@@ -147,9 +147,7 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 
 .tile-grid {
   display: grid;
-  /* wide enough for the widest recipe row (4 components + separators) so
-     every tile — basic through tier-3 — has room for its comps on one line */
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 8px;
 }
 
