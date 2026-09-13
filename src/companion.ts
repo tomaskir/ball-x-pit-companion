@@ -269,11 +269,13 @@ function attachToast(tile: HTMLElement, item: Item, isPassive: boolean, map: Map
 function buildToast(item: Item, isPassive: boolean, map: Map<string, Item>) {
   const el = document.createElement('div');
   el.className = 'toast';
+  // recipes are OR-of-ANDs: components within one recipe combine (+),
+  // alternate recipes are separated by "or"
   const comps = item.recipes.length
     ? item.recipes.map((r) => r.map((c) => {
         const comp = map.get(c);
         return comp ? `<img src="${icon(comp.icon)}" alt="${comp.name}" title="${comp.name}" width="16" height="16">` : c;
-      }).join('<span class="or">or</span>')).join('<span class="or">/</span>')
+      }).join('<span class="plus">+</span>')).join('<span class="or">or</span>')
     : '';
   const v = verdictFor(item, isPassive, selectedChars);
   el.innerHTML = `

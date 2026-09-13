@@ -251,7 +251,8 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 }
 
 .toast .rec img { width: 16px; height: 16px; image-rendering: pixelated; }
-.toast .rec .or { font-size: 10px; font-style: italic; }
+.toast .rec .or { font-size: 10px; font-style: italic; color: var(--gold); }
+.toast .rec .plus { font-size: 11px; color: var(--muted); }
 
 .toast .verdicts { margin-top: 6px; font-size: 11px; }
 .toast .verdicts span { padding: 1px 6px; border-radius: 3px; display: inline-block; }
