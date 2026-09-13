@@ -18,7 +18,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Every 7–12 rows, spawn a stone archer with 160 health on your side. Shoots arrows at enemies, dealing 10–20 each. Immune to ball damage.",
     "recipes": [],
-    "icon": "/icons/passives/archers-effigy.png",
+    "icon": "icons/passives/archers-effigy.png",
     "tags": [
       "spawns-allies"
     ]
@@ -29,7 +29,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Friendly pieces gain 100% more health",
     "recipes": [],
-    "icon": "/icons/passives/artificial-heart.png",
+    "icon": "icons/passives/artificial-heart.png",
     "tags": []
   },
   {
@@ -38,7 +38,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Gain 1.5x baby balls, but your aim becomes scattered",
     "recipes": [],
-    "icon": "/icons/passives/baby-rattle.png",
+    "icon": "icons/passives/baby-rattle.png",
     "tags": [
       "spawns-baby-balls"
     ]
@@ -49,7 +49,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Shoot 1–2 baby balls each time you're healed",
     "recipes": [],
-    "icon": "/icons/passives/bandage-roll.png",
+    "icon": "icons/passives/bandage-roll.png",
     "tags": [
       "spawns-baby-balls",
       "lifesteal"
@@ -61,7 +61,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "When you catch a special ball, automatically shoot 1–3 new baby balls in random directions",
     "recipes": [],
-    "icon": "/icons/passives/bottled-tornado.png",
+    "icon": "icons/passives/bottled-tornado.png",
     "tags": [
       "spawns-baby-balls"
     ]
@@ -72,7 +72,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Decrease damage taken by 10%",
     "recipes": [],
-    "icon": "/icons/passives/breastplate.png",
+    "icon": "icons/passives/breastplate.png",
     "tags": []
   },
   {
@@ -81,7 +81,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Destroy the 2 nearest enemies when you are hit from close range",
     "recipes": [],
-    "icon": "/icons/passives/crown-of-thorns.png",
+    "icon": "icons/passives/crown-of-thorns.png",
     "tags": [
       "aoe"
     ]
@@ -92,7 +92,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "When a poisoned enemy dies, 10% chance to come back as a zombie with 240 health",
     "recipes": [],
-    "icon": "/icons/passives/cursed-elixir.png",
+    "icon": "icons/passives/cursed-elixir.png",
     "tags": [
       "spawns-allies",
       "status-effect"
@@ -104,7 +104,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Critical hits deal 10–15 bonus damage",
     "recipes": [],
-    "icon": "/icons/passives/deadeyes-amulet.png",
+    "icon": "icons/passives/deadeyes-amulet.png",
     "tags": [
       "crit"
     ]
@@ -115,7 +115,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Increase crit chance to 20% when hitting enemies in the front",
     "recipes": [],
-    "icon": "/icons/passives/diamond-hilted-dagger.png",
+    "icon": "icons/passives/diamond-hilted-dagger.png",
     "tags": [
       "crit"
     ]
@@ -126,7 +126,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Every 5–10 rows, spawn an enemy with dynamite attached. Destroying them deals 200–500 damage to nearby enemies",
     "recipes": [],
-    "icon": "/icons/passives/dynamite.png",
+    "icon": "icons/passives/dynamite.png",
     "tags": [
       "aoe"
     ]
@@ -137,7 +137,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Increase crit chance to 20% when hitting enemies on their right side",
     "recipes": [],
-    "icon": "/icons/passives/emerald-hilted-dagger.png",
+    "icon": "icons/passives/emerald-hilted-dagger.png",
     "tags": [
       "crit"
     ]
@@ -148,7 +148,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Balls go through enemies and deal 25% bonus damage until they hit the back of the field",
     "recipes": [],
-    "icon": "/icons/passives/ethereal-cloak.png",
+    "icon": "icons/passives/ethereal-cloak.png",
     "tags": [
       "pass-through"
     ]
@@ -159,7 +159,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "You can heal past your max health at 20% efficiency",
     "recipes": [],
-    "icon": "/icons/passives/everflowing-goblet.png",
+    "icon": "icons/passives/everflowing-goblet.png",
     "tags": [
       "lifesteal"
     ]
@@ -170,7 +170,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "10% chance to dodge incoming attacks",
     "recipes": [],
-    "icon": "/icons/passives/eye-of-the-beholder.png",
+    "icon": "icons/passives/eye-of-the-beholder.png",
     "tags": []
   },
   {
@@ -179,7 +179,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Increase movement speed by 10% and move at full speed while shooting",
     "recipes": [],
-    "icon": "/icons/passives/fleet-feet.png",
+    "icon": "icons/passives/fleet-feet.png",
     "tags": [
       "ball-speed"
     ]
@@ -190,7 +190,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "When an enemy is frozen, they emit a chill to nearby enemies that deals 10–20 damage",
     "recipes": [],
-    "icon": "/icons/passives/frozen-spike.png",
+    "icon": "icons/passives/frozen-spike.png",
     "tags": [
       "aoe",
       "status-effect"
@@ -202,7 +202,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Every 7–11 rows, spawn a Gemspring. Damaging it drops an increasing amount of XP gems",
     "recipes": [],
-    "icon": "/icons/passives/gemspring.png",
+    "icon": "icons/passives/gemspring.png",
     "tags": []
   },
   {
@@ -211,7 +211,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Balls go through enemies and deal 20% bonus damage when hitting them from the side",
     "recipes": [],
-    "icon": "/icons/passives/ghostly-corset.png",
+    "icon": "icons/passives/ghostly-corset.png",
     "tags": [
       "pass-through"
     ]
@@ -222,7 +222,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Balls go through allies and heal them for 2 health",
     "recipes": [],
-    "icon": "/icons/passives/ghostly-shield.png",
+    "icon": "icons/passives/ghostly-shield.png",
     "tags": [
       "lifesteal"
     ]
@@ -233,7 +233,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Every 7–11 rows, spawn a golden bull with 400 health; accrues 10 gold/minute; moves up the field blocking/attacking",
     "recipes": [],
-    "icon": "/icons/passives/golden-bull.png",
+    "icon": "icons/passives/golden-bull.png",
     "tags": [
       "spawns-allies"
     ]
@@ -244,7 +244,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Slow down enemies in the same column as you by 50%",
     "recipes": [],
-    "icon": "/icons/passives/hand-fan.png",
+    "icon": "icons/passives/hand-fan.png",
     "tags": [
       "status-effect"
     ]
@@ -255,7 +255,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Projectiles have a 50% chance to reflect upon hitting you, dealing 20–40 damage if they hit an enemy",
     "recipes": [],
-    "icon": "/icons/passives/hand-mirror.png",
+    "icon": "icons/passives/hand-mirror.png",
     "tags": []
   },
   {
@@ -264,7 +264,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Every 7–12 rows, spawn a stone healer with 100 health; heals you 10 health/minute",
     "recipes": [],
-    "icon": "/icons/passives/healers-effigy.png",
+    "icon": "icons/passives/healers-effigy.png",
     "tags": [
       "spawns-allies",
       "lifesteal"
@@ -276,7 +276,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Balls deal 150% damage, but damage decays by 30% each bounce (min 50%)",
     "recipes": [],
-    "icon": "/icons/passives/hourglass.png",
+    "icon": "icons/passives/hourglass.png",
     "tags": [
       "bounce-scaling"
     ]
@@ -287,7 +287,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Balls deal 0.5% more damage for each baby ball on the field",
     "recipes": [],
-    "icon": "/icons/passives/iron-onesie.png",
+    "icon": "icons/passives/iron-onesie.png",
     "tags": [
       "baby-ball-scaling"
     ]
@@ -298,7 +298,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Charmed enemies have a 10% chance of dying after recovering",
     "recipes": [],
-    "icon": "/icons/passives/kiss-of-death.png",
+    "icon": "icons/passives/kiss-of-death.png",
     "tags": [
       "status-effect"
     ]
@@ -309,7 +309,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Projectiles have a 40% chance to heal you for 1 health instead of hurting you",
     "recipes": [],
-    "icon": "/icons/passives/lovers-quiver.png",
+    "icon": "icons/passives/lovers-quiver.png",
     "tags": [
       "lifesteal"
     ]
@@ -320,7 +320,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Increase area-of-effect damage (earthquake, laser, lightning) by 20%",
     "recipes": [],
-    "icon": "/icons/passives/magic-staff.png",
+    "icon": "icons/passives/magic-staff.png",
     "tags": [
       "aoe"
     ]
@@ -331,7 +331,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Increase range at which you pick up items and catch balls by 1.0 tiles",
     "recipes": [],
-    "icon": "/icons/passives/magnet.png",
+    "icon": "icons/passives/magnet.png",
     "tags": []
   },
   {
@@ -340,7 +340,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Balls that hit flaming enemies light on fire and deal 10–20 bonus fire damage on the next hit",
     "recipes": [],
-    "icon": "/icons/passives/midnight-oil.png",
+    "icon": "icons/passives/midnight-oil.png",
     "tags": [
       "status-effect"
     ]
@@ -351,7 +351,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Balls deal 12% bonus damage until they hit the back of the field",
     "recipes": [],
-    "icon": "/icons/passives/platinum-dumbbell.png",
+    "icon": "icons/passives/platinum-dumbbell.png",
     "tags": [
       "single-target"
     ]
@@ -362,7 +362,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Enemies explode on death, dealing 20–30 damage to adjacent enemies",
     "recipes": [],
-    "icon": "/icons/passives/pressure-valve.png",
+    "icon": "icons/passives/pressure-valve.png",
     "tags": [
       "aoe"
     ]
@@ -373,7 +373,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Gain a shield that blocks the next damage; recharges after 60 seconds",
     "recipes": [],
-    "icon": "/icons/passives/protective-charm.png",
+    "icon": "icons/passives/protective-charm.png",
     "tags": []
   },
   {
@@ -382,7 +382,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Increases ball launch speed by 20%, but you get knocked back a little each shot",
     "recipes": [],
-    "icon": "/icons/passives/radiant-feather.png",
+    "icon": "icons/passives/radiant-feather.png",
     "tags": [
       "ball-speed"
     ]
@@ -393,7 +393,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Increase crit chance to 20% when hitting enemies in the same column as you",
     "recipes": [],
-    "icon": "/icons/passives/reachers-spear.png",
+    "icon": "icons/passives/reachers-spear.png",
     "tags": [
       "crit"
     ]
@@ -404,7 +404,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Balls start at 70% speed but increase by 20% each bounce (max 200%)",
     "recipes": [],
-    "icon": "/icons/passives/rubber-headband.png",
+    "icon": "icons/passives/rubber-headband.png",
     "tags": [
       "ball-speed",
       "bounce-scaling"
@@ -416,7 +416,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Increase crit chance to 15% when hitting enemies in the back",
     "recipes": [],
-    "icon": "/icons/passives/ruby-hilted-dagger.png",
+    "icon": "icons/passives/ruby-hilted-dagger.png",
     "tags": [
       "crit"
     ]
@@ -427,7 +427,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Increase crit chance to 30% when hitting enemies on their left side",
     "recipes": [],
-    "icon": "/icons/passives/sapphire-hilted-dagger.png",
+    "icon": "icons/passives/sapphire-hilted-dagger.png",
     "tags": [
       "crit"
     ]
@@ -438,7 +438,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Increase fire rate by 15%",
     "recipes": [],
-    "icon": "/icons/passives/shortbow.png",
+    "icon": "icons/passives/shortbow.png",
     "tags": []
   },
   {
@@ -447,7 +447,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Increase crit chance to 20% when hitting blinded enemies",
     "recipes": [],
-    "icon": "/icons/passives/silver-blindfold.png",
+    "icon": "icons/passives/silver-blindfold.png",
     "tags": [
       "crit"
     ]
@@ -458,7 +458,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Balls deal 20% bonus damage until they hit a wall",
     "recipes": [],
-    "icon": "/icons/passives/silver-bullet.png",
+    "icon": "icons/passives/silver-bullet.png",
     "tags": [
       "single-target"
     ]
@@ -469,7 +469,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "25% chance to launch a baby ball when you pick up a gem",
     "recipes": [],
-    "icon": "/icons/passives/slingshot.png",
+    "icon": "icons/passives/slingshot.png",
     "tags": [
       "spawns-baby-balls"
     ]
@@ -480,7 +480,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Deal 30–50 to enemies the first time you get into their melee attack range",
     "recipes": [],
-    "icon": "/icons/passives/spiked-collar.png",
+    "icon": "icons/passives/spiked-collar.png",
     "tags": [
       "single-target"
     ]
@@ -491,7 +491,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Every 7–12 rows, spawn a stone soldier with 200 health; moves up the field blocking/attacking",
     "recipes": [],
-    "icon": "/icons/passives/stone-effigy.png",
+    "icon": "icons/passives/stone-effigy.png",
     "tags": [
       "spawns-allies"
     ]
@@ -502,7 +502,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Balls deal 40% less damage, but gain 1% damage for each enemy on the field",
     "recipes": [],
-    "icon": "/icons/passives/sword-breaker.png",
+    "icon": "icons/passives/sword-breaker.png",
     "tags": [
       "single-target"
     ]
@@ -513,7 +513,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Stone allies can now be damaged by your balls, but you heal 2 health when a ball hits one",
     "recipes": [],
-    "icon": "/icons/passives/traitors-cowl.png",
+    "icon": "icons/passives/traitors-cowl.png",
     "tags": [
       "friendly-fire-risk",
       "lifesteal"
@@ -525,7 +525,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Floats around your character and shoots a baby ball at enemies every 2.0 seconds",
     "recipes": [],
-    "icon": "/icons/passives/turret.png",
+    "icon": "icons/passives/turret.png",
     "tags": [
       "spawns-baby-balls"
     ]
@@ -536,7 +536,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Balls deal 80% more damage after hitting the back of the field, otherwise damage reduced by 20%",
     "recipes": [],
-    "icon": "/icons/passives/upturned-hatchet.png",
+    "icon": "icons/passives/upturned-hatchet.png",
     "tags": [
       "wall-bounce"
     ]
@@ -547,7 +547,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Each kill heals you by 5, but each shot you take deals 2 damage to you",
     "recipes": [],
-    "icon": "/icons/passives/vampiric-sword.png",
+    "icon": "icons/passives/vampiric-sword.png",
     "tags": [
       "lifesteal",
       "self-damage"
@@ -559,7 +559,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Curse has a 10% chance of killing enemies",
     "recipes": [],
-    "icon": "/icons/passives/voodoo-doll.png",
+    "icon": "icons/passives/voodoo-doll.png",
     "tags": [
       "status-effect"
     ]
@@ -570,7 +570,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Each time a ball hits a wall, it deals 30% extra damage on the next hit",
     "recipes": [],
-    "icon": "/icons/passives/wagon-wheel.png",
+    "icon": "icons/passives/wagon-wheel.png",
     "tags": [
       "wall-bounce"
     ]
@@ -581,7 +581,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "All baby balls deal 20% more damage",
     "recipes": [],
-    "icon": "/icons/passives/war-horn.png",
+    "icon": "icons/passives/war-horn.png",
     "tags": [
       "baby-ball-scaling"
     ]
@@ -592,7 +592,7 @@ export const PASSIVES: Passive[] = [
     "depth": 0,
     "effects": "Deal 6–12 per second to enemies within 2 tiles",
     "recipes": [],
-    "icon": "/icons/passives/wretched-onion.png",
+    "icon": "icons/passives/wretched-onion.png",
     "tags": [
       "aoe"
     ]
@@ -608,7 +608,7 @@ export const PASSIVES: Passive[] = [
         "rubber-headband"
       ]
     ],
-    "icon": "/icons/passives/ardent-tire.png",
+    "icon": "icons/passives/ardent-tire.png",
     "tags": [
       "ball-speed",
       "bounce-scaling"
@@ -625,7 +625,7 @@ export const PASSIVES: Passive[] = [
         "silver-bullet"
       ]
     ],
-    "icon": "/icons/passives/argent-stopwatch.png",
+    "icon": "icons/passives/argent-stopwatch.png",
     "tags": [
       "bounce-scaling"
     ]
@@ -641,7 +641,7 @@ export const PASSIVES: Passive[] = [
         "hand-mirror"
       ]
     ],
-    "icon": "/icons/passives/arrow-of-fate.png",
+    "icon": "icons/passives/arrow-of-fate.png",
     "tags": [
       "lifesteal",
       "spawns-baby-balls"
@@ -658,7 +658,7 @@ export const PASSIVES: Passive[] = [
         "war-horn"
       ]
     ],
-    "icon": "/icons/passives/cornucopia.png",
+    "icon": "icons/passives/cornucopia.png",
     "tags": [
       "spawns-baby-balls"
     ]
@@ -676,7 +676,7 @@ export const PASSIVES: Passive[] = [
         "emerald-hilted-dagger"
       ]
     ],
-    "icon": "/icons/passives/deadeyes-cross.png",
+    "icon": "icons/passives/deadeyes-cross.png",
     "tags": [
       "crit"
     ]
@@ -692,7 +692,7 @@ export const PASSIVES: Passive[] = [
         "gracious-impaler"
       ]
     ],
-    "icon": "/icons/passives/deadeyes-impaler.png",
+    "icon": "icons/passives/deadeyes-impaler.png",
     "tags": [
       "crit"
     ]
@@ -708,7 +708,7 @@ export const PASSIVES: Passive[] = [
         "sword-breaker"
       ]
     ],
-    "icon": "/icons/passives/full-metal-rapier.png",
+    "icon": "icons/passives/full-metal-rapier.png",
     "tags": [
       "baby-ball-scaling"
     ]
@@ -724,7 +724,7 @@ export const PASSIVES: Passive[] = [
         "deadeyes-amulet"
       ]
     ],
-    "icon": "/icons/passives/gracious-impaler.png",
+    "icon": "icons/passives/gracious-impaler.png",
     "tags": [
       "crit"
     ]
@@ -740,7 +740,7 @@ export const PASSIVES: Passive[] = [
         "hand-fan"
       ]
     ],
-    "icon": "/icons/passives/grotesque-artillery.png",
+    "icon": "icons/passives/grotesque-artillery.png",
     "tags": [
       "spawns-baby-balls"
     ]
@@ -756,7 +756,7 @@ export const PASSIVES: Passive[] = [
         "upturned-hatchet"
       ]
     ],
-    "icon": "/icons/passives/inglorious-hammer.png",
+    "icon": "icons/passives/inglorious-hammer.png",
     "tags": [
       "wall-bounce"
     ]
@@ -772,7 +772,7 @@ export const PASSIVES: Passive[] = [
         "breastplate"
       ]
     ],
-    "icon": "/icons/passives/odiferous-shell.png",
+    "icon": "icons/passives/odiferous-shell.png",
     "tags": []
   },
   {
@@ -786,7 +786,7 @@ export const PASSIVES: Passive[] = [
         "ethereal-cloak"
       ]
     ],
-    "icon": "/icons/passives/phantom-regalia.png",
+    "icon": "icons/passives/phantom-regalia.png",
     "tags": [
       "pass-through"
     ]
@@ -802,7 +802,7 @@ export const PASSIVES: Passive[] = [
         "magnet"
       ]
     ],
-    "icon": "/icons/passives/remote-detonator.png",
+    "icon": "icons/passives/remote-detonator.png",
     "tags": [
       "spawns-baby-balls",
       "aoe"
@@ -819,7 +819,7 @@ export const PASSIVES: Passive[] = [
         "everflowing-goblet"
       ]
     ],
-    "icon": "/icons/passives/soul-reaver.png",
+    "icon": "icons/passives/soul-reaver.png",
     "tags": [
       "lifesteal"
     ]
@@ -835,7 +835,7 @@ export const PASSIVES: Passive[] = [
         "crown-of-thorns"
       ]
     ],
-    "icon": "/icons/passives/tormenters-mask.png",
+    "icon": "icons/passives/tormenters-mask.png",
     "tags": []
   },
   {
@@ -849,7 +849,7 @@ export const PASSIVES: Passive[] = [
         "slingshot"
       ]
     ],
-    "icon": "/icons/passives/windweaver.png",
+    "icon": "icons/passives/windweaver.png",
     "tags": [
       "spawns-baby-balls",
       "ball-speed"
@@ -866,7 +866,7 @@ export const PASSIVES: Passive[] = [
         "fleet-feet"
       ]
     ],
-    "icon": "/icons/passives/wings-of-the-anointed.png",
+    "icon": "icons/passives/wings-of-the-anointed.png",
     "tags": [
       "ball-speed"
     ]

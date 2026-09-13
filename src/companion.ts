@@ -14,6 +14,10 @@ const byId = (items: Item[]) => new Map(items.map((i) => [i.id, i]));
 const ballMap = byId(BALLS);
 const passiveMap = byId(PASSIVES);
 
+/** Icons are stored in data as base-relative ("icons/balls/x.png"); the site
+ *  deploys under a sub-path, so prefix with the configured base URL. */
+const icon = (p: string) => import.meta.env.BASE_URL + p;
+
 // ---------- graph helpers (multi-recipe aware) ----------
 
 /** All recipes flattened: component ids this item is made from. */
@@ -130,7 +134,7 @@ function renderCharChips() {
   for (const ch of selectedChars) {
     const chip = document.createElement('button');
     chip.className = 'chip';
-    chip.innerHTML = `<img src="${ch.sprite}" alt="" width="22" height="22"><span>${ch.name}</span>`;
+    chip.innerHTML = `<img src="${icon(ch.sprite)}" alt="" width="22" height="22"><span>${ch.name}</span>`;
     chip.title = 'Click to remove';
     chip.addEventListener('click', () => toggleCharacter(ch));
     wrap.appendChild(chip);
@@ -144,7 +148,7 @@ function renderCharacters() {
     const card = document.createElement('div');
     card.className = 'char-card' + (selectedChars.some((c) => c.id === ch.id) ? ' selected' : '');
     card.innerHTML = `
-      <img src="${ch.icon}" alt="${ch.name}" width="96" height="96" loading="lazy">
+      <img src="${icon(ch.icon)}" alt="${ch.name}" width="96" height="96" loading="lazy">
       <div class="char-name">${ch.name}</div>
       <div class="char-quirk">${ch.quirk}</div>`;
     card.addEventListener('click', () => toggleCharacter(ch));
@@ -198,7 +202,7 @@ function renderGrid(gridId: string, items: Item[], isPassive: boolean) {
       }
       if (q && !(item.name.toLowerCase().includes(q) || item.effects.toLowerCase().includes(q))) tile.classList.add('filtered');
 
-      tile.innerHTML += `<img src="${item.icon}" alt="${item.name}" width="48" height="48" loading="lazy"><span class="nm">${item.name}</span>`;
+      tile.innerHTML += `<img src="${icon(item.icon)}" alt="${item.name}" width="48" height="48" loading="lazy"><span class="nm">${item.name}</span>`;
       tile.addEventListener('click', (e) => {
         e.stopPropagation();
         selectedId = selectedId === item.id ? null : item.id;
@@ -244,12 +248,12 @@ function buildToast(item: Item, isPassive: boolean, map: Map<string, Item>) {
   const comps = item.recipes.length
     ? item.recipes.map((r) => r.map((c) => {
         const comp = map.get(c);
-        return comp ? `<img src="${comp.icon}" alt="${comp.name}" title="${comp.name}" width="16" height="16">` : c;
+        return comp ? `<img src="${icon(comp.icon)}" alt="${comp.name}" title="${comp.name}" width="16" height="16">` : c;
       }).join('<span class="or">or</span>')).join('<span class="or">/</span>')
     : '';
   const v = verdictFor(item, isPassive, selectedChars);
   el.innerHTML = `
-    <h4><img src="${item.icon}" alt="" width="20" height="20">${item.name}</h4>
+    <h4><img src="${icon(item.icon)}" alt="" width="20" height="20">${item.name}</h4>
     <p class="eff">${item.effects}</p>
     ${comps ? `<div class="rec">${comps}</div>` : ''}
     ${v ? `<div class="verdicts"><span class="${v.verdict}">${v.verdict === 'red' ? '▲ red' : '✓ green'}${v.note ? ` — ${v.note}` : ''}</span></div>` : ''}

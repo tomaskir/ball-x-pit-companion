@@ -1,0 +1,1705 @@
+{
+  "balls": [
+    {
+      "name": "Bleed",
+      "depth": 0,
+      "recipes": [],
+      "onhit": "—",
+      "effect": "Inflicts 2 stacks of bleed. Bleeding enemies receive 1 damage per stack when hit by a ball (max 8 stacks)."
+    },
+    {
+      "name": "Brood Mother",
+      "depth": 0,
+      "recipes": [],
+      "onhit": "Spawn",
+      "effect": "Has a 25% chance of birthing a baby ball each time it hits an enemy."
+    },
+    {
+      "name": "Burn",
+      "depth": 0,
+      "recipes": [],
+      "onhit": "—",
+      "effect": "Add 1 stack of burn on hit for 3 seconds (max 3 stacks). Burnt units are dealt 4–8 damage per stack per second."
+    },
+    {
+      "name": "Cell",
+      "depth": 0,
+      "recipes": [],
+      "onhit": "Spawn",
+      "effect": "Splits into a clone on hit 2 times."
+    },
+    {
+      "name": "Charm",
+      "depth": 0,
+      "recipes": [],
+      "onhit": "—",
+      "effect": "Each hit has a 4% chance of charming the enemy for 5 seconds. Charmed units walk up the board and attack enemies."
+    },
+    {
+      "name": "Dark",
+      "depth": 0,
+      "recipes": [],
+      "onhit": "Destroy",
+      "effect": "Deals 3.0x damage but destroys itself after hitting an enemy. Has a 3 second cooldown before it can be shot again."
+    },
+    {
+      "name": "Earthquake",
+      "depth": 0,
+      "recipes": [],
+      "onhit": "AOE",
+      "effect": "Deals 5–13 damage to nearby units in a 3x3 tile square."
+    },
+    {
+      "name": "Egg Sac",
+      "depth": 0,
+      "recipes": [],
+      "onhit": "Destroy, Spawn",
+      "effect": "Explodes into 2–4 baby balls on hitting an enemy. Has a 3 second cooldown before it can be shot again."
+    },
+    {
+      "name": "Flesh",
+      "depth": 0,
+      "recipes": [],
+      "onhit": "—",
+      "effect": "Speed increases by 25% per bounce."
+    },
+    {
+      "name": "Freeze",
+      "depth": 0,
+      "recipes": [],
+      "onhit": "—",
+      "effect": "Has a 4% chance to freeze enemies for 5.0 seconds. Frozen enemies receive 25% more damage."
+    },
+    {
+      "name": "Ghost",
+      "depth": 0,
+      "recipes": [],
+      "onhit": "Pass Through",
+      "effect": "Passes through enemies."
+    },
+    {
+      "name": "Iron",
+      "depth": 0,
+      "recipes": [],
+      "onhit": "—",
+      "effect": "Deals double damage but moves 40% slower."
+    },
+    {
+      "name": "Laser (Horizontal)",
+      "depth": 0,
+      "recipes": [],
+      "onhit": "AOE",
+      "effect": "Deals 9–18 damage to all enemies in the same row."
+    },
+    {
+      "name": "Laser (Vertical)",
+      "depth": 0,
+      "recipes": [],
+      "onhit": "AOE",
+      "effect": "Deals 9–18 damage to all enemies in the same column."
+    },
+    {
+      "name": "Light",
+      "depth": 0,
+      "recipes": [],
+      "onhit": "—",
+      "effect": "Blinds enemies on hit for 3 seconds. Blinded units have a hard time detecting you and have a 50% chance of missing when they attack."
+    },
+    {
+      "name": "Lightning",
+      "depth": 0,
+      "recipes": [],
+      "onhit": "AOE",
+      "effect": "Deals 1–20 damage to up to 3 nearby enemies."
+    },
+    {
+      "name": "Poison",
+      "depth": 0,
+      "recipes": [],
+      "onhit": "—",
+      "effect": "Applies 1 stack of poison on hit (max 5 stacks). Poison lasts for 6 seconds and each stack deals 1–4 damage per second."
+    },
+    {
+      "name": "Stone",
+      "depth": 0,
+      "recipes": [],
+      "onhit": "—",
+      "effect": "Initially deals 300% damage. Damage erodes by 40% each time hitting an enemy (minimum 50%)."
+    },
+    {
+      "name": "Time",
+      "depth": 0,
+      "recipes": [],
+      "onhit": "Destroy",
+      "effect": "Explodes into a time snare upon hitting an enemy, which stays on the field for 20 seconds and freezes enemies inside it."
+    },
+    {
+      "name": "Vampire",
+      "depth": 0,
+      "recipes": [],
+      "onhit": "—",
+      "effect": "Each hit has a 4.5% chance of healing 1 health."
+    },
+    {
+      "name": "Wind",
+      "depth": 0,
+      "recipes": [],
+      "onhit": "Pass Through",
+      "effect": "Passes through enemies and slows them down by 30% for 5 seconds, but deals 25% less damage."
+    },
+    {
+      "name": "Baby Ball",
+      "depth": 0,
+      "recipes": [],
+      "onhit": "",
+      "effect": "Base attack ball, no special abilities. All characters start with a few except The Empty Nester and The Makeshift Sisyphus."
+    },
+    {
+      "name": "Armageddon",
+      "depth": 2,
+      "recipes": [
+        [
+          "inferno",
+          "storm"
+        ]
+      ],
+      "onhit": "Destroy, AOE",
+      "effect": "Creates a meteor shower upon hitting an enemy. The meteor shower lasts for 5 seconds and deals 30–50 damage/second to enemies within a 3 tile radius."
+    },
+    {
+      "name": "Assassin",
+      "depth": 1,
+      "recipes": [
+        [
+          "iron",
+          "ghost"
+        ],
+        [
+          "iron",
+          "dark"
+        ]
+      ],
+      "onhit": "Pass Through",
+      "effect": "Passes through the front of enemies, but not the back. Backstabs deal 30% bonus damage."
+    },
+    {
+      "name": "Banished Flame",
+      "depth": 1,
+      "recipes": [
+        [
+          "dark",
+          "burn"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Add 1 stack of darkflame on hit for 2 seconds (max 6 stacks). Darkflame deals 1–30 damage per stack per second. When the darkflame goes out, it deals 1–100 to the enemy."
+    },
+    {
+      "name": "Banshee",
+      "depth": 2,
+      "recipes": [
+        [
+          "phantom",
+          "wraith"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Curses all enemies while on the field when launched. Cursed enemies are dealt 150–300 after being hit 6 times."
+    },
+    {
+      "name": "Berserk",
+      "depth": 1,
+      "recipes": [
+        [
+          "charm",
+          "bleed"
+        ],
+        [
+          "charm",
+          "burn"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Each hit has a 30% chance of causing enemies to go berserk for 6 seconds. Berserk enemies deal 15–24 damage to adjacent enemies every second."
+    },
+    {
+      "name": "Black Hole",
+      "depth": 2,
+      "recipes": [
+        [
+          "sun",
+          "dark"
+        ],
+        [
+          "sun",
+          "time"
+        ]
+      ],
+      "onhit": "Destroy",
+      "effect": "Instantly kills the first non-boss enemy that it hits, but destroys itself afterwards. Has a 7 second cooldown before it can be shot again."
+    },
+    {
+      "name": "Blizzard",
+      "depth": 1,
+      "recipes": [
+        [
+          "freeze",
+          "wind"
+        ],
+        [
+          "freeze",
+          "lightning"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Freezes all enemies within a 2 tile radius for 0.8 seconds, dealing 1–50 damage."
+    },
+    {
+      "name": "Bomb",
+      "depth": 1,
+      "recipes": [
+        [
+          "burn",
+          "iron"
+        ]
+      ],
+      "onhit": "Destroy",
+      "effect": "Explodes when hitting an enemy, dealing 150–300 damage to nearby enemies. Has a 3 second cooldown before it can be shot again."
+    },
+    {
+      "name": "Brimstone",
+      "depth": 1,
+      "recipes": [
+        [
+          "burn",
+          "stone"
+        ],
+        [
+          "burn",
+          "poison"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Applies 1 stack of burn and poison every second to all enemies within a 2 tile radius (max 4 stacks)."
+    },
+    {
+      "name": "Catapult",
+      "depth": 1,
+      "recipes": [
+        [
+          "stone",
+          "egg-sac"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Launches 3–5 stone baby balls every 1.5 seconds, which are destroyed after hitting anything."
+    },
+    {
+      "name": "Drill",
+      "depth": 1,
+      "recipes": [
+        [
+          "earthquake",
+          "iron"
+        ]
+      ],
+      "onhit": "Pass Through",
+      "effect": "Pierces enemies and deals 50% bonus damage until reaching the back of the field."
+    },
+    {
+      "name": "Elemental",
+      "depth": 1,
+      "recipes": [
+        [
+          "burn",
+          "wind",
+          "freeze",
+          "earthquake"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Applies a random status effect (burn, slow, or freeze) to nearby enemies on hit."
+    },
+    {
+      "name": "Erosion",
+      "depth": 1,
+      "recipes": [
+        [
+          "time",
+          "wind"
+        ]
+      ],
+      "onhit": "Pass Through",
+      "effect": "Passes through enemies. Deals 3% of enemy's current health as bonus damage on hit."
+    },
+    {
+      "name": "Fireworks",
+      "depth": 1,
+      "recipes": [
+        [
+          "burn",
+          "egg-sac"
+        ]
+      ],
+      "onhit": "Destroy",
+      "effect": "Explodes into 3–6 fireworks. Fireworks target random enemies, dealing 20–30 damage and applying 1 stack of burn."
+    },
+    {
+      "name": "Flash",
+      "depth": 1,
+      "recipes": [
+        [
+          "lightning",
+          "light"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Damages all enemies on screen for 1–3 damage after hitting an enemy and blinds them for 2 seconds."
+    },
+    {
+      "name": "Flesh Mound",
+      "depth": 1,
+      "recipes": [
+        [
+          "brood-mother",
+          "flesh"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Emits a fleshy baby ball in a random direction every 1.0 seconds."
+    },
+    {
+      "name": "Flicker",
+      "depth": 1,
+      "recipes": [
+        [
+          "light",
+          "dark"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Deals 1–7 damage to every enemy on screen every 1.4 seconds."
+    },
+    {
+      "name": "Freeze Ray",
+      "depth": 1,
+      "recipes": [
+        [
+          "freeze",
+          "laser-horizontal"
+        ],
+        [
+          "freeze",
+          "laser-vertical"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Emits a freeze ray when hitting an enemy, dealing 20–50 to all enemies in its path, with a 10% chance of freezing them for 10.0 seconds."
+    },
+    {
+      "name": "Frozen Flame",
+      "depth": 1,
+      "recipes": [
+        [
+          "burn",
+          "freeze"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Add 1 stack of frostburn on hit for 20 seconds (max 4 stacks). Frostburnt units are dealt 8–12 damage per stack per second and receive 25% more damage from other sources."
+    },
+    {
+      "name": "Glacier",
+      "depth": 1,
+      "recipes": [
+        [
+          "freeze",
+          "earthquake"
+        ],
+        [
+          "freeze",
+          "stone"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Releases glacial spikes over time that deal 15–30 to enemies that touch them and freeze them for 2.0 seconds. This ball and its glacial spikes also deal 6–12 damage to nearby units."
+    },
+    {
+      "name": "Heart Swallower",
+      "depth": 1,
+      "recipes": [
+        [
+          "bleed",
+          "ghost"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Saps enemies on hit, with a 40% chance of stealing 1 health and reducing their attack damage by 20%."
+    },
+    {
+      "name": "Hemorrhage",
+      "depth": 1,
+      "recipes": [
+        [
+          "bleed",
+          "iron"
+        ],
+        [
+          "bleed",
+          "flesh"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Inflicts 3 stacks of bleed. When hitting an enemy with 12+ stacks of bleed, consumes all stacks to deal 20% of their current health."
+    },
+    {
+      "name": "Holy Laser",
+      "depth": 1,
+      "recipes": [
+        [
+          "laser-horizontal",
+          "laser-vertical"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Deals 24–36 damage to all enemies in the same row and column."
+    },
+    {
+      "name": "Incubus",
+      "depth": 1,
+      "recipes": [
+        [
+          "charm",
+          "dark"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Each hit has a 4% chance of charming the enemy for 9 seconds. Charmed enemies curse nearby enemies. Cursed enemies are dealt 100–200 after being hit 5 times."
+    },
+    {
+      "name": "Inferno",
+      "depth": 1,
+      "recipes": [
+        [
+          "burn",
+          "wind"
+        ],
+        [
+          "burn",
+          "time"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Applies 1 stack of burn every second to all enemies within a 2 tile radius. Burn lasts for 6 seconds, dealing 3–7 damage per stack per second."
+    },
+    {
+      "name": "Landslide",
+      "depth": 1,
+      "recipes": [
+        [
+          "stone",
+          "earthquake"
+        ]
+      ],
+      "onhit": "Destroy",
+      "effect": "Creates a landslide and destroys self upon hitting an enemy. The landslide lasts for 5 seconds and deals 20–30 damage per second to enemies within a 2 tile radius."
+    },
+    {
+      "name": "Laser Beam",
+      "depth": 1,
+      "recipes": [
+        [
+          "light",
+          "laser-horizontal"
+        ],
+        [
+          "light",
+          "laser-vertical"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Emits a laser beam on hit that deals 30–42 damage and blinds enemies for 8 seconds."
+    },
+    {
+      "name": "Laser Cutter",
+      "depth": 1,
+      "recipes": [
+        [
+          "laser-horizontal",
+          "steel"
+        ],
+        [
+          "laser-vertical",
+          "steel"
+        ]
+      ],
+      "onhit": "?",
+      "effect": "Constantly emits a laser in front of it, which deals 100–150 damage per second."
+    },
+    {
+      "name": "Leech",
+      "depth": 1,
+      "recipes": [
+        [
+          "brood-mother",
+          "bleed"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Attaches up to 1 leech onto enemies it hits, which adds 2 stacks of bleed per second (max 24 stacks)."
+    },
+    {
+      "name": "Lightning Bug",
+      "depth": 1,
+      "recipes": [
+        [
+          "lightning",
+          "brood-mother"
+        ]
+      ],
+      "onhit": "Spawn",
+      "effect": "Spawns a lightning bug each time it hits an enemy. Lightning bugs attack a random enemy, dealing 1–80 damage to up to 3 nearby enemies."
+    },
+    {
+      "name": "Lightning Rod",
+      "depth": 1,
+      "recipes": [
+        [
+          "lightning",
+          "iron"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Plants a lightning rod into enemies it hits. These enemies are struck by lightning every 3.0 seconds, dealing 1–30 damage to up to 8 nearby enemies."
+    },
+    {
+      "name": "Lovestruck",
+      "depth": 1,
+      "recipes": [
+        [
+          "charm",
+          "light"
+        ],
+        [
+          "charm",
+          "lightning"
+        ],
+        [
+          "charm",
+          "time"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Inflicts lovestruck on hit enemies for 20 seconds. Lovestruck units have a 50% chance of healing you for 5 health when they attack."
+    },
+    {
+      "name": "Maggot",
+      "depth": 1,
+      "recipes": [
+        [
+          "brood-mother",
+          "cell"
+        ]
+      ],
+      "onhit": "Spawn",
+      "effect": "Infests enemies on hit with maggots. When they die, they explode into 1–2 baby balls."
+    },
+    {
+      "name": "Magma",
+      "depth": 1,
+      "recipes": [
+        [
+          "burn",
+          "earthquake"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Emits lava blobs over time. Enemies who walk into lava blobs are dealt 15–30 damage and gain 1 stack of burn (max 3 stacks). This ball and its lava blobs also deal 6–12 damage to nearby units."
+    },
+    {
+      "name": "Mosquito King",
+      "depth": 1,
+      "recipes": [
+        [
+          "vampire",
+          "brood-mother"
+        ]
+      ],
+      "onhit": "Spawn",
+      "effect": "Spawns a mosquito each time it hits an enemy. Mosquitos attack a random enemy, dealing 80–120 damage each. If a mosquito kills an enemy, they steal 1 health."
+    },
+    {
+      "name": "Mosquito Kingdom",
+      "depth": 2,
+      "recipes": [
+        [
+          "mosquito-king",
+          "mosquito-swarm"
+        ]
+      ],
+      "onhit": "Spawn",
+      "effect": "Spawns 1–2 mosquitos each time it hits an enemy. Mosquitos attack a random enemy, dealing 100–150 damage each. If a mosquito kills an enemy, they steal 2 health."
+    },
+    {
+      "name": "Mosquito Swarm",
+      "depth": 1,
+      "recipes": [
+        [
+          "vampire",
+          "egg-sac"
+        ]
+      ],
+      "onhit": "Destroy, Spawn",
+      "effect": "Explodes into 3–6 mosquitos. Mosquitos attack random enemies, dealing 80–120 damage each. If a mosquito kills an enemy, they steal 1 health."
+    },
+    {
+      "name": "Nosferatu",
+      "depth": 2,
+      "recipes": [
+        [
+          "vampire-lord",
+          "spider-queen",
+          "mosquito-king"
+        ]
+      ],
+      "onhit": "Spawn",
+      "effect": "Spawns a vampire bat each bounce. Vampire bats fly towards a random enemy, dealing 132–176 damage on hit, turning into a Vampire Lord."
+    },
+    {
+      "name": "Noxious",
+      "depth": 1,
+      "recipes": [
+        [
+          "wind",
+          "poison"
+        ],
+        [
+          "wind",
+          "dark"
+        ]
+      ],
+      "onhit": "Pass Through",
+      "effect": "Passes through enemies and applies 3 stacks of poison to nearby enemies within a 2 tile radius. Poison lasts for 4 seconds and each stack deals 1–3 damage per second."
+    },
+    {
+      "name": "Nuclear Bomb",
+      "depth": 1,
+      "recipes": [
+        [
+          "bomb",
+          "poison"
+        ]
+      ],
+      "onhit": "Destroy, AOE",
+      "effect": "Explodes when hitting an enemy, dealing 300–500 damage to nearby enemies and applying 1 stack of radiation to everyone present indefinitely (max 5 stacks). Each stack of radiation increases damage received by 10%. Has a 3 second cooldown."
+    },
+    {
+      "name": "Offspring",
+      "depth": 1,
+      "recipes": [
+        [
+          "cell",
+          "flesh"
+        ]
+      ],
+      "onhit": "Spawn",
+      "effect": "Splits into a clone on hit 4 times."
+    },
+    {
+      "name": "Overgrowth",
+      "depth": 1,
+      "recipes": [
+        [
+          "earthquake",
+          "cell"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Applies 1 stack of overgrowth. Upon reaching 3, consume all stacks and deal 150–200 damage to all enemies in a 3x3 tile square."
+    },
+    {
+      "name": "Petrify",
+      "depth": 1,
+      "recipes": [
+        [
+          "stone",
+          "flesh"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Petrifies all enemies within its sightline for 1.5 seconds when first launched, dealing 50–120."
+    },
+    {
+      "name": "Phantom",
+      "depth": 1,
+      "recipes": [
+        [
+          "dark",
+          "ghost"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Curses enemies on hit. Cursed enemies are dealt 100–200 damage after being hit 5 times."
+    },
+    {
+      "name": "Radiation Beam",
+      "depth": 1,
+      "recipes": [
+        [
+          "laser-horizontal",
+          "poison"
+        ],
+        [
+          "laser-horizontal",
+          "cell"
+        ],
+        [
+          "laser-vertical",
+          "poison"
+        ],
+        [
+          "laser-vertical",
+          "cell"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Emits a radiation beam on hit that deals 24–48 damage and applies 1 stack of radiation (max 5 stacks, +10% damage taken per stack, 15 s)."
+    },
+    {
+      "name": "Reaper",
+      "depth": 2,
+      "recipes": [
+        [
+          "soul-sucker",
+          "heart-swallower"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Has a 10% chance to kill enemies on impact, healing you for 5 health."
+    },
+    {
+      "name": "Sacrifice",
+      "depth": 1,
+      "recipes": [
+        [
+          "bleed",
+          "dark"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Inflicts 4 stacks of bleed (max 15 stacks) and applies curse to hit enemies. Cursed enemies are dealt 50–100 after being hit 5 times."
+    },
+    {
+      "name": "Sandstorm",
+      "depth": 1,
+      "recipes": [
+        [
+          "earthquake",
+          "wind"
+        ],
+        [
+          "stone",
+          "wind"
+        ]
+      ],
+      "onhit": "Pass Through",
+      "effect": "Goes through enemies and is surrounded by a raging storm dealing 10–20 damage per second and blinding nearby enemies for 3 seconds."
+    },
+    {
+      "name": "Satan",
+      "depth": 2,
+      "recipes": [
+        [
+          "incubus",
+          "succubus"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "While active, adds 1 stack of burn to all active enemies per second (max 5 stacks, 10–20 damage per stack per second) and makes them go berserk (15–24 damage to adjacent enemies every second)."
+    },
+    {
+      "name": "Shotgun",
+      "depth": 1,
+      "recipes": [
+        [
+          "iron",
+          "egg-sac"
+        ]
+      ],
+      "onhit": "Spawn",
+      "effect": "Shoots 3–7 iron baby balls after hitting a wall. Iron baby balls move at 200% speed but are destroyed upon hitting anything."
+    },
+    {
+      "name": "Sniper",
+      "depth": 2,
+      "recipes": [
+        [
+          "shotgun",
+          "assassin"
+        ]
+      ],
+      "onhit": "Pass Through, Spawn",
+      "effect": "Pierces enemies and shoots 3–7 sniper baby balls after hitting a wall. Sniper baby balls pierce enemies but are destroyed upon hitting a wall."
+    },
+    {
+      "name": "Soul Sucker",
+      "depth": 1,
+      "recipes": [
+        [
+          "vampire",
+          "ghost"
+        ]
+      ],
+      "onhit": "Pass Through",
+      "effect": "Passes through enemies and saps them, with a 30% chance of stealing 1 health and reducing their attack damage by 20%."
+    },
+    {
+      "name": "Spider Queen",
+      "depth": 1,
+      "recipes": [
+        [
+          "brood-mother",
+          "egg-sac"
+        ]
+      ],
+      "onhit": "Spawn",
+      "effect": "Has a 25% chance of birthing an Egg Sac each time it hits an enemy."
+    },
+    {
+      "name": "Steel",
+      "depth": 1,
+      "recipes": [
+        [
+          "iron",
+          "stone"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Initially deals double damage but moves 50% slower. Damage increases by 10% each time it hits an enemy (max 300%)."
+    },
+    {
+      "name": "Storm",
+      "depth": 1,
+      "recipes": [
+        [
+          "lightning",
+          "wind"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Emits lightning to strike nearby enemies every second, dealing 1–40 damage."
+    },
+    {
+      "name": "Succubus",
+      "depth": 1,
+      "recipes": [
+        [
+          "charm",
+          "vampire"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Each hit has a 4% chance of charming the enemy for 9 seconds. Heals 1 when hitting a charmed enemy."
+    },
+    {
+      "name": "Sun",
+      "depth": 1,
+      "recipes": [
+        [
+          "burn",
+          "light"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Blinds all enemies in view and adds 1 stack of burn every second (max 5 stacks). Burn lasts for 6 seconds and deals 6–12 damage per stack per second."
+    },
+    {
+      "name": "Swamp",
+      "depth": 1,
+      "recipes": [
+        [
+          "poison",
+          "earthquake"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Leaves behind tar blobs over time. Enemies who walk into tar blobs are dealt 15–30, are slowed by 50% for 7 seconds and gain 1 stack of poison (max 8 stacks). This ball and its tar blobs also deal 6–12 damage to nearby units."
+    },
+    {
+      "name": "Time Bomb",
+      "depth": 1,
+      "recipes": [
+        [
+          "time",
+          "bomb"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Throws a time bomb every few seconds, which explodes after a delay, dealing 80–120 damage to nearby enemies."
+    },
+    {
+      "name": "Timestop",
+      "depth": 1,
+      "recipes": [
+        [
+          "time",
+          "freeze"
+        ]
+      ],
+      "onhit": "Destroy",
+      "effect": "Freezes everything on the field for 5.0 seconds but destroys itself after hitting an enemy. Has a 30 second cooldown."
+    },
+    {
+      "name": "Tumor",
+      "depth": 1,
+      "recipes": [
+        [
+          "radiation-beam",
+          "flesh"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Applies tumor on hit. Enemies with a tumor die after 40 seconds (except for bosses)."
+    },
+    {
+      "name": "Vampire Lord",
+      "depth": 1,
+      "recipes": [
+        [
+          "vampire",
+          "bleed"
+        ],
+        [
+          "vampire",
+          "dark"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Each hit inflicts 3 stacks of bleed. Heals 1 health and consumes all stacks when hitting an enemy with at least 10 stacks of bleed."
+    },
+    {
+      "name": "Venom",
+      "depth": 1,
+      "recipes": [
+        [
+          "poison",
+          "freeze"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Applies 1 stack of venom on hit (max 8 stacks). Each stack deals 3–6 damage per second and slows down enemies."
+    },
+    {
+      "name": "Virus",
+      "depth": 1,
+      "recipes": [
+        [
+          "poison",
+          "bleed"
+        ],
+        [
+          "poison",
+          "ghost"
+        ],
+        [
+          "poison",
+          "cell"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Applies 1 stack of disease to units it hits (max 8 stacks). Disease lasts 6 seconds; each stack deals 3–6 damage per second, and diseased units have a 15% chance per second of passing a stack to nearby enemies."
+    },
+    {
+      "name": "Voluptuous Egg Sac",
+      "depth": 1,
+      "recipes": [
+        [
+          "egg-sac",
+          "cell"
+        ]
+      ],
+      "onhit": "Destroy, Spawn",
+      "effect": "Explodes into 2–3 egg sacs on hitting an enemy. Has a 3 second cooldown."
+    },
+    {
+      "name": "Warp",
+      "depth": 1,
+      "recipes": [
+        [
+          "time",
+          "light"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "After each hit, warps to a random spot on the field and speeds up by 5%."
+    },
+    {
+      "name": "Wraith",
+      "depth": 1,
+      "recipes": [
+        [
+          "freeze",
+          "ghost"
+        ]
+      ],
+      "onhit": "Pass Through",
+      "effect": "Freezes any enemy it passes through for 0.8 seconds."
+    },
+    {
+      "name": "X Ray",
+      "depth": 2,
+      "recipes": [
+        [
+          "holy-laser",
+          "laser-beam"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Emits an X-shaped laser on hit, which deals 50–75 damage to enemies and applies 1 stack of radiation (max 5 stacks; +10% damage taken per stack)."
+    },
+    {
+      "name": "Zombie",
+      "depth": 1,
+      "recipes": [
+        [
+          "vampire",
+          "flesh"
+        ]
+      ],
+      "onhit": "—",
+      "effect": "Infects enemies on hit, giving them a 40% chance to turn into a friendly zombie on death."
+    }
+  ],
+  "passives": [
+    {
+      "name": "Archer's Effigy",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Every 7–12 rows, spawn a stone archer with 160 health on your side. Shoots arrows at enemies, dealing 10–20 each. Immune to ball damage."
+    },
+    {
+      "name": "Artificial Heart",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Friendly pieces gain 100% more health"
+    },
+    {
+      "name": "Baby Rattle",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Gain 1.5x baby balls, but your aim becomes scattered"
+    },
+    {
+      "name": "Bandage Roll",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Shoot 1–2 baby balls each time you're healed"
+    },
+    {
+      "name": "Bottled Tornado",
+      "depth": 0,
+      "recipes": [],
+      "effect": "When you catch a special ball, automatically shoot 1–3 new baby balls in random directions"
+    },
+    {
+      "name": "Breastplate",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Decrease damage taken by 10%"
+    },
+    {
+      "name": "Crown of Thorns",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Destroy the 2 nearest enemies when you are hit from close range"
+    },
+    {
+      "name": "Cursed Elixir",
+      "depth": 0,
+      "recipes": [],
+      "effect": "When a poisoned enemy dies, 10% chance to come back as a zombie with 240 health"
+    },
+    {
+      "name": "Deadeye's Amulet",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Critical hits deal 10–15 bonus damage"
+    },
+    {
+      "name": "Diamond Hilted Dagger",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Increase crit chance to 20% when hitting enemies in the front"
+    },
+    {
+      "name": "Dynamite",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Every 5–10 rows, spawn an enemy with dynamite attached. Destroying them deals 200–500 damage to nearby enemies"
+    },
+    {
+      "name": "Emerald Hilted Dagger",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Increase crit chance to 20% when hitting enemies on their right side"
+    },
+    {
+      "name": "Ethereal Cloak",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Balls go through enemies and deal 25% bonus damage until they hit the back of the field"
+    },
+    {
+      "name": "Everflowing Goblet",
+      "depth": 0,
+      "recipes": [],
+      "effect": "You can heal past your max health at 20% efficiency"
+    },
+    {
+      "name": "Eye of the Beholder",
+      "depth": 0,
+      "recipes": [],
+      "effect": "10% chance to dodge incoming attacks"
+    },
+    {
+      "name": "Fleet Feet",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Increase movement speed by 10% and move at full speed while shooting"
+    },
+    {
+      "name": "Frozen Spike",
+      "depth": 0,
+      "recipes": [],
+      "effect": "When an enemy is frozen, they emit a chill to nearby enemies that deals 10–20 damage"
+    },
+    {
+      "name": "Gemspring",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Every 7–11 rows, spawn a Gemspring. Damaging it drops an increasing amount of XP gems"
+    },
+    {
+      "name": "Ghostly Corset",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Balls go through enemies and deal 20% bonus damage when hitting them from the side"
+    },
+    {
+      "name": "Ghostly Shield",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Balls go through allies and heal them for 2 health"
+    },
+    {
+      "name": "Golden Bull",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Every 7–11 rows, spawn a golden bull with 400 health; accrues 10 gold/minute; moves up the field blocking/attacking"
+    },
+    {
+      "name": "Hand Fan",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Slow down enemies in the same column as you by 50%"
+    },
+    {
+      "name": "Hand Mirror",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Projectiles have a 50% chance to reflect upon hitting you, dealing 20–40 damage if they hit an enemy"
+    },
+    {
+      "name": "Healer's Effigy",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Every 7–12 rows, spawn a stone healer with 100 health; heals you 10 health/minute"
+    },
+    {
+      "name": "Hourglass",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Balls deal 150% damage, but damage decays by 30% each bounce (min 50%)"
+    },
+    {
+      "name": "Iron Onesie",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Balls deal 0.5% more damage for each baby ball on the field"
+    },
+    {
+      "name": "Kiss of Death",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Charmed enemies have a 10% chance of dying after recovering"
+    },
+    {
+      "name": "Lover's Quiver",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Projectiles have a 40% chance to heal you for 1 health instead of hurting you"
+    },
+    {
+      "name": "Magic Staff",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Increase area-of-effect damage (earthquake, laser, lightning) by 20%"
+    },
+    {
+      "name": "Magnet",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Increase range at which you pick up items and catch balls by 1.0 tiles"
+    },
+    {
+      "name": "Midnight Oil",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Balls that hit flaming enemies light on fire and deal 10–20 bonus fire damage on the next hit"
+    },
+    {
+      "name": "Platinum Dumbbell",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Balls deal 12% bonus damage until they hit the back of the field"
+    },
+    {
+      "name": "Pressure Valve",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Enemies explode on death, dealing 20–30 damage to adjacent enemies"
+    },
+    {
+      "name": "Protective Charm",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Gain a shield that blocks the next damage; recharges after 60 seconds"
+    },
+    {
+      "name": "Radiant Feather",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Increases ball launch speed by 20%, but you get knocked back a little each shot"
+    },
+    {
+      "name": "Reacher's Spear",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Increase crit chance to 20% when hitting enemies in the same column as you"
+    },
+    {
+      "name": "Rubber Headband",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Balls start at 70% speed but increase by 20% each bounce (max 200%)"
+    },
+    {
+      "name": "Ruby Hilted Dagger",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Increase crit chance to 15% when hitting enemies in the back"
+    },
+    {
+      "name": "Sapphire Hilted Dagger",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Increase crit chance to 30% when hitting enemies on their left side"
+    },
+    {
+      "name": "Shortbow",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Increase fire rate by 15%"
+    },
+    {
+      "name": "Silver Blindfold",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Increase crit chance to 20% when hitting blinded enemies"
+    },
+    {
+      "name": "Silver Bullet",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Balls deal 20% bonus damage until they hit a wall"
+    },
+    {
+      "name": "Slingshot",
+      "depth": 0,
+      "recipes": [],
+      "effect": "25% chance to launch a baby ball when you pick up a gem"
+    },
+    {
+      "name": "Spiked Collar",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Deal 30–50 to enemies the first time you get into their melee attack range"
+    },
+    {
+      "name": "Stone Effigy",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Every 7–12 rows, spawn a stone soldier with 200 health; moves up the field blocking/attacking"
+    },
+    {
+      "name": "Sword Breaker",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Balls deal 40% less damage, but gain 1% damage for each enemy on the field"
+    },
+    {
+      "name": "Traitor's Cowl",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Stone allies can now be damaged by your balls, but you heal 2 health when a ball hits one"
+    },
+    {
+      "name": "Turret",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Floats around your character and shoots a baby ball at enemies every 2.0 seconds"
+    },
+    {
+      "name": "Upturned Hatchet",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Balls deal 80% more damage after hitting the back of the field, otherwise damage reduced by 20%"
+    },
+    {
+      "name": "Vampiric Sword",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Each kill heals you by 5, but each shot you take deals 2 damage to you"
+    },
+    {
+      "name": "Voodoo Doll",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Curse has a 10% chance of killing enemies"
+    },
+    {
+      "name": "Wagon Wheel",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Each time a ball hits a wall, it deals 30% extra damage on the next hit"
+    },
+    {
+      "name": "War Horn",
+      "depth": 0,
+      "recipes": [],
+      "effect": "All baby balls deal 20% more damage"
+    },
+    {
+      "name": "Wretched Onion",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Deal 6–12 per second to enemies within 2 tiles"
+    },
+    {
+      "name": "Ardent Tire",
+      "depth": 1,
+      "recipes": [
+        [
+          "wagon-wheel",
+          "rubber-headband"
+        ]
+      ],
+      "effect": "Each bounce increases ball speed by 10% and damage by 5%."
+    },
+    {
+      "name": "Argent Stopwatch",
+      "depth": 1,
+      "recipes": [
+        [
+          "hourglass",
+          "silver-bullet"
+        ]
+      ],
+      "effect": "Balls deal 200% damage, but damage decays by 20% each bounce (minimum 100%)."
+    },
+    {
+      "name": "Arrow of Fate",
+      "depth": 1,
+      "recipes": [
+        [
+          "lovers-quiver",
+          "hand-mirror"
+        ]
+      ],
+      "effect": "Projectiles no longer hurt you. Shoot 1–2 baby balls when hit by a projectile."
+    },
+    {
+      "name": "Cornucopia",
+      "depth": 1,
+      "recipes": [
+        [
+          "baby-rattle",
+          "war-horn"
+        ]
+      ],
+      "effect": "Each time baby balls are created, spawn 0–1 additional baby balls."
+    },
+    {
+      "name": "Deadeye's Cross",
+      "depth": 1,
+      "recipes": [
+        [
+          "diamond-hilted-dagger",
+          "sapphire-hilted-dagger",
+          "ruby-hilted-dagger",
+          "emerald-hilted-dagger"
+        ]
+      ],
+      "effect": "Increase critical hit chance to 60%."
+    },
+    {
+      "name": "Deadeye's Impaler",
+      "depth": 2,
+      "recipes": [
+        [
+          "deadeyes-cross",
+          "gracious-impaler"
+        ]
+      ],
+      "effect": "Increase critical hit chance to 5%. Critical hits instantly kill non-boss enemies."
+    },
+    {
+      "name": "Full Metal Rapier",
+      "depth": 1,
+      "recipes": [
+        [
+          "iron-onesie",
+          "sword-breaker"
+        ]
+      ],
+      "effect": "Balls deal 1% more damage for each baby ball and enemy on the field."
+    },
+    {
+      "name": "Gracious Impaler",
+      "depth": 1,
+      "recipes": [
+        [
+          "reachers-spear",
+          "deadeyes-amulet"
+        ]
+      ],
+      "effect": "Critical hits have a 5% chance to instantly kill enemies."
+    },
+    {
+      "name": "Grotesque Artillery",
+      "depth": 1,
+      "recipes": [
+        [
+          "turret",
+          "hand-fan"
+        ]
+      ],
+      "effect": "Floats around your character and shoots a random level 1 unevolved special ball at enemies every 8.0 seconds."
+    },
+    {
+      "name": "Inglorious Hammer",
+      "depth": 1,
+      "recipes": [
+        [
+          "platinum-dumbbell",
+          "upturned-hatchet"
+        ]
+      ],
+      "effect": "When balls hit a wall or the back of the field, they hit a random enemy with 50% bonus damage."
+    },
+    {
+      "name": "Odiferous Shell",
+      "depth": 1,
+      "recipes": [
+        [
+          "wretched-onion",
+          "breastplate"
+        ]
+      ],
+      "effect": "When you touch enemies, they have a 50% chance of instantly dying."
+    },
+    {
+      "name": "Phantom Regalia",
+      "depth": 1,
+      "recipes": [
+        [
+          "ghostly-corset",
+          "ethereal-cloak"
+        ]
+      ],
+      "effect": "Balls go through enemies until they hit the back wall. Balls deal 50% more damage when going through enemies."
+    },
+    {
+      "name": "Remote Detonator",
+      "depth": 1,
+      "recipes": [
+        [
+          "pressure-valve",
+          "magnet"
+        ]
+      ],
+      "effect": "Enemies spawn a level 1 bomb ball upon dying."
+    },
+    {
+      "name": "Soul Reaver",
+      "depth": 1,
+      "recipes": [
+        [
+          "vampiric-sword",
+          "everflowing-goblet"
+        ]
+      ],
+      "effect": "Each kill heals you by 1 and you can heal past your max health at 30% efficiency."
+    },
+    {
+      "name": "Tormenters Mask",
+      "depth": 1,
+      "recipes": [
+        [
+          "spiked-collar",
+          "crown-of-thorns"
+        ]
+      ],
+      "effect": "Enemies have a 10% chance of dying immediately the first time they detect you."
+    },
+    {
+      "name": "Windweaver",
+      "depth": 1,
+      "recipes": [
+        [
+          "bottled-tornado",
+          "slingshot"
+        ]
+      ],
+      "effect": "Shoot a level 1 wind ball every time you pick up a gem."
+    },
+    {
+      "name": "Wings of the Anointed",
+      "depth": 1,
+      "recipes": [
+        [
+          "radiant-feather",
+          "fleet-feet"
+        ]
+      ],
+      "effect": "Balls move 40% faster and you move 20% faster. No longer affected by environmental hazards on the ground."
+    }
+  ],
+  "characters": [
+    {
+      "name": "The Warrior",
+      "baseBall": "Bleed",
+      "quirk": "Default character, no special gameplay quirks."
+    },
+    {
+      "name": "The Itchy Finger",
+      "baseBall": "Burn",
+      "quirk": "Scattered aim, shoots twice as fast, auto-launches balls; full speed while shooting."
+    },
+    {
+      "name": "The Repentant",
+      "baseBall": "Freeze",
+      "quirk": "Balls deal +5% damage per bounce; on hitting the back wall they return, damaging enemies passed through."
+    },
+    {
+      "name": "The Cohabitants",
+      "baseBall": "Brood Mother",
+      "quirk": "Each launched ball is mirrored by a copy; balls deal half damage."
+    },
+    {
+      "name": "The Cogitator",
+      "baseBall": "Laser (Vertical)",
+      "quirk": "Automatically chooses upgrades."
+    },
+    {
+      "name": "The Embedded",
+      "baseBall": "Poison",
+      "quirk": "Balls always pierce enemies until they hit a wall."
+    },
+    {
+      "name": "The Shade",
+      "baseBall": "Dark",
+      "quirk": "Balls shoot from the back; base crit chance 10%."
+    },
+    {
+      "name": "The Shieldbearer",
+      "baseBall": "Iron",
+      "quirk": "Large shield bounces back balls that hit it."
+    },
+    {
+      "name": "The Spendthrift",
+      "baseBall": "Vampire",
+      "quirk": "Shoots all balls at once in a wide arc."
+    },
+    {
+      "name": "The Juggler",
+      "baseBall": "Lightning",
+      "quirk": "Lobs balls at a target position; no bouncing until landing."
+    },
+    {
+      "name": "The Empty Nester",
+      "baseBall": "Ghost",
+      "quirk": "No baby balls. Each shot shoots multiple instances of one equipped special ball."
+    },
+    {
+      "name": "The Flagellant",
+      "baseBall": "Egg Sac",
+      "quirk": "Balls bounce normally off the bottom of the screen."
+    },
+    {
+      "name": "The Makeshift Sisyphus",
+      "baseBall": "Earthquake",
+      "quirk": "No baby balls. No direct hit damage; AOE and status damage ×4."
+    },
+    {
+      "name": "The Physicist",
+      "baseBall": "Light",
+      "quirk": "Balls are affected by gravity toward the back of the screen."
+    },
+    {
+      "name": "The Tactician",
+      "baseBall": "Iron",
+      "quirk": "Battles become turn-based."
+    },
+    {
+      "name": "The Radical",
+      "baseBall": "Wind",
+      "quirk": "Plays the game and chooses upgrades automatically (AI plays)."
+    },
+    {
+      "name": "The Falconer",
+      "baseBall": "Lightning",
+      "quirk": "Balls shot from two falcons on the sides of the screen."
+    },
+    {
+      "name": "The Carouser",
+      "baseBall": "Charm",
+      "quirk": "Balls can briefly orbit the player on return trajectory."
+    },
+    {
+      "name": "The Tunneller",
+      "baseBall": "Earthquake",
+      "quirk": "Balls wrap around top and bottom of the screen."
+    },
+    {
+      "name": "The Tiptoer",
+      "baseBall": "Laser (Horizontal)",
+      "quirk": "Undetectable by enemies (except bosses/minibosses); drastically less health."
+    },
+    {
+      "name": "The Hoary Hoarder",
+      "baseBall": null,
+      "quirk": "Only 2 ball slots; remaining equipment slots become passive slots."
+    },
+    {
+      "name": "The Ballbearer",
+      "baseBall": "Stone",
+      "quirk": "Twice as many ball slots, but no passive slots."
+    },
+    {
+      "name": "The False Messiah",
+      "baseBall": "Bleed",
+      "quirk": "Twitch audience votes on choices and random events."
+    }
+  ]
+}

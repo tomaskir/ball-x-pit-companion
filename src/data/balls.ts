@@ -21,7 +21,7 @@ export const BALLS: Ball[] = [
     "effects": "Inflicts 2 stacks of bleed. Bleeding enemies receive 1 damage per stack when hit by a ball (max 8 stacks).",
     "recipes": [],
     "onHit": "—",
-    "icon": "/icons/balls/bleed.png",
+    "icon": "icons/balls/bleed.png",
     "tags": [
       "status-effect"
     ]
@@ -33,7 +33,7 @@ export const BALLS: Ball[] = [
     "effects": "Has a 25% chance of birthing a baby ball each time it hits an enemy.",
     "recipes": [],
     "onHit": "Spawn",
-    "icon": "/icons/balls/brood-mother.png",
+    "icon": "icons/balls/brood-mother.png",
     "tags": [
       "spawns-baby-balls"
     ]
@@ -45,7 +45,7 @@ export const BALLS: Ball[] = [
     "effects": "Add 1 stack of burn on hit for 3 seconds (max 3 stacks). Burnt units are dealt 4–8 damage per stack per second.",
     "recipes": [],
     "onHit": "—",
-    "icon": "/icons/balls/burn.png",
+    "icon": "icons/balls/burn.png",
     "tags": [
       "status-effect"
     ]
@@ -57,7 +57,7 @@ export const BALLS: Ball[] = [
     "effects": "Splits into a clone on hit 2 times.",
     "recipes": [],
     "onHit": "Spawn",
-    "icon": "/icons/balls/cell.png",
+    "icon": "icons/balls/cell.png",
     "tags": [
       "clone",
       "spawns-allies"
@@ -70,7 +70,7 @@ export const BALLS: Ball[] = [
     "effects": "Each hit has a 4% chance of charming the enemy for 5 seconds. Charmed units walk up the board and attack enemies.",
     "recipes": [],
     "onHit": "—",
-    "icon": "/icons/balls/charm.png",
+    "icon": "icons/balls/charm.png",
     "tags": [
       "status-effect"
     ]
@@ -82,7 +82,7 @@ export const BALLS: Ball[] = [
     "effects": "Deals 3.0x damage but destroys itself after hitting an enemy. Has a 3 second cooldown before it can be shot again.",
     "recipes": [],
     "onHit": "Destroy",
-    "icon": "/icons/balls/dark.png",
+    "icon": "icons/balls/dark.png",
     "tags": [
       "single-target",
       "destroy-on-hit"
@@ -95,7 +95,7 @@ export const BALLS: Ball[] = [
     "effects": "Deals 5–13 damage to nearby units in a 3x3 tile square.",
     "recipes": [],
     "onHit": "AOE",
-    "icon": "/icons/balls/earthquake.png",
+    "icon": "icons/balls/earthquake.png",
     "tags": [
       "aoe"
     ]
@@ -107,7 +107,7 @@ export const BALLS: Ball[] = [
     "effects": "Explodes into 2–4 baby balls on hitting an enemy. Has a 3 second cooldown before it can be shot again.",
     "recipes": [],
     "onHit": "Destroy, Spawn",
-    "icon": "/icons/balls/egg-sac.png",
+    "icon": "icons/balls/egg-sac.png",
     "tags": [
       "destroy-on-hit",
       "spawns-baby-balls"
@@ -120,7 +120,7 @@ export const BALLS: Ball[] = [
     "effects": "Speed increases by 25% per bounce.",
     "recipes": [],
     "onHit": "—",
-    "icon": "/icons/balls/flesh.png",
+    "icon": "icons/balls/flesh.png",
     "tags": [
       "ball-speed"
     ]
@@ -132,7 +132,7 @@ export const BALLS: Ball[] = [
     "effects": "Has a 4% chance to freeze enemies for 5.0 seconds. Frozen enemies receive 25% more damage.",
     "recipes": [],
     "onHit": "—",
-    "icon": "/icons/balls/freeze.png",
+    "icon": "icons/balls/freeze.png",
     "tags": [
       "status-effect"
     ]
@@ -144,7 +144,7 @@ export const BALLS: Ball[] = [
     "effects": "Passes through enemies.",
     "recipes": [],
     "onHit": "Pass Through",
-    "icon": "/icons/balls/ghost.png",
+    "icon": "icons/balls/ghost.png",
     "tags": [
       "pass-through"
     ]
@@ -156,7 +156,7 @@ export const BALLS: Ball[] = [
     "effects": "Deals double damage but moves 40% slower.",
     "recipes": [],
     "onHit": "—",
-    "icon": "/icons/balls/iron.png",
+    "icon": "icons/balls/iron.png",
     "tags": [
       "single-target"
     ]
@@ -168,7 +168,7 @@ export const BALLS: Ball[] = [
     "effects": "Deals 9–18 damage to all enemies in the same row.",
     "recipes": [],
     "onHit": "AOE",
-    "icon": "/icons/balls/laser-horizontal.png",
+    "icon": "icons/balls/laser-horizontal.png",
     "tags": [
       "aoe"
     ]
@@ -180,7 +180,7 @@ export const BALLS: Ball[] = [
     "effects": "Deals 9–18 damage to all enemies in the same column.",
     "recipes": [],
     "onHit": "AOE",
-    "icon": "/icons/balls/laser-vertical.png",
+    "icon": "icons/balls/laser-vertical.png",
     "tags": [
       "aoe"
     ]
@@ -192,7 +192,7 @@ export const BALLS: Ball[] = [
     "effects": "Blinds enemies on hit for 3 seconds. Blinded units have a hard time detecting you and have a 50% chance of missing when they attack.",
     "recipes": [],
     "onHit": "—",
-    "icon": "/icons/balls/light.png",
+    "icon": "icons/balls/light.png",
     "tags": [
       "status-effect"
     ]
@@ -204,7 +204,7 @@ export const BALLS: Ball[] = [
     "effects": "Deals 1–20 damage to up to 3 nearby enemies.",
     "recipes": [],
     "onHit": "AOE",
-    "icon": "/icons/balls/lightning.png",
+    "icon": "icons/balls/lightning.png",
     "tags": [
       "aoe"
     ]
@@ -216,7 +216,7 @@ export const BALLS: Ball[] = [
     "effects": "Applies 1 stack of poison on hit (max 5 stacks). Poison lasts for 6 seconds and each stack deals 1–4 damage per second.",
     "recipes": [],
     "onHit": "—",
-    "icon": "/icons/balls/poison.png",
+    "icon": "icons/balls/poison.png",
     "tags": [
       "status-effect"
     ]
@@ -228,7 +228,7 @@ export const BALLS: Ball[] = [
     "effects": "Initially deals 300% damage. Damage erodes by 40% each time hitting an enemy (minimum 50%).",
     "recipes": [],
     "onHit": "—",
-    "icon": "/icons/balls/stone.png",
+    "icon": "icons/balls/stone.png",
     "tags": [
       "single-target"
     ]
@@ -240,7 +240,7 @@ export const BALLS: Ball[] = [
     "effects": "Explodes into a time snare upon hitting an enemy, which stays on the field for 20 seconds and freezes enemies inside it.",
     "recipes": [],
     "onHit": "Destroy",
-    "icon": "/icons/balls/time.png",
+    "icon": "icons/balls/time.png",
     "tags": [
       "destroy-on-hit",
       "status-effect"
@@ -253,7 +253,7 @@ export const BALLS: Ball[] = [
     "effects": "Each hit has a 4.5% chance of healing 1 health.",
     "recipes": [],
     "onHit": "—",
-    "icon": "/icons/balls/vampire.png",
+    "icon": "icons/balls/vampire.png",
     "tags": [
       "lifesteal"
     ]
@@ -265,7 +265,7 @@ export const BALLS: Ball[] = [
     "effects": "Passes through enemies and slows them down by 30% for 5 seconds, but deals 25% less damage.",
     "recipes": [],
     "onHit": "Pass Through",
-    "icon": "/icons/balls/wind.png",
+    "icon": "icons/balls/wind.png",
     "tags": [
       "pass-through",
       "status-effect"
@@ -278,7 +278,7 @@ export const BALLS: Ball[] = [
     "effects": "Base attack ball, no special abilities. All characters start with a few except The Empty Nester and The Makeshift Sisyphus.",
     "recipes": [],
     "onHit": "",
-    "icon": "/icons/balls/baby-ball.png",
+    "icon": "icons/balls/baby-ball.png",
     "tags": []
   },
   {
@@ -293,7 +293,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "Destroy, AOE",
-    "icon": "/icons/balls/armageddon.png",
+    "icon": "icons/balls/armageddon.png",
     "tags": [
       "aoe",
       "destroy-on-hit"
@@ -315,7 +315,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "Pass Through",
-    "icon": "/icons/balls/assassin.png",
+    "icon": "icons/balls/assassin.png",
     "tags": [
       "single-target",
       "pass-through"
@@ -333,7 +333,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/banished-flame.png",
+    "icon": "icons/balls/banished-flame.png",
     "tags": [
       "status-effect"
     ]
@@ -350,7 +350,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/banshee.png",
+    "icon": "icons/balls/banshee.png",
     "tags": [
       "status-effect"
     ]
@@ -371,7 +371,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/berserk.png",
+    "icon": "icons/balls/berserk.png",
     "tags": [
       "status-effect"
     ]
@@ -392,7 +392,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "Destroy",
-    "icon": "/icons/balls/black-hole.png",
+    "icon": "icons/balls/black-hole.png",
     "tags": [
       "destroy-on-hit",
       "screen-clear"
@@ -414,7 +414,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/blizzard.png",
+    "icon": "icons/balls/blizzard.png",
     "tags": [
       "aoe",
       "status-effect"
@@ -432,7 +432,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "Destroy",
-    "icon": "/icons/balls/bomb.png",
+    "icon": "icons/balls/bomb.png",
     "tags": [
       "aoe",
       "destroy-on-hit"
@@ -454,7 +454,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/brimstone.png",
+    "icon": "icons/balls/brimstone.png",
     "tags": [
       "aoe",
       "status-effect"
@@ -472,7 +472,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/catapult.png",
+    "icon": "icons/balls/catapult.png",
     "tags": [
       "spawns-baby-balls"
     ]
@@ -489,7 +489,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "Pass Through",
-    "icon": "/icons/balls/drill.png",
+    "icon": "icons/balls/drill.png",
     "tags": [
       "pass-through",
       "single-target"
@@ -509,7 +509,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/elemental.png",
+    "icon": "icons/balls/elemental.png",
     "tags": [
       "aoe",
       "status-effect"
@@ -527,7 +527,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "Pass Through",
-    "icon": "/icons/balls/erosion.png",
+    "icon": "icons/balls/erosion.png",
     "tags": [
       "pass-through"
     ]
@@ -544,7 +544,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "Destroy",
-    "icon": "/icons/balls/fireworks.png",
+    "icon": "icons/balls/fireworks.png",
     "tags": [
       "destroy-on-hit",
       "spawns-baby-balls",
@@ -563,7 +563,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/flash.png",
+    "icon": "icons/balls/flash.png",
     "tags": [
       "aoe",
       "screen-clear",
@@ -582,7 +582,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/flesh-mound.png",
+    "icon": "icons/balls/flesh-mound.png",
     "tags": [
       "spawns-baby-balls"
     ]
@@ -599,7 +599,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/flicker.png",
+    "icon": "icons/balls/flicker.png",
     "tags": [
       "aoe",
       "screen-clear"
@@ -621,7 +621,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/freeze-ray.png",
+    "icon": "icons/balls/freeze-ray.png",
     "tags": [
       "status-effect",
       "aoe"
@@ -639,7 +639,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/frozen-flame.png",
+    "icon": "icons/balls/frozen-flame.png",
     "tags": [
       "status-effect"
     ]
@@ -660,7 +660,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/glacier.png",
+    "icon": "icons/balls/glacier.png",
     "tags": [
       "aoe",
       "status-effect"
@@ -678,7 +678,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/heart-swallower.png",
+    "icon": "icons/balls/heart-swallower.png",
     "tags": [
       "lifesteal",
       "status-effect"
@@ -700,7 +700,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/hemorrhage.png",
+    "icon": "icons/balls/hemorrhage.png",
     "tags": [
       "status-effect"
     ]
@@ -717,7 +717,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/holy-laser.png",
+    "icon": "icons/balls/holy-laser.png",
     "tags": [
       "aoe"
     ]
@@ -734,7 +734,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/incubus.png",
+    "icon": "icons/balls/incubus.png",
     "tags": [
       "status-effect"
     ]
@@ -755,7 +755,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/inferno.png",
+    "icon": "icons/balls/inferno.png",
     "tags": [
       "aoe",
       "status-effect"
@@ -773,7 +773,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "Destroy",
-    "icon": "/icons/balls/landslide.png",
+    "icon": "icons/balls/landslide.png",
     "tags": [
       "aoe",
       "destroy-on-hit"
@@ -795,7 +795,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/laser-beam.png",
+    "icon": "icons/balls/laser-beam.png",
     "tags": [
       "aoe",
       "status-effect"
@@ -817,7 +817,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "?",
-    "icon": "/icons/balls/laser-cutter.png",
+    "icon": "icons/balls/laser-cutter.png",
     "tags": [
       "aoe"
     ]
@@ -834,7 +834,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/leech.png",
+    "icon": "icons/balls/leech.png",
     "tags": [
       "status-effect"
     ]
@@ -851,7 +851,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "Spawn",
-    "icon": "/icons/balls/lightning-bug.png",
+    "icon": "icons/balls/lightning-bug.png",
     "tags": [
       "spawns-allies",
       "aoe"
@@ -869,7 +869,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/lightning-rod.png",
+    "icon": "icons/balls/lightning-rod.png",
     "tags": [
       "aoe",
       "status-effect"
@@ -895,7 +895,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/lovestruck.png",
+    "icon": "icons/balls/lovestruck.png",
     "tags": [
       "status-effect",
       "lifesteal"
@@ -913,7 +913,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "Spawn",
-    "icon": "/icons/balls/maggot.png",
+    "icon": "icons/balls/maggot.png",
     "tags": [
       "status-effect",
       "spawns-baby-balls"
@@ -931,7 +931,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/magma.png",
+    "icon": "icons/balls/magma.png",
     "tags": [
       "aoe",
       "status-effect"
@@ -949,7 +949,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "Spawn",
-    "icon": "/icons/balls/mosquito-king.png",
+    "icon": "icons/balls/mosquito-king.png",
     "tags": [
       "spawns-allies",
       "lifesteal"
@@ -967,7 +967,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "Spawn",
-    "icon": "/icons/balls/mosquito-kingdom.png",
+    "icon": "icons/balls/mosquito-kingdom.png",
     "tags": [
       "spawns-allies",
       "lifesteal"
@@ -985,7 +985,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "Destroy, Spawn",
-    "icon": "/icons/balls/mosquito-swarm.png",
+    "icon": "icons/balls/mosquito-swarm.png",
     "tags": [
       "destroy-on-hit",
       "spawns-allies",
@@ -1005,7 +1005,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "Spawn",
-    "icon": "/icons/balls/nosferatu.png",
+    "icon": "icons/balls/nosferatu.png",
     "tags": [
       "spawns-allies"
     ]
@@ -1026,7 +1026,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "Pass Through",
-    "icon": "/icons/balls/noxious.png",
+    "icon": "icons/balls/noxious.png",
     "tags": [
       "pass-through",
       "status-effect"
@@ -1044,7 +1044,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "Destroy, AOE",
-    "icon": "/icons/balls/nuclear-bomb.png",
+    "icon": "icons/balls/nuclear-bomb.png",
     "tags": [
       "aoe",
       "destroy-on-hit",
@@ -1064,7 +1064,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "Spawn",
-    "icon": "/icons/balls/offspring.png",
+    "icon": "icons/balls/offspring.png",
     "tags": [
       "clone"
     ]
@@ -1081,7 +1081,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/overgrowth.png",
+    "icon": "icons/balls/overgrowth.png",
     "tags": [
       "aoe",
       "status-effect"
@@ -1099,7 +1099,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/petrify.png",
+    "icon": "icons/balls/petrify.png",
     "tags": [
       "status-effect",
       "aoe"
@@ -1117,7 +1117,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/phantom.png",
+    "icon": "icons/balls/phantom.png",
     "tags": [
       "status-effect"
     ]
@@ -1146,7 +1146,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/radiation-beam.png",
+    "icon": "icons/balls/radiation-beam.png",
     "tags": [
       "aoe",
       "status-effect"
@@ -1164,7 +1164,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/reaper.png",
+    "icon": "icons/balls/reaper.png",
     "tags": [
       "screen-clear",
       "lifesteal"
@@ -1182,7 +1182,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/sacrifice.png",
+    "icon": "icons/balls/sacrifice.png",
     "tags": [
       "status-effect"
     ]
@@ -1203,7 +1203,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "Pass Through",
-    "icon": "/icons/balls/sandstorm.png",
+    "icon": "icons/balls/sandstorm.png",
     "tags": [
       "pass-through",
       "aoe",
@@ -1222,7 +1222,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/satan.png",
+    "icon": "icons/balls/satan.png",
     "tags": [
       "aoe",
       "status-effect"
@@ -1240,7 +1240,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "Spawn",
-    "icon": "/icons/balls/shotgun.png",
+    "icon": "icons/balls/shotgun.png",
     "tags": [
       "spawns-baby-balls"
     ]
@@ -1257,7 +1257,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "Pass Through, Spawn",
-    "icon": "/icons/balls/sniper.png",
+    "icon": "icons/balls/sniper.png",
     "tags": [
       "pass-through",
       "spawns-baby-balls"
@@ -1275,7 +1275,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "Pass Through",
-    "icon": "/icons/balls/soul-sucker.png",
+    "icon": "icons/balls/soul-sucker.png",
     "tags": [
       "pass-through",
       "lifesteal",
@@ -1294,7 +1294,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "Spawn",
-    "icon": "/icons/balls/spider-queen.png",
+    "icon": "icons/balls/spider-queen.png",
     "tags": [
       "spawns-baby-balls"
     ]
@@ -1311,7 +1311,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/steel.png",
+    "icon": "icons/balls/steel.png",
     "tags": [
       "single-target",
       "bounce-scaling"
@@ -1329,7 +1329,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/storm.png",
+    "icon": "icons/balls/storm.png",
     "tags": [
       "aoe"
     ]
@@ -1346,7 +1346,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/succubus.png",
+    "icon": "icons/balls/succubus.png",
     "tags": [
       "status-effect",
       "lifesteal"
@@ -1364,7 +1364,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/sun.png",
+    "icon": "icons/balls/sun.png",
     "tags": [
       "screen-clear",
       "aoe",
@@ -1383,7 +1383,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/swamp.png",
+    "icon": "icons/balls/swamp.png",
     "tags": [
       "aoe",
       "status-effect"
@@ -1401,7 +1401,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/time-bomb.png",
+    "icon": "icons/balls/time-bomb.png",
     "tags": [
       "aoe",
       "status-effect"
@@ -1419,7 +1419,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "Destroy",
-    "icon": "/icons/balls/timestop.png",
+    "icon": "icons/balls/timestop.png",
     "tags": [
       "screen-clear",
       "status-effect",
@@ -1438,7 +1438,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/tumor.png",
+    "icon": "icons/balls/tumor.png",
     "tags": [
       "status-effect"
     ]
@@ -1459,7 +1459,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/vampire-lord.png",
+    "icon": "icons/balls/vampire-lord.png",
     "tags": [
       "status-effect",
       "lifesteal"
@@ -1477,7 +1477,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/venom.png",
+    "icon": "icons/balls/venom.png",
     "tags": [
       "status-effect"
     ]
@@ -1502,7 +1502,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/virus.png",
+    "icon": "icons/balls/virus.png",
     "tags": [
       "status-effect"
     ]
@@ -1519,7 +1519,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "Destroy, Spawn",
-    "icon": "/icons/balls/voluptuous-egg-sac.png",
+    "icon": "icons/balls/voluptuous-egg-sac.png",
     "tags": [
       "destroy-on-hit",
       "spawns-baby-balls"
@@ -1537,7 +1537,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/warp.png",
+    "icon": "icons/balls/warp.png",
     "tags": [
       "ball-speed"
     ]
@@ -1554,7 +1554,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "Pass Through",
-    "icon": "/icons/balls/wraith.png",
+    "icon": "icons/balls/wraith.png",
     "tags": [
       "pass-through",
       "status-effect"
@@ -1572,7 +1572,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/x-ray.png",
+    "icon": "icons/balls/x-ray.png",
     "tags": [
       "aoe",
       "status-effect"
@@ -1590,7 +1590,7 @@ export const BALLS: Ball[] = [
       ]
     ],
     "onHit": "—",
-    "icon": "/icons/balls/zombie.png",
+    "icon": "icons/balls/zombie.png",
     "tags": [
       "spawns-allies",
       "status-effect"

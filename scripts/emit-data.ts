@@ -319,7 +319,7 @@ export const BALLS: Ball[] = ${JSON.stringify(
     effects: b.effect,
     recipes: b.recipes,
     onHit: b.onhit,
-    icon: `/icons/balls/${slug(b.name)}.png`,
+    icon: `icons/balls/${slug(b.name)}.png`, // prefix with import.meta.env.BASE_URL at runtime
     tags: BALL_TAGS[slug(b.name)] ?? [],
   })), null, 2)};
 `);
@@ -344,7 +344,7 @@ export const PASSIVES: Passive[] = ${JSON.stringify(
     depth: p.depth,
     effects: p.effect,
     recipes: p.recipes,
-    icon: `/icons/passives/${slug(p.name)}.png`,
+    icon: `icons/passives/${slug(p.name)}.png`, // prefix with import.meta.env.BASE_URL at runtime
     tags: PASSIVE_TAGS[slug(p.name)] ?? [],
   })), null, 2)};
 `);
@@ -374,8 +374,8 @@ export const CHARACTERS: Character[] = ${JSON.stringify(
     name: c.name,
     baseBallId: c.baseBall === null ? null : slug(c.baseBall),
     quirk: c.quirk,
-    icon: `/icons/character-portraits/${slug(c.name)}.png`,
-    sprite: `/icons/character-sprites/${slug(c.name)}.png`,
+    icon: `icons/character-portraits/${slug(c.name)}.png`, // prefix with import.meta.env.BASE_URL at runtime
+    sprite: `icons/character-sprites/${slug(c.name)}.png`,
     verdicts: CHAR_VERDICTS[slug(c.name)] ?? [],
   })), null, 2)};
 `);
