@@ -210,7 +210,14 @@ function buildGrid(gridId: string, items: Item[], isPassive: boolean) {
       const tile = document.createElement('button');
       tile.className = 'tile';
       tile.dataset.id = item.id;
-      tile.innerHTML = `<img src="${icon(item.icon)}" alt="${item.name}" width="48" height="48" loading="lazy"><span class="nm">${item.name}</span>`;
+      // evolved/tier-3 tiles show their recipe components inline
+      const comps = item.depth > 0
+        ? `<span class="comps">${item.recipes[0].map((c) => {
+            const comp = map.get(c);
+            return comp ? `<img src="${icon(comp.icon)}" alt="${comp.name}" title="${comp.name}" width="28" height="28">` : '';
+          }).join('')}</span>`
+        : '';
+      tile.innerHTML = `<img src="${icon(item.icon)}" alt="${item.name}" width="48" height="48" loading="lazy"><span class="nm">${item.name}</span>${comps}`;
       tile.addEventListener('click', (e) => {
         e.stopPropagation();
         selectedId = selectedId === item.id ? null : item.id;
