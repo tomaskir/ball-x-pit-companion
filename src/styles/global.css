@@ -214,6 +214,22 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .char-card .char-quirk { color: var(--muted); font-size: 12px; margin-top: 4px; }
 .char-card.selected { border-color: var(--gold); box-shadow: 0 0 12px var(--glow); }
 
+.char-card .char-base {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 3px 8px;
+  border: 1px solid var(--gold-dim);
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--text);
+}
+
+.char-card .char-base img { width: 24px; height: 24px; }
+.char-card .char-base.none { color: var(--muted); font-style: italic; }
+
 /* ---------- toast (ticket 05) ---------- */
 
 .toast {
