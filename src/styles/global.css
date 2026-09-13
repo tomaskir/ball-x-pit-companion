@@ -1,0 +1,289 @@
+/* Game-look theming: dark plum + gold (default), light parchment.
+   Ticket 07: system default via prefers-color-scheme, persisted toggle. */
+
+:root {
+  --bg: #2b1d26;
+  --panel: #3d2a33;
+  --gold: #d9a441;
+  --gold-dim: #8a6a35;
+  --text: #e8d9c8;
+  --muted: #a08a7a;
+  --red: #d64545;
+  --green: #4caf6e;
+  --glow: rgba(217, 164, 65, 0.35);
+  --toast-bg: #1a1216;
+  --dim: 0.35;
+}
+
+:root[data-theme='light'] {
+  --bg: #f3e9d6;
+  --panel: #fffaf0;
+  --gold: #a67718;
+  --gold-dim: #c9a961;
+  --text: #3a2c1e;
+  --muted: #8a7358;
+  --red: #c22f2f;
+  --green: #2e7d4f;
+  --glow: rgba(166, 119, 24, 0.3);
+  --toast-bg: #fffdf7;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --bg: #f3e9d6;
+    --panel: #fffaf0;
+    --gold: #a67718;
+    --gold-dim: #c9a961;
+    --text: #3a2c1e;
+    --muted: #8a7358;
+    --red: #c22f2f;
+    --green: #2e7d4f;
+    --glow: rgba(166, 119, 24, 0.3);
+    --toast-bg: #fffdf7;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.45 Georgia, 'Times New Roman', serif;
+  min-height: 100vh;
+}
+
+/* ---------- header ---------- */
+
+header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--gold-dim);
+}
+
+header h1 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--gold);
+  letter-spacing: 0.5px;
+}
+
+header h1 span { color: var(--muted); font-style: italic; font-size: 14px; }
+
+.tabs { display: flex; gap: 4px; }
+
+.tab-btn {
+  background: none;
+  border: 1px solid transparent;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 14px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+.chips { display: flex; gap: 8px; }
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--gold-dim);
+  border-radius: 4px;
+  padding: 2px 8px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.chip img { width: 22px; height: 22px; image-rendering: pixelated; }
+
+.hint { color: var(--muted); font-style: italic; font-size: 12px; }
+
+.header-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+
+#search {
+  background: var(--panel);
+  border: 1px solid var(--gold-dim);
+  border-radius: 4px;
+  color: var(--text);
+  font: inherit;
+  padding: 6px 10px;
+  min-width: 200px;
+}
+
+#themeToggle {
+  background: var(--panel);
+  border: 1px solid var(--gold-dim);
+  border-radius: 4px;
+  font-size: 14px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+/* ---------- grids ---------- */
+
+main { padding: 16px; max-width: 1400px; margin: 0 auto; }
+
+.tier-heading {
+  color: var(--gold);
+  font-size: 15px;
+  margin: 20px 0 8px;
+  border-bottom: 1px solid var(--gold-dim);
+  padding-bottom: 4px;
+}
+
+.tile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+}
+
+.tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-height: 64px; /* mobile tap target (ticket 07) */
+  border: 2px solid var(--gold-dim);
+  background: var(--panel);
+  padding: 6px;
+  cursor: pointer;
+  font: inherit;
+  color: var(--text);
+  text-align: center;
+  user-select: none;
+}
+
+.tile img { width: 48px; height: 48px; image-rendering: pixelated; }
+.tile .nm { font-size: 11px; line-height: 1.2; }
+
+.tile.selected { border-color: var(--gold); box-shadow: 0 0 10px var(--glow); }
+.tile.related { border-color: var(--gold); box-shadow: 0 0 6px var(--glow); }
+.tile.dimmed { opacity: var(--dim); }
+
+/* search: non-matching tiles dim + greyscale in place (ticket 07) */
+.tile.filtered { opacity: var(--dim); filter: grayscale(1); }
+
+/* synergy indicator badge (ticket 05/06): red wins with 2 characters */
+.tile .ind {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 11px;
+  line-height: 18px;
+  color: #fff;
+}
+.tile .ind.red { background: var(--red); }
+.tile .ind.green { background: var(--green); }
+
+/* ---------- characters ---------- */
+
+.char-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.char-card {
+  border: 2px solid var(--gold-dim);
+  background: var(--panel);
+  padding: 14px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.char-card img { width: 96px; height: 96px; image-rendering: pixelated; }
+.char-card .char-name { color: var(--gold); font-size: 15px; margin-top: 8px; }
+.char-card .char-quirk { color: var(--muted); font-size: 12px; margin-top: 4px; }
+.char-card.selected { border-color: var(--gold); box-shadow: 0 0 12px var(--glow); }
+
+/* ---------- toast (ticket 05) ---------- */
+
+.toast {
+  position: fixed;
+  z-index: 50;
+  width: 280px;
+  background: var(--toast-bg);
+  border: 1px solid var(--gold);
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.45;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+.toast h4 {
+  margin: 0 0 4px;
+  color: var(--gold);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toast h4 img { width: 20px; height: 20px; image-rendering: pixelated; }
+.toast .eff { margin: 0; }
+
+.toast .rec {
+  margin-top: 6px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.toast .rec img { width: 16px; height: 16px; image-rendering: pixelated; }
+.toast .rec .or { font-size: 10px; font-style: italic; }
+
+.toast .verdicts { margin-top: 6px; font-size: 11px; }
+.toast .verdicts span { padding: 1px 6px; border-radius: 3px; display: inline-block; }
+.toast .verdicts .red { background: var(--red); color: #fff; }
+.toast .verdicts .green { background: var(--green); color: #fff; }
+
+.toast .tags { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 3px; }
+
+.toast .tags span {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--gold-dim);
+  color: var(--muted);
+}
+
+/* ---------- footer ---------- */
+
+footer {
+  padding: 24px 16px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+footer a { color: var(--gold); }
+
+/* ---------- mobile (ticket 07) ---------- */
+
+@media (max-width: 640px) {
+  .tile-grid { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); }
+  .char-grid { grid-template-columns: repeat(2, 1fr); }
+  #search { min-width: 0; flex: 1; }
+  .header-right { width: 100%; }
+}

@@ -1,0 +1,55 @@
+---
+// Single-page companion site. Static shell + one interactive island
+// (src/companion.ts). See .scratch/ball-x-pit-companion/map.md for the
+// resolved design decisions.
+import '../styles/global.css';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Fan companion for Ball x Pit: evolution recipes, synergy guides, and character quirks." />
+    <title>Ball x Pit Companion</title>
+  </head>
+  <body>
+    <header>
+      <h1>Ball x Pit <span>Companion</span></h1>
+      <nav class="tabs" aria-label="Sections">
+        <button class="tab-btn active" data-section="balls">Balls</button>
+        <button class="tab-btn" data-section="passives">Passives</button>
+        <button class="tab-btn" data-section="characters">Characters</button>
+      </nav>
+      <div class="chips" id="charChips"></div>
+      <span class="hint" id="slotHint"></span>
+      <div class="header-right">
+        <input id="search" type="search" placeholder="Search name or effect…" autocomplete="off" />
+        <button id="themeToggle" aria-label="Toggle theme">☀️</button>
+      </div>
+    </header>
+
+    <main>
+      <div class="section-view" data-section="balls">
+        <div id="ballsGrid"></div>
+      </div>
+      <div class="section-view" data-section="passives" hidden>
+        <div id="passivesGrid"></div>
+      </div>
+      <div class="section-view" data-section="characters" hidden>
+        <div id="charactersGrid" class="char-grid"></div>
+      </div>
+    </main>
+
+    <footer>
+      <p>
+        Fan-made companion site. Ball x Pit © Kenny Sun (Kenomi LLC).
+        Icons from <a href="https://ballxpit.wiki.gg/">ballxpit.wiki.gg</a> — see
+        <a href="/ball-x-pit-companion/icons/CREDITS.md">credits</a>. Not affiliated with the rights holder.
+      </p>
+    </footer>
+
+    <script>
+      import '../companion';
+    </script>
+  </body>
+</html>
