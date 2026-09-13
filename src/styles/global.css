@@ -176,7 +176,8 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .tile.dimmed { opacity: var(--dim); }
 
 /* search: non-matching tiles dim + greyscale in place (ticket 07) */
-.tile.filtered { opacity: var(--dim); filter: grayscale(1); }
+.tile.filtered,
+.char-card.filtered { opacity: var(--dim); filter: grayscale(1); }
 
 /* synergy indicator badge (ticket 05/06): red wins with 2 characters */
 .tile .ind {
