@@ -160,6 +160,13 @@ function buildCharacters() {
         ? `<div class="char-base" title="Base ball"><img src="${icon(base.icon)}" alt="${base.name}" width="24" height="24"><span>${base.name}</span></div>`
         : '<div class="char-base none">no base ball</div>'}`;
     card.addEventListener('click', () => toggleCharacter(ch));
+    // hovering the base-ball chip shows that ball's toast
+    const baseChip = card.querySelector('.char-base');
+    if (baseChip) {
+      baseChip.addEventListener('mouseenter', (e) => e.stopPropagation());
+      baseChip.addEventListener('mouseleave', (e) => e.stopPropagation());
+      attachToast(baseChip as HTMLElement, () => (base ? base : null));
+    }
     charCards.push({ ch, card });
     wrap.appendChild(card);
   }
@@ -201,7 +208,7 @@ function buildGrid(gridId: string, items: Item[], isPassive: boolean) {
         selectedId = selectedId === item.id ? null : item.id;
         paintGrids();
       });
-      attachToast(tile, item, isPassive, map);
+      attachToast(tile, () => item);
       tiles.set(item.id, { tile, item, isPassive });
       grid.appendChild(tile);
     }
@@ -257,22 +264,26 @@ function renderAll() {
 
 let toastEl: HTMLElement | null = null;
 
-function attachToast(tile: HTMLElement, item: Item, isPassive: boolean, map: Map<string, Item>) {
+function attachToast(anchor: HTMLElement, getItem: () => Item | null) {
   const show = () => {
+    const item = getItem();
+    if (!item) return;
     hideToast();
-    toastEl = buildToast(item, isPassive, map);
+    toastEl = buildToast(item);
     document.body.appendChild(toastEl);
-    positionToast(tile, toastEl);
+    positionToast(anchor, toastEl);
   };
-  tile.addEventListener('mouseenter', show);
-  tile.addEventListener('mouseleave', hideToast);
+  anchor.addEventListener('mouseenter', show);
+  anchor.addEventListener('mouseleave', hideToast);
   // mobile: tap shows toast, next tap elsewhere dismisses
-  tile.addEventListener('touchstart', show, { passive: true });
+  anchor.addEventListener('touchstart', show, { passive: true });
 }
 
-function buildToast(item: Item, isPassive: boolean, map: Map<string, Item>) {
+function buildToast(item: Item) {
   const el = document.createElement('div');
   el.className = 'toast';
+  const isPassive = !('onHit' in item) && item.depth !== undefined && PASSIVES.some((p) => p.id === item.id);
+  const map = ballMap.has(item.id) && !isPassive ? ballMap : passiveMap;
   // recipes are OR-of-ANDs: components within one recipe combine (+),
   // alternate recipes are separated by "or"
   const comps = item.recipes.length
