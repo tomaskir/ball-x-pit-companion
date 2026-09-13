@@ -147,7 +147,9 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 
 .tile-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  /* wide enough for the widest recipe row (4 components + separators) so
+     every tile — basic through tier-3 — has room for its comps on one line */
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
   gap: 8px;
 }
 
@@ -177,7 +179,6 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .tile .comps {
   display: flex;
   justify-content: center;
-  flex-wrap: wrap;
   gap: 2px;
   margin-top: auto;
   padding-top: 3px;
@@ -189,13 +190,11 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .tile .comps .plus { font-size: 11px; color: var(--muted); align-self: center; }
 .tile .comps .or { font-size: 10px; font-style: italic; color: var(--gold); align-self: center; }
 
-/* alternate group: dashed underline signals "pick one" */
+/* alternate group (pick one) — no extra marker, the / separator carries it */
 .tile .comps .alt {
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  border-bottom: 1px dashed var(--gold);
-  padding-bottom: 1px;
 }
 
 .tile.selected { border-color: var(--gold); box-shadow: 0 0 10px var(--glow); }
@@ -305,8 +304,6 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  border-bottom: 1px dashed var(--gold);
-  padding-bottom: 1px;
 }
 
 .toast .verdicts { margin-top: 6px; font-size: 11px; }
