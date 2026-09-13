@@ -123,8 +123,7 @@ function toggleCharacter(ch: Character) {
   }
   renderCharChips();
   renderCharacters();
-  renderGrid('ballsGrid', BALLS, false);
-  renderGrid('passivesGrid', PASSIVES, true);
+  paintGrids();
 }
 
 function renderCharChips() {
@@ -159,21 +158,14 @@ function renderCharacters() {
 
 // ---------- grids ----------
 
-function renderGrid(gridId: string, items: Item[], isPassive: boolean) {
+// Tiles are built once; state changes (selection, search, characters) only
+// repaint classes/badges on the existing DOM — rebuilding would recreate the
+// <img> elements and blink the icons.
+const tiles = new Map<string, { tile: HTMLElement; item: Item; isPassive: boolean }>();
+
+function buildGrid(gridId: string, items: Item[], isPassive: boolean) {
   const wrap = document.getElementById(gridId)!;
   wrap.innerHTML = '';
-
-  // highlight set from current selection
-  let related = new Set<string>();
-  if (selectedId) {
-    const sel = (isPassive ? passiveMap : ballMap).get(selectedId);
-    if (sel) {
-      related = closure([selectedId], isPassive ? passiveMap : ballMap, sel.depth === 0);
-      related.add(selectedId);
-    }
-  }
-
-  const q = query.trim().toLowerCase();
   const map = isPassive ? passiveMap : ballMap;
 
   for (let depth = 0 as 0 | 1 | 2; depth <= 2; depth++) {
@@ -189,31 +181,53 @@ function renderGrid(gridId: string, items: Item[], isPassive: boolean) {
       const tile = document.createElement('button');
       tile.className = 'tile';
       tile.dataset.id = item.id;
-      if (selectedId === item.id) tile.classList.add('selected');
-      else if (selectedId && !related.has(item.id)) tile.classList.add('dimmed');
-      else if (selectedId && related.has(item.id) && item.id !== selectedId) tile.classList.add('related');
-
-      const v = verdictFor(item, isPassive, selectedChars);
-      if (v) {
-        const badge = document.createElement('span');
-        badge.className = `ind ${v.verdict}`;
-        badge.textContent = '!';
-        badge.title = v.note ?? v.verdict;
-        tile.appendChild(badge);
-      }
-      if (q && !(item.name.toLowerCase().includes(q) || item.effects.toLowerCase().includes(q))) tile.classList.add('filtered');
-
-      tile.innerHTML += `<img src="${icon(item.icon)}" alt="${item.name}" width="48" height="48" loading="lazy"><span class="nm">${item.name}</span>`;
+      tile.innerHTML = `<img src="${icon(item.icon)}" alt="${item.name}" width="48" height="48" loading="lazy"><span class="nm">${item.name}</span>`;
       tile.addEventListener('click', (e) => {
         e.stopPropagation();
         selectedId = selectedId === item.id ? null : item.id;
-        renderGrid('ballsGrid', BALLS, false);
-        renderGrid('passivesGrid', PASSIVES, true);
+        paintGrids();
       });
       attachToast(tile, item, isPassive, map);
+      tiles.set(item.id, { tile, item, isPassive });
       grid.appendChild(tile);
     }
     wrap.appendChild(grid);
+  }
+}
+
+/** Repaint selection/search/verdict state on the existing tiles. */
+function paintGrids() {
+  // highlight set from current selection (ball and passive ids never collide —
+  // separate namespaces, separate graphs — so either map is fine for the walk)
+  let related = new Set<string>();
+  if (selectedId) {
+    const sel = ballMap.get(selectedId) ?? passiveMap.get(selectedId);
+    if (sel) {
+      related = closure([selectedId], ballMap, sel.depth === 0);
+      related.add(selectedId);
+    }
+  }
+
+  const q = query.trim().toLowerCase();
+
+  for (const { tile, item, isPassive } of tiles.values()) {
+    tile.classList.remove('selected', 'related', 'dimmed', 'filtered');
+    if (selectedId === item.id) tile.classList.add('selected');
+    else if (selectedId && !related.has(item.id)) tile.classList.add('dimmed');
+    else if (selectedId && related.has(item.id)) tile.classList.add('related');
+
+    if (q && !(item.name.toLowerCase().includes(q) || item.effects.toLowerCase().includes(q))) tile.classList.add('filtered');
+
+    // verdict badge: replace in place (cheap, no img recreation)
+    tile.querySelector('.ind')?.remove();
+    const v = verdictFor(item, isPassive, selectedChars);
+    if (v) {
+      const badge = document.createElement('span');
+      badge.className = `ind ${v.verdict}`;
+      badge.textContent = '!';
+      badge.title = v.note ?? v.verdict;
+      tile.appendChild(badge);
+    }
   }
 }
 
@@ -222,8 +236,7 @@ function clearSelection() {
 }
 
 function renderAll() {
-  renderGrid('ballsGrid', BALLS, false);
-  renderGrid('passivesGrid', PASSIVES, true);
+  paintGrids();
 }
 
 // ---------- toast ----------
@@ -289,8 +302,7 @@ function init() {
   const search = document.getElementById('search') as HTMLInputElement;
   search.addEventListener('input', () => {
     query = search.value;
-    renderGrid('ballsGrid', BALLS, false);
-    renderGrid('passivesGrid', PASSIVES, true);
+    paintGrids();
   });
 
   document.addEventListener('keydown', (e) => {
@@ -302,6 +314,9 @@ function init() {
   });
 
   initRouting();
+  buildGrid('ballsGrid', BALLS, false);
+  buildGrid('passivesGrid', PASSIVES, true);
+  paintGrids();
   renderCharChips();
   renderCharacters();
 }
