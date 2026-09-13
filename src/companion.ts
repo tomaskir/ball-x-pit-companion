@@ -304,7 +304,7 @@ function buildToast(item: Item) {
   const comps = item.recipes.length
     ? item.recipes.map((r) => r.map((c) => {
         const comp = map.get(c);
-        return comp ? `<img src="${icon(comp.icon)}" alt="${comp.name}" title="${comp.name}" width="16" height="16">` : c;
+        return comp ? `<img src="${icon(comp.icon)}" alt="${comp.name}" title="${comp.name}" width="28" height="28">` : c;
       }).join('<span class="plus">+</span>')).join('<span class="or">or</span>')
     : '';
   const v = verdictFor(item, isPassive, selectedChars);
