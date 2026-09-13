@@ -15,8 +15,9 @@ const ballMap = byId(BALLS);
 const passiveMap = byId(PASSIVES);
 
 /** Icons are stored in data as base-relative ("icons/balls/x.png"); the site
- *  deploys under a sub-path, so prefix with the configured base URL. */
-const icon = (p: string) => import.meta.env.BASE_URL + p;
+ *  deploys under a sub-path, so prefix with the configured base URL
+ *  (BASE_URL has no trailing slash — join with one). */
+const icon = (p: string) => import.meta.env.BASE_URL.replace(/\/$/, '') + '/' + p;
 
 // ---------- graph helpers (multi-recipe aware) ----------
 
