@@ -522,7 +522,7 @@
     },
     {
       "name": "Laser Cutter",
-      "depth": 1,
+      "depth": 2,
       "recipes": [
         [
           "laser-horizontal",
@@ -683,7 +683,7 @@
     },
     {
       "name": "Nuclear Bomb",
-      "depth": 1,
+      "depth": 2,
       "recipes": [
         [
           "bomb",
@@ -927,7 +927,7 @@
     },
     {
       "name": "Time Bomb",
-      "depth": 1,
+      "depth": 2,
       "recipes": [
         [
           "time",
@@ -951,7 +951,7 @@
     },
     {
       "name": "Tumor",
-      "depth": 1,
+      "depth": 2,
       "recipes": [
         [
           "radiation-beam",

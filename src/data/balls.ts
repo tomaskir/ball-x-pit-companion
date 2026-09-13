@@ -804,7 +804,7 @@ export const BALLS: Ball[] = [
   {
     "id": "laser-cutter",
     "name": "Laser Cutter",
-    "depth": 1,
+    "depth": 2,
     "effects": "Constantly emits a laser in front of it, which deals 100–150 damage per second.",
     "recipes": [
       [
@@ -1035,7 +1035,7 @@ export const BALLS: Ball[] = [
   {
     "id": "nuclear-bomb",
     "name": "Nuclear Bomb",
-    "depth": 1,
+    "depth": 2,
     "effects": "Explodes when hitting an enemy, dealing 300–500 damage to nearby enemies and applying 1 stack of radiation to everyone present indefinitely (max 5 stacks). Each stack of radiation increases damage received by 10%. Has a 3 second cooldown.",
     "recipes": [
       [
@@ -1392,7 +1392,7 @@ export const BALLS: Ball[] = [
   {
     "id": "time-bomb",
     "name": "Time Bomb",
-    "depth": 1,
+    "depth": 2,
     "effects": "Throws a time bomb every few seconds, which explodes after a delay, dealing 80–120 damage to nearby enemies.",
     "recipes": [
       [
@@ -1429,7 +1429,7 @@ export const BALLS: Ball[] = [
   {
     "id": "tumor",
     "name": "Tumor",
-    "depth": 1,
+    "depth": 2,
     "effects": "Applies tumor on hit. Enemies with a tumor die after 40 seconds (except for bosses).",
     "recipes": [
       [

@@ -79,11 +79,32 @@ for (const [name, onhit, , , effect] of parseTable(/^\| Ball \| On-hit effect \|
 balls.push({ name: 'Baby Ball', depth: 0, recipes: [], onhit: '', effect: 'Base attack ball, no special abilities. All characters start with a few except The Empty Nester and The Makeshift Sisyphus.' });
 
 // Evolved balls (depth 1|2): table 1.2 — columns: Ball | Depth | Recipe(s) | On-hit | Status effects | Effect text
-const TIER3 = new Set(['Armageddon', 'Banshee', 'Black Hole', 'Mosquito Kingdom', 'Nosferatu', 'Reaper', 'Satan', 'Sniper', 'X Ray']);
+// Depth is computed from recipe structure, not the wiki's loose Evo/Tier-3
+// labels (which put e.g. Tumor — built from evolved Radiation Beam — in "Evo"):
+//   depth 1 (Tier-2) = recipe includes an evolved ball as a component
+//   depth 2 (Tier-3) = recipe includes a tier-2 ball as a component
 const evoRows = parseTable(/^\| Ball \| Depth \|/m);
-for (const [name, depthCell, recipeCell, onhit, , effect] of evoRows) {
-  const depth = TIER3.has(clean(name)) ? 2 : 1;
-  balls.push({ name: clean(name), depth, recipes: parseRecipes(recipeCell), onhit: clean(onhit), effect: clean(effect) });
+const evo = evoRows.map(([name, , recipeCell, onhit, , effect]) => ({
+  name: clean(name),
+  recipes: parseRecipes(recipeCell),
+  onhit: clean(onhit),
+  effect: clean(effect),
+}));
+const evoIds = new Set(evo.map((e) => slug(e.name)));
+const depthOf = (id, cache = new Map()) => {
+  if (!evoIds.has(id)) return 0; // base ball component
+  if (cache.has(id)) return cache.get(id);
+  cache.set(id, 1); // guard against cycles
+  const ent = evo.find((e) => slug(e.name) === id);
+  const maxComp = Math.max(...ent.recipes.flat().map((c) => depthOf(c, cache)));
+  const d = Math.min(maxComp + 1, 2);
+  cache.set(id, d);
+  return d;
+};
+for (const ent of evo) {
+  // depthOf(component) is the component's own tier; this entity sits one above
+  const depth = Math.min(Math.max(...ent.recipes.flat().map((c) => depthOf(slug(c)))) + 1, 2);
+  balls.push({ name: ent.name, depth, recipes: ent.recipes, onhit: ent.onhit, effect: ent.effect });
 }
 
 // ---------- passives ----------
@@ -92,13 +113,29 @@ const passives = [];
 for (const [name, effect] of parseTable(/^\| Passive \| Effect text \(wiki\) \|/m)) {
   passives.push({ name: clean(name), depth: 0, recipes: [], effect: clean(effect) });
 }
-// Evolved passives (depth 1): Passive | Recipe | Effect text
+// Evolved passives (depth 1|2): Passive | Recipe | Effect text — same
+// structural depth computation as balls.
 const evoPassives = parseTable(/^\| Passive \| Recipe \|/m);
-for (const [name, recipeCell, effect] of evoPassives) {
-  passives.push({ name: clean(name), depth: 1, recipes: parseRecipes(recipeCell), effect: clean(effect) });
+const evoPas = evoPassives.map(([name, recipeCell, effect]) => ({
+  name: clean(name),
+  recipes: parseRecipes(recipeCell),
+  effect: clean(effect),
+}));
+const evoPasIds = new Set(evoPas.map((e) => slug(e.name)));
+const depthOfPas = (id, cache = new Map()) => {
+  if (!evoPasIds.has(id)) return 0;
+  if (cache.has(id)) return cache.get(id);
+  cache.set(id, 1);
+  const ent = evoPas.find((e) => slug(e.name) === id);
+  const maxComp = Math.max(...ent.recipes.flat().map((c) => depthOfPas(c, cache)));
+  const d = Math.min(maxComp + 1, 2);
+  cache.set(id, d);
+  return d;
+};
+for (const ent of evoPas) {
+  const depth = Math.min(Math.max(...ent.recipes.flat().map((c) => depthOfPas(slug(c)))) + 1, 2);
+  passives.push({ name: ent.name, depth, recipes: ent.recipes, effect: ent.effect });
 }
-// Deadeye's Impaler is tier-3-equivalent (built from Deadeye's Cross, itself evolved)
-for (const p of passives) if (p.name === "Deadeye's Impaler") p.depth = 2;
 
 // ---------- characters ----------
 const characters = [];
