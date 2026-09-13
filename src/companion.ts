@@ -173,8 +173,16 @@ function buildCharacters() {
 }
 
 function paintCharacters() {
-  for (const { ch, card } of charCards)
+  const q = query.trim().toLowerCase();
+  for (const { ch, card } of charCards) {
     card.classList.toggle('selected', selectedChars.some((c) => c.id === ch.id));
+    // same dim/greyscale-in-place behavior as the grids (ticket 07)
+    const match = !q
+      || ch.name.toLowerCase().includes(q)
+      || ch.quirk.toLowerCase().includes(q)
+      || (ballMap.get(ch.baseBallId ?? '')?.name.toLowerCase().includes(q) ?? false);
+    card.classList.toggle('filtered', !match);
+  }
 }
 
 // ---------- grids ----------
@@ -330,6 +338,7 @@ function init() {
   search.addEventListener('input', () => {
     query = search.value;
     paintGrids();
+    paintCharacters();
   });
 
   document.addEventListener('keydown', (e) => {
