@@ -213,7 +213,7 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 
 .char-card .char-quirk { flex: 1; } /* pushes the base-ball chip to the bottom */
 
-.char-card img { width: 96px; height: 96px; image-rendering: pixelated; }
+.char-card > img { width: 96px; height: 96px; image-rendering: pixelated; align-self: center; }
 .char-card .char-name { color: var(--gold); font-size: 15px; margin-top: 8px; }
 .char-card .char-quirk { color: var(--muted); font-size: 12px; margin-top: 4px; }
 .char-card.selected { border-color: var(--gold); box-shadow: 0 0 12px var(--glow); }
