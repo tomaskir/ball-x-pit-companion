@@ -210,13 +210,10 @@ function buildGrid(gridId: string, items: Item[], isPassive: boolean) {
       const tile = document.createElement('button');
       tile.className = 'tile';
       tile.dataset.id = item.id;
-      // evolved/tier-3 tiles show their recipe components inline
-      const comps = item.depth > 0
-        ? `<span class="comps">${item.recipes[0].map((c) => {
-            const comp = map.get(c);
-            return comp ? `<img src="${icon(comp.icon)}" alt="${comp.name}" title="${comp.name}" width="28" height="28">` : '';
-          }).join('')}</span>`
-        : '';
+      // evolved/tier-3 tiles show recipe components inline. All multi-recipe
+      // evolutions factorize into per-slot alternates (verified over the whole
+      // dataset), so slots render as x+(y/z); single-slot alternates as (x/z).
+      const comps = item.depth > 0 ? `<span class="comps">${recipeHtml(item, map)}</span>` : '';
       tile.innerHTML = `<img src="${icon(item.icon)}" alt="${item.name}" width="48" height="48" loading="lazy"><span class="nm">${item.name}</span>${comps}`;
       tile.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -229,6 +226,22 @@ function buildGrid(gridId: string, items: Item[], isPassive: boolean) {
     }
     wrap.appendChild(grid);
   }
+}
+
+/** Compact per-slot recipe notation: "a+(b/c)", "(a/b)+(c/d)", "a+b+c". */
+function recipeHtml(item: Item, map: Map<string, Item>): string {
+  const img = (id: string) => {
+    const comp = map.get(id);
+    return comp ? `<img src="${icon(comp.icon)}" alt="${comp.name}" title="${comp.name}" width="28" height="28">` : id;
+  };
+  const width = item.recipes[0].length;
+  // group recipes column-wise: recipes[i][slot]
+  const slots: string[][] = [];
+  for (let s = 0; s < width; s++) slots.push([...new Set(item.recipes.map((r) => r[s]))]);
+  const single = item.recipes.length === 1;
+  return slots
+    .map((opts) => (single || opts.length === 1 ? img(opts[0]) : `<span class="alt">${opts.map(img).join('<span class="or">/</span>')}</span>`))
+    .join('<span class="plus">+</span>');
 }
 
 /** Repaint selection/search/verdict state on the existing tiles. */
@@ -299,14 +312,8 @@ function buildToast(item: Item) {
   el.className = 'toast';
   const isPassive = !('onHit' in item) && item.depth !== undefined && PASSIVES.some((p) => p.id === item.id);
   const map = ballMap.has(item.id) && !isPassive ? ballMap : passiveMap;
-  // recipes are OR-of-ANDs: components within one recipe combine (+),
-  // alternate recipes are separated by "or"
-  const comps = item.recipes.length
-    ? item.recipes.map((r) => r.map((c) => {
-        const comp = map.get(c);
-        return comp ? `<img src="${icon(comp.icon)}" alt="${comp.name}" title="${comp.name}" width="28" height="28">` : c;
-      }).join('<span class="plus">+</span>')).join('<span class="or">or</span>')
-    : '';
+  // recipes are OR-of-ANDs — same compact per-slot notation as the tiles
+  const comps = item.recipes.length ? recipeHtml(item, map) : '';
   const v = verdictFor(item, isPassive, selectedChars);
   el.innerHTML = `
     <h4><img src="${icon(item.icon)}" alt="" width="20" height="20">${item.name}</h4>
