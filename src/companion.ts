@@ -122,7 +122,7 @@ function toggleCharacter(ch: Character) {
     selectedChars.push(ch);
   }
   renderCharChips();
-  renderCharacters();
+  paintCharacters();
   paintGrids();
 }
 
@@ -141,19 +141,29 @@ function renderCharChips() {
   }
 }
 
-function renderCharacters() {
+// Character cards are built once; selection repaints classes in place.
+let charCards: { ch: Character; card: HTMLElement }[] = [];
+
+function buildCharacters() {
   const wrap = document.getElementById('charactersGrid')!;
   wrap.innerHTML = '';
+  charCards = [];
   for (const ch of CHARACTERS) {
     const card = document.createElement('div');
-    card.className = 'char-card' + (selectedChars.some((c) => c.id === ch.id) ? ' selected' : '');
+    card.className = 'char-card';
     card.innerHTML = `
       <img src="${icon(ch.icon)}" alt="${ch.name}" width="96" height="96" loading="lazy">
       <div class="char-name">${ch.name}</div>
       <div class="char-quirk">${ch.quirk}</div>`;
     card.addEventListener('click', () => toggleCharacter(ch));
+    charCards.push({ ch, card });
     wrap.appendChild(card);
   }
+}
+
+function paintCharacters() {
+  for (const { ch, card } of charCards)
+    card.classList.toggle('selected', selectedChars.some((c) => c.id === ch.id));
 }
 
 // ---------- grids ----------
@@ -318,7 +328,7 @@ function init() {
   buildGrid('passivesGrid', PASSIVES, true);
   paintGrids();
   renderCharChips();
-  renderCharacters();
+  buildCharacters();
 }
 
 init();
