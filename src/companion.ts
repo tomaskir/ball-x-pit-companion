@@ -246,13 +246,15 @@ function recipeHtml(item: Item, map: Map<string, Item>): string {
 
 /** Repaint selection/search/verdict state on the existing tiles. */
 function paintGrids() {
-  // highlight set from current selection (ball and passive ids never collide —
-  // separate namespaces, separate graphs — so either map is fine for the walk)
+  // highlight set from current selection — walk the graph the selection lives in
+  // (ball and passive graphs are separate; ids never collide across them)
   let related = new Set<string>();
   if (selectedId) {
-    const sel = ballMap.get(selectedId) ?? passiveMap.get(selectedId);
+    const isPassiveSel = passiveMap.has(selectedId);
+    const map = isPassiveSel ? passiveMap : ballMap;
+    const sel = map.get(selectedId);
     if (sel) {
-      related = closure([selectedId], ballMap, sel.depth === 0);
+      related = closure([selectedId], map, sel.depth === 0);
       related.add(selectedId);
     }
   }
