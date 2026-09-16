@@ -14,6 +14,7 @@ export interface Character {
   baseBallId: string | null;
   quirk: string;
   icon: string;
+  sprite: string;
   verdicts: VerdictRule[];
 }
 

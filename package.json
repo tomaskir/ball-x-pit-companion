@@ -13,6 +13,7 @@
     "astro": "^5.12.0"
   },
   "devDependencies": {
+    "@types/node": "^22.20.3",
     "vitest": "^5.0.1"
   }
 }

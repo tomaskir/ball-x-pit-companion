@@ -10,7 +10,8 @@ export interface GraphItem {
 
 export type Graph = Map<string, GraphItem>;
 
-export const byId = (items: GraphItem[]): Graph => new Map(items.map((i) => [i.id, i]));
+/** Index items by id, preserving the concrete item type (Ball, Passive, …). */
+export const byId = <T extends GraphItem>(items: T[]): Map<string, T> => new Map(items.map((i) => [i.id, i]));
 
 /** All recipes flattened: component ids this item is made from. */
 export function componentsOf(item: GraphItem): string[] {
