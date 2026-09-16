@@ -49,6 +49,8 @@ function closure(ids: string[], map: Map<string, Item>, down: boolean): Set<stri
   return seen;
 }
 
+const union = (a: Set<string>, b: Set<string>) => new Set([...a, ...b]);
+
 // ---------- synergy ----------
 
 interface Verdict { verdict: 'red' | 'green'; note?: string }
@@ -248,13 +250,16 @@ function recipeHtml(item: Item, map: Map<string, Item>): string {
 function paintGrids() {
   // highlight set from current selection — walk the graph the selection lives in
   // (ball and passive graphs are separate; ids never collide across them)
+  // basic → descendants; evolved/tier-3 → components AND descendants
+  // (ticket 05: evolved balls highlight recipe components expanded recursively
+  // plus possible tier-3 children)
   let related = new Set<string>();
   if (selectedId) {
-    const isPassiveSel = passiveMap.has(selectedId);
-    const map = isPassiveSel ? passiveMap : ballMap;
+    const map = passiveMap.has(selectedId) ? passiveMap : ballMap;
     const sel = map.get(selectedId);
     if (sel) {
-      related = closure([selectedId], map, sel.depth === 0);
+      related = closure([selectedId], map, true); // descendants, always
+      if (sel.depth > 0) related = union(related, closure([selectedId], map, false)); // + components
       related.add(selectedId);
     }
   }
