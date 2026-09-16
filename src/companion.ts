@@ -5,12 +5,12 @@
 import { BALLS, type Ball } from './data/balls';
 import { PASSIVES, type Passive } from './data/passives';
 import { CHARACTERS, type Character } from './data/characters';
+import { byId, closure, highlightSet, union, type GraphItem } from './graph';
 
-type Item = Ball | Passive;
+type Item = Ball & GraphItem | Passive & GraphItem;
 
 const DEPTH_LABELS = ['Basic', 'Evolved', 'Tier-3'] as const;
 
-const byId = (items: Item[]) => new Map(items.map((i) => [i.id, i]));
 const ballMap = byId(BALLS);
 const passiveMap = byId(PASSIVES);
 
@@ -18,38 +18,6 @@ const passiveMap = byId(PASSIVES);
  *  deploys under a sub-path, so prefix with the configured base URL
  *  (BASE_URL has no trailing slash — join with one). */
 const icon = (p: string) => import.meta.env.BASE_URL.replace(/\/$/, '') + '/' + p;
-
-// ---------- graph helpers (multi-recipe aware) ----------
-
-/** All recipes flattened: component ids this item is made from. */
-function componentsOf(item: Item): string[] {
-  return [...new Set(item.recipes.flat())];
-}
-
-/** Items this item can evolve into (any recipe satisfied). */
-function childrenOf(id: string, map: Map<string, Item>): Item[] {
-  return [...map.values()].filter((it) => it.recipes.some((r) => r.includes(id)));
-}
-
-/** Recursive closure: id → ids of all descendants (multi-level) or components. */
-function closure(ids: string[], map: Map<string, Item>, down: boolean): Set<string> {
-  const seen = new Set<string>();
-  const queue = [...ids];
-  while (queue.length) {
-    const id = queue.pop()!;
-    if (seen.has(id)) continue;
-    seen.add(id);
-    if (down) {
-      for (const child of childrenOf(id, map)) queue.push(child.id);
-    } else {
-      const item = map.get(id);
-      if (item) queue.push(...componentsOf(item));
-    }
-  }
-  return seen;
-}
-
-const union = (a: Set<string>, b: Set<string>) => new Set([...a, ...b]);
 
 // ---------- synergy ----------
 
@@ -250,18 +218,10 @@ function recipeHtml(item: Item, map: Map<string, Item>): string {
 function paintGrids() {
   // highlight set from current selection — walk the graph the selection lives in
   // (ball and passive graphs are separate; ids never collide across them)
-  // basic → descendants; evolved/tier-3 → components AND descendants
-  // (ticket 05: evolved balls highlight recipe components expanded recursively
-  // plus possible tier-3 children)
   let related = new Set<string>();
   if (selectedId) {
     const map = passiveMap.has(selectedId) ? passiveMap : ballMap;
-    const sel = map.get(selectedId);
-    if (sel) {
-      related = closure([selectedId], map, true); // descendants, always
-      if (sel.depth > 0) related = union(related, closure([selectedId], map, false)); // + components
-      related.add(selectedId);
-    }
+    related = highlightSet(selectedId, map);
   }
 
   const q = query.trim().toLowerCase();
