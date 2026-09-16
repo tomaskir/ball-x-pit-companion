@@ -7,10 +7,9 @@
  * Run: node --experimental-strip-types scripts/emit-data.ts
  */
 import { readFileSync, writeFileSync } from 'node:fs';
+import { slug } from './slug.ts';
 
 const parsed = JSON.parse(readFileSync(new URL('../src/data/parsed.json', import.meta.url), 'utf8'));
-
-const slug = (name) => name.toLowerCase().replace(/'/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 // ---- tag vocabulary (fact base §4) ----
 const TAGS = {

@@ -8,6 +8,7 @@
  * derived from each entity's on-hit/status/effect columns.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
+import { slug } from './slug.ts';
 
 const SRC = new URL('../docs/research/game-mechanics.md', import.meta.url);
 const OUT = new URL('../src/data/', import.meta.url);
@@ -15,18 +16,6 @@ const OUT = new URL('../src/data/', import.meta.url);
 const md = readFileSync(SRC, 'utf8');
 
 // ---------- helpers ----------
-const slug = (name) => {
-  const ABBREV = {
-    'laser-h': 'laser-horizontal', 'laser-v': 'laser-vertical',
-    'diamond': 'diamond-hilted-dagger', 'sapphire': 'sapphire-hilted-dagger',
-    'ruby': 'ruby-hilted-dagger', 'emerald': 'emerald-hilted-dagger',
-  };
-  const s = name.toLowerCase()
-    .replace(/'/g, '') // "Archer's Effigy" → archers-effigy (matches icon filenames)
-    .replace(/\(horizontal\)/, 'horizontal').replace(/\(vertical\)/, 'vertical')
-    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  return ABBREV[s] ?? s;
-};
 
 const clean = (s) => s.replace(/\*\*/g, '').trim();
 
