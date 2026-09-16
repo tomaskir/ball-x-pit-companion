@@ -9,6 +9,7 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { slug } from './slug.ts';
+import { structuralDepth } from '../src/graph.ts';
 
 const SRC = new URL('../docs/research/game-mechanics.md', import.meta.url);
 const OUT = new URL('../src/data/', import.meta.url);
@@ -80,19 +81,20 @@ const evo = evoRows.map(([name, , recipeCell, onhit, , effect]) => ({
   effect: clean(effect),
 }));
 const evoIds = new Set(evo.map((e) => slug(e.name)));
+// depthOf(component) is the component's own tier; this entity sits one above.
+// The tier rule itself lives in graph.ts (structuralDepth) — the parser only
+// supplies the recursive component resolver (cache + cycle guard).
 const depthOf = (id, cache = new Map()) => {
   if (!evoIds.has(id)) return 0; // base ball component
   if (cache.has(id)) return cache.get(id);
   cache.set(id, 1); // guard against cycles
   const ent = evo.find((e) => slug(e.name) === id);
-  const maxComp = Math.max(...ent.recipes.flat().map((c) => depthOf(c, cache)));
-  const d = Math.min(maxComp + 1, 2);
+  const d = structuralDepth(ent.recipes, (c) => evoIds.has(c), (c) => depthOf(c, cache));
   cache.set(id, d);
   return d;
 };
 for (const ent of evo) {
-  // depthOf(component) is the component's own tier; this entity sits one above
-  const depth = Math.min(Math.max(...ent.recipes.flat().map((c) => depthOf(slug(c)))) + 1, 2);
+  const depth = depthOf(slug(ent.name));
   balls.push({ name: ent.name, depth, recipes: ent.recipes, onhit: ent.onhit, effect: ent.effect });
 }
 
@@ -111,18 +113,18 @@ const evoPas = evoPassives.map(([name, recipeCell, effect]) => ({
   effect: clean(effect),
 }));
 const evoPasIds = new Set(evoPas.map((e) => slug(e.name)));
+// Same resolver shape as depthOf — structuralDepth carries the tier rule.
 const depthOfPas = (id, cache = new Map()) => {
   if (!evoPasIds.has(id)) return 0;
   if (cache.has(id)) return cache.get(id);
   cache.set(id, 1);
   const ent = evoPas.find((e) => slug(e.name) === id);
-  const maxComp = Math.max(...ent.recipes.flat().map((c) => depthOfPas(c, cache)));
-  const d = Math.min(maxComp + 1, 2);
+  const d = structuralDepth(ent.recipes, (c) => evoPasIds.has(c), (c) => depthOfPas(c, cache));
   cache.set(id, d);
   return d;
 };
 for (const ent of evoPas) {
-  const depth = Math.min(Math.max(...ent.recipes.flat().map((c) => depthOfPas(slug(c)))) + 1, 2);
+  const depth = depthOfPas(slug(ent.name));
   passives.push({ name: ent.name, depth, recipes: ent.recipes, effect: ent.effect });
 }
 
