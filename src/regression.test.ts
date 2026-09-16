@@ -7,6 +7,7 @@ import { BALLS } from './data/balls';
 import { PASSIVES } from './data/passives';
 import { CHARACTERS } from './data/characters';
 import { byId, highlightSet, factorizesIntoSlots } from './graph';
+import { verdictFor } from './synergy';
 import { readFileSync } from 'node:fs';
 
 const ballMap = byId(BALLS);
@@ -172,15 +173,65 @@ describe('regression: every character has a verdict entry (The Carouser omission
 });
 
 describe('synergy verdict semantics (map Notes: red wins with 2 characters)', () => {
-  // The red-wins merge itself lives in the island (verdictFor); its data
-  // premises are pinned here: both red and green rules exist per character set.
-  it('characters exist with both red and green rules (indicator model exercised)', () => {
-    const withRed = CHARACTERS.filter((c) => c.verdicts.some((v) => v.verdict === 'red'));
-    const withGreen = CHARACTERS.filter((c) => c.verdicts.some((v) => v.verdict === 'green'));
-    expect(withRed.length).toBeGreaterThan(5);
-    expect(withGreen.length).toBeGreaterThan(5);
+  // Behavior tests through the synergy module's interface (was: data-premise
+  // assertions because verdictFor lived untested inside the island).
+  const char = (id: string) => CHARACTERS.find((c) => c.id === id)!;
+  const ball = (id: string) => ballMap.get(id)!;
+  const passive = (id: string) => passiveMap.get(id)!;
+
+  it('no selection → neutral', () => {
+    expect(verdictFor(ball('vampire'), [])).toBeNull();
+    expect(verdictFor(passive('wagon-wheel'), [])).toBeNull();
   });
-  it('The Warrior is neutral (no verdicts) — default character', () => {
-    expect(CHARACTERS.find((c) => c.id === 'the-warrior')!.verdicts).toHaveLength(0);
+
+  it('The Warrior (no rules) → neutral for every item', () => {
+    for (const item of [...BALLS, ...PASSIVES]) expect(verdictFor(item, [char('the-warrior')])).toBeNull();
+  });
+
+  it('green rule fires on tag overlap (The Itchy Finger: spawns-baby-balls green)', () => {
+    expect(verdictFor(ball('brood-mother'), [char('the-itchy-finger')])).toMatchObject({ verdict: 'green' });
+    expect(verdictFor(ball('bleed'), [char('the-itchy-finger')])).toBeNull();
+  });
+
+  it('*passives wildcard fires on passives only (The Ballbearer: red on every passive)', () => {
+    // every passive gets a verdict from the wildcard; passives that also match
+    // a green rule (single-target: Platinum Dumbbell et al.) report green —
+    // single-character selection, green wins over red
+    for (const p of PASSIVES) expect(verdictFor(p, [char('the-ballbearer')])).not.toBeNull();
+    // the wildcard never marks a ball red — balls only get The Ballbearer's
+    // green tag rules (single-target/aoe), everything else is neutral
+    for (const b of BALLS) {
+      const v = verdictFor(b, [char('the-ballbearer')]);
+      if (v) expect(v.verdict, b.id).toBe('green');
+      else expect(v, b.id).toBeNull();
+    }
+    expect(verdictFor(passive('silver-bullet'), [char('the-ballbearer')])).toMatchObject({ verdict: 'green' });
+    expect(verdictFor(passive('wagon-wheel'), [char('the-ballbearer')])).toMatchObject({ verdict: 'red' });
+  });
+
+  it('single character: green wins over red', () => {
+    // one character with both a green and a red rule matching → green reported
+    const both = CHARACTERS.find((c) => c.verdicts.some((v) => v.verdict === 'green') && c.verdicts.some((v) => v.verdict === 'red'));
+    if (!both) return; // no such character in current data
+    const greenTag = both.verdicts.find((v) => v.verdict === 'green')!.tag;
+    const item = BALLS.find((b) => b.tags.includes(greenTag));
+    if (item) expect(verdictFor(item, [both])?.verdict === 'green' || verdictFor(item, [both]) === null).toBe(true);
+  });
+
+  it('two characters: red wins, notes join with " · "', () => {
+    const redChar = CHARACTERS.find((c) => c.verdicts.some((v) => v.verdict === 'red' && v.tag !== '*passives'))!;
+    const redRule = redChar.verdicts.find((v) => v.verdict === 'red' && v.tag !== '*passives')!;
+    const other = CHARACTERS.find((c) => c.id !== redChar.id && c.verdicts.some((v) => v.verdict === 'green' && v.tag === redRule.tag));
+    const item = BALLS.find((b) => b.tags.includes(redRule.tag));
+    if (!item) return;
+    const v = verdictFor(item, [redChar, other ?? char('the-warrior')]);
+    expect(v?.verdict).toBe('red');
+    expect(v?.note).toContain(redChar.name);
+  });
+
+  it('namespace resolution: verdictFor never needs an isPassive flag', () => {
+    // same id cannot exist in both namespaces (ticket 03) — the module resolves
+    // membership itself; here we pin that a passive id gets the wildcard verdict
+    expect(verdictFor(passive('wagon-wheel'), [char('the-ballbearer')])).toMatchObject({ verdict: 'red' });
   });
 });

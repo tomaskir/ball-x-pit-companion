@@ -6,8 +6,7 @@ import { BALLS, type Ball } from './data/balls';
 import { PASSIVES, type Passive } from './data/passives';
 import { CHARACTERS, type Character } from './data/characters';
 import { byId, closure, highlightSet, union, type GraphItem } from './graph';
-
-type Item = Ball & GraphItem | Passive & GraphItem;
+import { verdictFor, type Item } from './synergy';
 
 const DEPTH_LABELS = ['Basic', 'Evolved', 'Tier-3'] as const;
 
@@ -20,23 +19,8 @@ const passiveMap = byId(PASSIVES);
 const icon = (p: string) => import.meta.env.BASE_URL.replace(/\/$/, '') + '/' + p;
 
 // ---------- synergy ----------
-
-interface Verdict { verdict: 'red' | 'green'; note?: string }
-
-/** Verdict of one item against the selected characters. Null = neutral. */
-function verdictFor(item: Item, isPassive: boolean, selected: Character[]): Verdict | null {
-  const verdicts: Verdict[] = [];
-  for (const ch of selected) {
-    for (const rule of ch.verdicts) {
-      const wildcard = rule.tag === '*passives' && isPassive;
-      if (wildcard || item.tags.includes(rule.tag)) verdicts.push({ verdict: rule.verdict, note: rule.note ? `${ch.name}: ${rule.note}` : undefined });
-    }
-  }
-  if (!verdicts.length) return null;
-  if (selected.length === 2 && verdicts.some((v) => v.verdict === 'red')) return { verdict: 'red', note: verdicts.filter((v) => v.verdict === 'red').map((v) => v.note).filter(Boolean).join(' · ') };
-  const greens = verdicts.filter((v) => v.verdict === 'green');
-  return greens.length ? greens[0] : verdicts[0];
-}
+// Verdict rules live in src/synergy.ts (namespace resolution included);
+// only the DOM painting of verdicts stays here.
 
 // ---------- state ----------
 
@@ -236,7 +220,7 @@ function paintGrids() {
 
     // verdict badge: replace in place (cheap, no img recreation)
     tile.querySelector('.ind')?.remove();
-    const v = verdictFor(item, isPassive, selectedChars);
+    const v = verdictFor(item, selectedChars);
     if (v) {
       const badge = document.createElement('span');
       badge.className = `ind ${v.verdict}`;
@@ -277,11 +261,10 @@ function attachToast(anchor: HTMLElement, getItem: () => Item | null) {
 function buildToast(item: Item) {
   const el = document.createElement('div');
   el.className = 'toast';
-  const isPassive = !('onHit' in item) && item.depth !== undefined && PASSIVES.some((p) => p.id === item.id);
-  const map = ballMap.has(item.id) && !isPassive ? ballMap : passiveMap;
+  const map = passiveMap.has(item.id) ? passiveMap : ballMap;
   // recipes are OR-of-ANDs — same compact per-slot notation as the tiles
   const comps = item.recipes.length ? recipeHtml(item, map) : '';
-  const v = verdictFor(item, isPassive, selectedChars);
+  const v = verdictFor(item, selectedChars);
   el.innerHTML = `
     <h4><img src="${icon(item.icon)}" alt="" width="20" height="20">${item.name}</h4>
     <p class="eff">${item.effects}</p>
