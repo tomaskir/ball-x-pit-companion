@@ -25,3 +25,9 @@ design decisions live in `.scratch/ball-x-pit-companion/map.md` and
 - **Island** — the single interactive script `src/companion.ts` mounted by
   the Astro page. Owns DOM painting only; verdict logic, graph math, and
   data live in their own modules.
+- **View state** — the island's state (item selection, character slots,
+  search query) and every derivation from it (highlight walks, filters,
+  verdict badges). Module: `src/view-state.ts` — one interface:
+  `createViewState()` → `dispatch(action) → ViewModel`. The island listens
+  to DOM events, dispatches, and paints the returned view model; the view
+  model is the test surface.

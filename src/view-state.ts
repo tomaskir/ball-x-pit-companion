@@ -6,12 +6,12 @@ import { BALLS } from './data/balls';
 import { PASSIVES } from './data/passives';
 import { CHARACTERS, type Character } from './data/characters';
 import { byId, highlightSet, type Graph, type GraphItem } from './graph';
-import { verdictFor, type Item } from './synergy';
+import { verdictFor, type Item, type Verdict } from './synergy';
 
 const ballMap = byId(BALLS);
 const passiveMap = byId(PASSIVES);
 
-export interface TileState { selected: boolean; related: boolean; dimmed: boolean; filtered: boolean; verdict: string | null; verdictNote: string | null; }
+export interface TileState { selected: boolean; related: boolean; dimmed: boolean; filtered: boolean; verdict: Verdict | null; }
 export interface CharCardState { selected: boolean; filtered: boolean; }
 export interface ViewModel {
   tiles: Map<string, TileState>;
@@ -46,8 +46,7 @@ export function createViewState() {
         related: !!selectedId && selectedId !== item.id && related.has(item.id),
         dimmed: !!selectedId && !related.has(item.id),
         filtered: !!q && !(item.name.toLowerCase().includes(q) || item.effects.toLowerCase().includes(q)),
-        verdict: v?.verdict ?? null,
-        verdictNote: v?.note ?? null,
+        verdict: v,
       });
     }
     for (const ch of CHARACTERS) {
@@ -64,6 +63,10 @@ export function createViewState() {
      *  the full verdict (note included), not just the tile's badge color. */
     verdictFor(item: Item) {
       return verdictFor(item, selectedChars);
+    },
+    /** Current view model without a state change — initial paint. */
+    derive(): ViewModel {
+      return derive();
     },
     dispatch(action: Action): ViewModel {
       switch (action.type) {
@@ -85,5 +88,3 @@ export function createViewState() {
     },
   };
 }
-
-export type { Item };

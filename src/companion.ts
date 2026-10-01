@@ -5,7 +5,7 @@
 // (see .scratch/ball-x-pit-companion/map.md).
 import { BALLS } from './data/balls';
 import { PASSIVES } from './data/passives';
-import { CHARACTERS } from './data/characters';
+import { CHARACTERS, type Character } from './data/characters';
 import { byId } from './graph';
 import { createViewState, type ViewModel } from './view-state';
 import type { Item } from './synergy';
@@ -74,13 +74,13 @@ function renderCharChips(vm: ViewModel) {
     chip.className = 'chip';
     chip.innerHTML = `<img src="${icon(ch.sprite)}" alt="" width="22" height="22"><span>${ch.name}</span>`;
     chip.title = 'Click to remove';
-    chip.addEventListener('click', () => repaint(view.dispatch({ type: 'toggleChar', id: ch.id })));
+    chip.addEventListener('click', () => repaintWithChips(view.dispatch({ type: 'toggleChar', id: ch.id })));
     wrap.appendChild(chip);
   }
 }
 
 // Character cards are built once; selection repaints classes in place.
-let charCards: { ch: typeof CHARACTERS[number]; card: HTMLElement }[] = [];
+let charCards: { ch: Character; card: HTMLElement }[] = [];
 
 function buildCharacters() {
   const wrap = document.getElementById('charactersGrid')!;
@@ -97,7 +97,7 @@ function buildCharacters() {
       ${base
         ? `<div class="char-base" title="Base ball"><img src="${icon(base.icon)}" alt="${base.name}" width="24" height="24"><span>${base.name}</span></div>`
         : '<div class="char-base none">no base ball</div>'}`;
-    card.addEventListener('click', () => repaint(view.dispatch({ type: 'toggleChar', id: ch.id })));
+    card.addEventListener('click', () => repaintWithChips(view.dispatch({ type: 'toggleChar', id: ch.id })));
     // hovering the base-ball chip shows that ball's toast
     const baseChip = card.querySelector('.char-base');
     if (baseChip) {
@@ -115,9 +115,9 @@ function buildCharacters() {
 // Tiles are built once; state changes (selection, search, characters) only
 // repaint classes/badges on the existing DOM — rebuilding would recreate the
 // <img> elements and blink the icons.
-const tiles = new Map<string, { tile: HTMLElement; item: (typeof BALLS)[number] | (typeof PASSIVES)[number] }>();
+const tiles = new Map<string, { tile: HTMLElement; item: Item }>();
 
-function buildGrid(gridId: string, items: (typeof BALLS)[number][] | (typeof PASSIVES)[number][], isPassive: boolean) {
+function buildGrid(gridId: string, items: Item[], isPassive: boolean) {
   const wrap = document.getElementById(gridId)!;
   wrap.innerHTML = '';
   const map = isPassive ? passiveMap : ballMap;
@@ -182,9 +182,9 @@ function paintTiles(vm: ViewModel) {
     tile.querySelector('.ind')?.remove();
     if (t.verdict) {
       const badge = document.createElement('span');
-      badge.className = `ind ${t.verdict}`;
+      badge.className = `ind ${t.verdict.verdict}`;
       badge.textContent = '!';
-      badge.title = t.verdictNote ?? t.verdict;
+      badge.title = t.verdict.note ?? t.verdict.verdict;
       tile.appendChild(badge);
     }
   }
@@ -201,6 +201,10 @@ function paintCharCards(vm: ViewModel) {
 function repaint(vm: ViewModel) {
   paintTiles(vm);
   paintCharCards(vm);
+}
+
+function repaintWithChips(vm: ViewModel) {
+  repaint(vm);
   renderCharChips(vm);
 }
 
@@ -278,7 +282,8 @@ function init() {
   buildGrid('ballsGrid', BALLS, false);
   buildGrid('passivesGrid', PASSIVES, true);
   buildCharacters();
-  repaint(view.dispatch({ type: 'search', query: '' }));
+  // initial paint: derive the view model once everything is built
+  repaintWithChips(view.derive());
 }
 
 init();

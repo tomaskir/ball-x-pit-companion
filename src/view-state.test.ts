@@ -75,9 +75,8 @@ describe('view state: search filter (ticket 07 semantics)', () => {
     const vm = view.dispatch({ type: 'search', query: 'vampire' });
     expect(vm.tiles.get('vampire')!.filtered).toBe(false);
     expect(vm.tiles.get('vampire-lord')!.filtered).toBe(false); // name match
-    // effect-text match: Nosferatu's effect mentions "Vampire Lord"… use a
-    // known effect-text-only match instead: Bleed's effect contains "bleeding",
-    // but so does its name — pin effect matching with a case-insensitive hit
+    // effect-text match: Nosferatu's effect mentions vampire bats but its name doesn't
+    expect(vm.tiles.get('nosferatu')!.filtered).toBe(false);
     expect(vm.tiles.get('burn')!.filtered).toBe(true);
     expect(vm.tiles.get('inferno')!.filtered).toBe(true); // "Inferno" name
   });
@@ -122,8 +121,9 @@ describe('view state: synergy verdicts ride the view model', () => {
   it('selected character drives verdict on tiles (The Ballbearer wildcard)', () => {
     const view = createViewState();
     const vm = view.dispatch({ type: 'toggleChar', id: 'the-ballbearer' });
-    expect(vm.tiles.get('wagon-wheel')!.verdict).toBe('red'); // passive + wildcard
-    expect(vm.tiles.get('silver-bullet')!.verdict).toBe('green'); // single-target green
+    // verdicts carry the note — the tile badge tooltip and toast need it
+    expect(vm.tiles.get('wagon-wheel')!.verdict).toMatchObject({ verdict: 'red' }); // passive + wildcard
+    expect(vm.tiles.get('silver-bullet')!.verdict).toMatchObject({ verdict: 'green' }); // single-target green
     expect(vm.tiles.get('bleed')!.verdict).toBeNull(); // neutral
   });
 
