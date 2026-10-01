@@ -1,33 +1,31 @@
-// Interactive island: section tabs, depth-grouped grids, click-to-highlight
-// evolution graphs, hover/tap toast, character selection with synergy
-// indicators, search dimming, theming, hash routing.
-// Decisions: tickets 03/05/06/07 (see .scratch/ball-x-pit-companion/map.md).
-import { BALLS, type Ball } from './data/balls';
-import { PASSIVES, type Passive } from './data/passives';
-import { CHARACTERS, type Character } from './data/characters';
-import { byId, closure, highlightSet, union, type GraphItem } from './graph';
-import { verdictFor, type Item } from './synergy';
+// Interactive island: DOM listening and painting only. All state (item
+// selection, character slots, search, section) and every derivation
+// (highlight walks, filters, verdicts) live in src/view-state.ts behind one
+// dispatch(action) → ViewModel interface. Decisions: tickets 03/05/06/07
+// (see .scratch/ball-x-pit-companion/map.md).
+import { BALLS } from './data/balls';
+import { PASSIVES } from './data/passives';
+import { CHARACTERS } from './data/characters';
+import { byId } from './graph';
+import { createViewState, type ViewModel } from './view-state';
+import type { Item } from './synergy';
 
 const DEPTH_LABELS = ['Basic', 'Evolved', 'Tier-3'] as const;
 
 const ballMap = byId(BALLS);
 const passiveMap = byId(PASSIVES);
 
+const view = createViewState();
+
 /** Icons are stored in data as base-relative ("icons/balls/x.png"); the site
  *  deploys under a sub-path, so prefix with the configured base URL
  *  (BASE_URL has no trailing slash — join with one). */
 const icon = (p: string) => import.meta.env.BASE_URL.replace(/\/$/, '') + '/' + p;
 
-// ---------- synergy ----------
-// Verdict rules live in src/synergy.ts (namespace resolution included);
-// only the DOM painting of verdicts stays here.
-
 // ---------- state ----------
+// `section` is pure UI routing (hash sync) — not part of the view model.
 
 let section: 'balls' | 'passives' | 'characters' = 'balls';
-let selectedId: string | null = null;
-const selectedChars: Character[] = [];
-let query = '';
 
 // ---------- theming ----------
 
@@ -62,41 +60,27 @@ function showSection(s: typeof section, updateHash = true) {
   if (updateHash) location.hash = `#/${s}`;
   for (const el of document.querySelectorAll<HTMLElement>('.section-view')) el.hidden = el.dataset.section !== s;
   for (const btn of document.querySelectorAll<HTMLElement>('.tab-btn')) btn.classList.toggle('active', btn.dataset.section === s);
-  clearSelection();
-  renderAll();
+  repaint(view.dispatch({ type: 'clear' }));
 }
 
 // ---------- character selection ----------
 
-function toggleCharacter(ch: Character) {
-  const idx = selectedChars.findIndex((c) => c.id === ch.id);
-  if (idx >= 0) selectedChars.splice(idx, 1);
-  else {
-    if (selectedChars.length >= 2) selectedChars.shift();
-    selectedChars.push(ch);
-  }
-  renderCharChips();
-  paintCharacters();
-  paintGrids();
-}
-
-function renderCharChips() {
+function renderCharChips(vm: ViewModel) {
   const wrap = document.getElementById('charChips')!;
   wrap.innerHTML = '';
-  const hint = document.getElementById('slotHint')!;
-  hint.textContent = selectedChars.length === 1 ? 'pick a second character…' : '';
-  for (const ch of selectedChars) {
+  document.getElementById('slotHint')!.textContent = vm.slotHint;
+  for (const ch of vm.selectedChars) {
     const chip = document.createElement('button');
     chip.className = 'chip';
     chip.innerHTML = `<img src="${icon(ch.sprite)}" alt="" width="22" height="22"><span>${ch.name}</span>`;
     chip.title = 'Click to remove';
-    chip.addEventListener('click', () => toggleCharacter(ch));
+    chip.addEventListener('click', () => repaint(view.dispatch({ type: 'toggleChar', id: ch.id })));
     wrap.appendChild(chip);
   }
 }
 
 // Character cards are built once; selection repaints classes in place.
-let charCards: { ch: Character; card: HTMLElement }[] = [];
+let charCards: { ch: typeof CHARACTERS[number]; card: HTMLElement }[] = [];
 
 function buildCharacters() {
   const wrap = document.getElementById('charactersGrid')!;
@@ -113,7 +97,7 @@ function buildCharacters() {
       ${base
         ? `<div class="char-base" title="Base ball"><img src="${icon(base.icon)}" alt="${base.name}" width="24" height="24"><span>${base.name}</span></div>`
         : '<div class="char-base none">no base ball</div>'}`;
-    card.addEventListener('click', () => toggleCharacter(ch));
+    card.addEventListener('click', () => repaint(view.dispatch({ type: 'toggleChar', id: ch.id })));
     // hovering the base-ball chip shows that ball's toast
     const baseChip = card.querySelector('.char-base');
     if (baseChip) {
@@ -126,27 +110,14 @@ function buildCharacters() {
   }
 }
 
-function paintCharacters() {
-  const q = query.trim().toLowerCase();
-  for (const { ch, card } of charCards) {
-    card.classList.toggle('selected', selectedChars.some((c) => c.id === ch.id));
-    // same dim/greyscale-in-place behavior as the grids (ticket 07)
-    const match = !q
-      || ch.name.toLowerCase().includes(q)
-      || ch.quirk.toLowerCase().includes(q)
-      || (ballMap.get(ch.baseBallId ?? '')?.name.toLowerCase().includes(q) ?? false);
-    card.classList.toggle('filtered', !match);
-  }
-}
-
 // ---------- grids ----------
 
 // Tiles are built once; state changes (selection, search, characters) only
 // repaint classes/badges on the existing DOM — rebuilding would recreate the
 // <img> elements and blink the icons.
-const tiles = new Map<string, { tile: HTMLElement; item: Item; isPassive: boolean }>();
+const tiles = new Map<string, { tile: HTMLElement; item: (typeof BALLS)[number] | (typeof PASSIVES)[number] }>();
 
-function buildGrid(gridId: string, items: Item[], isPassive: boolean) {
+function buildGrid(gridId: string, items: (typeof BALLS)[number][] | (typeof PASSIVES)[number][], isPassive: boolean) {
   const wrap = document.getElementById(gridId)!;
   wrap.innerHTML = '';
   const map = isPassive ? passiveMap : ballMap;
@@ -171,11 +142,10 @@ function buildGrid(gridId: string, items: Item[], isPassive: boolean) {
       tile.innerHTML = `<img src="${icon(item.icon)}" alt="${item.name}" width="48" height="48" loading="lazy"><span class="nm">${item.name}</span>${comps}`;
       tile.addEventListener('click', (e) => {
         e.stopPropagation();
-        selectedId = selectedId === item.id ? null : item.id;
-        paintGrids();
+        repaint(view.dispatch({ type: 'toggleItem', id: item.id }));
       });
       attachToast(tile, () => item);
-      tiles.set(item.id, { tile, item, isPassive });
+      tiles.set(item.id, { tile, item });
       grid.appendChild(tile);
     }
     wrap.appendChild(grid);
@@ -183,7 +153,7 @@ function buildGrid(gridId: string, items: Item[], isPassive: boolean) {
 }
 
 /** Compact per-slot recipe notation: "a+(b/c)", "(a/b)+(c/d)", "a+b+c". */
-function recipeHtml(item: Item, map: Map<string, Item>): string {
+function recipeHtml(item: { recipes: string[][] }, map: Map<string, { icon: string; name: string }>): string {
   const img = (id: string) => {
     const comp = map.get(id);
     return comp ? `<img src="${icon(comp.icon)}" alt="${comp.name}" title="${comp.name}" width="28" height="28">` : id;
@@ -199,44 +169,39 @@ function recipeHtml(item: Item, map: Map<string, Item>): string {
 }
 
 /** Repaint selection/search/verdict state on the existing tiles. */
-function paintGrids() {
-  // highlight set from current selection — walk the graph the selection lives in
-  // (ball and passive graphs are separate; ids never collide across them)
-  let related = new Set<string>();
-  if (selectedId) {
-    const map = passiveMap.has(selectedId) ? passiveMap : ballMap;
-    related = highlightSet(selectedId, map);
-  }
-
-  const q = query.trim().toLowerCase();
-
-  for (const { tile, item, isPassive } of tiles.values()) {
+function paintTiles(vm: ViewModel) {
+  for (const { tile, item } of tiles.values()) {
+    const t = vm.tiles.get(item.id)!;
     tile.classList.remove('selected', 'related', 'dimmed', 'filtered');
-    if (selectedId === item.id) tile.classList.add('selected');
-    else if (selectedId && !related.has(item.id)) tile.classList.add('dimmed');
-    else if (selectedId && related.has(item.id)) tile.classList.add('related');
-
-    if (q && !(item.name.toLowerCase().includes(q) || item.effects.toLowerCase().includes(q))) tile.classList.add('filtered');
+    if (t.selected) tile.classList.add('selected');
+    else if (t.related) tile.classList.add('related');
+    else if (t.dimmed) tile.classList.add('dimmed');
+    if (t.filtered) tile.classList.add('filtered');
 
     // verdict badge: replace in place (cheap, no img recreation)
     tile.querySelector('.ind')?.remove();
-    const v = verdictFor(item, selectedChars);
-    if (v) {
+    if (t.verdict) {
       const badge = document.createElement('span');
-      badge.className = `ind ${v.verdict}`;
+      badge.className = `ind ${t.verdict}`;
       badge.textContent = '!';
-      badge.title = v.note ?? v.verdict;
+      badge.title = t.verdictNote ?? t.verdict;
       tile.appendChild(badge);
     }
   }
 }
 
-function clearSelection() {
-  selectedId = null;
+function paintCharCards(vm: ViewModel) {
+  for (const { ch, card } of charCards) {
+    const c = vm.charCards.get(ch.id)!;
+    card.classList.toggle('selected', c.selected);
+    card.classList.toggle('filtered', c.filtered);
+  }
 }
 
-function renderAll() {
-  paintGrids();
+function repaint(vm: ViewModel) {
+  paintTiles(vm);
+  paintCharCards(vm);
+  renderCharChips(vm);
 }
 
 // ---------- toast ----------
@@ -264,7 +229,7 @@ function buildToast(item: Item) {
   const map = passiveMap.has(item.id) ? passiveMap : ballMap;
   // recipes are OR-of-ANDs — same compact per-slot notation as the tiles
   const comps = item.recipes.length ? recipeHtml(item, map) : '';
-  const v = verdictFor(item, selectedChars);
+  const v = view.verdictFor(item);
   el.innerHTML = `
     <h4><img src="${icon(item.icon)}" alt="" width="20" height="20">${item.name}</h4>
     <p class="eff">${item.effects}</p>
@@ -299,26 +264,21 @@ function init() {
     btn.addEventListener('click', () => showSection(btn.dataset.section as typeof section));
 
   const search = document.getElementById('search') as HTMLInputElement;
-  search.addEventListener('input', () => {
-    query = search.value;
-    paintGrids();
-    paintCharacters();
-  });
+  search.addEventListener('input', () => repaint(view.dispatch({ type: 'search', query: search.value })));
 
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { clearSelection(); renderAll(); }
+    if (e.key === 'Escape') repaint(view.dispatch({ type: 'clear' }));
   });
   document.addEventListener('click', (e) => {
     // empty space clears selection
-    if (!(e.target as HTMLElement).closest('.tile, .char-card, .chip, .toast')) { clearSelection(); renderAll(); }
+    if (!(e.target as HTMLElement).closest('.tile, .char-card, .chip, .toast')) repaint(view.dispatch({ type: 'clear' }));
   });
 
   initRouting();
   buildGrid('ballsGrid', BALLS, false);
   buildGrid('passivesGrid', PASSIVES, true);
-  paintGrids();
-  renderCharChips();
   buildCharacters();
+  repaint(view.dispatch({ type: 'search', query: '' }));
 }
 
 init();
