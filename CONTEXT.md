@@ -41,7 +41,8 @@ design decisions live in `.scratch/ball-x-pit-companion/map.md` and
   the events that *dispatch to view state*.)
 - **Renderer** — all DOM painting for the island. Module: `src/renderer.ts`
   (recipe notation comes from `src/graph.ts`; the renderer only injects
-  icon markup — see **Recipe notation**) — one interface:
+  icon markup — see **Recipe notation**; the icon-URL join comes from
+  `src/icon-url.ts`) — one interface:
   `buildAll(getVerdict)` (builds grids and character cards
   once, at startup) + `paint(viewModel)` (repaints state on the existing
   DOM; never recreates `<img>` elements — that would blink icons). Tiles,

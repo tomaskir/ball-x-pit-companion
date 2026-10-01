@@ -9,7 +9,6 @@ import { CHARACTERS } from './data/characters';
 import { ballMap, passiveMap } from './catalog';
 import { highlightSet, factorizesIntoSlots } from './graph';
 import { verdictFor } from './synergy';
-import { readFileSync } from 'node:fs';
 
 describe('regression: structural depth (was wiki labels — Tumor et al. misplaced)', () => {
   // The wiki labeled Tumor, Laser Cutter, Nuclear Bomb, Time Bomb, Black Hole
@@ -137,10 +136,8 @@ describe('regression: icon paths are base-relative (sub-path deploy join)', () =
     for (const p of PASSIVES) expect(p.icon).toBe(`icons/passives/${p.id}.png`);
   });
 
-  it('renderer joins BASE_URL with an explicit slash (source check)', () => {
-    const src = readFileSync(new URL('./renderer.ts', import.meta.url), 'utf8');
-    expect(src).toMatch(/BASE_URL[^\n]*replace\([^)]*\)\s*\+\s*'\/'/);
-  });
+  // The join itself is exercised through iconUrl's interface —
+  // see src/icon-url.test.ts (the renderer supplies the production base).
 });
 
 describe('regression: apostrophe slug normalization (Archer\'s Effigy et al.)', () => {

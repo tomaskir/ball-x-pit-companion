@@ -9,15 +9,15 @@ import { PASSIVES } from './data/passives';
 import { CHARACTERS, type Character } from './data/characters';
 import { ballMap, itemFor, type Item } from './catalog';
 import { recipeHtml } from './graph';
+import { iconUrl } from './icon-url';
 import type { Verdict } from './synergy';
 import type { ViewModel } from './view-state';
 
 const DEPTH_LABELS = ['Basic', 'Evolved', 'Tier-3'] as const;
 
-/** Icons are stored in data as base-relative ("icons/balls/x.png"); the site
- *  deploys under a sub-path, so prefix with the configured base URL
- *  (BASE_URL has no trailing slash — join with one). */
-const icon = (p: string) => import.meta.env.BASE_URL.replace(/\/$/, '') + '/' + p;
+/** Icons are stored in data as base-relative ("icons/balls/x.png"); the
+ *  join with the configured base URL lives in src/icon-url.ts. */
+const icon = (p: string) => iconUrl(import.meta.env.BASE_URL, p);
 
 /** Verdict lookup for the toast, injected at build time: the island passes
  *  its view-state's verdictFor so hover always reads the current selection. */
