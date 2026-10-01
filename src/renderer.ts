@@ -8,6 +8,7 @@ import { BALLS } from './data/balls';
 import { PASSIVES } from './data/passives';
 import { CHARACTERS, type Character } from './data/characters';
 import { ballMap, itemFor, type Item } from './catalog';
+import type { Verdict } from './synergy';
 import type { ViewModel } from './view-state';
 
 const DEPTH_LABELS = ['Basic', 'Evolved', 'Tier-3'] as const;
@@ -19,7 +20,7 @@ const icon = (p: string) => import.meta.env.BASE_URL.replace(/\/$/, '') + '/' + 
 
 /** Verdict lookup for the toast, injected at build time: the island passes
  *  its view-state's verdictFor so hover always reads the current selection. */
-let toastVerdict: (item: Item) => ReturnType<typeof import('./synergy').verdictFor> | null = () => null;
+let toastVerdict: (item: Item) => Verdict | null = () => null;
 
 // ---------- grids ----------
 
@@ -225,7 +226,7 @@ function hideToast() {
 /** Build all static DOM once: balls grid, passives grid, character cards.
  *  Call once at startup, before the first paint(). `getVerdict` supplies the
  *  toast's per-item verdict against the current character selection. */
-export function buildAll(getVerdict: (item: Item) => { verdict: 'red' | 'green'; note?: string } | null): void {
+export function buildAll(getVerdict: (item: Item) => Verdict | null): void {
   toastVerdict = getVerdict;
   buildGrid('ballsGrid', BALLS);
   buildGrid('passivesGrid', PASSIVES);

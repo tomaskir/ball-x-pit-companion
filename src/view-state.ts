@@ -1,7 +1,8 @@
 // View-state module: the island's state (item selection, character slots,
 // search query, section) and every derivation the island used to hand-wire
 // between its event handlers. One interface: dispatch(action) → ViewModel.
-// The island (src/companion.ts) keeps only DOM listening and painting.
+// The island (src/companion.ts) keeps only event listening, theme, and
+// hash routing; painting lives in src/renderer.ts.
 import { BALLS } from './data/balls';
 import { PASSIVES } from './data/passives';
 import { CHARACTERS, type Character } from './data/characters';

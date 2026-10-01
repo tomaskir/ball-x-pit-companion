@@ -30,6 +30,8 @@ design decisions live in `.scratch/ball-x-pit-companion/map.md` and
 - **Island** — the single interactive script `src/companion.ts` mounted by
   the Astro page. Owns event listening, theme, and hash routing only;
   painting, verdict logic, graph math, and data live in their own modules.
+  (The renderer attaches hover/tap listeners for toasts — the island owns
+  the events that *dispatch to view state*.)
 - **Renderer** — all DOM painting for the island. Module: `src/renderer.ts`
   — one interface: `buildAll(getVerdict)` (builds grids and character cards
   once, at startup) + `paint(viewModel)` (repaints state on the existing
