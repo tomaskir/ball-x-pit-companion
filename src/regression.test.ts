@@ -137,8 +137,8 @@ describe('regression: icon paths are base-relative (sub-path deploy join)', () =
     for (const p of PASSIVES) expect(p.icon).toBe(`icons/passives/${p.id}.png`);
   });
 
-  it('island joins BASE_URL with an explicit slash (source check)', () => {
-    const src = readFileSync(new URL('./companion.ts', import.meta.url), 'utf8');
+  it('renderer joins BASE_URL with an explicit slash (source check)', () => {
+    const src = readFileSync(new URL('./renderer.ts', import.meta.url), 'utf8');
     expect(src).toMatch(/BASE_URL[^\n]*replace\([^)]*\)\s*\+\s*'\/'/);
   });
 });
