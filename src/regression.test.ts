@@ -124,7 +124,7 @@ describe('regression: multi-recipe data supports the compact x+(y/z) notation', 
 describe('regression: icon paths are base-relative (sub-path deploy join)', () => {
   // Icons were root-absolute "/icons/..." — 404 under /ball-x-pit-companion/.
   // Then BASE_URL (no trailing slash) was concatenated directly — ".../companionicons/...".
-  // Data must be base-relative; the island joins BASE_URL + '/' + path.
+  // Data must be base-relative; the join lives in src/icon-url.ts.
   it('no icon path starts with "/"', () => {
     for (const b of BALLS) expect(b.icon.startsWith('/'), b.id).toBe(false);
     for (const p of PASSIVES) expect(p.icon.startsWith('/'), p.id).toBe(false);

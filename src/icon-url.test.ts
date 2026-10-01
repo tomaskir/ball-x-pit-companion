@@ -6,8 +6,7 @@ import { describe, it, expect } from 'vitest';
 import { iconUrl } from './icon-url';
 
 describe('iconUrl: the base-relative icon join (sub-path deploy)', () => {
-  // Icons were root-absolute "/icons/..." — 404 under /ball-x-pit-companion/.
-  // Then BASE_URL (no trailing slash) was concatenated directly — ".../companionicons/...".
+  // Bug history is narrated in regression.test.ts (icon-path describe block).
   it('joins base and path with exactly one slash', () => {
     expect(iconUrl('/ball-x-pit-companion', 'icons/balls/x.png')).toBe(
       '/ball-x-pit-companion/icons/balls/x.png',
