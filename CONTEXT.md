@@ -1,14 +1,31 @@
 # Context
 
-Domain glossary for the Ball x Pit companion site. Data provenance and
-design decisions live in `.scratch/ball-x-pit-companion/map.md` and
-`docs/research/game-mechanics.md`; this file names the concepts the code uses.
+Domain glossary for the Ball x Pit companion site. This file is self-contained:
+it names the concepts the code uses and carries the data those concepts stand on.
+Workflow guidance lives in `AGENTS.md`; the game-data fact base is
+`docs/research/game-mechanics.md`.
+
+## Game vs site terminology
+
+The wiki (ballxpit.wiki.gg) distinguishes two mechanics that fan sites conflate:
+
+- **Evolution** — combining 2+ specific level-3 balls in the Fusion Reactor into
+  a new *named* Evolved Ball (69 of them as of game v1.301). The site models
+  these and only these.
+- **Fusion** — merging any two unfused level-3 balls into a property-stacking
+  ball with no unique identity. Out of scope for the site.
+
+Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special),
+**Base Passives** (54), **Evolved Passives** (17), **Fusion Reactor**.
 
 ## Terms
 
 - **Evolution graph** — the OR-of-ANDs recipe graph (`recipes: string[][]`).
   Ball and passive graphs are strictly separate; ids never collide across
-  them (ticket 03).
+  them.
+- **Namespace** — which of the two strictly-separate collections (balls,
+  passives) an id lives in. Namespace resolution is decided in one place,
+  `src/catalog.ts`; callers pass the id or item only.
 - **Recipe notation** — the compact per-slot rendering of multi-recipe
   entities: "a+(b/c)", "(a/b)+(c/d)", "a+b+c". Faithful only because every
   multi-recipe entity factorizes into per-slot alternates
@@ -18,23 +35,39 @@ design decisions live in `.scratch/ball-x-pit-companion/map.md` and
   render as the raw id.
 - **Catalog** — the ball and passive collections, indexed, plus namespace
   resolution. Module: `src/catalog.ts` (`ballMap`, `passiveMap`,
-  `isPassive(id)`, `itemFor(id)`, `graphFor(id)`). "Which namespace does
-  this id live in?" is decided here and nowhere else; callers pass the id
-  or item only.
+  `isPassive(id)`, `itemFor(id)`, `graphFor(id)`).
 - **Depth** — evolution tier computed from recipe structure, not wiki labels:
   0 = basic, 1 = evolved (recipe includes a base ball only), 2 = tier-3
   (recipe includes an evolved component). Rule and recursion (tier rule,
   cache, cycle guard) live in `src/graph.ts` (`structuralDepth`,
   `resolveDepths`); the parser calls `resolveDepths` once per namespace.
+  Display names in the renderer (`DEPTH_LABELS`): Basic / Evolved / Tier-3.
 - **Slug** — name→id normalization (apostrophes dropped, kebab-case,
   abbreviation table for Laser H/V and hilted daggers). Single source of
   truth: `scripts/slug.ts`; both pipeline scripts import it.
+- **Tag** — one of the 17 entries in the synergy vocabulary
+  (`src/data/tags.ts`): `aoe`, `single-target`, `spawns-baby-balls`,
+  `spawns-allies`, `status-effect`, `pass-through`, `destroy-on-hit`,
+  `lifesteal`, `self-damage`, `ball-speed`, `bounce-scaling`, `crit`,
+  `wall-bounce`, `baby-ball-scaling`, `screen-clear`, `clone`,
+  `friendly-fire-risk`. The vocabulary is the site's own editorial model —
+  the game defines no tag system — so tag assignments and verdicts are
+  content decisions, not game data.
 - **Synergy verdict** — red/green indicator for an item against the selected
   characters, from tag overlap. Rules: characters carry
-  `{ tag, verdict, note }`; the `*passives` wildcard matches every passive;
-  with two characters selected, **red wins** and notes join with ` · `.
-  Module: `src/synergy.ts` (`verdictFor(item, selectedChars)`) — namespace
-  resolution (ball vs passive) is internal, callers pass the item only.
+  `{ tag, verdict, note }`; the `*passives` wildcard matches every passive
+  (only The Ballbearer uses it); with two characters selected, **red wins**
+  and notes join with ` · `. Module: `src/synergy.ts`
+  (`verdictFor(item, selectedChars)`) — namespace resolution is internal,
+  callers pass the item only.
+- **Character slot** — the selected-character list holds at most 2; a third
+  selection evicts the first (FIFO). One selected character shows the
+  "pick a second character…" hint. State: `src/view-state.ts`
+  (`toggleChar` action).
+- **Toast** — the hover/tap detail popup with icon, full effect text, recipe,
+  tags, and the item's current verdict. Its verdict function is injected at
+  build time (`buildAll(getVerdict)`), so hover always reads the current
+  selection. Lives in `src/renderer.ts`.
 - **Island** — the single interactive script `src/companion.ts` mounted by
   the Astro page. Owns event listening, theme, and hash routing only;
   painting, verdict logic, graph math, and data live in their own modules.
@@ -57,3 +90,21 @@ design decisions live in `.scratch/ball-x-pit-companion/map.md` and
   `verdictFor(item)` (full verdict with note, for the toast). The island
   listens to DOM events, dispatches, and hands the returned view model to
   the renderer; the view model is the test surface.
+
+## Data provenance
+
+- **Fact base** — `docs/research/game-mechanics.md`: hand-maintained
+  transcription of ballxpit.wiki.gg tables (fetched 2026-09-13, game v1.301
+  *Naturalist* update), cross-checked against the community "Ultimate Guide
+  of Evolutions" charts. Effect text is verbatim from the wiki.
+- **Pipeline** — `scripts/parse-wiki.ts` (fact base → `src/data/parsed.json`,
+  computing depth structurally) then `scripts/emit-data.ts`
+  (`parsed.json` + the hand-maintained tag/verdict maps inside it →
+  `src/data/{tags,balls,passives,characters}.ts`). The five `src/data`
+  outputs are generated — edit the fact base or the maps in `emit-data.ts`,
+  never the generated files.
+- **Icons** — 208 PNGs in `public/icons/`, downloaded from the wiki's
+  MediaWiki API; provenance and the rights-holder disclaimer live in
+  `public/icons/CREDITS.md`.
+- **Counts** (pinned by `src/data.test.ts`): 91 balls (21 base + Baby Ball +
+  69 evolved), 71 passives (54 + 17), 23 characters, 17 tags.
