@@ -1,7 +1,7 @@
 # Ball x Pit — Game mechanics fact base
 
-Research for the ball-x-pit-companion site data files. Resolves
-[`.scratch/ball-x-pit-companion/issues/02-game-mechanics-research.md`](../../.scratch/ball-x-pit-companion/issues/02-game-mechanics-research.md).
+Research for the ball-x-pit-companion site data files: the source the data
+pipeline (`scripts/parse-wiki.ts`) parses into `src/data/`.
 
 **Primary sources** (fetched 2026-09-13):
 
@@ -10,9 +10,10 @@ Research for the ball-x-pit-companion site data files. Resolves
 - Characters: <https://ballxpit.wiki.gg/wiki/Characters>
 - Fusion rules: <https://ballxpit.wiki.gg/wiki/Fusion_Mechanics> (redirects into Balls)
 
-**Cross-check source**: `references/the-ultimate-guide-of-evolutions-{1,2}.{webp,png}`
+**Cross-check source**: "the-ultimate-guide-of-evolutions-{1,2}.{webp,png}"
 ("Ultimate Guide of Evolutions" by CoupDeGlace, game version 1.301, Naturalist update,
-dated Aug 13 2026). Image 1 is the tier-grouped recipe list; image 2 is the full
+dated Aug 13 2026; local copies were kept in a gitignored `references/` directory
+and are not part of the repo). Image 1 is the tier-grouped recipe list; image 2 is the full
 21×21 base-ball fusion matrix plus Tier-2/Tier-3/Passive/Elemental summaries.
 Both sources agree — no contradictions found. The wiki pages carry a `{{Stub}}`
 notice and a TODO about damage types, so numbers below are wiki-as-of-date and
@@ -20,7 +21,8 @@ should be re-verified on game updates.
 
 **Terminology note**: the wiki distinguishes **Base Balls** (21, offered on level-up),
 **Evolved Balls** (69, made from 2+ specific level-3 balls in the Fusion Reactor), and
-**Fused Balls** (any other 2-ball combo — out of scope for the site, see map.md).
+**Fused Balls** (any other 2-ball combo — out of scope for the site: the site
+models only named evolutions, not property-stacking fusions).
 The site's "tier" grouping = evolution depth: Basic / Evolved (level-2) / Tier-3.
 Intermediate evolved balls that feed further evolutions are marked
 **Evo-intermediate** below.
@@ -151,7 +153,7 @@ the matrix shows the same pairings, including the "or" alternates and the single
 - If two balls can evolve into an evolved ball, they cannot be merely fused — except
   pairs whose only shared evolution needs 3+ balls (Nosferatu, Elemental components).
 - Fusing two Destroy balls may lose one of their abilities (community-noted caveat).
-- Fused-ball fusion (no unique result) is out of scope for the site per map.md.
+- Fused-ball fusion (no unique result) is out of scope for the site.
 
 ---
 
@@ -281,7 +283,7 @@ the default. The False Messiah is PC-exclusive via the Twitch extension.
 | The False Messiah | Bleed | Twitch audience votes on choices and random events. | Twitch extension (PC only) | interactive stream quirk |
 
 The wiki states 23 playable characters; the table lists 23 rows including Warrior
-and False Messiah. (Map note said ~21 — the count has grown with updates.)
+and False Messiah. (Earlier planning assumed ~21 — the count has grown with updates.)
 
 **AoE-incompatible / tag-relevant characters** (for verdict rules):
 The Empty Nester and The Makeshift Sisyphus have **no baby balls** → any
@@ -351,7 +353,7 @@ Per-character verdicts (proposed starting set; refine during implementation):
 
 Marked **uncertain**: the verdict table above is a proposal derived from quirk text,
 not playtested. Wiki pages do not define a synergy-tag system — this is the site's
-own model (per map.md), so verdicts are editorial.
+own model, so verdicts are editorial.
 
 ---
 
@@ -397,5 +399,5 @@ keep ~3–5 s between requests, and a descriptive User-Agent helped).
 - The synergy tag list and per-character verdicts are the site's own model —
   editorial, needs playtesting validation.
 - Character count (23) and evolved-ball count (69) are current as of the
-  Naturalist update; the map.md note said ~21 characters / 42 evolutions — both
+  Naturalist update; earlier planning assumed ~21 characters / 42 evolutions — both
   have grown, so the data model should tolerate additions.
