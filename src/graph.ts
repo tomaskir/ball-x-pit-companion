@@ -106,7 +106,7 @@ export function recipeSlots(recipes: string[][]): string[][] {
 /**
  * Render recipes in the compact per-slot notation: "a+(b/c)",
  * "(a/b)+(c/d)", "a+b+c". `renderComponent` turns a component id into
- * markup (the renderer injects its icon markup, joined by src/icon-url.ts); returning null
+ * markup (the renderer injects its icon+BASE_URL join); returning null
  * falls back to the raw id. Single-recipe items never show alternates.
  */
 export function recipeHtml(recipes: string[][], renderComponent: (id: string) => string | null): string {

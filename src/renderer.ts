@@ -3,7 +3,7 @@
 // paint(viewModel) repaints state on it — never recreating <img> elements
 // (rebuilding would blink the icons). The island (src/companion.ts) keeps
 // only event listening, theme, and hash routing; the ViewModel it paints
-// comes from src/view-state.ts.
+// comes from src/view-state.ts; the icon-URL join comes from src/icon-url.ts.
 import { BALLS } from './data/balls';
 import { PASSIVES } from './data/passives';
 import { CHARACTERS, type Character } from './data/characters';
