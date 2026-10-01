@@ -1,8 +1,8 @@
 // Interactive island: event listening, theme, and hash routing only. All
 // DOM painting lives in src/renderer.ts behind one buildAll() + paint(vm)
 // interface; all state and derivations live in src/view-state.ts behind one
-// dispatch(action) → ViewModel interface. Decisions: tickets 03/05/06/07
-// (see .scratch/ball-x-pit-companion/map.md).
+// dispatch(action) → ViewModel interface. See CONTEXT.md for the domain
+// glossary these contracts use.
 import { createViewState } from './view-state';
 import { buildAll, paint } from './renderer';
 
