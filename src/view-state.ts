@@ -5,11 +5,9 @@
 import { BALLS } from './data/balls';
 import { PASSIVES } from './data/passives';
 import { CHARACTERS, type Character } from './data/characters';
-import { byId, highlightSet, type Graph, type GraphItem } from './graph';
+import { highlightSet } from './graph';
+import { ballMap, graphFor } from './catalog';
 import { verdictFor, type Item, type Verdict } from './synergy';
-
-const ballMap = byId(BALLS);
-const passiveMap = byId(PASSIVES);
 
 export interface TileState { selected: boolean; related: boolean; dimmed: boolean; filtered: boolean; verdict: Verdict | null; }
 export interface CharCardState { selected: boolean; filtered: boolean; }
@@ -24,10 +22,6 @@ export type Action =
   | { type: 'toggleChar'; id: string }
   | { type: 'search'; query: string }
   | { type: 'clear' };
-
-/** All ids share one highlight namespace (ball and passive graphs are
- *  separate but ids never collide — ticket 03). */
-const graphFor = (id: string): Graph => (passiveMap.has(id) ? passiveMap : ballMap);
 
 export function createViewState() {
   let selectedId: string | null = null;

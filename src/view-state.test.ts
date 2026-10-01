@@ -4,6 +4,7 @@
 // selected, what the chips show) concentrate here — testable without DOM.
 import { describe, it, expect } from 'vitest';
 import { createViewState } from './view-state';
+import { graphFor } from './catalog';
 
 describe('view state: item selection (ticket 05 semantics through one interface)', () => {
   it('selecting an evolved ball marks it selected, components+descendants related, the rest dimmed', () => {

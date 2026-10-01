@@ -6,12 +6,10 @@ import { describe, it, expect } from 'vitest';
 import { BALLS } from './data/balls';
 import { PASSIVES } from './data/passives';
 import { CHARACTERS } from './data/characters';
-import { byId, highlightSet, factorizesIntoSlots } from './graph';
+import { ballMap, passiveMap } from './catalog';
+import { highlightSet, factorizesIntoSlots } from './graph';
 import { verdictFor } from './synergy';
 import { readFileSync } from 'node:fs';
-
-const ballMap = byId(BALLS);
-const passiveMap = byId(PASSIVES);
 
 describe('regression: structural depth (was wiki labels — Tumor et al. misplaced)', () => {
   // The wiki labeled Tumor, Laser Cutter, Nuclear Bomb, Time Bomb, Black Hole

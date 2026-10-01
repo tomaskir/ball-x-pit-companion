@@ -9,6 +9,11 @@ design decisions live in `.scratch/ball-x-pit-companion/map.md` and
 - **Evolution graph** — the OR-of-ANDs recipe graph (`recipes: string[][]`).
   Ball and passive graphs are strictly separate; ids never collide across
   them (ticket 03).
+- **Catalog** — the ball and passive collections, indexed, plus namespace
+  resolution. Module: `src/catalog.ts` (`ballMap`, `passiveMap`,
+  `isPassive(id)`, `itemFor(id)`, `graphFor(id)`). "Which namespace does
+  this id live in?" is decided here and nowhere else; callers pass the id
+  or item only.
 - **Depth** — evolution tier computed from recipe structure, not wiki labels:
   0 = basic, 1 = evolved (recipe includes a base ball only), 2 = tier-3
   (recipe includes an evolved component). Rule lives in `src/graph.ts`

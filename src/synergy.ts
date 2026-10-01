@@ -3,10 +3,11 @@
 // so the red-wins merge rule and the *passives wildcard have one testable
 // interface — the island keeps only DOM painting.
 //
-// Namespace resolution is an implementation detail: an item is a passive iff
-// its id appears in PASSIVES (ball and passive graphs are strictly separate;
-// ids never collide — ticket 03). Callers pass the item, not an isPassive flag.
-import { PASSIVES } from './data/passives';
+// Namespace resolution is delegated to the catalog (src/catalog.ts): an item
+// is a passive iff its id appears in PASSIVES (ball and passive graphs are
+// strictly separate; ids never collide — ticket 03). Callers pass the item,
+// not an isPassive flag.
+import { isPassive } from './catalog';
 import type { Ball } from './data/balls';
 import type { Passive } from './data/passives';
 import type { Character } from './data/characters';
@@ -15,15 +16,13 @@ export type Item = Ball | Passive;
 
 export interface Verdict { verdict: 'red' | 'green'; note?: string }
 
-const passiveIds = new Set(PASSIVES.map((p) => p.id));
-
 /** Verdict of one item against the selected characters. Null = neutral. */
 export function verdictFor(item: Item, selected: Character[]): Verdict | null {
-  const isPassive = passiveIds.has(item.id);
+  const passive = isPassive(item.id);
   const verdicts: Verdict[] = [];
   for (const ch of selected) {
     for (const rule of ch.verdicts) {
-      const wildcard = rule.tag === '*passives' && isPassive;
+      const wildcard = rule.tag === '*passives' && passive;
       if (wildcard || item.tags.includes(rule.tag)) verdicts.push({ verdict: rule.verdict, note: rule.note ? `${ch.name}: ${rule.note}` : undefined });
     }
   }

@@ -6,14 +6,11 @@
 import { BALLS } from './data/balls';
 import { PASSIVES } from './data/passives';
 import { CHARACTERS, type Character } from './data/characters';
-import { byId } from './graph';
+import { ballMap, graphFor, itemFor } from './catalog';
 import { createViewState, type ViewModel } from './view-state';
 import type { Item } from './synergy';
 
 const DEPTH_LABELS = ['Basic', 'Evolved', 'Tier-3'] as const;
-
-const ballMap = byId(BALLS);
-const passiveMap = byId(PASSIVES);
 
 const view = createViewState();
 
@@ -120,7 +117,6 @@ const tiles = new Map<string, { tile: HTMLElement; item: Item }>();
 function buildGrid(gridId: string, items: Item[], isPassive: boolean) {
   const wrap = document.getElementById(gridId)!;
   wrap.innerHTML = '';
-  const map = isPassive ? passiveMap : ballMap;
 
   for (let depth = 0 as 0 | 1 | 2; depth <= 2; depth++) {
     const tier = items.filter((i) => i.depth === depth);
@@ -138,7 +134,7 @@ function buildGrid(gridId: string, items: Item[], isPassive: boolean) {
       // evolved/tier-3 tiles show recipe components inline. All multi-recipe
       // evolutions factorize into per-slot alternates (verified over the whole
       // dataset), so slots render as x+(y/z); single-slot alternates as (x/z).
-      const comps = item.depth > 0 ? `<span class="comps">${recipeHtml(item, map)}</span>` : '';
+      const comps = item.depth > 0 ? `<span class="comps">${recipeHtml(item)}</span>` : '';
       tile.innerHTML = `<img src="${icon(item.icon)}" alt="${item.name}" width="48" height="48" loading="lazy"><span class="nm">${item.name}</span>${comps}`;
       tile.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -152,10 +148,12 @@ function buildGrid(gridId: string, items: Item[], isPassive: boolean) {
   }
 }
 
-/** Compact per-slot recipe notation: "a+(b/c)", "(a/b)+(c/d)", "a+b+c". */
-function recipeHtml(item: { recipes: string[][] }, map: Map<string, { icon: string; name: string }>): string {
+/** Compact per-slot recipe notation: "a+(b/c)", "(a/b)+(c/d)", "a+b+c".
+ *  Components resolve through the catalog (ids never collide across
+ *  namespaces — ticket 03), so no map parameter is needed. */
+function recipeHtml(item: { recipes: string[][] }): string {
   const img = (id: string) => {
-    const comp = map.get(id);
+    const comp = itemFor(id);
     return comp ? `<img src="${icon(comp.icon)}" alt="${comp.name}" title="${comp.name}" width="28" height="28">` : id;
   };
   const width = item.recipes[0].length;
@@ -230,9 +228,8 @@ function attachToast(anchor: HTMLElement, getItem: () => Item | null) {
 function buildToast(item: Item) {
   const el = document.createElement('div');
   el.className = 'toast';
-  const map = passiveMap.has(item.id) ? passiveMap : ballMap;
   // recipes are OR-of-ANDs — same compact per-slot notation as the tiles
-  const comps = item.recipes.length ? recipeHtml(item, map) : '';
+  const comps = item.recipes.length ? recipeHtml(item) : '';
   const v = view.verdictFor(item);
   el.innerHTML = `
     <h4><img src="${icon(item.icon)}" alt="" width="20" height="20">${item.name}</h4>
