@@ -80,7 +80,7 @@ export function factorizesIntoSlots(recipes: string[][]): boolean {
   if (recipes.length <= 1) return true;
   const width = recipes[0].length;
   if (recipes.some((r) => r.length !== width)) return false;
-  const cols = Array.from({ length: width }, (_, i) => [...new Set(recipes.map((r) => r[i]))]);
+  const cols = recipeSlots(recipes);
   let acc: string[][] = [[]];
   for (const col of cols) acc = acc.flatMap((a) => col.map((y) => [...a, y]));
   const key = (r: string[]) => r.join('|');
@@ -93,6 +93,8 @@ export function factorizesIntoSlots(recipes: string[][]): boolean {
  * alternate lists (first-occurrence order). This is the data behind
  * "a+(b/c)" / "(a/b)+(c/d)" rendering — meaningful only when
  * factorizesIntoSlots(recipes) holds (the dataset is verified to).
+ * Precondition: recipes is non-empty and rectangular (all rows the same
+ * width) — callers guard or guard first via factorizesIntoSlots.
  */
 export function recipeSlots(recipes: string[][]): string[][] {
   const width = recipes[0].length;

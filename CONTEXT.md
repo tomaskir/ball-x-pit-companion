@@ -12,7 +12,7 @@ design decisions live in `.scratch/ball-x-pit-companion/map.md` and
 - **Recipe notation** — the compact per-slot rendering of multi-recipe
   entities: "a+(b/c)", "(a/b)+(c/d)", "a+b+c". Faithful only because every
   multi-recipe entity factorizes into per-slot alternates
-  (`factorizesIntoSlots`); module: `src/graph.ts` (`recipeSlots(recipes)`,
+  (`factorizesIntoSlots`); Module: `src/graph.ts` (`recipeSlots(recipes)`,
   `recipeHtml(recipes, renderComponent)`) — the invariant and its rendering
   live in one place. The renderer injects the icon markup; unknown ids
   render as the raw id.
