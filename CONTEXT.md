@@ -23,8 +23,9 @@ design decisions live in `.scratch/ball-x-pit-companion/map.md` and
   or item only.
 - **Depth** — evolution tier computed from recipe structure, not wiki labels:
   0 = basic, 1 = evolved (recipe includes a base ball only), 2 = tier-3
-  (recipe includes an evolved component). Rule lives in `src/graph.ts`
-  (`structuralDepth`); the parser resolves components recursively around it.
+  (recipe includes an evolved component). Rule and recursion (tier rule,
+  cache, cycle guard) live in `src/graph.ts` (`structuralDepth`,
+  `resolveDepths`); the parser calls `resolveDepths` once per namespace.
 - **Slug** — name→id normalization (apostrophes dropped, kebab-case,
   abbreviation table for Laser H/V and hilted daggers). Single source of
   truth: `scripts/slug.ts`; both pipeline scripts import it.
