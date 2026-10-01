@@ -7,12 +7,10 @@
 // is a passive iff its id appears in PASSIVES (ball and passive graphs are
 // strictly separate; ids never collide — ticket 03). Callers pass the item,
 // not an isPassive flag.
-import { isPassive } from './catalog';
-import type { Ball } from './data/balls';
-import type { Passive } from './data/passives';
+import { isPassive, type Item } from './catalog';
 import type { Character } from './data/characters';
 
-export type Item = Ball | Passive;
+export type { Item };
 
 export interface Verdict { verdict: 'red' | 'green'; note?: string }
 

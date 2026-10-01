@@ -6,9 +6,8 @@
 import { BALLS } from './data/balls';
 import { PASSIVES } from './data/passives';
 import { CHARACTERS, type Character } from './data/characters';
-import { ballMap, graphFor, itemFor } from './catalog';
+import { ballMap, itemFor, type Item } from './catalog';
 import { createViewState, type ViewModel } from './view-state';
-import type { Item } from './synergy';
 
 const DEPTH_LABELS = ['Basic', 'Evolved', 'Tier-3'] as const;
 
@@ -114,7 +113,7 @@ function buildCharacters() {
 // <img> elements and blink the icons.
 const tiles = new Map<string, { tile: HTMLElement; item: Item }>();
 
-function buildGrid(gridId: string, items: Item[], isPassive: boolean) {
+function buildGrid(gridId: string, items: Item[]) {
   const wrap = document.getElementById(gridId)!;
   wrap.innerHTML = '';
 
@@ -276,8 +275,8 @@ function init() {
   });
 
   initRouting();
-  buildGrid('ballsGrid', BALLS, false);
-  buildGrid('passivesGrid', PASSIVES, true);
+  buildGrid('ballsGrid', BALLS);
+  buildGrid('passivesGrid', PASSIVES);
   buildCharacters();
   // initial paint: derive the view model once everything is built
   repaintWithChips(view.derive());

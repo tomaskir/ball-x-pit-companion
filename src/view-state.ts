@@ -6,7 +6,7 @@ import { BALLS } from './data/balls';
 import { PASSIVES } from './data/passives';
 import { CHARACTERS, type Character } from './data/characters';
 import { highlightSet } from './graph';
-import { ballMap, graphFor } from './catalog';
+import { itemFor, graphFor } from './catalog';
 import { verdictFor, type Item, type Verdict } from './synergy';
 
 export interface TileState { selected: boolean; related: boolean; dimmed: boolean; filtered: boolean; verdict: Verdict | null; }
@@ -46,7 +46,7 @@ export function createViewState() {
     for (const ch of CHARACTERS) {
       charCards.set(ch.id, {
         selected: selectedChars.some((c) => c.id === ch.id),
-        filtered: !!q && !(ch.name.toLowerCase().includes(q) || ch.quirk.toLowerCase().includes(q) || (ballMap.get(ch.baseBallId ?? '')?.name.toLowerCase().includes(q) ?? false)),
+        filtered: !!q && !(ch.name.toLowerCase().includes(q) || ch.quirk.toLowerCase().includes(q) || (ch.baseBallId && itemFor(ch.baseBallId)?.name.toLowerCase().includes(q) || false)),
       });
     }
     return { tiles, charCards, selectedChars, slotHint: selectedChars.length === 1 ? 'pick a second character…' : '' };

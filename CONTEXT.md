@@ -33,6 +33,8 @@ design decisions live in `.scratch/ball-x-pit-companion/map.md` and
 - **View state** — the island's state (item selection, character slots,
   search query) and every derivation from it (highlight walks, filters,
   verdict badges). Module: `src/view-state.ts` — one interface:
-  `createViewState()` → `dispatch(action) → ViewModel`. The island listens
-  to DOM events, dispatches, and paints the returned view model; the view
-  model is the test surface.
+  `createViewState()` → `dispatch(action) → ViewModel`, plus `derive()`
+  (same view model without a state change, for initial paint) and
+  `verdictFor(item)` (full verdict with note, for the toast). The island
+  listens to DOM events, dispatches, and paints the returned view model;
+  the view model is the test surface.
