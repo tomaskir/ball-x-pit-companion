@@ -8,6 +8,7 @@ import { BALLS } from './data/balls';
 import { PASSIVES } from './data/passives';
 import { CHARACTERS, type Character } from './data/characters';
 import { ballMap, itemFor, type Item } from './catalog';
+import { recipeHtml } from './graph';
 import type { Verdict } from './synergy';
 import type { ViewModel } from './view-state';
 
@@ -49,7 +50,7 @@ function buildGrid(gridId: string, items: Item[]) {
       // evolved/tier-3 tiles show recipe components inline. All multi-recipe
       // evolutions factorize into per-slot alternates (verified over the whole
       // dataset), so slots render as x+(y/z); single-slot alternates as (x/z).
-      const comps = item.depth > 0 ? `<span class="comps">${recipeHtml(item)}</span>` : '';
+      const comps = item.depth > 0 ? `<span class="comps">${recipeMarkup(item)}</span>` : '';
       tile.innerHTML = `<img src="${icon(item.icon)}" alt="${item.name}" width="48" height="48" loading="lazy"><span class="nm">${item.name}</span>${comps}`;
       tile.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -63,23 +64,15 @@ function buildGrid(gridId: string, items: Item[]) {
   }
 }
 
-/** Compact per-slot recipe notation: "a+(b/c)", "(a/b)+(c/d)", "a+b+c".
- *  Components resolve through the catalog (ids never collide across
- *  namespaces — ticket 03), so no map parameter is needed. */
-function recipeHtml(item: { recipes: string[][] }): string {
-  const img = (id: string) => {
+/** The compact per-slot notation lives in graph.ts beside its
+ *  factorizesIntoSlots invariant; this adapter supplies the icon markup
+ *  (BASE_URL join) for a component id — null for unknown ids, which the
+ *  notation renders as the raw id. */
+const recipeMarkup = (item: { recipes: string[][] }): string =>
+  recipeHtml(item.recipes, (id) => {
     const comp = itemFor(id);
-    return comp ? `<img src="${icon(comp.icon)}" alt="${comp.name}" title="${comp.name}" width="28" height="28">` : id;
-  };
-  const width = item.recipes[0].length;
-  // group recipes column-wise: recipes[i][slot]
-  const slots: string[][] = [];
-  for (let s = 0; s < width; s++) slots.push([...new Set(item.recipes.map((r) => r[s]))]);
-  const single = item.recipes.length === 1;
-  return slots
-    .map((opts) => (single || opts.length === 1 ? img(opts[0]) : `<span class="alt">${opts.map(img).join('<span class="or">/</span>')}</span>`))
-    .join('<span class="plus">+</span>');
-}
+    return comp ? `<img src="${icon(comp.icon)}" alt="${comp.name}" title="${comp.name}" width="28" height="28">` : null;
+  });
 
 /** Repaint selection/search/verdict state on the existing tiles. */
 function paintTiles(vm: ViewModel) {
@@ -194,7 +187,7 @@ function buildToast(item: Item) {
   const el = document.createElement('div');
   el.className = 'toast';
   // recipes are OR-of-ANDs — same compact per-slot notation as the tiles
-  const comps = item.recipes.length ? recipeHtml(item) : '';
+  const comps = item.recipes.length ? recipeMarkup(item) : '';
   const v = toastVerdict(item);
   el.innerHTML = `
     <h4><img src="${icon(item.icon)}" alt="" width="20" height="20">${item.name}</h4>

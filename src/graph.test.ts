@@ -2,7 +2,7 @@
 // extracted from the island (src/graph.ts). Fixture graph mirrors the real
 // ball graph's shapes: multi-recipe alternates, 3-way, 4-way, chains.
 import { describe, it, expect } from 'vitest';
-import { byId, closure, childrenOf, componentsOf, highlightSet, structuralDepth, factorizesIntoSlots, type GraphItem } from './graph';
+import { byId, closure, childrenOf, componentsOf, highlightSet, structuralDepth, factorizesIntoSlots, recipeSlots, recipeHtml, type GraphItem } from './graph';
 
 // fixture: base(0) a,b,c,d; tier-2(1) ab (a+b or a+c), ad (a+d); tier-3(2) abd (ab+d)
 const G: GraphItem[] = [
@@ -98,5 +98,32 @@ describe('factorizesIntoSlots (session fix: compact x+(y/z) notation is faithful
   it('rejects non-factorizable constraints (cross product not all valid)', () => {
     // a+d valid, b+c valid, but a+c and b+d invalid — cannot render as slots
     expect(factorizesIntoSlots([['a', 'd'], ['b', 'c']])).toBe(false);
+  });
+});
+
+describe('recipeSlots / recipeHtml (the compact x+(y/z) notation has one home)', () => {
+  it('recipeSlots groups recipes column-wise into per-slot alternates', () => {
+    // Vampire Lord shape: shared first slot, alternate second slot
+    expect(recipeSlots([['v', 'bleed'], ['v', 'dark']])).toEqual([['v'], ['bleed', 'dark']]);
+  });
+  it('recipeSlots preserves option order (first occurrence wins)', () => {
+    expect(recipeSlots([['a', 'x'], ['b', 'x']])).toEqual([['a', 'b'], ['x']]);
+  });
+  it('recipeSlots on a single recipe is just its columns', () => {
+    expect(recipeSlots([['a', 'b', 'c']])).toEqual([['a'], ['b'], ['c']]);
+  });
+  it('recipeHtml renders single-slot components as plain img + plus joins', () => {
+    const html = recipeHtml([['a', 'b']], (id) => `<img data-id="${id}">`);
+    expect(html).toBe('<img data-id="a"><span class="plus">+</span><img data-id="b">');
+  });
+  it('recipeHtml renders alternate slots as alt spans joined with or', () => {
+    const html = recipeHtml([['a', 'b'], ['a', 'c']], (id) => `<img data-id="${id}">`);
+    expect(html).toBe(
+      '<img data-id="a"><span class="plus">+</span>' +
+      '<span class="alt"><img data-id="b"><span class="or">/</span><img data-id="c"></span>'
+    );
+  });
+  it('recipeHtml falls back to the raw id when the resolver returns null', () => {
+    expect(recipeHtml([['ghost-id']], () => null)).toBe('ghost-id');
   });
 });

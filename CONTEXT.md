@@ -9,6 +9,13 @@ design decisions live in `.scratch/ball-x-pit-companion/map.md` and
 - **Evolution graph** — the OR-of-ANDs recipe graph (`recipes: string[][]`).
   Ball and passive graphs are strictly separate; ids never collide across
   them (ticket 03).
+- **Recipe notation** — the compact per-slot rendering of multi-recipe
+  entities: "a+(b/c)", "(a/b)+(c/d)", "a+b+c". Faithful only because every
+  multi-recipe entity factorizes into per-slot alternates
+  (`factorizesIntoSlots`); module: `src/graph.ts` (`recipeSlots(recipes)`,
+  `recipeHtml(recipes, renderComponent)`) — the invariant and its rendering
+  live in one place. The renderer injects the icon markup; unknown ids
+  render as the raw id.
 - **Catalog** — the ball and passive collections, indexed, plus namespace
   resolution. Module: `src/catalog.ts` (`ballMap`, `passiveMap`,
   `isPassive(id)`, `itemFor(id)`, `graphFor(id)`). "Which namespace does
@@ -33,7 +40,9 @@ design decisions live in `.scratch/ball-x-pit-companion/map.md` and
   (The renderer attaches hover/tap listeners for toasts — the island owns
   the events that *dispatch to view state*.)
 - **Renderer** — all DOM painting for the island. Module: `src/renderer.ts`
-  — one interface: `buildAll(getVerdict)` (builds grids and character cards
+  (recipe notation comes from `src/graph.ts`; the renderer only injects
+  icon markup — see **Recipe notation**) — one interface:
+  `buildAll(getVerdict)` (builds grids and character cards
   once, at startup) + `paint(viewModel)` (repaints state on the existing
   DOM; never recreates `<img>` elements — that would blink icons). Tiles,
   character cards, chips, and toasts live here; the ViewModel is its input

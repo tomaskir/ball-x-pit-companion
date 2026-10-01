@@ -87,3 +87,30 @@ export function factorizesIntoSlots(recipes: string[][]): boolean {
   const valid = new Set(recipes.map(key));
   return acc.every((c) => valid.has(key(c)));
 }
+
+/**
+ * The compact per-slot notation, grouped: recipes column-wise → per-slot
+ * alternate lists (first-occurrence order). This is the data behind
+ * "a+(b/c)" / "(a/b)+(c/d)" rendering — meaningful only when
+ * factorizesIntoSlots(recipes) holds (the dataset is verified to).
+ */
+export function recipeSlots(recipes: string[][]): string[][] {
+  const width = recipes[0].length;
+  const slots: string[][] = [];
+  for (let s = 0; s < width; s++) slots.push([...new Set(recipes.map((r) => r[s]))]);
+  return slots;
+}
+
+/**
+ * Render recipes in the compact per-slot notation: "a+(b/c)",
+ * "(a/b)+(c/d)", "a+b+c". `renderComponent` turns a component id into
+ * markup (the renderer injects its icon+BASE_URL join); returning null
+ * falls back to the raw id. Single-recipe items never show alternates.
+ */
+export function recipeHtml(recipes: string[][], renderComponent: (id: string) => string | null): string {
+  const img = (id: string) => renderComponent(id) ?? id;
+  const single = recipes.length === 1;
+  return recipeSlots(recipes)
+    .map((opts) => (single || opts.length === 1 ? img(opts[0]) : `<span class="alt">${opts.map(img).join('<span class="or">/</span>')}</span>`))
+    .join('<span class="plus">+</span>');
+}
