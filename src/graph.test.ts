@@ -112,14 +112,15 @@ describe('resolveDepths (ticket 11: the parser\'s recursion machinery has one ho
     const cyclic: Record<string, string[][]> = { a: [['b']], b: [['a']] };
     const cycIds = new Set(['a', 'b']);
     const depths = resolveDepths(['a', 'b'], cycIds, (id) => cyclic[id] ?? []);
-    // guard fires (provisional depth 1 on first visit): both come out bounded numbers
-    expect(Number.isInteger(depths.get('a'))).toBe(true);
-    expect(Number.isInteger(depths.get('b'))).toBe(true);
+    // guard pins depth 1 on first visit; each then resolves one above its
+    // highest component (1 → 2): bounded-but-undefined, deterministic here
+    expect(depths.get('a')).toBe(2);
+    expect(depths.get('b')).toBe(2);
   });
   it('self-cycle terminates', () => {
     const selfRef: Record<string, string[][]> = { x: [['x']] };
     const depths = resolveDepths(['x'], new Set(['x']), (id) => selfRef[id] ?? []);
-    expect(Number.isInteger(depths.get('x'))).toBe(true);
+    expect(depths.get('x')).toBe(2);
   });
 });
 
