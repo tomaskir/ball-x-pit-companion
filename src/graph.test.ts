@@ -2,7 +2,7 @@
 // extracted from the island (src/graph.ts). Fixture graph mirrors the real
 // ball graph's shapes: multi-recipe alternates, 3-way, 4-way, chains.
 import { describe, it, expect } from 'vitest';
-import { byId, closure, childrenOf, componentsOf, highlightSet, structuralDepth, factorizesIntoSlots, recipeSlots, recipeHtml, type GraphItem } from './graph';
+import { byId, closure, childrenOf, componentsOf, highlightSet, structuralDepth, factorizesIntoSlots, recipeSlots, recipeHtml, resolveDepths, type GraphItem } from './graph';
 
 // fixture: base(0) a,b,c,d; tier-2(1) ab (a+b or a+c), ad (a+d); tier-3(2) abd (ab+d)
 const G: GraphItem[] = [
@@ -78,6 +78,48 @@ describe('structuralDepth (session fix: depth from recipe structure, not wiki la
   });
   it('no recipes → basic', () => {
     expect(structuralDepth([], isEvolved, depthOf)).toBe(0);
+  });
+});
+
+describe('resolveDepths (ticket 11: the parser\'s recursion machinery has one home)', () => {
+  // namespace: bases a,b; evolved ab (a+b), abc (ab+c) — mirrors the ball graph's chain shape
+  const evolvedIds = new Set(['ab', 'abc']);
+  const recipes: Record<string, string[][]> = {
+    ab: [['a', 'b']],
+    abc: [['ab', 'c']],
+  };
+  const recipesOf = (id: string) => recipes[id] ?? [];
+
+  it('base-only recipe → depth 1; evolved component → depth 2', () => {
+    const depths = resolveDepths(['ab', 'abc'], evolvedIds, recipesOf);
+    expect(depths.get('ab')).toBe(1);
+    expect(depths.get('abc')).toBe(2);
+  });
+  it('entity with no recipes → depth 0', () => {
+    const depths = resolveDepths(['a'], new Set<string>(), recipesOf);
+    expect(depths.get('a')).toBe(0);
+    // and an evolved entity with no recipes is still depth 0 (structuralDepth: no recipes → 0)
+    const noRecipeEvolved = resolveDepths(['z'], new Set(['z']), () => []);
+    expect(noRecipeEvolved.get('z')).toBe(0);
+  });
+  it('shared cache: a component referenced by another entity resolves once', () => {
+    // 'ab' appears as a component of 'abc'; both must agree on its depth
+    const depths = resolveDepths(['a', 'b', 'ab', 'abc'], evolvedIds, recipesOf);
+    expect(depths.get('ab')).toBe(1);
+    expect(depths.get('abc')).toBe(depths.get('ab')! + 1);
+  });
+  it('cycle guard: a↔b cycle terminates with bounded depths (no infinite loop)', () => {
+    const cyclic: Record<string, string[][]> = { a: [['b']], b: [['a']] };
+    const cycIds = new Set(['a', 'b']);
+    const depths = resolveDepths(['a', 'b'], cycIds, (id) => cyclic[id] ?? []);
+    // guard fires (provisional depth 1 on first visit): both come out bounded numbers
+    expect(Number.isInteger(depths.get('a'))).toBe(true);
+    expect(Number.isInteger(depths.get('b'))).toBe(true);
+  });
+  it('self-cycle terminates', () => {
+    const selfRef: Record<string, string[][]> = { x: [['x']] };
+    const depths = resolveDepths(['x'], new Set(['x']), (id) => selfRef[id] ?? []);
+    expect(Number.isInteger(depths.get('x'))).toBe(true);
   });
 });
 

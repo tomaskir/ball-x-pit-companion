@@ -72,6 +72,32 @@ export function structuralDepth(recipes: string[][], isEvolvedId: (id: string) =
 }
 
 /**
+ * Resolve evolution depth for a namespace's entities: base entities (not in
+ * `evolvedIds`) are depth 0; everything else sits one above its highest
+ * component (structuralDepth), computed recursively with a cache and a
+ * provisional-depth cycle guard. `recipesOf(id)` must return the entity's
+ * OR-of-ANDs recipes; entities without recipes are depth 0. A cyclic recipe
+ * graph yields bounded-but-undefined depths (the guard pins depth 1 on first
+ * visit); the dataset is verified acyclic (factorizesIntoSlots + data tests).
+ */
+export function resolveDepths(ids: string[], evolvedIds: Set<string>, recipesOf: (id: string) => string[][]): Map<string, 0 | 1 | 2> {
+  const depths = new Map<string, 0 | 1 | 2>();
+  const depthOf = (id: string): 0 | 1 | 2 => {
+    if (!evolvedIds.has(id)) {
+      depths.set(id, 0); // base entity — still record it so the map covers every id
+      return 0;
+    }
+    if (depths.has(id)) return depths.get(id)!;
+    depths.set(id, 1); // guard against cycles
+    const d = structuralDepth(recipesOf(id), (c) => evolvedIds.has(c), depthOf);
+    depths.set(id, d);
+    return d;
+  };
+  for (const id of ids) depthOf(id);
+  return depths;
+}
+
+/**
  * All multi-recipe entities must factorize into per-slot alternates — i.e.
  * every cross product of per-column choices is a valid recipe. This is what
  * makes the compact "x+(y/z)" tile notation faithful (user-verified format).
