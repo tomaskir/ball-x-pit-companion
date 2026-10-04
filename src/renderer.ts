@@ -261,14 +261,14 @@ function buildFusionPanel() {
   root.innerHTML = `
     <p class="fusion-hint">Pick two balls to see their fusion.</p>
     <div class="fusion-head" hidden>
-      <img alt="" width="48" height="48"><span class="fusion-name"></span>
+      <img class="icon-a" alt="" width="48" height="48"><span class="name-a fusion-name"></span>
       <span class="fusion-times">×</span>
-      <img alt="" width="48" height="48"><span class="fusion-name"></span>
+      <img class="icon-b" alt="" width="48" height="48"><span class="name-b fusion-name"></span>
     </div>
     <p class="fusion-evo" hidden></p>
     <div class="fusion-body" hidden>
-      <p class="fusion-eff"></p>
-      <p class="fusion-eff"></p>
+      <p class="fusion-eff eff-a"></p>
+      <p class="fusion-eff eff-b"></p>
       <p class="fusion-cross" hidden></p>
     </div>
     <ul class="fusion-notes" hidden></ul>`;
@@ -277,14 +277,14 @@ function buildFusionPanel() {
     root,
     hint: q('.fusion-hint') as HTMLElement,
     head: q('.fusion-head') as HTMLElement,
-    iconA: q('.fusion-head img:nth-of-type(1)') as HTMLImageElement,
-    nameA: q('.fusion-head .fusion-name:nth-of-type(2)') as HTMLElement,
+    iconA: q('.icon-a') as HTMLImageElement,
+    nameA: q('.name-a') as HTMLElement,
     op: q('.fusion-times') as HTMLElement,
-    iconB: q('.fusion-head img:nth-of-type(3)') as HTMLImageElement,
-    nameB: q('.fusion-head .fusion-name:nth-of-type(5)') as HTMLElement,
+    iconB: q('.icon-b') as HTMLImageElement,
+    nameB: q('.name-b') as HTMLElement,
     evo: q('.fusion-evo') as HTMLElement,
-    effA: q('.fusion-eff:nth-of-type(1)') as HTMLElement,
-    effB: q('.fusion-eff:nth-of-type(2)') as HTMLElement,
+    effA: q('.eff-a') as HTMLElement,
+    effB: q('.eff-b') as HTMLElement,
     cross: q('.fusion-cross') as HTMLElement,
     notes: q('.fusion-notes') as HTMLElement,
   };
