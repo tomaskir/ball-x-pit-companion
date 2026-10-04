@@ -280,6 +280,40 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
   // rows. Fix: overflow-y: scroll + scrollbar-width: thin (fixed-size,
   // hover-safe in Firefox) + separation
   // paddings (styles.test.ts pins the block; aliased here).
+
+  // Bug: the composer cross-wired pairs the corpus says do NOT wire —
+  // Voluptuous Egg Sac's two-hop spawn chain (property drops at hop 2),
+  // Freeze Ray's beam-path-bound freeze, Brood Mother's non-carrying spawn
+  // channel, Mosquito King's spawn-on-hit not firing from screen hits, and
+  // Satan's debuff-only field judgment. Found by cross-checking the composer
+  // against all 31 no-cross-wire claims in docs/research/fusion-observations/.
+  // Fix: SPAWN_EXCLUDED_IDS / AOE_EXCLUDED_IDS / SPAWN_BOUND_IDS. Pinned with
+  // positive controls in fusion.test.ts (cross-wire exclusions describe).
+  it('cross-wire exclusions match the corpus no-wire evidence', async () => {
+    const { fuse } = await import('./fusion');
+    const { ballMap } = await import('./catalog');
+    const ball = (id: string) => ballMap.get(id)!;
+    for (const [a, b] of [
+      ['hemorrhage', 'voluptuous-egg-sac'], ['nuclear-bomb', 'voluptuous-egg-sac'],
+      ['freeze-ray', 'sun'], ['brood-mother', 'flash'],
+      ['flash', 'mosquito-king'], ['hemorrhage', 'satan'],
+    ] as const) {
+      expect(fuse(ball(a), ball(b))!.crossWire, `${a}+${b}`).toBeNull();
+    }
+  });
+
+  // Bug: fused balls improve component numbers (Overgrowth threshold 3 → 2,
+  // spawn counts +1/bound, chances up) — the composer showed base numbers.
+  // Fix: FUSED_STATS override table from the transcribed tooltips; exact-
+  // substring replacements so a wiki rewording fails loudly. Pinned in
+  // fusion.test.ts (fused-stat overrides describe).
+  it('fused-stat overrides apply (Overgrowth threshold 3 → 2 et al.)', async () => {
+    const { fuse } = await import('./fusion');
+    const { ballMap } = await import('./catalog');
+    const r = fuse(ballMap.get('overgrowth')!, ballMap.get('flash')!)!;
+    expect(r.paragraphs[0]).toContain('Upon reaching 2, consume all stacks');
+  });
+
   it('fusion list scrollbar is permanent and separated (was hover-only, blended)', () => {
     const css = readFileSync('src/styles/global.css', 'utf8');
     const block = css.match(/\.fusion-list\s*\{[^}]*\}/)![0];

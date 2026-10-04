@@ -121,3 +121,74 @@ describe('fuse', () => {
     expect(fg.crossWire).toBeNull();
   });
 });
+
+describe('fused-stat overrides (observed, from transcribed tooltips)', () => {
+  it('Overgrowth threshold drops 3 → 2 in fusions (Overgrowth × Flash tooltip)', () => {
+    const r = fuse(ball('overgrowth'), ball('flash'))!;
+    expect(r.paragraphs[0]).toContain('Upon reaching 2, consume all stacks');
+    expect(r.paragraphs[0]).not.toContain('reaching 3');
+  });
+
+  it('spawn counts gain +1 per bound (Egg Sac 2–4 → 3–5)', () => {
+    const r = fuse(ball('egg-sac'), ball('poison'))!;
+    expect(r.paragraphs.find((p) => p.includes('baby balls'))).toContain('Explodes into 3–5 baby balls');
+  });
+
+  it('Maggot babies 1–2 → 2–3 (Overgrowth × Maggot tooltip)', () => {
+    const r = fuse(ball('maggot'), ball('overgrowth'))!;
+    expect(r.paragraphs.find((p) => p.includes('Infest'))).toContain('explode into 2–3 baby balls');
+  });
+
+  it('Reaper kill chance 10% → 15% and heal 5 → 7 (Satan × Reaper tooltip)', () => {
+    const r = fuse(ball('reaper'), ball('satan'))!;
+    const p = r.paragraphs.find((p) => p.includes('kill enemies on impact'))!;
+    expect(p).toContain('15% chance');
+    expect(p).toContain('healing you for 7 health');
+  });
+
+  it('overrides are per-ball, not global (unrelated balls keep base numbers)', () => {
+    const r = fuse(ball('freeze'), ball('light'))!;
+    expect(r.paragraphs[0]).toContain('4% chance to freeze');
+    expect(r.paragraphs[1]).toContain('Blinds enemies on hit for 3 seconds');
+  });
+
+  it('damage rolls in overridden text still abstract to X', () => {
+    const r = fuse(ball('overgrowth'), ball('flash'))!;
+    // the fused tooltip's 150–200 explosion is a damage roll → X
+    expect(r.paragraphs[0]).toContain('deal X damage to all enemies');
+  });
+});
+
+describe('cross-wire exclusions (corpus no-cross-wire evidence)', () => {
+  it('VES two-hop spawn chain drops the property (Steam: Assassin × VES, Hemorrhage × VES)', () => {
+    expect(fuse(ball('hemorrhage'), ball('voluptuous-egg-sac'))!.crossWire).toBeNull();
+    expect(fuse(ball('nuclear-bomb'), ball('voluptuous-egg-sac'))!.crossWire).toBeNull();
+  });
+
+  it('Freeze Ray freeze is beam-path-bound — Sun AOE does not apply it', () => {
+    expect(fuse(ball('freeze-ray'), ball('sun'))!.crossWire).toBeNull();
+  });
+
+  it('Brood Mother spawn channel does not carry the partner property', () => {
+    expect(fuse(ball('brood-mother'), ball('flash'))!.crossWire).toBeNull();
+  });
+
+  it('Mosquito King spawn-on-hit does not fire from screen hits', () => {
+    expect(fuse(ball('flash'), ball('mosquito-king'))!.crossWire).toBeNull();
+  });
+
+  it('Satan field judgment is debuff-only — cannot carry on-hit statuses', () => {
+    expect(fuse(ball('hemorrhage'), ball('satan'))!.crossWire).toBeNull();
+  });
+
+  it('Blizzard freeze stays icicle-bound (status-vs-spawn, both Flash pairs)', () => {
+    expect(fuse(ball('blizzard'), ball('flash'))!.crossWire).toBeNull();
+  });
+
+  it('positive controls keep wiring (playtest + tooltip pairs)', () => {
+    expect(fuse(ball('overgrowth'), ball('flash'))!.crossWire).not.toBeNull();
+    expect(fuse(ball('flicker'), ball('radiation-beam'))!.crossWire).not.toBeNull();
+    expect(fuse(ball('overgrowth'), ball('maggot'))!.crossWire).not.toBeNull();
+    expect(fuse(ball('black-hole'), ball('maggot'))!.crossWire).not.toBeNull();
+  });
+});
