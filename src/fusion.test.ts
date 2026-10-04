@@ -146,6 +146,31 @@ describe('fused-stat overrides (observed, from transcribed tooltips)', () => {
     expect(p).toContain('healing you for 7 health');
   });
 
+  it('no hard-coded fused damage values in FUSED_STATS (unchanged base constants allowed)', () => {
+    // The no-damage-tracking decision: FUSED_STATS replacement values must
+    // never introduce concrete damage rolls that the base text does not
+    // already have. An output-level scan cannot catch violations
+    // (abstractDamage runs after the table and cleans up), so this scans
+    // the module source: extract each [from, to] pair, diff their damage
+    // rolls — any roll present in `to` but not in `from` is a fused value
+    // and fails. Rolls shared by both sides are unchanged mechanic
+    // constants (e.g. bleed's 1 damage per stack) and are allowed.
+    const { readFileSync } = require('node:fs') as typeof import('node:fs');
+    const src = readFileSync(new URL('./fusion.ts', import.meta.url).pathname, 'utf8');
+    const table = src.match(/const FUSED_STATS[\s\S]*?^};/m)![0];
+    const strings = [...table.matchAll(/'((?:[^'\\]|\\.)*)'/g)].map((m) => m[1]);
+    expect(strings.length % 2, 'FUSED_STATS pairs must be complete').toBe(0);
+    const beforeDamage = /\b\d+(?:\.\d+)?(?:[–-]\d+(?:\.\d+)?)?(?:x|%)?(?= damage)/gi;
+    const afterDeal = /\b(?:deals?|dealt|dealing) \d+(?:\.\d+)?(?:[–-]\d+(?:\.\d+)?)?(?![\dx%]|\.\d)/gi;
+    const rolls = (s: string) => [...(s.match(beforeDamage) ?? []), ...(s.match(afterDeal) ?? [])];
+    for (let i = 0; i < strings.length; i += 2) {
+      const [from, to] = [strings[i], strings[i + 1]];
+      const fromRolls = new Set(rolls(from));
+      const introduced = rolls(to).filter((r) => !fromRolls.has(r));
+      expect(introduced, `FUSED_STATS introduces fused damage rolls: ${introduced.join(', ')}`).toEqual([]);
+    }
+  });
+
   it('overrides are per-ball, not global (unrelated balls keep base numbers)', () => {
     const r = fuse(ball('freeze'), ball('light'))!;
     expect(r.paragraphs[0]).toContain('4% chance to freeze');

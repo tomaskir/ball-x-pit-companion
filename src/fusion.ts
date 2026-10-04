@@ -113,17 +113,19 @@ const FUSED_STATS: Record<string, [string, string][]> = {
   // Egg Sac X Poison tooltip
   poison: [
     ['(max 5 stacks). Poison lasts for 6 seconds and each stack deals 1–4 damage per second',
-     '(max 8 stacks). Poison lasts for 9 seconds and each stack deals 10–25 damage per second'],
+     '(max 8 stacks). Poison lasts for 9 seconds and each stack deals X damage per second'],
   ],
   // Satan × Reaper tooltip
   satan: [
     ['(max 5 stacks), dealing 10–20 damage per stack per second',
-     '(max 5 stacks), dealing 58–116 damage per stack per second'],
+     '(max 5 stacks), dealing X damage per stack per second'],
     ['makes them go berserk (15–24 damage to adjacent enemies every second)',
-     'makes them go berserk (81–116 damage to adjacent enemies every second)'],
+     'makes them go berserk (X damage to adjacent enemies every second)'],
   ],
   // Bleed X Freeze tooltip (partial — the freeze half was below the frame)
   bleed: [
+    // narrow replacement: only the stacks change (the 1-damage-per-stack tick
+    // is an unchanged mechanic constant, not a fused roll)
     ['Inflicts 2 stacks of bleed. Bleeding enemies receive 1 damage per stack when hit by a ball (max 8 stacks).',
      'Inflicts 4 stacks of bleed. Bleeding enemies receive 1 damage per stack when hit by a ball (max 14 stacks).'],
   ],
