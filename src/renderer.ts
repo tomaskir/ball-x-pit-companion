@@ -242,17 +242,27 @@ let fusionPanel: {
 function buildFusionList() {
   const wrap = document.getElementById('fusionList')!;
   wrap.innerHTML = '';
-  for (const ball of fusionBalls()) {
-    const row = document.createElement('button');
-    row.className = 'fusion-row';
-    row.dataset.id = ball.id;
-    row.innerHTML = `<img src="${icon(ball.icon)}" alt="${ball.name}" width="36" height="36" loading="lazy"><span class="nm">${ball.name}</span>`;
-    row.addEventListener('click', (e) => {
-      e.stopPropagation();
-      document.dispatchEvent(new CustomEvent('fusion-select', { detail: ball.id }));
-    });
-    fusionRowEls.set(ball.id, { row, ball });
-    wrap.appendChild(row);
+  // tier order (structural depth), name within tier — mirroring the Balls page
+  const balls = fusionBalls();
+  for (let depth = 0 as 0 | 1 | 2; depth <= 2; depth++) {
+    const tier = balls.filter((b) => b.depth === depth);
+    if (!tier.length) continue;
+    const head = document.createElement('h3');
+    head.className = 'fusion-list-heading';
+    head.textContent = `${DEPTH_LABELS[depth]} (${tier.length})`;
+    wrap.appendChild(head);
+    for (const ball of tier) {
+      const row = document.createElement('button');
+      row.className = 'fusion-row';
+      row.dataset.id = ball.id;
+      row.innerHTML = `<img src="${icon(ball.icon)}" alt="${ball.name}" width="36" height="36" loading="lazy"><span class="nm">${ball.name}</span>`;
+      row.addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.dispatchEvent(new CustomEvent('fusion-select', { detail: ball.id }));
+      });
+      fusionRowEls.set(ball.id, { row, ball });
+      wrap.appendChild(row);
+    }
   }
 }
 
@@ -326,8 +336,9 @@ function paintFusion(vm: ViewModel) {
   p.iconA.alt = a.name;
   p.nameA.textContent = a.name;
   if (!b || !f) {
-    p.iconB.removeAttribute('src');
-    p.iconB.alt = '';
+    // hide the second icon slot entirely — an src-less <img> renders as a
+    // broken-image box
+    p.iconB.style.display = 'none';
     p.nameB.textContent = '';
     p.hint.textContent = '…pick a second ball.';
     p.hint.hidden = false;
@@ -336,6 +347,11 @@ function paintFusion(vm: ViewModel) {
     p.notes.hidden = true;
     return;
   }
+  p.hint.hidden = true;
+  p.iconB.style.display = '';
+  if (p.iconB.getAttribute('src') !== icon(b.icon)) p.iconB.src = icon(b.icon);
+  p.iconB.alt = b.name;
+  p.nameB.textContent = b.name;
   p.hint.hidden = true;
   if (p.iconB.getAttribute('src') !== icon(b.icon)) p.iconB.src = icon(b.icon);
   p.iconB.alt = b.name;

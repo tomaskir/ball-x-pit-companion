@@ -12,9 +12,9 @@ import { fileURLToPath } from 'node:url';
  *  from the source (a drift here is exactly the bug class being pinned). */
 function skeletonHtml(): string {
   // Under the jsdom environment import.meta.url is an http URL (jsdom's URL
-  // global wins), so resolve the source path from the CJS-style __dirname
-  // equivalent instead: the test file's own directory.
-  const src = readFileSync(new URL('file:///workspace/src/renderer.ts').pathname, 'utf8');
+  // global wins), so join the repo-relative path from the process CWD — the
+  // repo root, both locally and in CI (`vitest run` from the repo root).
+  const src = readFileSync('src/renderer.ts', 'utf8');
   const m = src.match(/root\.innerHTML = `([\s\S]*?)`;/);
   if (!m) throw new Error('buildFusionPanel skeleton not found in renderer.ts');
   return m[1];
