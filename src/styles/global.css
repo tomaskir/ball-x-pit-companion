@@ -45,6 +45,10 @@
 
 * { box-sizing: border-box; }
 
+/* The hidden attribute must always win — author display rules (e.g.
+   .fusion-head's flex) would otherwise override the UA's [hidden] rule. */
+[hidden] { display: none !important; }
+
 body {
   margin: 0;
   background: var(--bg);
@@ -353,9 +357,13 @@ footer a { color: var(--gold); }
   gap: 2px;
   max-height: calc(100vh - 140px);
   overflow-y: scroll; /* always show the scrollbar, not just on hover */
-  scrollbar-width: auto;
-  scrollbar-color: var(--gold-dim) transparent;
-  padding-right: 4px;
+  /* Firefox: scrollbar-width auto can still render hover-only in some
+     themes; `stable` keeps the gutter permanent. The color pair makes the
+     thumb visible against the page background in both themes. */
+  scrollbar-width: stable;
+  scrollbar-color: var(--gold) var(--panel);
+  padding-right: 8px; /* keep the scrollbar off the rows */
+  margin-right: 4px; /* and off the panel edge */
 }
 
 .fusion-list-heading {
