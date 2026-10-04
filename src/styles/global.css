@@ -357,10 +357,13 @@ footer a { color: var(--gold); }
   gap: 2px;
   max-height: calc(100vh - 140px);
   overflow-y: scroll; /* always show the scrollbar, not just on hover */
-  /* Firefox: scrollbar-width auto can still render hover-only in some
-     themes; `stable` keeps the gutter permanent. The color pair makes the
-     thumb visible against the page background in both themes. */
-  scrollbar-width: stable;
+  /* Firefox: `thin` selects the custom-rendered scrollbar, which is a fixed
+     size — it never expands on hover the way the classic (auto) scrollbar
+     does, so it can't overlap the row borders. `stable` is not a Firefox
+     value (Chrome-only); with `auto` Firefox falls back to classic
+     hover-expanding scrollbars. The color pair keeps the thumb visible
+     against the page background in both themes. */
+  scrollbar-width: thin;
   scrollbar-color: var(--gold) var(--panel);
   padding-right: 8px; /* keep the scrollbar off the rows */
   margin-right: 4px; /* and off the panel edge */

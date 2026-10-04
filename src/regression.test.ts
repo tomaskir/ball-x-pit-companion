@@ -277,12 +277,13 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
   });
 
   // Bug: the fusion pick list's scrollbar was hover-only and blended into the
-  // rows. Fix: overflow-y: scroll + scrollbar-width: stable + separation
+  // rows. Fix: overflow-y: scroll + scrollbar-width: thin (fixed-size,
+  // hover-safe in Firefox) + separation
   // paddings (styles.test.ts pins the block; aliased here).
   it('fusion list scrollbar is permanent and separated (was hover-only, blended)', () => {
     const css = readFileSync('src/styles/global.css', 'utf8');
     const block = css.match(/\.fusion-list\s*\{[^}]*\}/)![0];
     expect(block).toContain('overflow-y: scroll');
-    expect(block).toContain('scrollbar-width: stable');
+    expect(block).toContain('scrollbar-width: thin');
   });
 });

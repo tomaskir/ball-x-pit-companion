@@ -16,7 +16,10 @@ describe('global stylesheet', () => {
     const css = readFileSync('src/styles/global.css', 'utf8');
     const block = css.match(/\.fusion-list\s*\{[^}]*\}/)![0];
     expect(block).toContain('overflow-y: scroll');
-    expect(block).toContain('scrollbar-width: stable');
+    // `thin` — the custom-rendered Firefox scrollbar has a fixed size and
+    // never expands on hover (the classic `auto` scrollbar does, overlapping
+    // the row borders). `stable` is not a valid scrollbar-width value.
+    expect(block).toContain('scrollbar-width: thin');
     expect(block).toContain('padding-right: 8px');
   });
 });
