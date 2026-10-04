@@ -201,8 +201,6 @@ export function fuse(a: Ball, b: Ball): FusionResult | null {
     crossWire: crossWire(a, b),
     evolvesInstead: evo ? { id: evo.id, name: evo.name } : null,
     notes: [
-      'Fused damage rolls are shown as X — the game’s fused numbers are not derivable from public sources.',
-      'Where in-game fused tooltips have been transcribed (11 balls), the observed fused stat changes are applied; all other numbers are the components’ own.',
       'Composition is modeled from community-observed rules; verify against the game.',
     ],
   };

@@ -20,6 +20,16 @@ describe('global stylesheet', () => {
     // never expands on hover (the classic `auto` scrollbar does, overlapping
     // the row borders). `stable` is not a valid scrollbar-width value.
     expect(block).toContain('scrollbar-width: thin');
-    expect(block).toContain('padding-right: 8px');
+    expect(block).toContain('padding-right: 12px');
+    // rows keep clearance from the scrollbar gutter (Firefox hover-expansion)
+    expect(css).toMatch(/\.fusion-list > \.fusion-row\s*\{[^}]*margin-right: 6px/);
+  });
+
+  it('both picked slots highlight identically (slot-2 was visually subtle)', () => {
+    const css = readFileSync('src/styles/global.css', 'utf8');
+    const merged = css.match(/\.fusion-row\.slot-1,\s*\.fusion-row\.slot-2\s*\{[^}]*\}/);
+    expect(merged, 'slot-1 and slot-2 share one highlight rule').not.toBeNull();
+    expect(merged![0]).toContain('border-color: var(--gold)');
+    expect(merged![0]).toContain('box-shadow: 0 0 6px var(--glow)');
   });
 });

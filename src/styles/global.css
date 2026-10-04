@@ -365,8 +365,16 @@ footer a { color: var(--gold); }
      against the page background in both themes. */
   scrollbar-width: thin;
   scrollbar-color: var(--gold) var(--panel);
-  padding-right: 8px; /* keep the scrollbar off the rows */
+  /* The scrollbar renders INSIDE the padding box, over the content edge —
+     padding alone cannot separate it from the rows. Reserve real space by
+     narrowing the rows instead: the gutter (scrollbar + this margin) stays
+     clear of the row boxes even if a browser expands the thumb on hover. */
+  padding-right: 12px;
   margin-right: 4px; /* and off the panel edge */
+}
+
+.fusion-list > .fusion-row {
+  margin-right: 6px; /* clearance against the scrollbar gutter */
 }
 
 .fusion-list-heading {
@@ -403,8 +411,9 @@ footer a { color: var(--gold); }
 
 .fusion-row .nm { font-size: 12px; }
 
-.fusion-row.slot-1 { border-color: var(--gold); box-shadow: 0 0 6px var(--glow); }
-.fusion-row.slot-2 { border-color: var(--gold-dim); background: var(--panel); box-shadow: inset 0 0 0 1px var(--gold-dim); }
+/* both picked slots highlight identically — the badge number tells them apart */
+.fusion-row.slot-1,
+.fusion-row.slot-2 { border-color: var(--gold); box-shadow: 0 0 6px var(--glow); }
 .fusion-row.slot-1::after { content: '1'; color: var(--gold); font-size: 11px; margin-left: auto; }
 .fusion-row.slot-2::after { content: '2'; color: var(--gold); font-size: 11px; margin-left: auto; }
 .fusion-row.filtered { display: none; }

@@ -314,6 +314,15 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
     expect(r.paragraphs[0]).toContain('Upon reaching 2, consume all stacks');
   });
 
+  // Bug: slot-2 pick highlight was visually subtle (dim border, no glow) —
+  // users read it as "not highlighted" even though the class was applied.
+  // Fix: slot-1 and slot-2 share one gold+glow highlight rule; the badge
+  // number distinguishes them. Pinned in styles.test.ts.
+  it('both picked slots highlight identically (slot-2 was visually subtle)', () => {
+    const css = readFileSync('src/styles/global.css', 'utf8');
+    expect(css).toMatch(/\.fusion-row\.slot-1,\s*\.fusion-row\.slot-2\s*\{[^}]*border-color: var\(--gold\)/);
+  });
+
   it('fusion list scrollbar is permanent and separated (was hover-only, blended)', () => {
     const css = readFileSync('src/styles/global.css', 'utf8');
     const block = css.match(/\.fusion-list\s*\{[^}]*\}/)![0];

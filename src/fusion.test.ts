@@ -94,7 +94,7 @@ describe('fuse', () => {
     expect(r.name).toBe('Glacier × Flash');
     expect(r.paragraphs[0]).toContain('glacial spikes');
     expect(r.paragraphs[1]).toContain('blinds them');
-    expect(r.notes.length).toBeGreaterThan(0);
+    expect(r.notes).toEqual(['Composition is modeled from community-observed rules; verify against the game.']);
   });
 
   it('returns null for self-fusion', () => {
