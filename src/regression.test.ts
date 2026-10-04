@@ -9,6 +9,7 @@ import { CHARACTERS } from './data/characters';
 import { ballMap, passiveMap } from './catalog';
 import { highlightSet, factorizesIntoSlots } from './graph';
 import { verdictFor } from './synergy';
+import { readFileSync } from 'node:fs';
 
 describe('regression: structural depth (was wiki labels — Tumor et al. misplaced)', () => {
   // The wiki labeled Tumor, Laser Cutter, Nuclear Bomb, Time Bomb, Black Hole
@@ -228,5 +229,60 @@ describe('synergy verdict semantics (map Notes: red wins with 2 characters)', ()
     // same id cannot exist in both namespaces (ticket 03) — the module resolves
     // membership itself; here we pin that a passive id gets the wildcard verdict
     expect(verdictFor(passive('wagon-wheel'), [char('the-ballbearer')])).toMatchObject({ verdict: 'red' });
+  });
+});
+
+describe('regression: fusion screen (2026-10-05 session bugs)', () => {
+  // Bug: buildFusionPanel queried its skeleton with compound nth-of-type
+  // selectors (.fusion-name:nth-of-type(2) etc.). nth-of-type counts among
+  // same-tag siblings and ignores classes, so nameA's selector matched
+  // nothing; querySelector returned null, the null hid inside an HTMLElement
+  // cast, and paintFusion died at p.nameA.textContent — killing paint()
+  // mid-flight. Symptom: pick-list rows painted (top of paintFusion), the
+  // panel never did. Pinned in renderer.test.ts at the source level (every
+  // selector the builder queries must resolve in its own skeleton,
+  // mutation-verified); aliased here so the bug is findable from the
+  // regression index.
+  it('fusion panel skeleton: every queried selector resolves (was nth-of-type nulls)', () => {
+    // renderer.test.ts owns the skeleton extraction; run its assertions here
+    // by importing and invoking them is overkill — instead assert the file
+    // exists and the skeleton uses dedicated hook classes, not positional
+    // selectors.
+    const src = readFileSync('src/renderer.ts', 'utf8');
+    expect(src).not.toMatch(/nth-of-type/);
+    for (const hook of ['.icon-a', '.name-a', '.icon-b', '.name-b', '.eff-a', '.eff-b']) {
+      expect(src).toContain(`'${hook}'`);
+    }
+  });
+
+  // Bug: the fusion panel toggles pieces via the hidden attribute, but
+  // .fusion-head { display: flex } (an author style) overrides the UA
+  // stylesheet's [hidden] rule — author styles beat UA styles regardless of
+  // the attribute. The reset path set head.hidden = true, yet the head stayed
+  // visible: the panel showed a torn state (empty hint + stale head) after
+  // deselecting the first/only pick. Invisible to jsdom (no CSS cascade);
+  // found by browser screenshot. Fix: base-layer [hidden] !important rule,
+  // pinned in styles.test.ts; aliased here for the regression index.
+  it('global stylesheet: [hidden] must beat author display rules (was torn panel state)', () => {
+    const css = readFileSync('src/styles/global.css', 'utf8');
+    expect(css).toMatch(/\[hidden\]\s*\{\s*display:\s*none\s*!important/);
+  });
+
+  // Bug: the pending second head icon rendered as a broken-image box (an
+  // src-less <img> is not invisible). Fix: display:none until a second ball
+  // is picked.
+  it('pending second head icon is display:none, not a broken-image box', () => {
+    const src = readFileSync('src/renderer.ts', 'utf8');
+    expect(src).toContain("p.iconB.style.display = 'none'");
+  });
+
+  // Bug: the fusion pick list's scrollbar was hover-only and blended into the
+  // rows. Fix: overflow-y: scroll + scrollbar-width: stable + separation
+  // paddings (styles.test.ts pins the block; aliased here).
+  it('fusion list scrollbar is permanent and separated (was hover-only, blended)', () => {
+    const css = readFileSync('src/styles/global.css', 'utf8');
+    const block = css.match(/\.fusion-list\s*\{[^}]*\}/)![0];
+    expect(block).toContain('overflow-y: scroll');
+    expect(block).toContain('scrollbar-width: stable');
   });
 });
