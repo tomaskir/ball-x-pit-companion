@@ -18,6 +18,8 @@ import '../styles/global.css';
         <button class="tab-btn active" data-section="balls">Balls</button>
         <button class="tab-btn" data-section="passives">Passives</button>
         <button class="tab-btn" data-section="characters">Characters</button>
+        <span class="tab-sep" aria-hidden="true"></span>
+        <button class="tab-btn" data-section="fusions">Fusions</button>
       </nav>
       <div class="chips" id="charChips"></div>
       <span class="hint" id="slotHint"></span>
@@ -36,6 +38,12 @@ import '../styles/global.css';
       </div>
       <div class="section-view" data-section="characters" hidden>
         <div id="charactersGrid" class="char-grid"></div>
+      </div>
+      <div class="section-view" data-section="fusions" hidden>
+        <div class="fusion-layout">
+          <div id="fusionList" class="fusion-list" aria-label="Pick two balls to fuse"></div>
+          <div id="fusionPanel" class="fusion-panel"></div>
+        </div>
       </div>
     </main>
 

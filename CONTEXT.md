@@ -10,10 +10,15 @@ Workflow guidance lives in `AGENTS.md`; the game-data fact base is
 The wiki (ballxpit.wiki.gg) distinguishes two mechanics that fan sites conflate:
 
 - **Evolution** — combining 2+ specific level-3 balls in the Fusion Reactor into
-  a new *named* Evolved Ball (69 of them as of game v1.301). The site models
-  these and only these.
+  a new *named* Evolved Ball (69 of them as of game v1.301). Modeled from the
+  fact base.
 - **Fusion** — merging any two unfused level-3 balls into a property-stacking
-  ball with no unique identity. Out of scope for the site.
+  ball with no unique identity. Modeled **editorially** on the Fusions screen:
+  the game stores no fusion table (see `docs/research/fusion-completeness.md`),
+  so `src/fusion.ts` composes fused-ball text from the two components' effect
+  text using community-observed rules — damage rolls abstracted to "X" (fused
+  numbers are not derivable from public sources). This is the site's model,
+  not game data.
 
 Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special),
 **Base Passives** (54), **Evolved Passives** (17), **Fusion Reactor**.
@@ -72,24 +77,39 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   the Astro page. Owns event listening, theme, and hash routing only;
   painting, verdict logic, graph math, and data live in their own modules.
   (The renderer attaches hover/tap listeners for toasts — the island owns
-  the events that *dispatch to view state*.)
+  the events that *dispatch to view state*; the fusion screen's picks
+  persist across Esc/empty-space clears by design — the panel is the
+  screen's working state.)
 - **Renderer** — all DOM painting for the island. Module: `src/renderer.ts`
   (recipe notation comes from `src/graph.ts`; the renderer only injects
   icon markup — see **Recipe notation**; the icon-URL join comes from
   `src/icon-url.ts`) — one interface:
-  `buildAll(getVerdict)` (builds grids and character cards
-  once, at startup) + `paint(viewModel)` (repaints state on the existing
-  DOM; never recreates `<img>` elements — that would blink icons). Tiles,
-  character cards, chips, and toasts live here; the ViewModel is its input
-  and the test surface stays `view-state.ts`.
+  `buildAll(getVerdict)` (builds grids, character cards, the fusion pick
+  list, and the fusion panel skeleton once, at startup) + `paint(viewModel)`
+  (repaints state on the existing DOM; never recreates `<img>` elements —
+  that would blink icons; the fusion panel's head icons are built once and
+  repainted in place). Tiles, character cards, chips, toasts, and the fusion
+  screen live here; the ViewModel is its input and the test surface stays
+  `view-state.ts`.
 - **View state** — the island's state (item selection, character slots,
-  search query) and every derivation from it (highlight walks, filters,
-  verdict badges). Module: `src/view-state.ts` — one interface:
-  `createViewState()` → `dispatch(action) → ViewModel`, plus `derive()`
-  (same view model without a state change, for initial paint) and
-  `verdictFor(item)` (full verdict with note, for the toast). The island
+  fusion picks, search query) and every derivation from it (highlight walks,
+  filters, verdict badges, the composed fusion). Module: `src/view-state.ts`
+  — one interface: `createViewState()` → `dispatch(action) → ViewModel`, plus
+  `derive()` (same view model without a state change, for initial paint) and
+  `verdictFor(item)` (full verdict with note, for the toast). Fusion picks
+  are clear-and-restart (a third pick drops both; re-clicking a pick
+  deselects it); the composed fusion comes from `src/fusion.ts`. The island
   listens to DOM events, dispatches, and hands the returned view model to
   the renderer; the view model is the test surface.
+- **Fusion composer** — pure composition of a fused ball from two components:
+  name "A × B" (first-selected first), component effect paragraphs in name
+  order with damage rolls abstracted to "X", a role-named cross-wire line
+  when a spawn/AOE channel can carry the partner's on-hit status, and the
+  evolve-instead note for 2-component evolution recipes. Module:
+  `src/fusion.ts` (`fuse(a, b)`, `fusionBalls()`, `fusionName`,
+  `abstractDamage`, `crossWire`, `evolvesInstead`) — the site's editorial
+  model of fusion, not game data; the composition rules and their evidence
+  live in `docs/research/fusion-observations/`.
 
 ## Data provenance
 

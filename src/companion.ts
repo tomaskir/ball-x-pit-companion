@@ -29,12 +29,12 @@ function initTheme() {
 
 // `section` is pure UI routing (hash sync) — not part of the view model.
 
-let section: 'balls' | 'passives' | 'characters' = 'balls';
+let section: 'balls' | 'passives' | 'characters' | 'fusions' = 'balls';
 
 function initRouting() {
   const apply = () => {
     const hash = location.hash.replace(/^#\/?/, '') || 'balls';
-    if (['balls', 'passives', 'characters'].includes(hash)) showSection(hash as typeof section, false);
+    if (['balls', 'passives', 'characters', 'fusions'].includes(hash)) showSection(hash as typeof section, false);
   };
   addEventListener('hashchange', apply);
   apply();
@@ -63,13 +63,15 @@ function init() {
     if (e.key === 'Escape') paint(view.dispatch({ type: 'clear' }));
   });
   document.addEventListener('click', (e) => {
-    // empty space clears selection
-    if (!(e.target as HTMLElement).closest('.tile, .char-card, .chip, .toast')) paint(view.dispatch({ type: 'clear' }));
+    // empty space clears selection (fusion picks persist — the panel is the
+    // fusion screen's working state, not a transient highlight)
+    if (!(e.target as HTMLElement).closest('.tile, .char-card, .chip, .toast, .fusion-row, .fusion-panel')) paint(view.dispatch({ type: 'clear' }));
   });
 
   // grid/card clicks come up as custom events so the renderer stays paint-only
   document.addEventListener('tile-select', (e) => paint(view.dispatch({ type: 'toggleItem', id: (e as CustomEvent<string>).detail })));
   document.addEventListener('char-select', (e) => paint(view.dispatch({ type: 'toggleChar', id: (e as CustomEvent<string>).detail })));
+  document.addEventListener('fusion-select', (e) => paint(view.dispatch({ type: 'toggleFusion', id: (e as CustomEvent<string>).detail })));
 
   initRouting();
   buildAll((item) => view.verdictFor(item));

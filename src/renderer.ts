@@ -4,10 +4,11 @@
 // (rebuilding would blink the icons). The island (src/companion.ts) keeps
 // only event listening, theme, and hash routing; the ViewModel it paints
 // comes from src/view-state.ts; the icon-URL join comes from src/icon-url.ts.
-import { BALLS } from './data/balls';
+import { BALLS, type Ball } from './data/balls';
 import { PASSIVES } from './data/passives';
 import { CHARACTERS, type Character } from './data/characters';
 import { ballMap, itemFor, type Item } from './catalog';
+import { fusionBalls } from './fusion';
 import { recipeHtml } from './graph';
 import { iconUrl } from './icon-url';
 import type { Verdict } from './synergy';
@@ -214,24 +215,175 @@ function hideToast() {
   toastEl = null;
 }
 
+// ---------- fusion screen ----------
+
+// Fusion rows are built once (never recreate <img> — same invariant as the
+// grids); pick order and filtering repaint classes in place. The pick list
+// mirrors the game's Fusion Reactor: any two of the fusable upgrade entities.
+const fusionRowEls = new Map<string, { row: HTMLElement; ball: Ball }>();
+// Panel skeleton is built once with icon-bearing slots; paint() toggles the
+// pieces in place — never recreating <img> (same invariant as the grids).
+let fusionPanel: {
+  root: HTMLElement;
+  head: HTMLElement;
+  iconA: HTMLImageElement;
+  nameA: HTMLElement;
+  op: HTMLElement;
+  iconB: HTMLImageElement;
+  nameB: HTMLElement;
+  evo: HTMLElement;
+  effA: HTMLElement;
+  effB: HTMLElement;
+  cross: HTMLElement;
+  hint: HTMLElement;
+  notes: HTMLElement;
+} | null = null;
+
+function buildFusionList() {
+  const wrap = document.getElementById('fusionList')!;
+  wrap.innerHTML = '';
+  for (const ball of fusionBalls()) {
+    const row = document.createElement('button');
+    row.className = 'fusion-row';
+    row.dataset.id = ball.id;
+    row.innerHTML = `<img src="${icon(ball.icon)}" alt="${ball.name}" width="36" height="36" loading="lazy"><span class="nm">${ball.name}</span>`;
+    row.addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.dispatchEvent(new CustomEvent('fusion-select', { detail: ball.id }));
+    });
+    fusionRowEls.set(ball.id, { row, ball });
+    wrap.appendChild(row);
+  }
+}
+
+function buildFusionPanel() {
+  const root = document.getElementById('fusionPanel')!;
+  root.innerHTML = `
+    <p class="fusion-hint">Pick two balls to see their fusion.</p>
+    <div class="fusion-head" hidden>
+      <img alt="" width="48" height="48"><span class="fusion-name"></span>
+      <span class="fusion-times">×</span>
+      <img alt="" width="48" height="48"><span class="fusion-name"></span>
+    </div>
+    <p class="fusion-evo" hidden></p>
+    <div class="fusion-body" hidden>
+      <p class="fusion-eff"></p>
+      <p class="fusion-eff"></p>
+      <p class="fusion-cross" hidden></p>
+    </div>
+    <ul class="fusion-notes" hidden></ul>`;
+  const q = (s: string) => root.querySelector(s)!;
+  fusionPanel = {
+    root,
+    hint: q('.fusion-hint') as HTMLElement,
+    head: q('.fusion-head') as HTMLElement,
+    iconA: q('.fusion-head img:nth-of-type(1)') as HTMLImageElement,
+    nameA: q('.fusion-head .fusion-name:nth-of-type(2)') as HTMLElement,
+    op: q('.fusion-times') as HTMLElement,
+    iconB: q('.fusion-head img:nth-of-type(3)') as HTMLImageElement,
+    nameB: q('.fusion-head .fusion-name:nth-of-type(5)') as HTMLElement,
+    evo: q('.fusion-evo') as HTMLElement,
+    effA: q('.fusion-eff:nth-of-type(1)') as HTMLElement,
+    effB: q('.fusion-eff:nth-of-type(2)') as HTMLElement,
+    cross: q('.fusion-cross') as HTMLElement,
+    notes: q('.fusion-notes') as HTMLElement,
+  };
+}
+
+/** Repaint pick order, filtering, and the composed fusion panel. */
+function paintFusion(vm: ViewModel) {
+  for (const { row } of fusionRowEls.values()) {
+    row.classList.remove('slot-1', 'slot-2', 'filtered');
+  }
+  for (const [id, state] of vm.fusionRows) {
+    const row = fusionRowEls.get(id);
+    if (!row) continue;
+    if (state.slot === 1) row.row.classList.add('slot-1');
+    else if (state.slot === 2) row.row.classList.add('slot-2');
+    if (state.filtered) row.row.classList.add('filtered');
+  }
+
+  const p = fusionPanel;
+  if (!p) return;
+  const f = vm.fusion;
+  const a = vm.fusionSlots[0] ? fusionRowEls.get(vm.fusionSlots[0])!.ball : null;
+  const b = vm.fusionSlots[1] ? fusionRowEls.get(vm.fusionSlots[1])!.ball : null;
+
+  // Pending states replace the body via hidden toggles; text nodes update in
+  // place; the two head <img> elements are created exactly once (build time).
+  if (!a) {
+    p.hint.textContent = 'Pick two balls to see their fusion.';
+    p.hint.hidden = false;
+    p.head.hidden = true;
+    p.evo.hidden = true;
+    (p.effA.parentElement as HTMLElement).hidden = true;
+    p.notes.hidden = true;
+    return;
+  }
+  p.head.hidden = false;
+  p.op.textContent = b ? '×' : '+ ?';
+  if (p.iconA.getAttribute('src') !== icon(a.icon)) p.iconA.src = icon(a.icon);
+  p.iconA.alt = a.name;
+  p.nameA.textContent = a.name;
+  if (!b || !f) {
+    p.iconB.removeAttribute('src');
+    p.iconB.alt = '';
+    p.nameB.textContent = '';
+    p.hint.textContent = '…pick a second ball.';
+    p.hint.hidden = false;
+    p.evo.hidden = true;
+    (p.effA.parentElement as HTMLElement).hidden = true;
+    p.notes.hidden = true;
+    return;
+  }
+  p.hint.hidden = true;
+  if (p.iconB.getAttribute('src') !== icon(b.icon)) p.iconB.src = icon(b.icon);
+  p.iconB.alt = b.name;
+  p.nameB.textContent = b.name;
+  p.evo.hidden = !f.evolvesInstead;
+  if (f.evolvesInstead) {
+    p.evo.textContent = '';
+    p.evo.append('⚠ These two Evolve into ');
+    const strong = document.createElement('strong');
+    strong.textContent = f.evolvesInstead.name;
+    p.evo.append(strong, ' rather than fuse — the Fusion Reactor will not offer this pair.');
+  }
+  (p.effA.parentElement as HTMLElement).hidden = false;
+  p.effA.textContent = f.paragraphs[0];
+  p.effB.textContent = f.paragraphs[1];
+  p.cross.hidden = !f.crossWire;
+  if (f.crossWire) p.cross.textContent = f.crossWire;
+  p.notes.hidden = false;
+  p.notes.replaceChildren(...f.notes.map((n) => {
+    const li = document.createElement('li');
+    li.textContent = n;
+    return li;
+  }));
+}
+
 // ---------- interface ----------
 
-/** Build all static DOM once: balls grid, passives grid, character cards.
- *  Call once at startup, before the first paint(). `getVerdict` supplies the
- *  toast's per-item verdict against the current character selection. */
+/** Build all static DOM once: balls grid, passives grid, character cards,
+ *  fusion pick list. Call once at startup, before the first paint().
+ *  `getVerdict` supplies the toast's per-item verdict against the current
+ *  character selection. */
 export function buildAll(getVerdict: (item: Item) => Verdict | null): void {
   toastVerdict = getVerdict;
   buildGrid('ballsGrid', BALLS);
   buildGrid('passivesGrid', PASSIVES);
   buildCharacters();
+  buildFusionList();
+  buildFusionPanel();
 }
 
 /** Repaint state (selection/related/dimmed/filtered, verdict badges,
- *  character cards and chips) on the existing DOM. Safe to call before
- *  buildAll() (no-op — nothing built yet). Idempotent; never recreates
- *  <img> elements. */
+ *  character cards and chips, fusion picks and panel) on the existing DOM.
+ *  Safe to call before buildAll() (no-op — nothing built yet). Idempotent;
+ *  never recreates <img> elements — the fusion panel's skeleton (with its
+ *  two head icons) is built once and repainted in place. */
 export function paint(vm: ViewModel): void {
   paintTiles(vm);
   paintCharCards(vm);
   renderCharChips(vm);
+  paintFusion(vm);
 }

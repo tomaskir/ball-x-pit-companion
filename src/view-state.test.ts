@@ -117,6 +117,62 @@ describe('view state: clear action (Esc / empty-space click)', () => {
   });
 });
 
+describe('view state: fusion picks (clear-and-restart)', () => {
+  it('first click fills slot A, second fills slot B and composes the fusion', () => {
+    const view = createViewState();
+    const vm = view.dispatch({ type: 'toggleFusion', id: 'flash' });
+    expect(vm.fusionSlots).toEqual(['flash', null]);
+    expect(vm.fusion).toBeNull();
+    const vm2 = view.dispatch({ type: 'toggleFusion', id: 'glacier' });
+    expect(vm2.fusionSlots).toEqual(['flash', 'glacier']);
+    expect(vm2.fusion!.name).toBe('Flash × Glacier');
+  });
+
+  it('a third click clears and restarts with that ball', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleFusion', id: 'flash' });
+    view.dispatch({ type: 'toggleFusion', id: 'glacier' });
+    const vm = view.dispatch({ type: 'toggleFusion', id: 'flicker' });
+    expect(vm.fusionSlots).toEqual(['flicker', null]);
+    expect(vm.fusion).toBeNull();
+  });
+
+  it('clicking a selected ball deselects it, leaving the other pending', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleFusion', id: 'flash' });
+    view.dispatch({ type: 'toggleFusion', id: 'glacier' });
+    const vm = view.dispatch({ type: 'toggleFusion', id: 'flash' });
+    expect(vm.fusionSlots).toEqual(['glacier', null]);
+    expect(vm.fusion).toBeNull();
+  });
+
+  it('clicking the only selected ball clears the pick entirely', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleFusion', id: 'flash' });
+    const vm = view.dispatch({ type: 'toggleFusion', id: 'flash' });
+    expect(vm.fusionSlots).toEqual([null, null]);
+    expect(vm.fusion).toBeNull();
+  });
+
+  it('fusion rows reflect pick order and search filtering', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleFusion', id: 'overgrowth' });
+    view.dispatch({ type: 'toggleFusion', id: 'maggot' });
+    const vm = view.dispatch({ type: 'search', query: 'maggot' });
+    expect(vm.fusionRows.get('overgrowth')!.slot).toBe(1);
+    expect(vm.fusionRows.get('maggot')!.slot).toBe(2);
+    expect(vm.fusionRows.get('maggot')!.filtered).toBe(false);
+    expect(vm.fusionRows.get('flash')!.filtered).toBe(true);
+  });
+
+  it('the evolve-instead-of-fuse note rides the composed fusion', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleFusion', id: 'bleed' });
+    const vm = view.dispatch({ type: 'toggleFusion', id: 'poison' });
+    expect(vm.fusion!.evolvesInstead!.name).toBe('Virus');
+  });
+});
+
 describe('view state: synergy verdicts ride the view model', () => {
   it('selected character drives verdict on tiles (The Ballbearer wildcard)', () => {
     const view = createViewState();
