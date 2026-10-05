@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Fusion observation",
+  "description": "One source saying one thing about one fused-ball pair. One JSON object per line in a <source>.jsonl harvest file. See README.md for the contract.",
+  "type": "object",
+  "required": ["kind", "text", "source", "confidence"],
+  "allOf": [
+    {
+      "if": {
+        "properties": { "kind": { "enum": ["effect-text", "behavior-claim", "screenshot", "name-only"] } },
+        "required": ["kind"]
+      },
+      "then": { "required": ["pair"] }
+    }
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "pair": {
+      "description": "Canonical ball ids (see aliases.json / src/data/balls.ts), sorted alphabetically. A pair, not a triple. Omit entirely only for kind=composition-rule global rules (e.g. name format, merge model) that name no specific pair.",
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "in_game_name": {
+      "description": "The fused name as the source writes it, e.g. \"Bleed X Freeze\". Optional for rule/kind-only observations.",
+      "type": "string"
+    },
+    "order_as_named": {
+      "description": "Component names in the order the source names them (fusion order matters for name/sprite only).",
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "kind": {
+      "enum": ["effect-text", "behavior-claim", "composition-rule", "screenshot", "name-only"]
+    },
+    "text": {
+      "description": "Verbatim quote from the source (tooltip text, post wording, rule wording). Never paraphrased. For screenshots, the caption/tooltip transcription. For name-only, the sentence that names the pair."
+    },
+    "claims": {
+      "description": "Structured interpretation of the text. Your wording lives here; the quote stays in text.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "detail"],
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "enum": ["cross-wire", "no-cross-wire", "priority", "bug", "order", "other"]
+          },
+          "detail": { "type": "string" }
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "required": ["type", "url", "date"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "enum": ["reddit", "steam", "youtube", "namu", "wiki", "bilibili", "discord-repost", "playtest", "other"]
+        },
+        "url": { "type": "string", "minLength": 8 },
+        "date": {
+          "description": "YYYY-MM-DD of the source content (post date, screenshot date). Access date goes in access_date.",
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        },
+        "author": { "type": "string" },
+        "access_date": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        }
+      }
+    },
+    "game_version": {
+      "description": "Build/version the observation refers to, if known; else \"unknown\".",
+      "type": "string",
+      "default": "unknown"
+    },
+    "confidence": {
+      "description": "observed = we/author verified it; reported = self-reported by a source; contradicted = conflicts with another observation (keep both); rule-derived = produced by applying composition rules, not found in a source (should be rare in harvest files).",
+      "enum": ["observed", "reported", "contradicted", "rule-derived"]
+    }
+  }
+}
