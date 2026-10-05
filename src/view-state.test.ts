@@ -4,6 +4,7 @@
 // selected, what the chips show) concentrate here — testable without DOM.
 import { describe, it, expect } from 'vitest';
 import { createViewState } from './view-state';
+import { ballMap } from './catalog';
 
 describe('view state: item selection (ticket 05 semantics through one interface)', () => {
   it('selecting an evolved ball marks it selected, components+descendants related, the rest dimmed', () => {
@@ -121,11 +122,21 @@ describe('view state: fusion picks (clear-and-restart)', () => {
   it('first click fills slot A, second fills slot B and composes the fusion', () => {
     const view = createViewState();
     const vm = view.dispatch({ type: 'toggleFusion', id: 'flash' });
-    expect(vm.fusionSlots).toEqual(['flash', null]);
+    expect(vm.fusionSlots.map((b) => b?.id ?? null)).toEqual(['flash', null]);
     expect(vm.fusion).toBeNull();
     const vm2 = view.dispatch({ type: 'toggleFusion', id: 'glacier' });
-    expect(vm2.fusionSlots).toEqual(['flash', 'glacier']);
+    expect(vm2.fusionSlots.map((b) => b?.id ?? null)).toEqual(['flash', 'glacier']);
     expect(vm2.fusion!.name).toBe('Flash × Glacier');
+  });
+
+  it('fusionSlots carry the resolved Ball items in selection order', () => {
+    const view = createViewState();
+    const vm = view.dispatch({ type: 'toggleFusion', id: 'flash' });
+    expect(vm.fusionSlots[0]).toBe(ballMap.get('flash')!);
+    expect(vm.fusionSlots[1]).toBeNull();
+    const vm2 = view.dispatch({ type: 'toggleFusion', id: 'glacier' });
+    expect(vm2.fusionSlots[0]).toBe(ballMap.get('flash')!);
+    expect(vm2.fusionSlots[1]).toBe(ballMap.get('glacier')!);
   });
 
   it('a third click clears and restarts with that ball', () => {
@@ -133,7 +144,7 @@ describe('view state: fusion picks (clear-and-restart)', () => {
     view.dispatch({ type: 'toggleFusion', id: 'flash' });
     view.dispatch({ type: 'toggleFusion', id: 'glacier' });
     const vm = view.dispatch({ type: 'toggleFusion', id: 'flicker' });
-    expect(vm.fusionSlots).toEqual(['flicker', null]);
+    expect(vm.fusionSlots.map((b) => b?.id ?? null)).toEqual(['flicker', null]);
     expect(vm.fusion).toBeNull();
   });
 
@@ -142,7 +153,7 @@ describe('view state: fusion picks (clear-and-restart)', () => {
     view.dispatch({ type: 'toggleFusion', id: 'flash' });
     view.dispatch({ type: 'toggleFusion', id: 'glacier' });
     const vm = view.dispatch({ type: 'toggleFusion', id: 'flash' });
-    expect(vm.fusionSlots).toEqual(['glacier', null]);
+    expect(vm.fusionSlots.map((b) => b?.id ?? null)).toEqual(['glacier', null]);
     expect(vm.fusion).toBeNull();
   });
 
@@ -150,7 +161,7 @@ describe('view state: fusion picks (clear-and-restart)', () => {
     const view = createViewState();
     view.dispatch({ type: 'toggleFusion', id: 'flash' });
     const vm = view.dispatch({ type: 'toggleFusion', id: 'flash' });
-    expect(vm.fusionSlots).toEqual([null, null]);
+    expect(vm.fusionSlots.map((b) => b?.id ?? null)).toEqual([null, null]);
     expect(vm.fusion).toBeNull();
   });
 

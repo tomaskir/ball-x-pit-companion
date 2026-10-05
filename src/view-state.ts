@@ -3,8 +3,10 @@
 // to hand-wire between its event handlers. One interface:
 // dispatch(action) → ViewModel. The island (src/companion.ts) keeps only
 // event listening, theme, and hash routing; painting lives in
-// src/renderer.ts. Fusion composition lives in src/fusion.ts.
-import { BALLS } from './data/balls';
+// src/renderer.ts. Fusion composition lives in src/fusion.ts. The view
+// model carries resolved items, not bare ids: fusionSlots holds the picked
+// Ball objects so the renderer never re-derives them.
+import { BALLS, type Ball } from './data/balls';
 import { PASSIVES } from './data/passives';
 import { CHARACTERS, type Character } from './data/characters';
 import { highlightSet } from './graph';
@@ -24,8 +26,10 @@ export interface ViewModel {
   fusionRows: Map<string, FusionRowState>;
   selectedChars: Character[];
   slotHint: string;
-  /** The two picks in selection order; empty slots are null. */
-  fusionSlots: [string | null, string | null];
+  /** The two picks in selection order, as the resolved Ball items; empty
+   *  slots are null. (The renderer paints the panel from these directly —
+   *  it never re-derives the picks from its row registry.) */
+  fusionSlots: [Ball | null, Ball | null];
   /** Composed fused ball for the two picks, or null until both are picked. */
   fusion: FusionResult | null;
 }
@@ -84,7 +88,7 @@ export function createViewState() {
       fusionRows,
       selectedChars,
       slotHint: selectedChars.length === 1 ? 'pick a second character…' : '',
-      fusionSlots: [fusionPicks[0] ?? null, fusionPicks[1] ?? null],
+      fusionSlots: [a, b],
       fusion: a && b ? fuse(a, b) : null,
     };
   };

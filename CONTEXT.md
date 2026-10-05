@@ -90,7 +90,9 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   that would blink icons; the fusion panel's head icons are built once and
   repainted in place). Tiles, character cards, chips, toasts, and the fusion
   screen live here; the ViewModel is its input and the test surface stays
-  `view-state.ts`.
+  `view-state.ts`. The renderer holds no domain data of its own: its
+  fusion-row map is purely a DOM-row registry, and the picked balls ride
+  the view model (`fusionSlots` carries the resolved items).
 - **View state** — the island's state (item selection, character slots,
   fusion picks, search query) and every derivation from it (highlight walks,
   filters, verdict badges, the composed fusion). Module: `src/view-state.ts`
@@ -98,7 +100,9 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   `derive()` (same view model without a state change, for initial paint) and
   `verdictFor(item)` (full verdict with note, for the toast). Fusion picks
   are clear-and-restart (a third pick drops both; re-clicking a pick
-  deselects it); the composed fusion comes from `src/fusion.ts`. The island
+  deselects it); the view model carries the picks as resolved Ball items
+  (`fusionSlots`), not bare ids — the renderer paints the panel from them
+  directly; the composed fusion comes from `src/fusion.ts`. The island
   listens to DOM events, dispatches, and hands the returned view model to
   the renderer; the view model is the test surface.
 - **Fusion composer** — pure composition of a fused ball from two components:

@@ -3,8 +3,10 @@
 // paint(viewModel) repaints state on it — never recreating <img> elements
 // (rebuilding would blink the icons). The island (src/companion.ts) keeps
 // only event listening, theme, and hash routing; the ViewModel it paints
-// comes from src/view-state.ts; the icon-URL join comes from src/icon-url.ts.
-import { BALLS, type Ball } from './data/balls';
+// comes from src/view-state.ts (including the resolved fusion picks — the
+// renderer holds no domain data of its own); the icon-URL join comes from
+// src/icon-url.ts.
+import { BALLS } from './data/balls';
 import { PASSIVES } from './data/passives';
 import { CHARACTERS, type Character } from './data/characters';
 import { ballMap, itemFor, type Item } from './catalog';
@@ -220,7 +222,9 @@ function hideToast() {
 // Fusion rows are built once (never recreate <img> — same invariant as the
 // grids); pick order and filtering repaint classes in place. The pick list
 // mirrors the game's Fusion Reactor: any two of the fusable upgrade entities.
-const fusionRowEls = new Map<string, { row: HTMLElement; ball: Ball }>();
+// Purely a DOM-row registry — the picked balls themselves ride the view
+// model (vm.fusionSlots carries the resolved items).
+const fusionRowEls = new Map<string, HTMLElement>();
 // Panel skeleton is built once with icon-bearing slots; paint() toggles the
 // pieces in place — never recreating <img> (same invariant as the grids).
 let fusionPanel: {
@@ -260,7 +264,7 @@ function buildFusionList() {
         e.stopPropagation();
         document.dispatchEvent(new CustomEvent('fusion-select', { detail: ball.id }));
       });
-      fusionRowEls.set(ball.id, { row, ball });
+      fusionRowEls.set(ball.id, row);
       wrap.appendChild(row);
     }
   }
@@ -302,22 +306,21 @@ function buildFusionPanel() {
 
 /** Repaint pick order, filtering, and the composed fusion panel. */
 function paintFusion(vm: ViewModel) {
-  for (const { row } of fusionRowEls.values()) {
+  for (const row of fusionRowEls.values()) {
     row.classList.remove('slot-1', 'slot-2', 'filtered');
   }
   for (const [id, state] of vm.fusionRows) {
     const row = fusionRowEls.get(id);
     if (!row) continue;
-    if (state.slot === 1) row.row.classList.add('slot-1');
-    else if (state.slot === 2) row.row.classList.add('slot-2');
-    if (state.filtered) row.row.classList.add('filtered');
+    if (state.slot === 1) row.classList.add('slot-1');
+    else if (state.slot === 2) row.classList.add('slot-2');
+    if (state.filtered) row.classList.add('filtered');
   }
 
   const p = fusionPanel;
   if (!p) return;
   const f = vm.fusion;
-  const a = vm.fusionSlots[0] ? fusionRowEls.get(vm.fusionSlots[0])!.ball : null;
-  const b = vm.fusionSlots[1] ? fusionRowEls.get(vm.fusionSlots[1])!.ball : null;
+  const [a, b] = vm.fusionSlots;
 
   // Pending states replace the body via hidden toggles; text nodes update in
   // place; the two head <img> elements are created exactly once (build time).
