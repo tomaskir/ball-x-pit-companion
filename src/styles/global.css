@@ -79,6 +79,13 @@ header h1 {
   letter-spacing: 0.5px;
 }
 
+header h1 {
+  /* line-height matches .tab-btn's (14px font × 1.45 = ~20px box): without
+     this the h1's default heading line-height makes it taller than the
+     buttons and the whole header row misaligns */
+  line-height: 1.45;
+}
+
 header h1 span { color: var(--muted); font-style: italic; font-size: 14px; }
 
 .tabs { display: flex; gap: 4px; }
@@ -369,9 +376,12 @@ footer a { color: var(--gold); }
 /* ---------- fusions screen ---------- */
 
 .tab-sep {
+  /* a divider between title and tabs as much as between tab groups — lives
+     at header level, so `align-self: center` centers it on the header's
+     cross axis, not inside .tabs */
   width: 1px;
   align-self: center;
-  height: 18px; /* shorter than the full tab height — a subtle divider */
+  height: 18px;
   margin: 0 6px;
   background: var(--gold-dim);
 }

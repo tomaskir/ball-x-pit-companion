@@ -14,12 +14,14 @@ import '../styles/global.css';
   <body>
     <header>
       <h1>Ball x Pit <span>Companion</span></h1>
+      <span class="tab-sep" aria-hidden="true"></span>
       <nav class="tabs" aria-label="Sections">
         <button class="tab-btn active" data-section="balls">Balls</button>
-        <button class="tab-btn" data-section="passives">Passives</button>
-        <button class="tab-btn" data-section="characters">Characters</button>
-        <span class="tab-sep" aria-hidden="true"></span>
         <button class="tab-btn" data-section="fusions">Fusions</button>
+        <span class="tab-sep" aria-hidden="true"></span>
+        <button class="tab-btn" data-section="passives">Passives</button>
+        <span class="tab-sep" aria-hidden="true"></span>
+        <button class="tab-btn" data-section="characters">Characters</button>
       </nav>
       <div class="chips" id="charChips"></div>
       <span class="hint" id="slotHint"></span>

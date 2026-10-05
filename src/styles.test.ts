@@ -48,6 +48,23 @@ describe('global stylesheet', () => {
     expect(repoAt).toBeGreaterThan(toggleAt);
   });
 
+  it('top menu: title, separator, then Balls/Fusions/Passives/Characters with group separators', () => {
+    // pins the requested menu order and the title↔button vertical alignment
+    // (the h1's default heading line-height made it taller than .tab-btn)
+    const html = readFileSync('src/pages/index.astro', 'utf8');
+    const nav = html.match(/<nav class="tabs"[\s\S]*?<\/nav>/)![0];
+    const order = [...nav.matchAll(/data-section="(\w+)"/g)].map((m) => m[1]);
+    expect(order).toEqual(['balls', 'fusions', 'passives', 'characters']);
+    // separators inside the nav split the three groups…
+    expect(nav.match(/tab-sep/g)!.length).toBe(2);
+    // …and one more sits between the title and the nav
+    const titleEnd = html.indexOf('</h1>');
+    const navStart = html.indexOf('<nav class="tabs"');
+    expect(html.slice(titleEnd, navStart)).toContain('tab-sep');
+    const css = readFileSync('src/styles/global.css', 'utf8');
+    expect(css).toMatch(/header h1\s*\{[^}]*line-height:\s*1\.45/);
+  });
+
   it('both picked slots highlight identically (slot-2 was visually subtle)', () => {
     const css = readFileSync('src/styles/global.css', 'utf8');
     const merged = css.match(/\.fusion-row\.slot-1,\s*\.fusion-row\.slot-2\s*\{[^}]*\}/);
