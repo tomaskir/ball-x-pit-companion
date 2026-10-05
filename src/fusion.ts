@@ -1,6 +1,6 @@
 // Fusion module: pure composition of a fused ball from its two components.
 // The game has no fusion table — a fused ball is computed at runtime by
-// stacking the two components' effects (see docs/research/fusion-completeness.md).
+// stacking the two components' effects (see docs/research/fusion-mechanics.md).
 // This module mirrors that composer over the catalog's effect text:
 //   - name is "A × B" in selection order (function is order-independent)
 //   - effect paragraphs concatenate per component, in name order
@@ -15,7 +15,7 @@
 //   - order side-effects and fixed composition caveats (both-cooldown pairs,
 //     same-property pairs, Destroy × Destroy, hit-once dominance over
 //     pass-through, spawn compensating Destroy, Dark's multiplier) are notes
-//     (docs/research/fusion-ordering.md; fusion-pairs.json general_rules_notes)
+//     (docs/research/fusion-mechanics.md §3; fusion-pairs.json general_rules_notes)
 //   - damage rolls are abstracted to "X" (fused numbers are not derivable)
 // It is the site's editorial model of fusion, not game data.
 import { BALLS, type Ball } from './data/balls';
@@ -81,7 +81,7 @@ const AOE_EXCLUDED_IDS = new Set(['satan']);
  *  damage, and the corpus shows its pairs don't wire. */
 const KILL_EFFECT_IDS = new Set(['black-hole', 'reaper']);
 
-/** Order side-effects (docs/research/fusion-ordering.md): the only two
+/** Order side-effects (docs/research/fusion-mechanics.md §3): the only two
  *  functionally order-sensitive pair classes. Both are reported (Discord
  *  PSA #2 / namu.wiki), never playtested here — notes carry that caveat.
  *  The cooldown class is also the hit-once class (both from the game-file
@@ -299,7 +299,7 @@ export function fuse(a: Ball, b: Ball): FusionResult | null {
   const evo = evolvesInstead(a, b);
   const notes = ['Composition is modeled from community-observed rules; verify against the game.'];
 
-  // Order side-effects (fusion-ordering.md §3): both-cooldown pairs and
+  // Order side-effects (fusion-mechanics.md §3): both-cooldown pairs and
   // same-property pairs take the first-selected ball's variant/cooldown.
   const pairKey = pairId(a, b);
   if (COOLDOWN_CLASS_IDS.has(a.id) && COOLDOWN_CLASS_IDS.has(b.id)) {

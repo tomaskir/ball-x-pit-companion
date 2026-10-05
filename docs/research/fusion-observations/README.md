@@ -3,9 +3,9 @@
 Shared brief for research agents harvesting **fused-ball evidence** for the
 Ball x Pit companion site. Read this file before writing anything.
 
-Domain background: `../../../CONTEXT.md`, `../fusion-completeness.md`
-(mechanics + why there is no fusion table), `../fusion-evidence-sources.md`
-(source survey + the 105 pairs already found). Game-evolution fact base:
+Domain background: `../../../CONTEXT.md`, `../fusion-mechanics.md` (fusion
+mechanics distilled: why there is no fusion table, composition rules, order
+verdict, and the source survey behind it). Game-evolution fact base:
 `../game-mechanics.md`.
 
 ## What we are collecting

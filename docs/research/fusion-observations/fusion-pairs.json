@@ -1,7 +1,7 @@
 {
   "generated": "2026-10-04",
   "pair_count": 370,
-  "order_notes": "Order matters for NAME and SPRITE ALWAYS, for every pair. The fused name is \"A X B\" with A = first-selected; the icon usually comes from the first pick and the colour from the second (Steam Shajirr 2026-01-26); the damage-number colour changes (Reddit PSA #1); the sprite sometimes differs (wiki.gg: 'Spider Queen X Vampire Lord has a completely different sprite from Vampire Lord X Spider Queen', while 'Egg Sac X Poison looks the same as Poison X Egg Sac'); the description paragraphs list the components in selection order (al-gest commenter 2025-12-01). For STATS, COOLDOWNS, PROCS and CROSS-WIRING, order is functionally irrelevant except for the two documented exceptions recorded per pair under order.matters_functionally=yes (same-property pairs; both-cooldown pairs). A third order effect exists but is NOT a fusion effect: base-ball pool recursion (which slot consumes a base ball so it stops appearing) — see the general_rules/pool-recursion entry. Full synthesis: ../fusion-ordering.md.",
+  "order_notes": "Order matters for NAME and SPRITE ALWAYS, for every pair. The fused name is \"A X B\" with A = first-selected; the icon usually comes from the first pick and the colour from the second (Steam Shajirr 2026-01-26); the damage-number colour changes (Reddit PSA #1); the sprite sometimes differs (wiki.gg: 'Spider Queen X Vampire Lord has a completely different sprite from Vampire Lord X Spider Queen', while 'Egg Sac X Poison looks the same as Poison X Egg Sac'); the description paragraphs list the components in selection order (al-gest commenter 2025-12-01). For STATS, COOLDOWNS, PROCS and CROSS-WIRING, order is functionally irrelevant except for the two documented exceptions recorded per pair under order.matters_functionally=yes (same-property pairs; both-cooldown pairs). A third order effect exists but is NOT a fusion effect: base-ball pool recursion (which slot consumes a base ball so it stops appearing) — see the general_rules/pool-recursion entry. Full synthesis: ../fusion-mechanics.md §3.",
   "rules": {
     "namu-seven-composition-rules": {
       "title": "namu.wiki — the seven fusion-composition rules",
@@ -209,7 +209,7 @@
       "source": "https://raw.githubusercontent.com/jellyhani/ball-x-pit-companion/HEAD/tools/bepinex/BallxPitBridge/Plugin.cs",
       "date": "2026-09-29",
       "confidence": "observed",
-      "statement": "The bridge presents fusion choices as directed (first, second) pairs and has two directionally asymmetric call sites (GetComboScore(loopIndex, hc), heroes[hc.Idx1].IsBadCombo(heroes[hc.Idx2])), which is suggestive of a 'first component' notion but is NOT proof the two orders produce different fused balls. Save-format NumCombos is a 90x90 counter matrix whose symmetry is unverified (see ../fusion-ordering.md §2h)."
+      "statement": "The bridge presents fusion choices as directed (first, second) pairs and has two directionally asymmetric call sites (GetComboScore(loopIndex, hc), heroes[hc.Idx1].IsBadCombo(heroes[hc.Idx2])), which is suggestive of a 'first component' notion but is NOT proof the two orders produce different fused balls. Save-format NumCombos is a 90x90 counter matrix whose symmetry is unverified (see fusion-mechanics.md §4)."
     },
     "pair-space-arithmetic-unverified": {
       "title": "Pair-space arithmetic is unverified (7836 vs 7921)",
@@ -920,7 +920,7 @@
       ],
       "order": {
         "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-ordering.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
       },
       "status": "verified",
       "obs_count": 14,
@@ -1076,7 +1076,7 @@
       ],
       "order": {
         "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-ordering.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
       },
       "status": "contradicted",
       "obs_count": 9,
@@ -1574,7 +1574,7 @@
       ],
       "order": {
         "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. mmemo.jp lists this pair among its 3 extra rows beyond al-gest's 8; corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-ordering.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. mmemo.jp lists this pair among its 3 extra rows beyond al-gest's 8; corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
       },
       "status": "contradicted",
       "obs_count": 50,
@@ -1879,7 +1879,7 @@
       ],
       "order": {
         "matters_functionally": "unknown",
-        "detail": "Order claims exist for this pair but no controlled both-orders test was found, and the pair is neither same-property nor both-cooldown. See ../fusion-ordering.md."
+        "detail": "Order claims exist for this pair but no controlled both-orders test was found, and the pair is neither same-property nor both-cooldown. See ../fusion-mechanics.md §3."
       },
       "status": "unverified",
       "obs_count": 25,
@@ -2543,7 +2543,7 @@
       ],
       "order": {
         "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. Frankie (demo-era 2025-06-18) + Heidi Bumm claim a functional order effect (Magma-first 4-tile freeze radius vs Blizzard-first 2-tile), re-affirmed 2025-10-22; corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-ordering.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. Frankie (demo-era 2025-06-18) + Heidi Bumm claim a functional order effect (Magma-first 4-tile freeze radius vs Blizzard-first 2-tile), re-affirmed 2025-10-22; corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
       },
       "status": "unverified",
       "obs_count": 3,
@@ -3580,7 +3580,7 @@
       ],
       "order": {
         "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-ordering.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
       },
       "status": "inferred",
       "obs_count": 8,
@@ -4289,7 +4289,7 @@
       ],
       "order": {
         "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. mmemo.jp lists this pair among its 3 extra rows beyond al-gest's 8; corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-ordering.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. mmemo.jp lists this pair among its 3 extra rows beyond al-gest's 8; corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
       },
       "status": "verified",
       "obs_count": 5,
@@ -4945,7 +4945,7 @@
       ],
       "order": {
         "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-ordering.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
       },
       "status": "contradicted",
       "obs_count": 5,
@@ -5083,7 +5083,7 @@
       ],
       "order": {
         "matters_functionally": "unknown",
-        "detail": "Order claims exist for this pair but no controlled both-orders test was found, and the pair is neither same-property nor both-cooldown. See ../fusion-ordering.md."
+        "detail": "Order claims exist for this pair but no controlled both-orders test was found, and the pair is neither same-property nor both-cooldown. See ../fusion-mechanics.md §3."
       },
       "status": "verified",
       "obs_count": 2,
@@ -5287,7 +5287,7 @@
       ],
       "order": {
         "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-ordering.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
       },
       "status": "contradicted",
       "obs_count": 5,
@@ -5352,7 +5352,7 @@
       ],
       "order": {
         "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-ordering.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
       },
       "status": "verified",
       "obs_count": 4,
@@ -5456,7 +5456,7 @@
       ],
       "order": {
         "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-ordering.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
       },
       "status": "inferred",
       "obs_count": 3,
@@ -5587,7 +5587,7 @@
       ],
       "order": {
         "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-ordering.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
       },
       "status": "verified",
       "obs_count": 4,
@@ -5794,7 +5794,7 @@
       ],
       "order": {
         "matters_functionally": "unknown",
-        "detail": "Order claims exist for this pair but no controlled both-orders test was found, and the pair is neither same-property nor both-cooldown. See ../fusion-ordering.md."
+        "detail": "Order claims exist for this pair but no controlled both-orders test was found, and the pair is neither same-property nor both-cooldown. See ../fusion-mechanics.md §3."
       },
       "status": "inferred",
       "obs_count": 1,
@@ -5937,7 +5937,7 @@
       ],
       "order": {
         "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-ordering.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
       },
       "status": "inferred",
       "obs_count": 4,
@@ -6352,7 +6352,7 @@
       ],
       "order": {
         "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. al-gest.com prescribes a fixed fusion order for this pair (8-pair boilerplate, no mechanism given); mmemo.jp transcribes the same list as a 融合1→融合2 table; corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-ordering.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. al-gest.com prescribes a fixed fusion order for this pair (8-pair boilerplate, no mechanism given); mmemo.jp transcribes the same list as a 融合1→融合2 table; corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
       },
       "status": "contradicted",
       "obs_count": 32,
@@ -6963,7 +6963,7 @@
       ],
       "order": {
         "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. al-gest.com prescribes a fixed fusion order for this pair (8-pair boilerplate, no mechanism given); mmemo.jp transcribes the same list as a 融合1→融合2 table; u/beastlike claims Flash must be selected first; contradicted by u/FemurFiend, PSA #1's both-orders tests, and al-gest's own commenter; corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-ordering.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. al-gest.com prescribes a fixed fusion order for this pair (8-pair boilerplate, no mechanism given); mmemo.jp transcribes the same list as a 融合1→融合2 table; u/beastlike claims Flash must be selected first; contradicted by u/FemurFiend, PSA #1's both-orders tests, and al-gest's own commenter; corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
       },
       "status": "contradicted",
       "obs_count": 59,
@@ -7869,7 +7869,7 @@
       ],
       "order": {
         "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. al-gest.com prescribes a fixed fusion order for this pair (8-pair boilerplate, no mechanism given); mmemo.jp transcribes the same list as a 融合1→融合2 table; corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-ordering.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. al-gest.com prescribes a fixed fusion order for this pair (8-pair boilerplate, no mechanism given); mmemo.jp transcribes the same list as a 融合1→融合2 table; corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
       },
       "status": "verified",
       "obs_count": 14,
@@ -8059,7 +8059,7 @@
       ],
       "order": {
         "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. al-gest.com prescribes a fixed fusion order for this pair (8-pair boilerplate, no mechanism given); mmemo.jp transcribes the same list as a 融合1→融合2 table; corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-ordering.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. al-gest.com prescribes a fixed fusion order for this pair (8-pair boilerplate, no mechanism given); mmemo.jp transcribes the same list as a 融合1→融合2 table; corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
       },
       "status": "contradicted",
       "obs_count": 13,
@@ -9100,7 +9100,7 @@
       ],
       "order": {
         "matters_functionally": "unknown",
-        "detail": "Order claims exist for this pair but no controlled both-orders test was found, and the pair is neither same-property nor both-cooldown. See ../fusion-ordering.md."
+        "detail": "Order claims exist for this pair but no controlled both-orders test was found, and the pair is neither same-property nor both-cooldown. See ../fusion-mechanics.md §3."
       },
       "status": "unverified",
       "obs_count": 1,
@@ -9340,7 +9340,7 @@
       ],
       "order": {
         "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. al-gest.com prescribes a fixed fusion order for this pair (8-pair boilerplate, no mechanism given); mmemo.jp transcribes the same list as a 融合1→融合2 table; corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-ordering.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. al-gest.com prescribes a fixed fusion order for this pair (8-pair boilerplate, no mechanism given); mmemo.jp transcribes the same list as a 融合1→融合2 table; corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
       },
       "status": "inferred",
       "obs_count": 4,
@@ -10051,7 +10051,7 @@
       ],
       "order": {
         "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-ordering.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
       },
       "status": "inferred",
       "obs_count": 6,
@@ -10378,7 +10378,7 @@
         },
         {
           "type": "other",
-          "detail": "IMPORTANT terminological clarification: 'Maggot won't combine with Holy Laser to create a new named combination' — i.e. no unique fusion identity/name exists, but the free fusion works. Directly supports the fusion-completeness.md model (fusions have no unique identity).",
+          "detail": "IMPORTANT terminological clarification: 'Maggot won't combine with Holy Laser to create a new named combination' — i.e. no unique fusion identity/name exists, but the free fusion works. Directly supports the fusion-mechanics.md model (fusions have no unique identity).",
           "sources": [
             "https://pcgamesn.com/ball-x-pit/evolutions-tier-list"
           ],
@@ -10444,7 +10444,7 @@
       ],
       "order": {
         "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-ordering.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
       },
       "status": "contradicted",
       "obs_count": 28,
@@ -11478,7 +11478,7 @@
       ],
       "order": {
         "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-ordering.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
       },
       "status": "inferred",
       "obs_count": 4,
@@ -11507,7 +11507,7 @@
       ],
       "order": {
         "matters_functionally": "unknown",
-        "detail": "Order claims exist for this pair but no controlled both-orders test was found, and the pair is neither same-property nor both-cooldown. See ../fusion-ordering.md."
+        "detail": "Order claims exist for this pair but no controlled both-orders test was found, and the pair is neither same-property nor both-cooldown. See ../fusion-mechanics.md §3."
       },
       "status": "unverified",
       "obs_count": 1,
@@ -11536,7 +11536,7 @@
       ],
       "order": {
         "matters_functionally": "unknown",
-        "detail": "Order claims exist for this pair but no controlled both-orders test was found, and the pair is neither same-property nor both-cooldown. See ../fusion-ordering.md."
+        "detail": "Order claims exist for this pair but no controlled both-orders test was found, and the pair is neither same-property nor both-cooldown. See ../fusion-mechanics.md §3."
       },
       "status": "unverified",
       "obs_count": 1,
@@ -11966,7 +11966,7 @@
       ],
       "order": {
         "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-ordering.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
       },
       "status": "contradicted",
       "obs_count": 27,
@@ -12663,7 +12663,7 @@
       ],
       "order": {
         "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. al-gest.com prescribes a fixed fusion order for this pair (8-pair boilerplate, no mechanism given); mmemo.jp transcribes the same list as a 融合1→融合2 table; corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-ordering.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. al-gest.com prescribes a fixed fusion order for this pair (8-pair boilerplate, no mechanism given); mmemo.jp transcribes the same list as a 融合1→融合2 table; corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
       },
       "status": "unverified",
       "obs_count": 3,
@@ -13537,7 +13537,7 @@
       ],
       "order": {
         "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-ordering.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
       },
       "status": "verified",
       "obs_count": 4,
@@ -13675,7 +13675,7 @@
       ],
       "order": {
         "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. mmemo.jp lists this pair among its 3 extra rows beyond al-gest's 8; corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-ordering.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. mmemo.jp lists this pair among its 3 extra rows beyond al-gest's 8; corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
       },
       "status": "inferred",
       "obs_count": 5,
@@ -13848,7 +13848,7 @@
       ],
       "order": {
         "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-ordering.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
       },
       "status": "inferred",
       "obs_count": 1,
@@ -13986,7 +13986,7 @@
       ],
       "order": {
         "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-ordering.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
       },
       "status": "verified",
       "obs_count": 14,
@@ -14742,7 +14742,7 @@
       ],
       "order": {
         "matters_functionally": "unknown",
-        "detail": "Order claims exist for this pair but no controlled both-orders test was found, and the pair is neither same-property nor both-cooldown. See ../fusion-ordering.md."
+        "detail": "Order claims exist for this pair but no controlled both-orders test was found, and the pair is neither same-property nor both-cooldown. See ../fusion-mechanics.md §3."
       },
       "status": "verified",
       "obs_count": 4,

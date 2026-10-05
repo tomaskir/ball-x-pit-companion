@@ -14,7 +14,7 @@ The wiki (ballxpit.wiki.gg) distinguishes two mechanics that fan sites conflate:
   fact base.
 - **Fusion** — merging any two unfused level-3 balls into a property-stacking
   ball with no unique identity. Modeled **editorially** on the Fusions screen:
-  the game stores no fusion table (see `docs/research/fusion-completeness.md`),
+  the game stores no fusion table (see `docs/research/fusion-mechanics.md`),
   so `src/fusion.ts` composes fused-ball text from the two components' effect
   text using community-observed rules — damage rolls abstracted to "X" (fused
   numbers are not derivable from public sources). This is the site's model,
@@ -138,7 +138,7 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   site's editorial model of fusion, not game data; the composition rules,
   their evidence, and the full 370-pair observation corpus live in
   `docs/research/fusion-observations/` (validation methodology:
-  `fusion-ordering.md`, `CONTRADICTIONS.md`).
+  `../docs/research/fusion-mechanics.md`, `CONTRADICTIONS.md`).
 
 ## Data provenance
 

@@ -270,7 +270,7 @@ describe('cross-wire exclusions (corpus no-cross-wire evidence)', () => {
   });
 });
 
-describe('order side-effects (fusion-ordering.md)', () => {
+describe('order side-effects (fusion-mechanics.md §3)', () => {
   it('both-cooldown pairs: first-selected ball\'s cooldown wins (namu.wiki)', () => {
     // cooldown class = {black-hole, bomb, dark, egg-sac, nuclear-bomb,
     // timestop, voluptuous-egg-sac} — exactly the balls whose text lists a

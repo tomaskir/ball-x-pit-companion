@@ -21,7 +21,7 @@ Order: `yes` 15 · `no` 74 · `disputed` 26 · `unknown` 255.
 conflicts; the remaining 328 pairs have no contradiction to record.
 
 **Access date for all web sources: 2026-10-04.** Source content dates as cited.
-Ordering background and the reconciliation argument: `../fusion-ordering.md`.
+Ordering background and the reconciliation argument: `../fusion-mechanics.md` §3.
 
 ---
 
@@ -477,7 +477,7 @@ game bug, not a property of either pair.
 - **Balls** (2026-09-10): `(90*89) - 89 = 7921`
 Both are editor arithmetic, not game data. **Best reading: treat any exact
 fusion count as unverified.** (The 90×90 `NumCombos` save matrix is a separate
-question — see `../fusion-ordering.md` §2h.)
+question — see `../fusion-mechanics.md` §4.)
 
 ### 10b. Fused-ball level on creation: level 1 vs level 3
 - **TVTropes** (2026-09-21): "fusion balls are always level 1 on creation" —
@@ -543,7 +543,7 @@ screen degradation). Both can be true.**
 to u/FemurFiend. The Arctic Shift record shows it is **u/beastlike**, with
 FemurFiend replying that order does **not** matter. Correct records live in
 `ordering.jsonl`. **Do not cite `english.jsonl:86` for either side.** See
-`../fusion-ordering.md` §2a and §Uncertainty.
+`../fusion-mechanics.md` §3 and its Uncertainty summary.
 
 ### 10i. Magma X Blizzard freeze radius (demo-era, possible build change)
 Frankie (Steam, 2025-06-18) + Heidi Bumm (2025-06-21) report a real order
@@ -806,6 +806,6 @@ tend to be the pairs with the most anchor noise (`flash+overgrowth` 59 obs →
 4. **One current-build playtest** of Magma × Blizzard in both orders settles
    §10i (demo-era claim).
 5. **A completed save's `NumCombos` matrix** would reveal whether the game
-   records directed pairs (order map) — `../fusion-ordering.md` §2h.
+   records directed pairs (order map) — `../fusion-mechanics.md` §4.
 6. **One UI observation** settles "first-selected" vs "acquisition order"
-   (`../fusion-ordering.md` §Uncertainty).
+   (`../fusion-mechanics.md` (Uncertainty summary)).
