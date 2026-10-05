@@ -137,6 +137,23 @@ header h1 span { color: var(--muted); font-style: italic; font-size: 14px; }
   cursor: pointer;
 }
 
+/* GitHub repo link — same visual size as #themeToggle; the svg inherits
+   currentColor so it tracks the theme's text color */
+.repo-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--panel);
+  border: 1px solid var(--gold-dim);
+  border-radius: 4px;
+  color: var(--text);
+  padding: 4px 8px;
+  line-height: 0;
+}
+
+.repo-link:hover { border-color: var(--gold); }
+.repo-link svg { width: 14px; height: 14px; }
+
 /* ---------- grids ---------- */
 
 main { padding: 16px; max-width: 1400px; margin: 0 auto; }

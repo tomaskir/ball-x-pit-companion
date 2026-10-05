@@ -28,6 +28,19 @@ describe('global stylesheet', () => {
     expect(css).toMatch(/\.fusion-list > \.fusion-row\s*\{[^}]*margin-right: 6px/);
   });
 
+  it('GitHub repo link matches the theme toggle button sizing', () => {
+    const css = readFileSync('src/styles/global.css', 'utf8');
+    const toggle = css.match(/#themeToggle\s*\{[^}]*\}/)![0];
+    const repo = css.match(/\.repo-link\s*\{[^}]*\}/)![0];
+    // font-size is shared on #themeToggle only — the anchor holds just an svg
+    for (const prop of ['border-radius: 4px', 'padding: 4px 8px']) {
+      expect(toggle, `#themeToggle has ${prop}`).toContain(prop);
+      expect(repo, `.repo-link has ${prop}`).toContain(prop);
+    }
+    // repo link sits in the same cluster as the search + theme toggle
+    expect(css).toMatch(/\.header-right\s*\{[^}]*\.repo-link|\.repo-link[^}]*\}[\s\S]*?\.header-right/);
+  });
+
   it('both picked slots highlight identically (slot-2 was visually subtle)', () => {
     const css = readFileSync('src/styles/global.css', 'utf8');
     const merged = css.match(/\.fusion-row\.slot-1,\s*\.fusion-row\.slot-2\s*\{[^}]*\}/);
