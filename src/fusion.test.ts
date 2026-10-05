@@ -214,6 +214,80 @@ describe('cross-wire exclusions (corpus no-cross-wire evidence)', () => {
     expect(fuse(ball('overgrowth'), ball('flash'))!.crossWire).not.toBeNull();
     expect(fuse(ball('flicker'), ball('radiation-beam'))!.crossWire).not.toBeNull();
     expect(fuse(ball('overgrowth'), ball('maggot'))!.crossWire).not.toBeNull();
-    expect(fuse(ball('black-hole'), ball('maggot'))!.crossWire).not.toBeNull();
+  });
+
+  it('kill effects ride AOE carriers (Black Hole × Sun — the corpus meta pair)', () => {
+    // corpus: black-hole+sun 7 cross-wire claims, black-hole+flash 6 —
+    // "Sun's screen-wide hits apply Black Hole's instant-kill to every
+    // non-boss enemy". Previously the composer emitted nothing: Black Hole's
+    // kill is not a status effect.
+    expect(fuse(ball('black-hole'), ball('sun'))!.crossWire).toContain('Black Hole');
+    expect(fuse(ball('black-hole'), ball('flash'))!.crossWire).toContain('instant kill');
+    expect(fuse(ball('reaper'), ball('flash'))!.crossWire).toContain('Reaper');
+    expect(fuse(ball('flicker'), ball('reaper'))!.crossWire).not.toBeNull();
+    expect(fuse(ball('armageddon'), ball('reaper'))!.crossWire).not.toBeNull();
+  });
+
+  it('kill carriers are damage-dealing AOE only (Timestop freezes, deals no damage)', () => {
+    expect(fuse(ball('black-hole'), ball('timestop'))!.crossWire).toBeNull();
+  });
+
+  it('Satan carries Black Hole\'s kill but not Reaper\'s (corpus: both directions tested)', () => {
+    // black-hole+satan: 3 cross-wire claims ("Satan's aoe will inflict the
+    // instant kill from Black Hole", Steam build guide).
+    expect(fuse(ball('black-hole'), ball('satan'))!.crossWire).toContain('Black Hole');
+    // reaper+satan: no-cross-wire — "Reaper's instant-kill is NOT triggered
+    // by Satan's AOE" (on-impact kill vs debuff-only judgment).
+    expect(fuse(ball('reaper'), ball('satan'))!.crossWire).toBeNull();
+  });
+
+  it('spawn carriers carry spawn-bound statuses too (Glacier × Maggot, Blizzard × Spider Queen)', () => {
+    // corpus: glacier+maggot 2 CW, cell+glacier 2, blizzard+spider-queen 2,
+    // magma+cell, swamp+cell, inferno+spider-queen — namu rule 6: the spawned
+    // balls carry the fused kit including its spawned spikes/blobs.
+    expect(fuse(ball('glacier'), ball('maggot'))!.crossWire).toContain('Glacier');
+    expect(fuse(ball('blizzard'), ball('spider-queen'))!.crossWire).toContain('Spider Queen');
+    expect(fuse(ball('cell'), ball('glacier'))!.crossWire).not.toBeNull();
+    expect(fuse(ball('magma'), ball('cell'))!.crossWire).not.toBeNull();
+    expect(fuse(ball('swamp'), ball('cell'))!.crossWire).not.toBeNull();
+  });
+});
+
+describe('order side-effects (fusion-ordering.md)', () => {
+  it('both-cooldown pairs: first-selected ball\'s cooldown wins (namu.wiki)', () => {
+    // cooldown class = {black-hole, bomb, dark, egg-sac, nuclear-bomb,
+    // timestop, voluptuous-egg-sac} — exactly the balls whose text lists a
+    // cooldown (validated against the game-file dump class).
+    const r = fuse(ball('black-hole'), ball('timestop'))!;
+    expect(r.notes.join(' ')).toMatch(/cooldown/i);
+    expect(fuse(ball('bomb'), ball('dark'))!.notes.join(' ')).toMatch(/cooldown/i);
+    // non-cooldown pairs get no order note
+    expect(fuse(ball('flash'), ball('glacier'))!.notes.join(' ')).not.toMatch(/first-selected ball's cooldown/i);
+  });
+
+  it('same-property pairs: first-selected variant wins (PSA #2)', () => {
+    const r = fuse(ball('mosquito-swarm'), ball('mosquito-king'))!;
+    expect(r.notes.join(' ')).toMatch(/first-selected ball's variant/i);
+    expect(fuse(ball('radiation-beam'), ball('nuclear-bomb'))!.notes.join(' ')).toMatch(/first-selected ball's variant/i);
+  });
+});
+
+describe('composition caveats (general_rules_notes)', () => {
+  it('two Destroy-class balls may lose one self-destruct effect', () => {
+    expect(fuse(ball('bomb'), ball('dark'))!.notes.join(' ')).toMatch(/Destroy/i);
+  });
+
+  it('hit-once + cooldown suppresses the partner\'s pass-through', () => {
+    expect(fuse(ball('black-hole'), ball('ghost'))!.notes.join(' ')).toMatch(/pass-through/i);
+    expect(fuse(ball('ghost'), ball('flash'))!.notes.join(' ')).not.toMatch(/pass-through/i);
+  });
+
+  it('spawn can compensate Destroy (Cell × Bomb = indestructible bomb)', () => {
+    expect(fuse(ball('bomb'), ball('cell'))!.notes.join(' ')).toMatch(/Spawn/i);
+  });
+
+  it('Dark\'s damage multiplier carries into any fusion (namu.wiki)', () => {
+    expect(fuse(ball('dark'), ball('flash'))!.notes.join(' ')).toMatch(/Dark's damage multiplier/);
+    expect(fuse(ball('flash'), ball('sun'))!.notes.join(' ')).not.toMatch(/multiplier/);
   });
 });

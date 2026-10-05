@@ -5,9 +5,15 @@
 //   - name is "A × B" in selection order (function is order-independent)
 //   - effect paragraphs concatenate per component, in name order
 //   - a cross-wire line is emitted when one component's channel can carry the
-//     other's effect (spawn/AOE carrier + on-hit status), per the community
-//     composition rules (namu's 7 rules; the status-vs-spawn split — see
-//     docs/research/fusion-observations/ and the playtest notes)
+//     other's effect: spawn/AOE carrier + on-hit status, AOE carrier + kill-
+//     on-hit (Black Hole × Sun), spawn carrier + spawn-bound status (Glacier
+//     × Maggot) — per the community composition rules (namu's 7 rules; the
+//     status-vs-spawn split) validated against the 1,035-observation corpus
+//     in docs/research/fusion-observations/
+//   - order side-effects and fixed composition caveats (both-cooldown pairs,
+//     same-property pairs, Destroy × Destroy, hit-once dominance over
+//     pass-through, spawn compensating Destroy, Dark's multiplier) are notes
+//     (docs/research/fusion-ordering.md; fusion-pairs.json general_rules_notes)
 //   - damage rolls are abstracted to "X" (fused numbers are not derivable)
 // It is the site's editorial model of fusion, not game data.
 import { BALLS, type Ball } from './data/balls';
@@ -61,8 +67,29 @@ const SPAWN_BOUND_IDS = new Set(['blizzard', 'freeze-ray']);
 const SPAWN_EXCLUDED_IDS = new Set(['voluptuous-egg-sac', 'brood-mother', 'mosquito-king']);
 /** AOE carriers with no damage hits to carry a status: Satan's screen
  *  judgment is debuff-only (Bilibili) — it cannot trigger on-hit statuses
- *  like Hemorrhage's %-damage. */
+ *  like Hemorrhage's %-damage, nor Reaper's on-impact kill (corpus:
+ *  reaper+satan no-cross-wire). It DOES carry Black Hole's instant kill
+ *  (corpus: black-hole+satan, 3 claims). */
 const AOE_EXCLUDED_IDS = new Set(['satan']);
+/** Kill-on-hit effects that ride damage-dealing AOE carriers (the corpus's
+ *  biggest documented cross-wire class: Black Hole × Sun is its single
+ *  most-discussed pair — "Sun's screen-wide hits apply Black Hole's
+ *  instant-kill to every non-boss enemy"; Reaper's on-impact kill works with
+ *  Flash/Flicker/Armageddon). Timestop is deliberately absent: it deals no
+ *  damage, and the corpus shows its pairs don't wire. */
+const KILL_EFFECT_IDS = new Set(['black-hole', 'reaper']);
+
+/** Order side-effects (docs/research/fusion-ordering.md): the only two
+ *  functionally order-sensitive pair classes. Both are reported (Discord
+ *  PSA #2 / namu.wiki), never playtested here — notes carry that caveat. */
+const COOLDOWN_CLASS_IDS = new Set(['black-hole', 'bomb', 'dark', 'egg-sac', 'nuclear-bomb', 'timestop', 'voluptuous-egg-sac']);
+const SAME_PROPERTY_PAIRS = new Set(['mosquito-king+mosquito-swarm', 'nuclear-bomb+radiation-beam']);
+
+/** Fixed composition caveats from the corpus (general_rules_notes): reported
+ *  interactions beyond naive text concatenation. */
+const DESTROY_CLASS_IDS = new Set(['dark', 'egg-sac', 'time', 'armageddon', 'black-hole', 'bomb', 'fireworks', 'landslide', 'mosquito-swarm', 'nuclear-bomb', 'timestop', 'voluptuous-egg-sac']);
+const HIT_ONCE_COOLDOWN_IDS = new Set(['black-hole', 'bomb', 'dark', 'egg-sac', 'nuclear-bomb', 'timestop', 'voluptuous-egg-sac']);
+const PIERCE_IDS = new Set(['ghost', 'wind', 'assassin', 'drill', 'erosion', 'noxious', 'sniper', 'soul-sucker', 'wraith']);
 
 function statusChannel(b: Ball): StatusChannel {
   if (!b.tags.includes('status-effect')) return null;
@@ -71,6 +98,10 @@ function statusChannel(b: Ball): StatusChannel {
   if (FIELD_AURA.test(b.effects)) return 'field';
   return 'hit';
 }
+
+/** AOE carriers with no damage rolls cannot carry a kill-on-hit effect.
+ *  Timestop freezes but deals no damage; its pairs don't wire (corpus). */
+const dealsDamage = (b: Ball) => /\b\d+(?:\.\d+)?(?:[–-]\d+(?:\.\d+)?)?(?:x|%)?(?= damage)|\bdeals?\b/i.test(b.effects);
 
 /** Fused balls improve some of their components' numbers — the game recomputes
  *  stats at merge time. No formula fits all cases (thresholds shrink by 1,
@@ -142,25 +173,52 @@ function applyFusedStats(ballId: string, text: string): string {
 }
 
 const hasSpawn = (b: Ball) => b.tags.some((t) => t === 'spawns-baby-balls' || t === 'spawns-allies' || t === 'clone');
-const isAoeCarrier = (b: Ball) => b.tags.includes('screen-clear') || b.tags.includes('aoe');
 
 /** Cross-wire line when one component's channel can carry the other's effect.
  *  Role-named like the game's tooltip ("Spawned balls from X … as Y"), not
- *  order-named. Conservative: only patterns with tooltip evidence —
- *  spawn-carrier × on-hit status, and AOE-carrier × on-hit status. */
+ *  order-named. Conservative: only patterns with tooltip or corpus evidence —
+ *  spawn-carrier × on-hit status, AOE-carrier × on-hit status, AOE-carrier ×
+ *  kill-on-hit (Black Hole × Sun), and spawn-carrier × spawn-bound status
+ *  (Glacier × Maggot: babies inherit the whole kit including its spikes). */
 export function crossWire(a: Ball, b: Ball): string | null {
+  const isKill = (b: Ball) => KILL_EFFECT_IDS.has(b.id);
+  const isStatus = (b: Ball) => statusChannel(b) === 'hit';
+
   // spawn carrier + partner's on-hit status (tooltip: Overgrowth × Maggot)
   const spawnable = (b: Ball) => hasSpawn(b) && !SPAWN_EXCLUDED_IDS.has(b.id);
-  const [spawner, st] = spawnable(a) && statusChannel(b) === 'hit' ? [a, b]
-    : spawnable(b) && statusChannel(a) === 'hit' ? [b, a] : [null, null];
+  const [spawner, st] = spawnable(a) && isStatus(b) ? [a, b]
+    : spawnable(b) && isStatus(a) ? [b, a] : [null, null];
   if (spawner && st) return `Spawned balls from ${spawner.name} have the same properties as ${st.name}.`;
 
   // AOE carrier + partner's on-hit status (tooltip: Overgrowth × Flash)
   const rank = (b: Ball) => (b.tags.includes('screen-clear') ? 2 : b.tags.includes('aoe') ? 1 : 0);
   const aoeCarrier = (b: Ball) => rank(b) > 0 && !AOE_EXCLUDED_IDS.has(b.id);
-  const [carrier, st2] = aoeCarrier(a) && rank(a) > rank(b) && statusChannel(b) === 'hit' ? [a, b]
-    : aoeCarrier(b) && rank(b) > rank(a) && statusChannel(a) === 'hit' ? [b, a] : [null, null];
+  const [carrier, st2] = aoeCarrier(a) && rank(a) > rank(b) && isStatus(b) ? [a, b]
+    : aoeCarrier(b) && rank(b) > rank(a) && isStatus(a) ? [b, a] : [null, null];
   if (carrier && st2) return `Area-of-effect damage from ${carrier.name} inflicts the status effect of ${st2.name}.`;
+
+  // AOE carrier + partner's kill-on-hit (Black Hole × Sun — the corpus meta
+  // pair; kamigame: "Black Hole's effect rides on Flash's screen-wide
+  // attack"). The kill ball is often itself screen-clear (Black Hole,
+  // Reaper), so no rank comparison — any damage-dealing AOE carrier works.
+  // Carrier must deal damage: Timestop's freeze does not carry it. Satan is
+  // allowed as carrier only for Black Hole's kill: its judgment is
+  // debuff-only, and applying an instant-kill is a debuff, while Reaper's
+  // kill is a damage-channel proc it cannot fire (corpus, both directions).
+  const killCarrierOk = (carrier: Ball, killer: Ball) =>
+    killer.id === 'black-hole' || !AOE_EXCLUDED_IDS.has(carrier.id);
+  const [kCarrier, killer] = isKill(b) && !isKill(a) && dealsDamage(a) && killCarrierOk(a, b) ? [a, b]
+    : isKill(a) && !isKill(b) && dealsDamage(b) && killCarrierOk(b, a) ? [b, a] : [null, null];
+  if (kCarrier && killer) return `Area-of-effect damage from ${kCarrier.name} triggers the instant kill of ${killer.name}.`;
+
+  // spawn carrier + partner's spawn-bound status (Glacier × Maggot — the
+  // babies inherit the fused kit, spikes included; namu rule 6, corpus
+  // glacier+maggot / cell+glacier / blizzard+spider-queen). Excluded spawn
+  // carriers still apply (the property drops at their broken hop).
+  const spawnStatus = (b: Ball) => statusChannel(b) === 'spawn';
+  const [sp2, sst] = spawnable(a) && spawnStatus(b) ? [a, b]
+    : spawnable(b) && spawnStatus(a) ? [b, a] : [null, null];
+  if (sp2 && sst) return `Spawned balls from ${sp2.name} have the same properties as ${sst.name}, including its spawned effects.`;
   return null;
 }
 
@@ -195,13 +253,39 @@ export interface FusionResult {
 export function fuse(a: Ball, b: Ball): FusionResult | null {
   if (a.id === b.id) return null;
   const evo = evolvesInstead(a, b);
+  const notes = ['Composition is modeled from community-observed rules; verify against the game.'];
+
+  // Order side-effects (fusion-ordering.md §3): both-cooldown pairs and
+  // same-property pairs take the first-selected ball's variant/cooldown.
+  const pairKey = [a.id, b.id].sort().join('+');
+  if (COOLDOWN_CLASS_IDS.has(a.id) && COOLDOWN_CLASS_IDS.has(b.id)) {
+    notes.push(`Both balls list a cooldown — the first-selected ball's cooldown wins (reported, untested here).`);
+  }
+  if (SAME_PROPERTY_PAIRS.has(pairKey)) {
+    notes.push(`Same-property pair — the first-selected ball's variant of the shared property wins (reported, untested here).`);
+  }
+
+  // Fixed composition caveats (corpus general rules; commutative, not order).
+  if (a.id === 'dark' || b.id === 'dark') {
+    notes.push(`Dark's damage multiplier carries into the fusion — Dark is prized as fusion material for exactly this (reported).`);
+  }
+  if (DESTROY_CLASS_IDS.has(a.id) && DESTROY_CLASS_IDS.has(b.id)) {
+    notes.push('Both balls self-destruct — fusing two Destroy-class balls may lose one of the two effects (reported).');
+  }
+  const hitOnce = (b: Ball) => HIT_ONCE_COOLDOWN_IDS.has(b.id);
+  if ((hitOnce(a) && PIERCE_IDS.has(b.id)) || (hitOnce(b) && PIERCE_IDS.has(a.id))) {
+    notes.push(`Hit-once + cooldown is dominant: the fused ball keeps it and loses the partner's pass-through (reported).`);
+  }
+  const spawns = (b: Ball) => hasSpawn(b) && !SPAWN_EXCLUDED_IDS.has(b.id);
+  if ((DESTROY_CLASS_IDS.has(a.id) && spawns(b)) || (DESTROY_CLASS_IDS.has(b.id) && spawns(a))) {
+    notes.push('Spawn can compensate Destroy — spawned clones/babies keep the fused ball alive (reported; Cell × Bomb is the known example).');
+  }
+
   return {
     name: fusionName(a, b),
     paragraphs: [applyFusedStats(a.id, a.effects), applyFusedStats(b.id, b.effects)].map(abstractDamage) as [string, string],
     crossWire: crossWire(a, b),
     evolvesInstead: evo ? { id: evo.id, name: evo.name } : null,
-    notes: [
-      'Composition is modeled from community-observed rules; verify against the game.',
-    ],
+    notes,
   };
 }

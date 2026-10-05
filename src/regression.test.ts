@@ -329,4 +329,28 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
     expect(block).toContain('overflow-y: scroll');
     expect(block).toContain('scrollbar-width: thin');
   });
+
+  // Bug: the full-corpus validation pass (2026-10-05, all 370 pairs in
+  // fusion-pairs.json diffed against the composer) found 55 pairs with
+  // cross-wire evidence the composer ignored. Biggest classes: kill-on-hit
+  // effects (Black Hole, Reaper) did not ride AOE carriers — Black Hole ×
+  // Sun is the corpus's single most-discussed pair (7 cross-wire claims) —
+  // and spawn carriers did not carry spawn-bound statuses (Glacier × Maggot,
+  // Cell × Glacier: namu rule 6). Also missing entirely: the two order
+  // side-effects (both-cooldown pairs, same-property pairs) and the fixed
+  // composition caveats (Destroy × Destroy, hit-once dominance over
+  // pass-through, spawn compensates Destroy, Dark's multiplier). Pinned in
+  // fusion.test.ts (cross-wire exclusions / order side-effects / composition
+  // caveats describes).
+  it('kill-on-hit rides AOE carriers and order side-effects emit notes', async () => {
+    const { fuse } = await import('./fusion');
+    const { ballMap } = await import('./catalog');
+    const ball = (id: string) => ballMap.get(id)!;
+    // Black Hole × Sun: the corpus meta pair — 7 cross-wire claims
+    expect(fuse(ball('black-hole'), ball('sun'))!.crossWire).toContain('Black Hole');
+    // Glacier × Maggot: spawn-bound status rides the spawn carrier
+    expect(fuse(ball('glacier'), ball('maggot'))!.crossWire).toContain('Glacier');
+    // both-cooldown pair note (namu rule: first-selected's cooldown wins)
+    expect(fuse(ball('black-hole'), ball('timestop'))!.notes.join(' ')).toMatch(/cooldown wins/);
+  });
 });

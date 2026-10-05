@@ -104,12 +104,19 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
 - **Fusion composer** — pure composition of a fused ball from two components:
   name "A × B" (first-selected first), component effect paragraphs in name
   order with damage rolls abstracted to "X", a role-named cross-wire line
-  when a spawn/AOE channel can carry the partner's on-hit status, and the
-  evolve-instead note for 2-component evolution recipes. Module:
-  `src/fusion.ts` (`fuse(a, b)`, `fusionBalls()`, `fusionName`,
-  `abstractDamage`, `crossWire`, `evolvesInstead`) — the site's editorial
-  model of fusion, not game data; the composition rules and their evidence
-  live in `docs/research/fusion-observations/`.
+  when a channel can carry the partner's effect (spawn/AOE carrier × on-hit
+  status; AOE carrier × kill-on-hit, e.g. Black Hole × Sun; spawn carrier ×
+  spawn-bound status, e.g. Glacier × Maggot), notes for the two order
+  side-effects (both-cooldown pairs, same-property pairs — first-selected
+  wins) and the fixed composition caveats (Destroy × Destroy, hit-once
+  dominance over pass-through, spawn compensates Destroy, Dark's
+  multiplier), and the evolve-instead note for 2-component evolution
+  recipes. Module: `src/fusion.ts` (`fuse(a, b)`, `fusionBalls()`,
+  `fusionName`, `abstractDamage`, `crossWire`, `evolvesInstead`) — the
+  site's editorial model of fusion, not game data; the composition rules,
+  their evidence, and the full 370-pair observation corpus live in
+  `docs/research/fusion-observations/` (validation methodology:
+  `fusion-ordering.md`, `CONTRADICTIONS.md`).
 
 ## Data provenance
 
