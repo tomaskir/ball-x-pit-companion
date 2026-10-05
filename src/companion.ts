@@ -46,8 +46,8 @@ function showSection(s: Section, updateHash = true) {
   if (updateHash) location.hash = `#/${s}`;
   for (const el of document.querySelectorAll<HTMLElement>('.section-view')) el.hidden = el.dataset.section !== s;
   for (const btn of document.querySelectorAll<HTMLElement>('.tab-btn')) btn.classList.toggle('active', btn.dataset.section === s);
-  // switching sections wipes every selection — the screen starts fresh
-  paint(view.dispatch({ type: 'clearAll' }));
+  // cross-screen remembering: each screen's selection survives switching away
+  // and back — no dispatch needed, view state already holds it per screen
 }
 
 // ---------- init ----------
@@ -63,7 +63,8 @@ function init() {
 
   document.addEventListener('keydown', (e) => {
     // Esc clears the active section's selection (chars/fusions included);
-    // switching sections clears everything (clearAll)
+    // switching sections keeps every screen's selection (cross-screen
+    // remembering)
     if (e.key === 'Escape') paint(view.dispatch({ type: 'clear', section }));
   });
   document.addEventListener('click', (e) => {

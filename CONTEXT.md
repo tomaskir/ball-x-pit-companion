@@ -89,7 +89,8 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   (The renderer attaches hover/tap listeners for toasts; tile/card/row
   clicks come back through the build seam's `emit`, which the island wires
   to dispatch + paint. Esc and empty-space clicks clear the active
-  section's selection, switching sections clears every selection.)
+  section's selection; each screen's selection survives switching away and
+  back — cross-screen remembering.)
 - **Renderer** — all DOM painting for the island. Module: `src/renderer.ts`
   (recipe notation comes from `src/graph.ts`; the renderer only injects
   icon markup — see **Recipe notation**; the icon-URL join comes from

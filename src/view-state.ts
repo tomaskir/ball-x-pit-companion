@@ -2,7 +2,8 @@
 // fusion picks, search query) and every derivation the island used to
 // hand-wire between its event handlers. One interface:
 // dispatch(action) → ViewModel — 'clear' is section-scoped (the active
-// section's selection only), 'clearAll' wipes every section (tab switch).
+// section's selection only); selections from different screens coexist, so
+// tab switching dispatches nothing.
 // The island (src/companion.ts) keeps only event listening, theme, and hash
 // routing; painting lives in src/renderer.ts. Fusion composition lives in
 // src/fusion.ts. The view model carries resolved items, not bare ids:
@@ -60,9 +61,7 @@ export type Action =
   | { type: 'toggleFusion'; id: string }
   | { type: 'search'; query: string }
   /** Esc / empty-space click: clears the named section's selection only. */
-  | { type: 'clear'; section: Section }
-  /** Tab switch: clears every section's selection. */
-  | { type: 'clearAll' };
+  | { type: 'clear'; section: Section };
 
 /** The selection-toggle actions — exactly the ones the renderer's click
  *  handlers produce and hand back through the build seam's `emit` callback
@@ -181,11 +180,6 @@ export function createViewState() {
           if (action.section === 'balls' || action.section === 'passives') selectedId = null;
           else if (action.section === 'characters') selectedChars.length = 0;
           else fusionPicks.length = 0;
-          break;
-        case 'clearAll':
-          selectedId = null;
-          selectedChars.length = 0;
-          fusionPicks.length = 0;
           break;
       }
       return derive();

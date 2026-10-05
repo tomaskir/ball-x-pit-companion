@@ -145,15 +145,17 @@ describe('view state: clear action (Esc / empty-space click, section-scoped)', (
     expect(vm.fusionPanel).toEqual({ state: 'empty' });
   });
 
-  it('clearAll wipes item selection, characters, and fusion picks (tab switch)', () => {
+  it('selections from different screens coexist — tab switching clears nothing', () => {
+    // Cross-screen remembering: each screen's selection survives switching
+    // away and back; only Esc / empty-space (section-scoped clear) wipes.
     const view = createViewState();
     view.dispatch({ type: 'toggleItem', id: 'inferno' });
     view.dispatch({ type: 'toggleChar', id: 'the-warrior' });
     view.dispatch({ type: 'toggleFusion', id: 'flash' });
-    const vm = view.dispatch({ type: 'clearAll' });
-    expect(vm.tiles.get('inferno')!.selected).toBe(false);
-    expect(vm.selectedChars).toHaveLength(0);
-    expect(vm.fusionPanel).toEqual({ state: 'empty' });
+    const vm = view.derive();
+    expect(vm.tiles.get('inferno')!.selected).toBe(true);
+    expect(vm.selectedChars.map((c) => c.id)).toEqual(['the-warrior']);
+    expect(vm.fusionPanel).toMatchObject({ state: 'pending', first: ballMap.get('flash')! });
   });
 });
 
