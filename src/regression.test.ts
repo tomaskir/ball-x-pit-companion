@@ -260,7 +260,7 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
   // CustomEvents on the global document ('tile-select' / 'char-select' /
   // 'fusion-select') — an invisible interface: nothing in buildAll's
   // signature showed it, and the click→action wiring had no test surface.
-  // Fix: the build seam carries an `emit(type, id)` callback (the island
+  // Fix: the build seam carries an `emit(action)` callback (the island
   // dispatches the named view-state action and paints); the renderer no
   // longer dispatches DOM events at all. Pinned behaviorally in
   // renderer.test.ts ("build seam: clicks call emit"); aliased here for the
@@ -272,7 +272,9 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
     for (const event of ['tile-select', 'char-select', 'fusion-select']) {
       expect(src).not.toContain(event);
     }
-    // the seam is in the signature, not hidden module state
+    // the seam is declared in the signature (the options object carries both
+    // callbacks; buildAll assigns them to module-level slots — the pre-existing
+    // toastVerdict pattern)
     expect(src).toMatch(/export function buildAll\(\{ getVerdict, emit/);
   });
 

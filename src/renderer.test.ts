@@ -202,7 +202,7 @@ describe('build seam: clicks call emit (jsdom)', () => {
     const tile = document.querySelector<HTMLElement>('#ballsGrid .tile[data-id="flash"]')!;
     expect(tile).toBeTruthy();
     tile.click();
-    expect(emit).toHaveBeenCalledWith('toggleItem', 'flash');
+    expect(emit).toHaveBeenCalledWith({ type: 'toggleItem', id: 'flash' });
   });
 
   it('char card click emits toggleChar with the character id', () => {
@@ -211,7 +211,19 @@ describe('build seam: clicks call emit (jsdom)', () => {
     const card = document.querySelector<HTMLElement>('#charactersGrid .char-card')!;
     card.click();
     expect(emit).toHaveBeenCalledTimes(1);
-    expect(emit).toHaveBeenCalledWith('toggleChar', card.dataset.id ?? expect.any(String));
+    expect(emit).toHaveBeenCalledWith({ type: 'toggleChar', id: card.dataset.id ?? expect.any(String) });
+  });
+
+  it('char chip click emits toggleChar with the chip character id', () => {
+    const emit = vi.fn();
+    buildAll({ getVerdict: () => null, emit });
+    // chips only exist once a character is selected — paint the selection first
+    const view = createViewState();
+    paint(view.dispatch({ type: 'toggleChar', id: 'the-warrior' }));
+    const chip = document.querySelector<HTMLElement>('#charChips .chip')!;
+    expect(chip).toBeTruthy();
+    chip.click();
+    expect(emit).toHaveBeenCalledWith({ type: 'toggleChar', id: 'the-warrior' });
   });
 
   it('fusion row click emits toggleFusion with the ball id', () => {
@@ -220,7 +232,7 @@ describe('build seam: clicks call emit (jsdom)', () => {
     const row = document.querySelector<HTMLElement>('#fusionList .fusion-row[data-id="flash"]')!;
     expect(row).toBeTruthy();
     row.click();
-    expect(emit).toHaveBeenCalledWith('toggleFusion', 'flash');
+    expect(emit).toHaveBeenCalledWith({ type: 'toggleFusion', id: 'flash' });
   });
 
   it('the emit callback actually reaches view state (the island path)', () => {
@@ -228,7 +240,7 @@ describe('build seam: clicks call emit (jsdom)', () => {
     const view = createViewState();
     buildAll({
       getVerdict: () => null,
-      emit: (type, id) => paint(view.dispatch({ type, id } as Action)),
+      emit: (action) => paint(view.dispatch(action)),
     });
     document.querySelector<HTMLElement>('#ballsGrid .tile[data-id="flash"]')!.click();
     paint(view.derive());

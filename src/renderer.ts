@@ -11,8 +11,8 @@
 // The build seam is the options object: { getVerdict, emit }. getVerdict
 // supplies the toast's per-item verdict against the current character
 // selection; emit is how built-in click handlers report selection toggles
-// back to the island — emit(type, id) names the view-state action
-// ('toggleItem' | 'toggleChar' | 'toggleFusion') and the clicked id. The
+// back to the island — emit(action) hands over the whole view-state
+// ToggleAction (the island dispatches it verbatim). The
 // renderer never dispatches DOM events or touches view state: emit is just
 // a callback the island supplies (it dispatches and paints); hover/tap
 // toast listeners stay internal to the renderer.
@@ -37,7 +37,7 @@ const icon = (p: string) => iconUrl(import.meta.env.BASE_URL, p);
  *  current selection) and the click→island callback (the island dispatches
  *  the named view-state action and paints). */
 let toastVerdict: (item: Item) => Verdict | null = () => null;
-let emit: (type: ToggleAction['type'], id: string) => void = () => {};
+let emit: (action: ToggleAction) => void = () => {};
 
 // ---------- grids ----------
 
@@ -70,7 +70,7 @@ function buildGrid(gridId: string, items: Item[]) {
       tile.innerHTML = `<img src="${icon(item.icon)}" alt="${item.name}" width="48" height="48" loading="lazy"><span class="nm">${item.name}</span>${comps}`;
       tile.addEventListener('click', (e) => {
         e.stopPropagation();
-        emit('toggleItem', item.id);
+        emit({ type: 'toggleItem', id: item.id });
       });
       attachToast(tile, () => item);
       tiles.set(item.id, { tile, item });
@@ -133,7 +133,7 @@ function buildCharacters() {
         ? `<div class="char-base" title="Base ball"><img src="${icon(base.icon)}" alt="${base.name}" width="24" height="24"><span>${base.name}</span></div>`
         : '<div class="char-base none">no base ball</div>'}`;
     card.addEventListener('click', () => {
-      emit('toggleChar', ch.id);
+      emit({ type: 'toggleChar', id: ch.id });
     });
     // hovering the base-ball chip shows that ball's toast
     const baseChip = card.querySelector('.char-base');
@@ -174,7 +174,7 @@ function renderCharChips(vm: ViewModel) {
     chip.innerHTML = `<img src="${icon(ch.sprite)}" alt="" width="22" height="22"><span>${ch.name}</span>`;
     chip.title = 'Click to remove';
     chip.addEventListener('click', () => {
-      emit('toggleChar', ch.id);
+      emit({ type: 'toggleChar', id: ch.id });
     });
     wrap.appendChild(chip);
   }
@@ -276,7 +276,7 @@ function buildFusionList() {
       row.innerHTML = `<img src="${icon(ball.icon)}" alt="${ball.name}" width="36" height="36" loading="lazy"><span class="nm">${ball.name}</span>`;
       row.addEventListener('click', (e) => {
         e.stopPropagation();
-        emit('toggleFusion', ball.id);
+        emit({ type: 'toggleFusion', id: ball.id });
       });
       fusionRowEls.set(ball.id, row);
       wrap.appendChild(row);
@@ -408,12 +408,12 @@ function paintFusion(vm: ViewModel) {
 /** The build seam: everything the island injects at build time.
  *  `getVerdict` supplies the toast's per-item verdict against the current
  *  character selection; `emit` is how the built-in click handlers report
- *  selection toggles back — the island dispatches the named view-state
- *  action and paints. The renderer stays paint-only: it never dispatches
+ *  selection toggles back — the island dispatches the whole ToggleAction
+ *  and paints. The renderer stays paint-only: it never dispatches
  *  DOM events and never touches view state. */
 export interface BuildOptions {
   getVerdict: (item: Item) => Verdict | null;
-  emit: (type: ToggleAction['type'], id: string) => void;
+  emit: (action: ToggleAction) => void;
 }
 
 /** Build all static DOM once: balls grid, passives grid, character cards,

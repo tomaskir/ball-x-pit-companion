@@ -3,7 +3,7 @@
 // interface; all state and derivations live in src/view-state.ts behind one
 // dispatch(action) → ViewModel interface. See CONTEXT.md for the domain
 // glossary these contracts use.
-import { createViewState, type Section, type Action } from './view-state';
+import { createViewState, type Section } from './view-state';
 import { buildAll, paint } from './renderer';
 
 const view = createViewState();
@@ -76,7 +76,7 @@ function init() {
   initRouting();
   buildAll({
     getVerdict: (item) => view.verdictFor(item),
-    emit: (type, id) => paint(view.dispatch({ type, id } as Action)),
+    emit: (action) => paint(view.dispatch(action)),
   });
   // initial paint: derive the view model once everything is built
   paint(view.derive());

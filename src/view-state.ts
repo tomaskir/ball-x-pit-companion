@@ -66,7 +66,9 @@ export type Action =
 
 /** The selection-toggle actions — exactly the ones the renderer's click
  *  handlers produce and hand back through the build seam's `emit` callback
- *  (the island dispatches them verbatim). */
+ *  (the island dispatches them verbatim). ToggleAction is the seam's
+ *  currency: emit carries the whole action, so callers never reassemble
+ *  it from a type/id pair. */
 export type ToggleAction = Extract<
   Action,
   { type: 'toggleItem' | 'toggleChar' | 'toggleFusion' }

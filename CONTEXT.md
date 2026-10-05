@@ -77,11 +77,12 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   current selection. Lives in `src/renderer.ts`.
 - **Build seam** — the options object `buildAll({ getVerdict, emit })` hands
   the island's two callbacks to the renderer at build time: `getVerdict`
-  feeds the toast, `emit(type, id)` is how built-in click handlers report
-  selection toggles back (the island dispatches the named view-state action
-  and paints). The renderer stays paint-only — it never dispatches DOM
-  events and never imports view state (pinned in `src/regression.test.ts`;
-  the emit wiring is pinned behaviorally in `src/renderer.test.ts`).
+  feeds the toast, `emit(action)` is how built-in click handlers report
+  selection toggles back (the whole view-state `ToggleAction`, which the
+  island dispatches verbatim and paints). The renderer stays paint-only —
+  it never dispatches DOM events and never depends on view state at runtime
+  (its view-state imports are types only; pinned in `src/regression.test.ts`,
+  the emit wiring behaviorally in `src/renderer.test.ts`).
 - **Island** — the single interactive script `src/companion.ts` mounted by
   the Astro page. Owns event listening, theme, and hash routing only;
   painting, verdict logic, graph math, and data live in their own modules.
