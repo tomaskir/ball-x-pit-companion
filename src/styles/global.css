@@ -150,7 +150,13 @@ header h1 span { color: var(--muted); font-style: italic; font-size: 14px; }
   min-width: 0;
 }
 
-.fusion-list-col .screen-search { margin-bottom: 8px; }
+.fusion-list-col .screen-search {
+  margin-bottom: 8px;
+  /* Match the .fusion-row right edge: the list reserves 16px on the right
+     for the scrollbar gutter (padding-right 12px + margin-right 4px) and
+     each row adds 6px clearance, so 16 + 6 = 22px. */
+  margin-right: 22px;
+}
 
 #themeToggle,
 .repo-link {
@@ -163,18 +169,19 @@ header h1 span { color: var(--muted); font-style: italic; font-size: 14px; }
 
 #themeToggle { font-size: 14px; }
 
-/* GitHub repo link — same visual size as #themeToggle; the svg inherits
-   currentColor so it tracks the theme's text color */
+/* GitHub repo link — same visual size as #themeToggle (square 26×26 box);
+   the svg inherits currentColor so it tracks the theme's text color */
 .repo-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   color: var(--text);
   line-height: 0;
+  padding: 4px; /* square, unlike the toggle's 4px 8px — the svg has no side text */
 }
 
 .repo-link:hover { border-color: var(--gold); }
-.repo-link svg { width: 14px; height: 14px; }
+.repo-link svg { width: 16px; height: 16px; }
 
 /* ---------- grids ---------- */
 
