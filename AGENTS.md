@@ -93,6 +93,13 @@ non-zero on violation.
   bug, each naming the bug. When you fix a bug, add a regression test there
   (or in the module's test file) that names it.
 - Data invariants (counts, schema, icon-on-disk checks) live in `src/data.test.ts`.
+- The fusion corpus is an executable spec: `src/corpus.test.ts` checks the
+  composer against `docs/research/fusion-observations/fusion-pairs.json`,
+  `src/corpus-schema.test.ts` gates the corpus's own schema (via
+  `scripts/harvest/validate-observations.ts`), and a `data.test.ts` test
+  pins every `FUSED_STATS` override to the current catalog effect text.
+  Changing the composer, the corpus, or the wiki effect text must keep all
+  three green — a disagreement is a content decision, not a test to relax.
 - New pure logic goes in `graph.ts`/`view-state.ts` with unit tests first where
   practical (TDD has been the pattern for graph work).
 

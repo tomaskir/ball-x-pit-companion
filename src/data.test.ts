@@ -6,6 +6,7 @@ import { PASSIVES } from './data/passives';
 import { CHARACTERS } from './data/characters';
 import { TAGS } from './data/tags';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { FUSED_STATS } from './fusion';
 
 const ballIds = new Set(BALLS.map((b) => b.id));
 const passiveIds = new Set(PASSIVES.map((p) => p.id));
@@ -119,6 +120,23 @@ describe('characters (ticket 06)', () => {
     for (const id of ['the-empty-nester', 'the-makeshift-sisyphus']) {
       const ch = CHARACTERS.find((c) => c.id === id)!;
       expect(ch.verdicts.some((v) => v.tag === 'spawns-baby-balls' && v.verdict === 'red')).toBe(true);
+    }
+  });
+});
+
+describe('fused-stat overrides vs catalog (the "fails loudly" contract)', () => {
+  // applyFusedStats() replaces exact substrings of the component's effect
+  // text and silently skips replacements that no longer match (a wiki
+  // rewording must never corrupt text). Silent skipping is safe ONLY while
+  // every `from` still matches the current catalog text — this test turns a
+  // rewording into a loud failure here instead of a silent no-op on the site.
+  it('every FUSED_STATS `from` is a substring of the ball\'s current effects', () => {
+    for (const [ballId, replacements] of Object.entries(FUSED_STATS)) {
+      const b = BALLS.find((x) => x.id === ballId);
+      expect(b, `FUSED_STATS key "${ballId}" is not a catalog ball`).toBeDefined();
+      for (const [from] of replacements) {
+        expect(b!.effects.includes(from), `${ballId}: override source no longer in effect text: "${from}"`).toBe(true);
+      }
     }
   });
 });

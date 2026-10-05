@@ -118,8 +118,10 @@ const dealsDamage = (b: Ball) => /\b\d+(?:\.\d+)?(?:[–-]\d+(?:\.\d+)?)?(?:x|%)
  *  (docs/research/fusion-observations/images.jsonl; Steam/reddit corroborate
  *  the Overgrowth threshold). Each entry is a [from, to] replacement applied
  *  to the component's effect text — exact-substring, so a wiki rewording
- *  fails loudly (the override stops applying) rather than corrupting text. */
-const FUSED_STATS: Record<string, [string, string][]> = {
+ *  fails loudly (the override stops applying) rather than corrupting text.
+ *  Exported for the data.test.ts substring gate that keeps "fails loudly"
+ *  true: every `from` must remain a substring of the catalog's effect text. */
+export const FUSED_STATS: Record<string, [string, string][]> = {
   // Overgrowth × Maggot / Overgrowth × Flash tooltips: threshold 3 → 2
   overgrowth: [
     ['Upon reaching 3, consume all stacks', 'Upon reaching 2, consume all stacks'],
@@ -154,10 +156,15 @@ const FUSED_STATS: Record<string, [string, string][]> = {
     ['(max 5 stacks). Poison lasts for 6 seconds and each stack deals 1–4 damage per second',
      '(max 8 stacks). Poison lasts for 9 seconds and each stack deals X damage per second'],
   ],
-  // Satan × Reaper tooltip
+  // Satan × Reaper tooltip. The first `from` was originally transcribed from
+  // the fused tooltip's phrasing ("(max 5 stacks), dealing 10–20 damage per
+  // stack per second") — which is not a substring of the base text and so
+  // never applied; abstractDamage() masked the no-op (both shapes render
+  // "X damage per stack per second"). Realigned to the catalog text so the
+  // override is live and the substring gate (data.test.ts) holds.
   satan: [
-    ['(max 5 stacks), dealing 10–20 damage per stack per second',
-     '(max 5 stacks), dealing X damage per stack per second'],
+    ['(max 5 stacks, 10–20 damage per stack per second)',
+     '(max 5 stacks, X damage per stack per second)'],
     ['makes them go berserk (15–24 damage to adjacent enemies every second)',
      'makes them go berserk (X damage to adjacent enemies every second)'],
   ],
