@@ -290,4 +290,31 @@ describe('composition caveats (general_rules_notes)', () => {
     expect(fuse(ball('dark'), ball('flash'))!.notes.join(' ')).toMatch(/Dark's damage multiplier/);
     expect(fuse(ball('flash'), ball('sun'))!.notes.join(' ')).not.toMatch(/multiplier/);
   });
+
+  it('kill cross-wire requires a real AOE carrier (Iron × Reaper must not wire)', () => {
+    // review finding: the kill branch originally gated only on dealsDamage —
+    // "Area-of-effect damage from Iron triggers the instant kill of Reaper"
+    // for any ball whose text contains "deals". Iron/Stone/Steel/Drill are
+    // single-target, not AOE carriers.
+    expect(fuse(ball('iron'), ball('reaper'))!.crossWire).toBeNull();
+    expect(fuse(ball('timestop'), ball('reaper'))!.crossWire).toBeNull();
+  });
+
+  it('Noxious × Poison is a same-property pair (corpus: max stacks differ by order)', () => {
+    expect(fuse(ball('noxious'), ball('poison'))!.notes.join(' ')).toMatch(/first-selected ball's variant/i);
+  });
+
+  it('base-ball pool recursion note (first-selected base ball is consumed)', () => {
+    expect(fuse(ball('wraith'), ball('egg-sac'))!.notes.join(' ')).toMatch(/base ball is consumed/);
+    expect(fuse(ball('flash'), ball('glacier'))!.notes.join(' ')).not.toMatch(/base ball is consumed/);
+  });
+
+  it('corpus-disputed kill pairs carry a contradiction note (flicker × reaper)', () => {
+    // CONTRADICTIONS.md §10e: three reports say Flicker's ticks fire
+    // Reaper's kill, one says only direct hits do — genuinely open.
+    // flash+reaper is corpus-verified, so no contradiction note there.
+    expect(fuse(ball('flicker'), ball('reaper'))!.crossWire).not.toBeNull();
+    expect(fuse(ball('flicker'), ball('reaper'))!.notes.join(' ')).toMatch(/reports disagree/);
+    expect(fuse(ball('reaper'), ball('sun'))!.notes.join(' ')).not.toMatch(/reports disagree/);
+  });
 });

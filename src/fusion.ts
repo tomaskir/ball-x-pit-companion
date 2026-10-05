@@ -81,14 +81,22 @@ const KILL_EFFECT_IDS = new Set(['black-hole', 'reaper']);
 
 /** Order side-effects (docs/research/fusion-ordering.md): the only two
  *  functionally order-sensitive pair classes. Both are reported (Discord
- *  PSA #2 / namu.wiki), never playtested here — notes carry that caveat. */
+ *  PSA #2 / namu.wiki), never playtested here — notes carry that caveat.
+ *  The cooldown class is also the hit-once class (both from the game-file
+ *  I2 effect-text dump: these are exactly the balls whose text lists a
+ *  cooldown). */
 const COOLDOWN_CLASS_IDS = new Set(['black-hole', 'bomb', 'dark', 'egg-sac', 'nuclear-bomb', 'timestop', 'voluptuous-egg-sac']);
-const SAME_PROPERTY_PAIRS = new Set(['mosquito-king+mosquito-swarm', 'nuclear-bomb+radiation-beam']);
+/** Same-property pairs (PSA #2): both components implement the SAME exact
+ *  property — the first-selected ball's variant wins. Known worked examples
+ *  from the corpus: Mosquito Swarm × Mosquito King (spawn variant),
+ *  Nuclear Bomb × Radiation Beam (radiation duration 15 s vs infinite),
+ *  Noxious × Poison (max poison stacks differ by order). */
+const SAME_PROPERTY_PAIRS = new Set(['mosquito-king+mosquito-swarm', 'nuclear-bomb+radiation-beam', 'noxious+poison']);
 
 /** Fixed composition caveats from the corpus (general_rules_notes): reported
  *  interactions beyond naive text concatenation. */
 const DESTROY_CLASS_IDS = new Set(['dark', 'egg-sac', 'time', 'armageddon', 'black-hole', 'bomb', 'fireworks', 'landslide', 'mosquito-swarm', 'nuclear-bomb', 'timestop', 'voluptuous-egg-sac']);
-const HIT_ONCE_COOLDOWN_IDS = new Set(['black-hole', 'bomb', 'dark', 'egg-sac', 'nuclear-bomb', 'timestop', 'voluptuous-egg-sac']);
+const HIT_ONCE_COOLDOWN_IDS = COOLDOWN_CLASS_IDS;
 const PIERCE_IDS = new Set(['ghost', 'wind', 'assassin', 'drill', 'erosion', 'noxious', 'sniper', 'soul-sucker', 'wraith']);
 
 function statusChannel(b: Ball): StatusChannel {
@@ -173,6 +181,9 @@ function applyFusedStats(ballId: string, text: string): string {
 }
 
 const hasSpawn = (b: Ball) => b.tags.some((t) => t === 'spawns-baby-balls' || t === 'spawns-allies' || t === 'clone');
+const spawnable = (b: Ball) => hasSpawn(b) && !SPAWN_EXCLUDED_IDS.has(b.id);
+/** Unordered pair key ("a+b", sorted) — same-property lookup. */
+const pairId = (a: Ball, b: Ball) => [a.id, b.id].sort().join('+');
 
 /** Cross-wire line when one component's channel can carry the other's effect.
  *  Role-named like the game's tooltip ("Spawned balls from X … as Y"), not
@@ -180,12 +191,16 @@ const hasSpawn = (b: Ball) => b.tags.some((t) => t === 'spawns-baby-balls' || t 
  *  spawn-carrier × on-hit status, AOE-carrier × on-hit status, AOE-carrier ×
  *  kill-on-hit (Black Hole × Sun), and spawn-carrier × spawn-bound status
  *  (Glacier × Maggot: babies inherit the whole kit including its spikes). */
+/** Set by crossWire() when the emitted kill cross-wire is corpus-disputed
+ *  (both polarities reported; fuse() turns this into a caveat note). */
+let killDisputed = false;
+
 export function crossWire(a: Ball, b: Ball): string | null {
+  killDisputed = false;
   const isKill = (b: Ball) => KILL_EFFECT_IDS.has(b.id);
   const isStatus = (b: Ball) => statusChannel(b) === 'hit';
 
   // spawn carrier + partner's on-hit status (tooltip: Overgrowth × Maggot)
-  const spawnable = (b: Ball) => hasSpawn(b) && !SPAWN_EXCLUDED_IDS.has(b.id);
   const [spawner, st] = spawnable(a) && isStatus(b) ? [a, b]
     : spawnable(b) && isStatus(a) ? [b, a] : [null, null];
   if (spawner && st) return `Spawned balls from ${spawner.name} have the same properties as ${st.name}.`;
@@ -199,22 +214,35 @@ export function crossWire(a: Ball, b: Ball): string | null {
 
   // AOE carrier + partner's kill-on-hit (Black Hole × Sun — the corpus meta
   // pair; kamigame: "Black Hole's effect rides on Flash's screen-wide
-  // attack"). The kill ball is often itself screen-clear (Black Hole,
-  // Reaper), so no rank comparison — any damage-dealing AOE carrier works.
-  // Carrier must deal damage: Timestop's freeze does not carry it. Satan is
-  // allowed as carrier only for Black Hole's kill: its judgment is
-  // debuff-only, and applying an instant-kill is a debuff, while Reaper's
-  // kill is a damage-channel proc it cannot fire (corpus, both directions).
+  // attack"). The carrier must be a real AOE carrier (rank > 0, not
+  // excluded) that deals damage — Timestop freezes but deals none, and its
+  // pairs don't wire (corpus). The kill ball is often itself screen-clear
+  // (Black Hole, Reaper), so no rank comparison. Satan is allowed as
+  // carrier only for Black Hole's kill: its judgment is debuff-only, and
+  // applying an instant-kill is a debuff, while Reaper's kill is a
+  // damage-channel proc it cannot fire (corpus, both directions).
   const killCarrierOk = (carrier: Ball, killer: Ball) =>
-    killer.id === 'black-hole' || !AOE_EXCLUDED_IDS.has(carrier.id);
-  const [kCarrier, killer] = isKill(b) && !isKill(a) && dealsDamage(a) && killCarrierOk(a, b) ? [a, b]
-    : isKill(a) && !isKill(b) && dealsDamage(b) && killCarrierOk(b, a) ? [b, a] : [null, null];
-  if (kCarrier && killer) return `Area-of-effect damage from ${kCarrier.name} triggers the instant kill of ${killer.name}.`;
+    dealsDamage(carrier) && (
+      // Satan is excluded as an AOE carrier for statuses, but its debuff-only
+      // judgment does apply Black Hole's instant kill (corpus: 3 claims).
+      killer.id === 'black-hole' && carrier.id === 'satan' ||
+      aoeCarrier(carrier)
+    );
+  /** Pairs whose kill cross-wire is corpus-contradicted (both polarities
+   *  reported, unresolved — CONTRADICTIONS.md §10e). */
+  const KILL_DISPUTED_PAIRS = new Set(['flicker+reaper']);
+  const [kCarrier, killer] = isKill(b) && !isKill(a) && killCarrierOk(a, b) ? [a, b]
+    : isKill(a) && !isKill(b) && killCarrierOk(b, a) ? [b, a] : [null, null];
+  if (kCarrier && killer) {
+    killDisputed = KILL_DISPUTED_PAIRS.has(pairId(a, b));
+    return `Area-of-effect damage from ${kCarrier.name} triggers the instant kill of ${killer.name}.`;
+  }
 
   // spawn carrier + partner's spawn-bound status (Glacier × Maggot — the
   // babies inherit the fused kit, spikes included; namu rule 6, corpus
-  // glacier+maggot / cell+glacier / blizzard+spider-queen). Excluded spawn
-  // carriers still apply (the property drops at their broken hop).
+  // glacier+maggot / cell+glacier / blizzard+spider-queen). spawnable()
+  // filters the excluded carriers (VES, Brood Mother, Mosquito King), so
+  // their broken hop yields null here.
   const spawnStatus = (b: Ball) => statusChannel(b) === 'spawn';
   const [sp2, sst] = spawnable(a) && spawnStatus(b) ? [a, b]
     : spawnable(b) && spawnStatus(a) ? [b, a] : [null, null];
@@ -257,12 +285,19 @@ export function fuse(a: Ball, b: Ball): FusionResult | null {
 
   // Order side-effects (fusion-ordering.md §3): both-cooldown pairs and
   // same-property pairs take the first-selected ball's variant/cooldown.
-  const pairKey = [a.id, b.id].sort().join('+');
+  const pairKey = pairId(a, b);
   if (COOLDOWN_CLASS_IDS.has(a.id) && COOLDOWN_CLASS_IDS.has(b.id)) {
     notes.push(`Both balls list a cooldown — the first-selected ball's cooldown wins (reported, untested here).`);
   }
   if (SAME_PROPERTY_PAIRS.has(pairKey)) {
     notes.push(`Same-property pair — the first-selected ball's variant of the shared property wins (reported, untested here).`);
+  }
+
+  // Pool recursion (CONTRADICTIONS.md §2): not a fusion effect, but the
+  // first-selected base ball is consumed from the level-up/fusion pool.
+  const BASE_BALL_IDS = new Set(BALLS.filter((b) => b.depth === 0).map((b) => b.id));
+  if (BASE_BALL_IDS.has(a.id) || BASE_BALL_IDS.has(b.id)) {
+    notes.push(`Pool note — the first-selected base ball is consumed and does not reappear in the level-up/fusion pool this run (reported).`);
   }
 
   // Fixed composition caveats (corpus general rules; commutative, not order).
@@ -272,19 +307,22 @@ export function fuse(a: Ball, b: Ball): FusionResult | null {
   if (DESTROY_CLASS_IDS.has(a.id) && DESTROY_CLASS_IDS.has(b.id)) {
     notes.push('Both balls self-destruct — fusing two Destroy-class balls may lose one of the two effects (reported).');
   }
-  const hitOnce = (b: Ball) => HIT_ONCE_COOLDOWN_IDS.has(b.id);
-  if ((hitOnce(a) && PIERCE_IDS.has(b.id)) || (hitOnce(b) && PIERCE_IDS.has(a.id))) {
+  if ((HIT_ONCE_COOLDOWN_IDS.has(a.id) && PIERCE_IDS.has(b.id)) || (HIT_ONCE_COOLDOWN_IDS.has(b.id) && PIERCE_IDS.has(a.id))) {
     notes.push(`Hit-once + cooldown is dominant: the fused ball keeps it and loses the partner's pass-through (reported).`);
   }
-  const spawns = (b: Ball) => hasSpawn(b) && !SPAWN_EXCLUDED_IDS.has(b.id);
-  if ((DESTROY_CLASS_IDS.has(a.id) && spawns(b)) || (DESTROY_CLASS_IDS.has(b.id) && spawns(a))) {
+  if ((DESTROY_CLASS_IDS.has(a.id) && spawnable(b)) || (DESTROY_CLASS_IDS.has(b.id) && spawnable(a))) {
     notes.push('Spawn can compensate Destroy — spawned clones/babies keep the fused ball alive (reported; Cell × Bomb is the known example).');
+  }
+
+  const wire = crossWire(a, b);
+  if (killDisputed) {
+    notes.push('Corpus contradiction — reports disagree on whether the instant kill fires from the partner\'s hits here (see docs/research/fusion-observations/CONTRADICTIONS.md).');
   }
 
   return {
     name: fusionName(a, b),
     paragraphs: [applyFusedStats(a.id, a.effects), applyFusedStats(b.id, b.effects)].map(abstractDamage) as [string, string],
-    crossWire: crossWire(a, b),
+    crossWire: wire,
     evolvesInstead: evo ? { id: evo.id, name: evo.name } : null,
     notes,
   };
