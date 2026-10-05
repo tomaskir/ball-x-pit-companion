@@ -145,9 +145,11 @@ describe('view state: clear action (Esc / empty-space click, section-scoped)', (
     expect(vm.fusionPanel).toEqual({ state: 'empty' });
   });
 
-  it('selections from different screens coexist — tab switching clears nothing', () => {
-    // Cross-screen remembering: each screen's selection survives switching
-    // away and back; only Esc / empty-space (section-scoped clear) wipes.
+  it('toggles across screens coexist in one view model (nothing clears on a switch)', () => {
+    // Cross-screen remembering: there is no clear-on-switch action at all —
+    // selections survive because nothing wipes them. (The tab-switch wiring
+    // itself lives in companion.ts, pinned at source level in
+    // regression.test.ts.) Only Esc / empty-space (section-scoped clear) wipes.
     const view = createViewState();
     view.dispatch({ type: 'toggleItem', id: 'inferno' });
     view.dispatch({ type: 'toggleChar', id: 'the-warrior' });

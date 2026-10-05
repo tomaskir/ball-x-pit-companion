@@ -396,4 +396,24 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
     // both-cooldown pair note (namu rule: first-selected's cooldown wins)
     expect(fuse(ball('black-hole'), ball('timestop'))!.notes.join(' ')).toMatch(/cooldown wins/);
   });
+
+  // Bug (cross-screen remembering, 2026-10-05): the document-level
+  // empty-space click handler cleared the active section's selection for any
+  // click outside the interactive selectors — and a .tab-btn is outside
+  // them. Bubbling order made it a cross-screen killer: the tab button's own
+  // listener ran showSection first (updating `section` to the destination),
+  // then the document handler dispatched clear with that destination —
+  // wiping the screen you had just arrived on. Harmless before (showSection
+  // dispatched clearAll anyway), fatal after tab switching stopped
+  // clearing. Fix: header controls are not empty space — the exclusion
+  // selector includes `header`. Pinned at the source level (companion.ts
+  // has no DOM test surface; the behavioral shape — no clear on tab click —
+  // is the island's runtime wiring, jsdom-hostile to import for its
+  // top-level init()).
+  it('empty-space clear excludes header controls (tab click wiped the destination screen)', () => {
+    const src = readFileSync('src/companion.ts', 'utf8');
+    const handler = src.match(/document\.addEventListener\('click'[\s\S]*?\n  \}\);/);
+    expect(handler, 'empty-space click handler not found').toBeTruthy();
+    expect(handler![0]).toMatch(/closest\('[^']*header/);
+  });
 });

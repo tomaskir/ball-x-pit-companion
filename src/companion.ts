@@ -46,8 +46,8 @@ function showSection(s: Section, updateHash = true) {
   if (updateHash) location.hash = `#/${s}`;
   for (const el of document.querySelectorAll<HTMLElement>('.section-view')) el.hidden = el.dataset.section !== s;
   for (const btn of document.querySelectorAll<HTMLElement>('.tab-btn')) btn.classList.toggle('active', btn.dataset.section === s);
-  // cross-screen remembering: each screen's selection survives switching away
-  // and back — no dispatch needed, view state already holds it per screen
+  // cross-screen remembering: nothing in view state is cleared on a switch,
+  // so every screen's selection survives switching away and back
 }
 
 // ---------- init ----------
@@ -68,8 +68,12 @@ function init() {
     if (e.key === 'Escape') paint(view.dispatch({ type: 'clear', section }));
   });
   document.addEventListener('click', (e) => {
-    // empty space clears the active section's selection, same as Esc
-    if (!(e.target as HTMLElement).closest('.tile, .char-card, .chip, .toast, .fusion-row, .fusion-panel')) paint(view.dispatch({ type: 'clear', section }));
+    // empty space clears the active section's selection, same as Esc.
+    // Header controls are not empty space — a tab click must not clear the
+    // destination screen's remembered selection (cross-screen remembering).
+    const target = e.target as HTMLElement;
+    if (target.closest('.tile, .char-card, .chip, .toast, .fusion-row, .fusion-panel, header')) return;
+    paint(view.dispatch({ type: 'clear', section }));
   });
 
   // grid/card/row clicks come back through the build seam's emit callback —
