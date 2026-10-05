@@ -80,10 +80,10 @@ describe('view state: character slots (max 2, sticky selection)', () => {
   });
 });
 
-describe('view state: search filter (ticket 07 semantics)', () => {
+describe('view state: search filter (ticket 07 semantics, per screen)', () => {
   it('filters tiles by name and effect text, non-matching get filtered', () => {
     const view = createViewState();
-    const vm = view.dispatch({ type: 'search', query: 'vampire' });
+    const vm = view.dispatch({ type: 'search', section: 'balls', query: 'vampire' });
     expect(vm.tiles.get('vampire')!.filtered).toBe(false);
     expect(vm.tiles.get('vampire-lord')!.filtered).toBe(false); // name match
     // effect-text match: Nosferatu's effect mentions vampire bats but its name doesn't
@@ -92,25 +92,61 @@ describe('view state: search filter (ticket 07 semantics)', () => {
     expect(vm.tiles.get('inferno')!.filtered).toBe(true); // "Inferno" name
   });
 
-  it('search also filters character cards by name, quirk, and base ball name', () => {
+  it('the characters search filters character cards by name, quirk, and base ball name', () => {
     const view = createViewState();
     // The Warrior's base ball is Bleed — base-ball-name match
-    const vm = view.dispatch({ type: 'search', query: 'bleed' });
+    const vm = view.dispatch({ type: 'search', section: 'characters', query: 'bleed' });
     expect(vm.charCards.get('the-warrior')!.filtered).toBe(false);
-    expect(vm.tiles.get('burn')!.filtered).toBe(true);
   });
 
   it('search is case-insensitive and trims', () => {
     const view = createViewState();
-    const vm = view.dispatch({ type: 'search', query: '  VAMPIRE  ' });
+    const vm = view.dispatch({ type: 'search', section: 'balls', query: '  VAMPIRE  ' });
     expect(vm.tiles.get('vampire')!.filtered).toBe(false);
   });
 
   it('clearing the query un-filters', () => {
     const view = createViewState();
-    view.dispatch({ type: 'search', query: 'zzz-no-match' });
-    const vm = view.dispatch({ type: 'search', query: '' });
+    view.dispatch({ type: 'search', section: 'balls', query: 'zzz-no-match' });
+    const vm = view.dispatch({ type: 'search', section: 'balls', query: '' });
     expect(vm.tiles.get('burn')!.filtered).toBe(false);
+  });
+});
+
+describe('view state: search is per screen (each screen has its own box)', () => {
+  it('the balls search filters balls but leaves passives unfiltered', () => {
+    const view = createViewState();
+    const vm = view.dispatch({ type: 'search', section: 'balls', query: 'vampire' });
+    expect(vm.tiles.get('burn')!.filtered).toBe(true);
+    expect(vm.tiles.get('wagon-wheel')!.filtered).toBe(false); // passive — different screen
+  });
+
+  it('the passives search filters passives but leaves balls unfiltered', () => {
+    const view = createViewState();
+    const vm = view.dispatch({ type: 'search', section: 'passives', query: 'wagon' });
+    expect(vm.tiles.get('wagon-wheel')!.filtered).toBe(false);
+    expect(vm.tiles.get('vampire')!.filtered).toBe(false); // ball — different screen, own query
+  });
+
+  it('each screen keeps its own query, independent of the others', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'search', section: 'balls', query: 'vamp' });
+    const vm = view.dispatch({ type: 'search', section: 'fusions', query: 'maggot' });
+    expect(vm.tiles.get('burn')!.filtered).toBe(true); // balls query still active
+    expect(vm.fusionRows.get('maggot')!.filtered).toBe(false);
+    expect(vm.fusionRows.get('flash')!.filtered).toBe(true);
+    expect(vm.charCards.get('the-warrior')!.filtered).toBe(false); // characters untouched
+  });
+
+  it('queries survive a tab switch (clearAll wipes selections, not searches)', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'search', section: 'balls', query: 'vamp' });
+    view.dispatch({ type: 'toggleChar', id: 'the-warrior' });
+    view.dispatch({ type: 'toggleFusion', id: 'flash' });
+    const vm = view.dispatch({ type: 'clearAll' });
+    expect(vm.tiles.get('burn')!.filtered).toBe(true); // query persists
+    expect(vm.selectedChars).toHaveLength(0);
+    expect(vm.fusionPanel).toEqual({ state: 'empty' });
   });
 });
 
@@ -119,7 +155,7 @@ describe('view state: clear action (Esc / empty-space click, section-scoped)', (
     const view = createViewState();
     view.dispatch({ type: 'toggleItem', id: 'inferno' });
     view.dispatch({ type: 'toggleChar', id: 'the-warrior' });
-    view.dispatch({ type: 'search', query: 'vamp' });
+    view.dispatch({ type: 'search', section: 'balls', query: 'vamp' });
     const vm = view.dispatch({ type: 'clear', section: 'balls' });
     expect(vm.tiles.get('inferno')!.selected).toBe(false);
     expect(vm.tiles.get('bleed')!.dimmed).toBe(false);
@@ -222,7 +258,7 @@ describe('view state: fusion picks (max 2, sticky selection)', () => {
     const view = createViewState();
     view.dispatch({ type: 'toggleFusion', id: 'overgrowth' });
     view.dispatch({ type: 'toggleFusion', id: 'maggot' });
-    const vm = view.dispatch({ type: 'search', query: 'maggot' });
+    const vm = view.dispatch({ type: 'search', section: 'fusions', query: 'maggot' });
     expect(vm.fusionRows.get('overgrowth')!.slot).toBe(1);
     expect(vm.fusionRows.get('maggot')!.slot).toBe(2);
     expect(vm.fusionRows.get('maggot')!.filtered).toBe(false);

@@ -58,8 +58,13 @@ function init() {
   for (const btn of document.querySelectorAll<HTMLElement>('.tab-btn'))
     btn.addEventListener('click', () => showSection(btn.dataset.section as Section));
 
-  const search = document.getElementById('search') as HTMLInputElement;
-  search.addEventListener('input', () => paint(view.dispatch({ type: 'search', query: search.value })));
+  // Each screen has its own search box; its input dispatches a section-scoped
+  // search action. Switching sections repaints from the view state, so each
+  // box's saved query re-applies on return (queries survive tab switches).
+  for (const input of document.querySelectorAll<HTMLInputElement>('.screen-search')) {
+    const section = input.id.replace(/^search-/, '') as Section;
+    input.addEventListener('input', () => paint(view.dispatch({ type: 'search', section, query: input.value })));
+  }
 
   document.addEventListener('keydown', (e) => {
     // Esc clears the active section's selection (chars/fusions included);

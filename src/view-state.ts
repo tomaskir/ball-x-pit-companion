@@ -1,6 +1,6 @@
 // View-state module: the island's state (item selection, character slots,
-// fusion picks, search query) and every derivation the island used to
-// hand-wire between its event handlers. One interface:
+// fusion picks, per-screen search queries) and every derivation the island
+// used to hand-wire between its event handlers. One interface:
 // dispatch(action) → ViewModel — 'clear' is section-scoped (the active
 // section's selection only); selections from different screens coexist, so
 // tab switching dispatches nothing.
@@ -59,7 +59,9 @@ export type Action =
   | { type: 'toggleItem'; id: string }
   | { type: 'toggleChar'; id: string }
   | { type: 'toggleFusion'; id: string }
-  | { type: 'search'; query: string }
+  /** Per-screen search: each section has its own query (own search box);
+   *  queries survive a tab switch (clearAll wipes selections only). */
+  | { type: 'search'; section: Section; query: string }
   /** Esc / empty-space click: clears the named section's selection only. */
   | { type: 'clear'; section: Section };
 
@@ -95,7 +97,10 @@ function stickyToggle<T>(list: T[], id: string, match: (x: T) => boolean, make: 
 
 export function createViewState() {
   let selectedId: string | null = null;
-  let query = '';
+  /** Per-screen search queries — each section has its own search box, so
+   *  each keeps its own query; a tab switch (clearAll) wipes selections
+   *  but keeps every query (the boxes stay as the user left them). */
+  const queries: Record<Section, string> = { balls: '', passives: '', characters: '', fusions: '' };
   const selectedChars: Character[] = [];
   /** Fusion picks in selection order, at most 2. */
   const fusionPicks: string[] = [];
@@ -105,28 +110,41 @@ export function createViewState() {
     const charCards = new Map<string, CharCardState>();
     const fusionRows = new Map<string, FusionRowState>();
     const related = selectedId ? highlightSet(selectedId, graphFor(selectedId)) : new Set<string>();
-    const q = query.trim().toLowerCase();
-    for (const item of [...BALLS, ...PASSIVES]) {
+    const ballQ = queries.balls.trim().toLowerCase();
+    const passiveQ = queries.passives.trim().toLowerCase();
+    const charQ = queries.characters.trim().toLowerCase();
+    const fusionQ = queries.fusions.trim().toLowerCase();
+    for (const item of BALLS) {
       const v = verdictFor(item, selectedChars);
       tiles.set(item.id, {
         selected: selectedId === item.id,
         related: !!selectedId && selectedId !== item.id && related.has(item.id),
         dimmed: !!selectedId && !related.has(item.id),
-        filtered: !!q && !(item.name.toLowerCase().includes(q) || item.effects.toLowerCase().includes(q)),
+        filtered: !!ballQ && !(item.name.toLowerCase().includes(ballQ) || item.effects.toLowerCase().includes(ballQ)),
+        verdict: v,
+      });
+    }
+    for (const item of PASSIVES) {
+      const v = verdictFor(item, selectedChars);
+      tiles.set(item.id, {
+        selected: selectedId === item.id,
+        related: !!selectedId && selectedId !== item.id && related.has(item.id),
+        dimmed: !!selectedId && !related.has(item.id),
+        filtered: !!passiveQ && !(item.name.toLowerCase().includes(passiveQ) || item.effects.toLowerCase().includes(passiveQ)),
         verdict: v,
       });
     }
     for (const ch of CHARACTERS) {
       charCards.set(ch.id, {
         selected: selectedChars.some((c) => c.id === ch.id),
-        filtered: !!q && !(ch.name.toLowerCase().includes(q) || ch.quirk.toLowerCase().includes(q) || (ch.baseBallId && itemFor(ch.baseBallId)?.name.toLowerCase().includes(q) || false)),
+        filtered: !!charQ && !(ch.name.toLowerCase().includes(charQ) || ch.quirk.toLowerCase().includes(charQ) || (ch.baseBallId && itemFor(ch.baseBallId)?.name.toLowerCase().includes(charQ) || false)),
       });
     }
     for (const b of FUSION_BALLS) {
       const pick = fusionPicks.indexOf(b.id);
       fusionRows.set(b.id, {
         slot: pick === 0 ? 1 : pick === 1 ? 2 : null,
-        filtered: !!q && !b.name.toLowerCase().includes(q),
+        filtered: !!fusionQ && !b.name.toLowerCase().includes(fusionQ),
       });
     }
     const a = fusionPicks[0] ? ballMap.get(fusionPicks[0]) : null;
@@ -175,7 +193,7 @@ export function createViewState() {
         case 'toggleFusion':
           stickyToggle(fusionPicks, action.id, (id) => id === action.id, () => action.id);
           break;
-        case 'search': query = action.query; break;
+        case 'search': queries[action.section] = action.query; break;
         case 'clear':
           if (action.section === 'balls' || action.section === 'passives') selectedId = null;
           else if (action.section === 'characters') selectedChars.length = 0;

@@ -107,8 +107,9 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   state — per state, which hooks show and what they show (behavior pinned
   in `src/renderer.test.ts` through jsdom).
 - **View state** — the island's state (item selection, character slots,
-  fusion picks, search query) and every derivation from it (highlight walks,
-  filters, verdict badges, the composed fusion). Module: `src/view-state.ts`
+  fusion picks, per-screen search queries) and every derivation from it
+  (highlight walks, filters, verdict badges, the composed fusion). Module:
+  `src/view-state.ts`
   — one interface: `createViewState()` → `dispatch(action) → ViewModel`, plus
   `derive()` (same view model without a state change, for initial paint) and
   `verdictFor(item)` (full verdict with note, for the toast). Fusion picks

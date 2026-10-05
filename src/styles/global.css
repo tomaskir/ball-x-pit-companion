@@ -118,7 +118,16 @@ header h1 span { color: var(--muted); font-style: italic; font-size: 14px; }
 
 .header-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
 
-#search {
+/* Per-screen search boxes — one per section, not a global header input.
+   Grid/char screens: a toolbar row, box pushed top right. Fusion screen: the
+   box sits on top of the pick list (inside the list column). */
+.screen-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.screen-search {
   background: var(--panel);
   border: 1px solid var(--gold-dim);
   border-radius: 4px;
@@ -127,6 +136,14 @@ header h1 span { color: var(--muted); font-style: italic; font-size: 14px; }
   padding: 6px 10px;
   min-width: 200px;
 }
+
+.fusion-list-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fusion-list-col .screen-search { margin-bottom: 8px; }
 
 #themeToggle,
 .repo-link {
@@ -370,10 +387,11 @@ footer a { color: var(--gold); }
   display: flex;
   flex-direction: column;
   gap: 2px;
-  /* Budget: header ~57 + main padding 2×16 + footer ~89 + margin ≈ 190 —
-     the list must never push the page past the viewport (the whole-page
-     scroll it caused otherwise). */
-  max-height: calc(100vh - 190px);
+  /* Budget: header ~57 + main padding 2×16 + footer ~89 + margin ≈ 190, plus
+     the screen-search box above the list (~34 + 8 margin ≈ 42) — the list
+     must never push the page past the viewport (the whole-page scroll it
+     caused otherwise). */
+  max-height: calc(100vh - 232px);
   overflow-y: scroll; /* always show the scrollbar, not just on hover */
   /* Firefox: `thin` selects the custom-rendered scrollbar, which is a fixed
      size — it never expands on hover the way the classic (auto) scrollbar
@@ -492,8 +510,8 @@ footer a { color: var(--gold); }
 @media (max-width: 640px) {
   .tile-grid { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); }
   .char-grid { grid-template-columns: repeat(2, 1fr); }
-  #search { min-width: 0; flex: 1; }
-  .header-right { width: 100%; }
+  .screen-toolbar .screen-search { min-width: 0; flex: 1; }
+  .fusion-list-col .screen-search { min-width: 0; }
   .fusion-layout { grid-template-columns: 1fr; }
   .fusion-list {
     max-height: 40vh;
