@@ -173,18 +173,42 @@ describe('implemented cross-wire patterns → composer wires', () => {
 
 describe('cross-wire claims beyond the model → conservatively null', () => {
   // Corpus cross-wire pairs the composer deliberately does NOT implement
-  // (42 pairs). Classes, with the reason each stays out:
-  //   - Dark's 5× multiplier / cooldown reuse / Destroy-compensation — real
-  //     composition effects, but notes, not cross-wire lines (fuse() emits
-  //     them as notes; tested in fusion.test.ts).
+  // (42 pairs), by class:
   //   - VES (voluptuous-egg-sac) spawn pairs — the two-hop chain drops the
   //     property (SPAWN_EXCLUDED_IDS; CONTRADICTIONS.md §3), yet the corpus
-  //     also holds positive reports; unresolved → conservative null.
-  //   - Synergy sentiment ("works well", tier lists) — not channel claims.
-  //   - Field-aura statuses (Sun, Inferno, Banshee) and AOE × AOE
-  //     coexistence — channels the model does not carry (statusChannel()).
-  //   - Pierce/pass-through trait transfer (Ghost + AOE class) — trait, not
-  //     status.
+  //     also holds positive reports; unresolved → conservative null. The
+  //     phantom/wraith VES claims ("hit effects DO trigger from VolEgg
+  //     babies") are single-source against the VES exclusions and stay null.
+  //   - Other excluded spawn carriers (brood-mother, mosquito-king) —
+  //     SPAWN_EXCLUDED_IDS: their spawn channel does not carry the partner
+  //     at all.
+  //   - Spawn × spawn compounding — two spawners, or a spawn carrier whose
+  //     partner has no status/kill for a channel to carry: bomb+cell,
+  //     bomb+egg-sac, nosferatu+shotgun, shotgun+sniper,
+  //     mosquito-king+spider-queen. bomb+cell's claim is specifically
+  //     "spawn compensates Destroy" — implemented as a fuse() note, not a
+  //     wire line.
+  //   - Dark's 5× multiplier / cooldown reuse (bomb+dark, bomb+timestop,
+  //     dark+*) — real composition effects, but notes, not cross-wire lines
+  //     (tested in fusion.test.ts).
+  //   - Kill-on-hit via spawn carriers (black-hole+mosquito-swarm,
+  //     reaper+voluptuous-egg-sac) — the model wires kills through
+  //     damage-dealing AOE carriers only.
+  //   - Field-aura statuses (Sun, Inferno, Banshee) — statusChannel()
+  //     returns 'field'; the model carries only 'hit' statuses.
+  //   - On-hit effects on balls without the status-effect tag (erosion's
+  //     %HP, vampire's lifesteal) — no status channel exists to carry.
+  //   - AOE × AOE coexistence/shaping (earthquake+laser-vertical,
+  //     holy-laser+x-ray, earthquake+glacier) — kits coexist or reshape, no
+  //     inheritance (§10f).
+  //   - Pierce/pass-through trait transfer (flash+ghost,
+  //     ghost+lightning-rod) — trait, not status.
+  //   - Residual shapes: carrier-rank refusals (flash+storm, flash+holy-laser
+  //     — the lower-rank AOE cannot carry the higher-rank one's status),
+  //     contradicted/ambiguous single observations (egg-sac+holy-laser,
+  //     holy-laser+shotgun), and synergy sentiment / tier lists
+  //     (berserk+hemorrhage, bleed+vampire-lord, flash+vampire) — not
+  //     channel claims the model could implement.
   // The list pins today's boundary: a composer change that starts wiring one
   // of these (or a corpus refresh that adds pairs) surfaces here for review.
   const BEYOND_MODEL = [

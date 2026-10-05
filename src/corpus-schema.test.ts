@@ -4,10 +4,11 @@
 // are the validator's own; this test just invokes them (the CLI remains the
 // occasional-refresh entry point — scripts/harvest/validate-observations.ts).
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { describe, it, expect } from 'vitest';
 import { validateObservations } from '../scripts/harvest/validate-observations';
 
-const repoRoot = new URL('..', import.meta.url).pathname;
+const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 
 describe('fusion-observation corpus schema (the gate)', () => {
   it('every jsonl line conforms to the schema contract', () => {
@@ -20,7 +21,7 @@ describe('fusion-observation corpus schema (the gate)', () => {
 
   it('the corpus the gate just validated is the one corpus.test.ts reads', () => {
     // Guard against the two tests drifting onto different directories.
-    const obsDir = new URL('../docs/research/fusion-observations/', import.meta.url).pathname;
+    const obsDir = fileURLToPath(new URL('../docs/research/fusion-observations/', import.meta.url));
     expect(readFileSync(`${obsDir}fusion-pairs.json`, 'utf8')).toContain('"pair_count"');
   });
 });
