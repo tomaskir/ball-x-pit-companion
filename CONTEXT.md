@@ -65,10 +65,12 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   and notes join with ` · `. Module: `src/synergy.ts`
   (`verdictFor(item, selectedChars)`) — namespace resolution is internal,
   callers pass the item only.
-- **Character slot** — the selected-character list holds at most 2; a third
-  selection evicts the first (FIFO). One selected character shows the
-  "pick a second character…" hint. State: `src/view-state.ts`
-  (`toggleChar` action).
+- **Character slot** — the selected-character list holds at most 2. Selection
+  is sticky (shared with fusion picks): re-clicking a pick deselects it; a
+  third selection while two are held is a no-op — one must be deselected
+  first, and the hint says so ("selection full — deselect one first"). One
+  selected character shows the "pick a second character…" hint. State:
+  `src/view-state.ts` (`toggleChar` action).
 - **Toast** — the hover/tap detail popup with icon, full effect text, recipe,
   tags, and the item's current verdict. Its verdict function is injected at
   build time (`buildAll(getVerdict)`), so hover always reads the current
@@ -77,9 +79,9 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   the Astro page. Owns event listening, theme, and hash routing only;
   painting, verdict logic, graph math, and data live in their own modules.
   (The renderer attaches hover/tap listeners for toasts — the island owns
-  the events that *dispatch to view state*; the fusion screen's picks
-  persist across Esc/empty-space clears by design — the panel is the
-  screen's working state.)
+  the events that *dispatch to view state*; Esc and empty-space clicks clear
+  the active section's selection, switching sections clears every
+  selection.)
 - **Renderer** — all DOM painting for the island. Module: `src/renderer.ts`
   (recipe notation comes from `src/graph.ts`; the renderer only injects
   icon markup — see **Recipe notation**; the icon-URL join comes from
@@ -99,12 +101,13 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   — one interface: `createViewState()` → `dispatch(action) → ViewModel`, plus
   `derive()` (same view model without a state change, for initial paint) and
   `verdictFor(item)` (full verdict with note, for the toast). Fusion picks
-  are clear-and-restart (a third pick drops both; re-clicking a pick
-  deselects it); the view model carries the picks as resolved Ball items
-  (`fusionSlots`), not bare ids — the renderer paints the panel from them
-  directly; the composed fusion comes from `src/fusion.ts`. The island
-  listens to DOM events, dispatches, and hands the returned view model to
-  the renderer; the view model is the test surface.
+  share the character slots' sticky semantics (re-click deselects; a third
+  pick while two are held is a no-op); the view model carries the picks as
+  resolved Ball items (`fusionSlots`), not bare ids — the renderer paints
+  the panel from them directly; the composed fusion comes from
+  `src/fusion.ts`. The island listens to DOM events, dispatches, and hands
+  the returned view model to the renderer; the view model is the test
+  surface.
 - **Fusion composer** — pure composition of a fused ball from two components:
   name "A × B" (first-selected first), component effect paragraphs in name
   order with damage rolls abstracted to "X", a role-named cross-wire line

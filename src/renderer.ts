@@ -149,12 +149,12 @@ function paintCharCards(vm: ViewModel) {
 let paintedCharIds: string[] = [];
 
 function renderCharChips(vm: ViewModel) {
+  document.getElementById('slotHint')!.textContent = vm.slotHint;
   const ids = vm.selectedChars.map((c) => c.id);
   if (ids.length === paintedCharIds.length && ids.every((id, i) => id === paintedCharIds[i])) return;
   paintedCharIds = ids;
   const wrap = document.getElementById('charChips')!;
   wrap.innerHTML = '';
-  document.getElementById('slotHint')!.textContent = vm.slotHint;
   for (const ch of vm.selectedChars) {
     const chip = document.createElement('button');
     chip.className = 'chip';
@@ -325,7 +325,7 @@ function paintFusion(vm: ViewModel) {
   // Pending states replace the body via hidden toggles; text nodes update in
   // place; the two head <img> elements are created exactly once (build time).
   if (!a) {
-    p.hint.textContent = 'Pick two balls to see their fusion.';
+    p.hint.textContent = vm.fusionHint;
     p.hint.hidden = false;
     p.head.hidden = true;
     p.evo.hidden = true;
@@ -343,7 +343,7 @@ function paintFusion(vm: ViewModel) {
     // broken-image box
     p.iconB.style.display = 'none';
     p.nameB.textContent = '';
-    p.hint.textContent = '…pick a second ball.';
+    p.hint.textContent = vm.fusionHint;
     p.hint.hidden = false;
     p.evo.hidden = true;
     (p.effA.parentElement as HTMLElement).hidden = true;

@@ -27,7 +27,8 @@ function initTheme() {
 
 // ---------- routing ----------
 
-// `section` is pure UI routing (hash sync) — not part of the view model.
+// `section` is pure UI routing (hash sync) — mirrored into view state only
+// so Esc/empty-space can clear the active section's selection.
 
 let section: 'balls' | 'passives' | 'characters' | 'fusions' = 'balls';
 
@@ -45,7 +46,8 @@ function showSection(s: typeof section, updateHash = true) {
   if (updateHash) location.hash = `#/${s}`;
   for (const el of document.querySelectorAll<HTMLElement>('.section-view')) el.hidden = el.dataset.section !== s;
   for (const btn of document.querySelectorAll<HTMLElement>('.tab-btn')) btn.classList.toggle('active', btn.dataset.section === s);
-  paint(view.dispatch({ type: 'clear' }));
+  // switching sections wipes every selection — the screen starts fresh
+  paint(view.dispatch({ type: 'clearAll' }));
 }
 
 // ---------- init ----------
@@ -60,12 +62,13 @@ function init() {
   search.addEventListener('input', () => paint(view.dispatch({ type: 'search', query: search.value })));
 
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') paint(view.dispatch({ type: 'clear' }));
+    // Esc clears the active section's selection (chars/fusions included);
+    // switching sections clears everything (clearAll)
+    if (e.key === 'Escape') paint(view.dispatch({ type: 'clear', section }));
   });
   document.addEventListener('click', (e) => {
-    // empty space clears selection (fusion picks persist — the panel is the
-    // fusion screen's working state, not a transient highlight)
-    if (!(e.target as HTMLElement).closest('.tile, .char-card, .chip, .toast, .fusion-row, .fusion-panel')) paint(view.dispatch({ type: 'clear' }));
+    // empty space clears the active section's selection, same as Esc
+    if (!(e.target as HTMLElement).closest('.tile, .char-card, .chip, .toast, .fusion-row, .fusion-panel')) paint(view.dispatch({ type: 'clear', section }));
   });
 
   // grid/card clicks come up as custom events so the renderer stays paint-only

@@ -1,11 +1,13 @@
 // View-state module: the island's state (item selection, character slots,
-// fusion picks, search query, section) and every derivation the island used
-// to hand-wire between its event handlers. One interface:
-// dispatch(action) → ViewModel. The island (src/companion.ts) keeps only
-// event listening, theme, and hash routing; painting lives in
-// src/renderer.ts. Fusion composition lives in src/fusion.ts. The view
-// model carries resolved items, not bare ids: fusionSlots holds the picked
-// Ball objects so the renderer never re-derives them.
+// fusion picks, search query) and every derivation the island used to
+// hand-wire between its event handlers. One interface:
+// dispatch(action) → ViewModel — 'clear' is section-scoped (the active
+// section's selection only), 'clearAll' wipes every section (tab switch).
+// The island (src/companion.ts) keeps only event listening, theme, and hash
+// routing; painting lives in src/renderer.ts. Fusion composition lives in
+// src/fusion.ts. The view model carries resolved items, not bare ids:
+// fusionSlots holds the picked Ball objects so the renderer never re-derives
+// them.
 import { BALLS, type Ball } from './data/balls';
 import { PASSIVES } from './data/passives';
 import { CHARACTERS, type Character } from './data/characters';
@@ -25,6 +27,8 @@ export interface ViewModel {
   charCards: Map<string, CharCardState>;
   fusionRows: Map<string, FusionRowState>;
   selectedChars: Character[];
+  /** Hint for the character screen: "pick a second character…" while one is
+   *  held, "selection full — deselect one first" when two are held. */
   slotHint: string;
   /** The two picks in selection order, as the resolved Ball items; empty
    *  slots are null. (The renderer paints the panel from these directly —
@@ -32,17 +36,40 @@ export interface ViewModel {
   fusionSlots: [Ball | null, Ball | null];
   /** Composed fused ball for the two picks, or null until both are picked. */
   fusion: FusionResult | null;
+  /** Hint for the fusion panel's pending states, mirroring slotHint's
+   *  pick-a-second / selection-full wording for balls. */
+  fusionHint: string;
 }
+export type Section = 'balls' | 'passives' | 'characters' | 'fusions';
 export type Action =
   | { type: 'toggleItem'; id: string }
   | { type: 'toggleChar'; id: string }
   | { type: 'toggleFusion'; id: string }
   | { type: 'search'; query: string }
-  | { type: 'clear' };
+  /** Esc / empty-space click: clears the named section's selection only. */
+  | { type: 'clear'; section: Section }
+  /** Tab switch: clears every section's selection. */
+  | { type: 'clearAll' };
 
 /** Balls offered by the fusion pick list: all fusable upgrade entities.
  *  Baby Ball is not one (research: it is not an upgrade entity). */
 const FUSION_BALLS = fusionBalls();
+
+/** Both max-2 selections (characters, fusion picks) show this when full —
+ *  the sticky-toggle semantics are shared, so is the wording. */
+const SELECTION_FULL = 'selection full — deselect one first';
+
+/** Shared max-2 sticky-toggle semantics for characters and fusion picks:
+ *  re-clicking a member deselects it; a third member while two are held is
+ *  a no-op — one must be deselected first. Mutates `list` in place. */
+function stickyToggle<T>(list: T[], id: string, match: (x: T) => boolean, make: () => T | undefined) {
+  const idx = list.findIndex(match);
+  if (idx >= 0) list.splice(idx, 1);
+  else if (list.length < 2) {
+    const x = make();
+    if (x) list.push(x);
+  }
+}
 
 export function createViewState() {
   let selectedId: string | null = null;
@@ -87,9 +114,16 @@ export function createViewState() {
       charCards,
       fusionRows,
       selectedChars,
-      slotHint: selectedChars.length === 1 ? 'pick a second character…' : '',
+      slotHint:
+        selectedChars.length === 1 ? 'pick a second character…'
+        : selectedChars.length === 2 ? SELECTION_FULL
+        : '',
       fusionSlots: [a, b],
       fusion: a && b ? fuse(a, b) : null,
+      fusionHint:
+        fusionPicks.length === 0 ? 'Pick two balls to see their fusion.'
+        : fusionPicks.length === 1 ? '…pick a second ball.'
+        : SELECTION_FULL,
     };
   };
 
@@ -106,28 +140,24 @@ export function createViewState() {
     dispatch(action: Action): ViewModel {
       switch (action.type) {
         case 'toggleItem': selectedId = selectedId === action.id ? null : action.id; break;
-        case 'toggleChar': {
-          const idx = selectedChars.findIndex((c) => c.id === action.id);
-          if (idx >= 0) selectedChars.splice(idx, 1);
-          else {
-            if (selectedChars.length >= 2) selectedChars.shift();
-            const ch = CHARACTERS.find((c) => c.id === action.id);
-            if (ch) selectedChars.push(ch);
-          }
+        case 'toggleChar':
+          stickyToggle(selectedChars, action.id, (c) => c.id === action.id,
+            () => CHARACTERS.find((c) => c.id === action.id));
           break;
-        }
-        // Fusion picks are clear-and-restart: re-clicking a pick deselects it
-        // (the other becomes the pending first pick), clicking a third ball
-        // drops both and starts a new pair with that ball.
-        case 'toggleFusion': {
-          const idx = fusionPicks.indexOf(action.id);
-          if (idx >= 0) fusionPicks.splice(idx, 1);
-          else if (fusionPicks.length >= 2) fusionPicks.splice(0, 2, action.id);
-          else fusionPicks.push(action.id);
+        case 'toggleFusion':
+          stickyToggle(fusionPicks, action.id, (id) => id === action.id, () => action.id);
           break;
-        }
         case 'search': query = action.query; break;
-        case 'clear': selectedId = null; break;
+        case 'clear':
+          if (action.section === 'balls' || action.section === 'passives') selectedId = null;
+          else if (action.section === 'characters') selectedChars.length = 0;
+          else fusionPicks.length = 0;
+          break;
+        case 'clearAll':
+          selectedId = null;
+          selectedChars.length = 0;
+          fusionPicks.length = 0;
+          break;
       }
       return derive();
     },

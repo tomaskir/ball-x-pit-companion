@@ -41,7 +41,7 @@ describe('view state: item selection (ticket 05 semantics through one interface)
   });
 });
 
-describe('view state: character slots (max 2, FIFO eviction)', () => {
+describe('view state: character slots (max 2, sticky selection)', () => {
   it('first selection sets slotHint, selection marks the card', () => {
     const view = createViewState();
     const vm = view.dispatch({ type: 'toggleChar', id: 'the-warrior' });
@@ -50,13 +50,23 @@ describe('view state: character slots (max 2, FIFO eviction)', () => {
     expect(vm.selectedChars).toHaveLength(1);
   });
 
-  it('third selection evicts the first (FIFO)', () => {
+  it('selection sticks: a third click when two are selected is a no-op', () => {
     const view = createViewState();
     view.dispatch({ type: 'toggleChar', id: 'the-warrior' });
     view.dispatch({ type: 'toggleChar', id: 'the-shade' });
     const vm = view.dispatch({ type: 'toggleChar', id: 'the-tactician' });
-    expect(vm.selectedChars.map((c) => c.id)).toEqual(['the-shade', 'the-tactician']);
-    expect(vm.charCards.get('the-warrior')!.selected).toBe(false);
+    expect(vm.selectedChars.map((c) => c.id)).toEqual(['the-warrior', 'the-shade']);
+    expect(vm.charCards.get('the-tactician')!.selected).toBe(false);
+  });
+
+  it('the hint reports a full selection when two characters are held', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleChar', id: 'the-warrior' });
+    view.dispatch({ type: 'toggleChar', id: 'the-shade' });
+    const vm = view.dispatch({ type: 'toggleChar', id: 'the-tactician' });
+    expect(vm.slotHint).toBe('selection full — deselect one first');
+    const vm2 = view.dispatch({ type: 'toggleChar', id: 'the-warrior' });
+    expect(vm2.slotHint).toBe('pick a second character…');
   });
 
   it('deselecting one character keeps the other', () => {
@@ -64,7 +74,7 @@ describe('view state: character slots (max 2, FIFO eviction)', () => {
     view.dispatch({ type: 'toggleChar', id: 'the-warrior' });
     const vm = view.dispatch({ type: 'toggleChar', id: 'the-shade' });
     expect(vm.selectedChars).toHaveLength(2);
-    expect(vm.slotHint).toBe('');
+    expect(vm.slotHint).toBe('selection full — deselect one first');
     const vm2 = view.dispatch({ type: 'toggleChar', id: 'the-warrior' });
     expect(vm2.selectedChars.map((c) => c.id)).toEqual(['the-shade']);
   });
@@ -104,21 +114,51 @@ describe('view state: search filter (ticket 07 semantics)', () => {
   });
 });
 
-describe('view state: clear action (Esc / empty-space click)', () => {
-  it('clears item selection but keeps characters and query', () => {
+describe('view state: clear action (Esc / empty-space click, section-scoped)', () => {
+  it('clearing the item section clears the item selection but keeps characters and query', () => {
     const view = createViewState();
     view.dispatch({ type: 'toggleItem', id: 'inferno' });
     view.dispatch({ type: 'toggleChar', id: 'the-warrior' });
     view.dispatch({ type: 'search', query: 'vamp' });
-    const vm = view.dispatch({ type: 'clear' });
+    const vm = view.dispatch({ type: 'clear', section: 'balls' });
     expect(vm.tiles.get('inferno')!.selected).toBe(false);
     expect(vm.tiles.get('bleed')!.dimmed).toBe(false);
     expect(vm.selectedChars).toHaveLength(1);
     expect(vm.tiles.get('burn')!.filtered).toBe(true); // query survives
   });
+
+  it('clearing the characters section clears both picks but keeps the item selection', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleItem', id: 'inferno' });
+    view.dispatch({ type: 'toggleChar', id: 'the-warrior' });
+    view.dispatch({ type: 'toggleChar', id: 'the-shade' });
+    const vm = view.dispatch({ type: 'clear', section: 'characters' });
+    expect(vm.selectedChars).toHaveLength(0);
+    expect(vm.tiles.get('inferno')!.selected).toBe(true); // item selection untouched
+  });
+
+  it('clearing the fusions section empties both picks', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleFusion', id: 'flash' });
+    view.dispatch({ type: 'toggleFusion', id: 'glacier' });
+    const vm = view.dispatch({ type: 'clear', section: 'fusions' });
+    expect(vm.fusionSlots).toEqual([null, null]);
+    expect(vm.fusion).toBeNull();
+  });
+
+  it('clearAll wipes item selection, characters, and fusion picks (tab switch)', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleItem', id: 'inferno' });
+    view.dispatch({ type: 'toggleChar', id: 'the-warrior' });
+    view.dispatch({ type: 'toggleFusion', id: 'flash' });
+    const vm = view.dispatch({ type: 'clearAll' });
+    expect(vm.tiles.get('inferno')!.selected).toBe(false);
+    expect(vm.selectedChars).toHaveLength(0);
+    expect(vm.fusionSlots).toEqual([null, null]);
+  });
 });
 
-describe('view state: fusion picks (clear-and-restart)', () => {
+describe('view state: fusion picks (max 2, sticky selection)', () => {
   it('first click fills slot A, second fills slot B and composes the fusion', () => {
     const view = createViewState();
     const vm = view.dispatch({ type: 'toggleFusion', id: 'flash' });
@@ -139,13 +179,22 @@ describe('view state: fusion picks (clear-and-restart)', () => {
     expect(vm2.fusionSlots[1]).toBe(ballMap.get('glacier')!);
   });
 
-  it('a third click clears and restarts with that ball', () => {
+  it('selection sticks: a third click when two are picked is a no-op', () => {
     const view = createViewState();
     view.dispatch({ type: 'toggleFusion', id: 'flash' });
     view.dispatch({ type: 'toggleFusion', id: 'glacier' });
     const vm = view.dispatch({ type: 'toggleFusion', id: 'flicker' });
-    expect(vm.fusionSlots.map((b) => b?.id ?? null)).toEqual(['flicker', null]);
-    expect(vm.fusion).toBeNull();
+    expect(vm.fusionSlots.map((b) => b?.id ?? null)).toEqual(['flash', 'glacier']);
+    expect(vm.fusionRows.get('flicker')!.slot).toBeNull();
+    expect(vm.fusion!.name).toBe('Flash × Glacier');
+    expect(vm.fusionHint).toBe('selection full — deselect one first');
+  });
+
+  it('the fusion hint walks through empty → second-pick → full', () => {
+    const view = createViewState();
+    expect(view.derive().fusionHint).toBe('Pick two balls to see their fusion.');
+    const vm = view.dispatch({ type: 'toggleFusion', id: 'flash' });
+    expect(vm.fusionHint).toBe('…pick a second ball.');
   });
 
   it('clicking a selected ball deselects it, leaving the other pending', () => {
