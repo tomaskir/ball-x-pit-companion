@@ -128,14 +128,16 @@ header h1 span { color: var(--muted); font-style: italic; font-size: 14px; }
   min-width: 200px;
 }
 
-#themeToggle {
+#themeToggle,
+.repo-link {
   background: var(--panel);
   border: 1px solid var(--gold-dim);
   border-radius: 4px;
-  font-size: 14px;
   padding: 4px 8px;
   cursor: pointer;
 }
+
+#themeToggle { font-size: 14px; }
 
 /* GitHub repo link — same visual size as #themeToggle; the svg inherits
    currentColor so it tracks the theme's text color */
@@ -143,11 +145,7 @@ header h1 span { color: var(--muted); font-style: italic; font-size: 14px; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--panel);
-  border: 1px solid var(--gold-dim);
-  border-radius: 4px;
   color: var(--text);
-  padding: 4px 8px;
   line-height: 0;
 }
 

@@ -30,15 +30,21 @@ describe('global stylesheet', () => {
 
   it('GitHub repo link matches the theme toggle button sizing', () => {
     const css = readFileSync('src/styles/global.css', 'utf8');
-    const toggle = css.match(/#themeToggle\s*\{[^}]*\}/)![0];
-    const repo = css.match(/\.repo-link\s*\{[^}]*\}/)![0];
-    // font-size is shared on #themeToggle only — the anchor holds just an svg
+    // the sizing props live in one shared rule for both controls
+    const shared = css.match(/#themeToggle,\s*\n\.repo-link\s*\{[^}]*\}/)![0];
     for (const prop of ['border-radius: 4px', 'padding: 4px 8px']) {
-      expect(toggle, `#themeToggle has ${prop}`).toContain(prop);
-      expect(repo, `.repo-link has ${prop}`).toContain(prop);
+      expect(shared, `shared rule has ${prop}`).toContain(prop);
     }
-    // repo link sits in the same cluster as the search + theme toggle
-    expect(css).toMatch(/\.header-right\s*\{[^}]*\.repo-link|\.repo-link[^}]*\}[\s\S]*?\.header-right/);
+  });
+
+  it('repo link sits in the header-right cluster, right of the theme toggle', () => {
+    // placement is a DOM fact — pin it against the page shell, not the CSS
+    const html = readFileSync('src/pages/index.astro', 'utf8');
+    const cluster = html.match(/<div class="header-right">[\s\S]*?<\/div>/)![0];
+    const toggleAt = cluster.indexOf('id="themeToggle"');
+    const repoAt = cluster.indexOf('class="repo-link"');
+    expect(toggleAt).toBeGreaterThan(-1);
+    expect(repoAt).toBeGreaterThan(toggleAt);
   });
 
   it('both picked slots highlight identically (slot-2 was visually subtle)', () => {
