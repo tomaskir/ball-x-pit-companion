@@ -6,8 +6,10 @@
 // The island (src/companion.ts) keeps only event listening, theme, and hash
 // routing; painting lives in src/renderer.ts. Fusion composition lives in
 // src/fusion.ts. The view model carries resolved items, not bare ids:
-// fusionSlots holds the picked Ball objects so the renderer never re-derives
-// them.
+// fusionPanel names the fusion screen's state machine (empty / pending /
+// composed) and carries the resolved Ball objects and composed fusion so
+// the renderer never re-derives them — it switches on the named state and
+// paints.
 import { BALLS, type Ball } from './data/balls';
 import { PASSIVES } from './data/passives';
 import { CHARACTERS, type Character } from './data/characters';
@@ -22,6 +24,19 @@ export interface CharCardState { selected: boolean; filtered: boolean; }
  *  first, 2 second), null when not picked. Baby Ball is not a fusable
  *  upgrade entity and is excluded from the list. */
 export interface FusionRowState { slot: 1 | 2 | null; filtered: boolean; }
+/** The fusion panel's state machine, named. Three states:
+ *  - empty    — no picks; the panel shows only the pick-two hint.
+ *  - pending  — one pick; the head shows the first ball, the second icon
+ *               slot stays hidden (an src-less <img> renders as a broken-
+ *               image box), and the hint asks for a second ball.
+ *  - composed — both picks; the full panel (head, evo line, effect body,
+ *               cross-wire, notes) paints from the fused result.
+ *  The renderer switches on `state`; everything it paints per state rides
+ *  here, derived in one place (testable without DOM). */
+export type FusionPanelState =
+  | { state: 'empty' }
+  | { state: 'pending'; first: Ball }
+  | { state: 'composed'; fusion: FusionResult; a: Ball; b: Ball };
 export interface ViewModel {
   tiles: Map<string, TileState>;
   charCards: Map<string, CharCardState>;
@@ -30,12 +45,10 @@ export interface ViewModel {
   /** Hint for the character screen: "pick a second character…" while one is
    *  held, "selection full — deselect one first" when two are held. */
   slotHint: string;
-  /** The two picks in selection order, as the resolved Ball items; empty
-   *  slots are null. (The renderer paints the panel from these directly —
-   *  it never re-derives the picks from its row registry.) */
-  fusionSlots: [Ball | null, Ball | null];
-  /** Composed fused ball for the two picks, or null until both are picked. */
-  fusion: FusionResult | null;
+  /** The fusion screen's panel state — see FusionPanelState. The panel's
+   *  hint text is derived here too (fusionHint below) so the renderer
+   *  paints it without re-deriving pick counts. */
+  fusionPanel: FusionPanelState;
   /** Hint for the fusion panel's pending states, mirroring slotHint's
    *  pick-a-second / selection-full wording for balls. */
   fusionHint: string;
@@ -109,6 +122,11 @@ export function createViewState() {
     }
     const a = fusionPicks[0] ? ballMap.get(fusionPicks[0]) : null;
     const b = fusionPicks[1] ? ballMap.get(fusionPicks[1]) : null;
+    const fusionPanel: FusionPanelState = !a
+      ? { state: 'empty' }
+      : !b
+        ? { state: 'pending', first: a }
+        : { state: 'composed', fusion: fuse(a, b), a, b };
     return {
       tiles,
       charCards,
@@ -118,8 +136,7 @@ export function createViewState() {
         selectedChars.length === 1 ? 'pick a second character…'
         : selectedChars.length === 2 ? SELECTION_FULL
         : '',
-      fusionSlots: [a, b],
-      fusion: a && b ? fuse(a, b) : null,
+      fusionPanel,
       fusionHint:
         fusionPicks.length === 0 ? 'Pick two balls to see their fusion.'
         : fusionPicks.length === 1 ? '…pick a second ball.'

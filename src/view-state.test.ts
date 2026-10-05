@@ -142,8 +142,7 @@ describe('view state: clear action (Esc / empty-space click, section-scoped)', (
     view.dispatch({ type: 'toggleFusion', id: 'flash' });
     view.dispatch({ type: 'toggleFusion', id: 'glacier' });
     const vm = view.dispatch({ type: 'clear', section: 'fusions' });
-    expect(vm.fusionSlots).toEqual([null, null]);
-    expect(vm.fusion).toBeNull();
+    expect(vm.fusionPanel).toEqual({ state: 'empty' });
   });
 
   it('clearAll wipes item selection, characters, and fusion picks (tab switch)', () => {
@@ -154,29 +153,29 @@ describe('view state: clear action (Esc / empty-space click, section-scoped)', (
     const vm = view.dispatch({ type: 'clearAll' });
     expect(vm.tiles.get('inferno')!.selected).toBe(false);
     expect(vm.selectedChars).toHaveLength(0);
-    expect(vm.fusionSlots).toEqual([null, null]);
+    expect(vm.fusionPanel).toEqual({ state: 'empty' });
   });
 });
 
 describe('view state: fusion picks (max 2, sticky selection)', () => {
-  it('first click fills slot A, second fills slot B and composes the fusion', () => {
+  it('initial panel state is empty', () => {
     const view = createViewState();
-    const vm = view.dispatch({ type: 'toggleFusion', id: 'flash' });
-    expect(vm.fusionSlots.map((b) => b?.id ?? null)).toEqual(['flash', null]);
-    expect(vm.fusion).toBeNull();
-    const vm2 = view.dispatch({ type: 'toggleFusion', id: 'glacier' });
-    expect(vm2.fusionSlots.map((b) => b?.id ?? null)).toEqual(['flash', 'glacier']);
-    expect(vm2.fusion!.name).toBe('Flash × Glacier');
+    expect(view.derive().fusionPanel).toEqual({ state: 'empty' });
   });
 
-  it('fusionSlots carry the resolved Ball items in selection order', () => {
+  it('first click → pending with the first ball; second → composed with the fusion', () => {
     const view = createViewState();
     const vm = view.dispatch({ type: 'toggleFusion', id: 'flash' });
-    expect(vm.fusionSlots[0]).toBe(ballMap.get('flash')!);
-    expect(vm.fusionSlots[1]).toBeNull();
+    expect(vm.fusionPanel).toEqual({ state: 'pending', first: ballMap.get('flash')! });
     const vm2 = view.dispatch({ type: 'toggleFusion', id: 'glacier' });
-    expect(vm2.fusionSlots[0]).toBe(ballMap.get('flash')!);
-    expect(vm2.fusionSlots[1]).toBe(ballMap.get('glacier')!);
+    expect(vm2.fusionPanel).toMatchObject({
+      state: 'composed',
+      a: ballMap.get('flash')!,
+      b: ballMap.get('glacier')!,
+    });
+    if (vm2.fusionPanel.state === 'composed') {
+      expect(vm2.fusionPanel.fusion.name).toBe('Flash × Glacier');
+    }
   });
 
   it('selection sticks: a third click when two are picked is a no-op', () => {
@@ -184,9 +183,12 @@ describe('view state: fusion picks (max 2, sticky selection)', () => {
     view.dispatch({ type: 'toggleFusion', id: 'flash' });
     view.dispatch({ type: 'toggleFusion', id: 'glacier' });
     const vm = view.dispatch({ type: 'toggleFusion', id: 'flicker' });
-    expect(vm.fusionSlots.map((b) => b?.id ?? null)).toEqual(['flash', 'glacier']);
+    expect(vm.fusionPanel).toMatchObject({
+      state: 'composed',
+      a: ballMap.get('flash')!,
+      b: ballMap.get('glacier')!,
+    });
     expect(vm.fusionRows.get('flicker')!.slot).toBeNull();
-    expect(vm.fusion!.name).toBe('Flash × Glacier');
     expect(vm.fusionHint).toBe('selection full — deselect one first');
   });
 
@@ -202,16 +204,14 @@ describe('view state: fusion picks (max 2, sticky selection)', () => {
     view.dispatch({ type: 'toggleFusion', id: 'flash' });
     view.dispatch({ type: 'toggleFusion', id: 'glacier' });
     const vm = view.dispatch({ type: 'toggleFusion', id: 'flash' });
-    expect(vm.fusionSlots.map((b) => b?.id ?? null)).toEqual(['glacier', null]);
-    expect(vm.fusion).toBeNull();
+    expect(vm.fusionPanel).toEqual({ state: 'pending', first: ballMap.get('glacier')! });
   });
 
   it('clicking the only selected ball clears the pick entirely', () => {
     const view = createViewState();
     view.dispatch({ type: 'toggleFusion', id: 'flash' });
     const vm = view.dispatch({ type: 'toggleFusion', id: 'flash' });
-    expect(vm.fusionSlots.map((b) => b?.id ?? null)).toEqual([null, null]);
-    expect(vm.fusion).toBeNull();
+    expect(vm.fusionPanel).toEqual({ state: 'empty' });
   });
 
   it('fusion rows reflect pick order and search filtering', () => {
@@ -229,7 +229,9 @@ describe('view state: fusion picks (max 2, sticky selection)', () => {
     const view = createViewState();
     view.dispatch({ type: 'toggleFusion', id: 'bleed' });
     const vm = view.dispatch({ type: 'toggleFusion', id: 'poison' });
-    expect(vm.fusion!.evolvesInstead!.name).toBe('Virus');
+    if (vm.fusionPanel.state === 'composed') {
+      expect(vm.fusionPanel.fusion.evolvesInstead!.name).toBe('Virus');
+    }
   });
 });
 

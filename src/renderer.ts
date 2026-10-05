@@ -229,6 +229,7 @@ const fusionRowEls = new Map<string, HTMLElement>();
 // pieces in place — never recreating <img> (same invariant as the grids).
 let fusionPanel: {
   root: HTMLElement;
+  hint: HTMLElement;
   head: HTMLElement;
   iconA: HTMLImageElement;
   nameA: HTMLElement;
@@ -236,10 +237,10 @@ let fusionPanel: {
   iconB: HTMLImageElement;
   nameB: HTMLElement;
   evo: HTMLElement;
+  body: HTMLElement;
   effA: HTMLElement;
   effB: HTMLElement;
   cross: HTMLElement;
-  hint: HTMLElement;
   notes: HTMLElement;
 } | null = null;
 
@@ -297,6 +298,7 @@ function buildFusionPanel() {
     iconB: q('.icon-b') as HTMLImageElement,
     nameB: q('.name-b') as HTMLElement,
     evo: q('.fusion-evo') as HTMLElement,
+    body: q('.fusion-body') as HTMLElement,
     effA: q('.eff-a') as HTMLElement,
     effB: q('.eff-b') as HTMLElement,
     cross: q('.fusion-cross') as HTMLElement,
@@ -304,7 +306,11 @@ function buildFusionPanel() {
   };
 }
 
-/** Repaint pick order, filtering, and the composed fusion panel. */
+/** Repaint pick order, filtering, and the fusion panel. The panel is a
+ *  3-state machine — the ViewModel names the state (vm.fusionPanel) and this
+ *  switch paints per state: which hooks show, and what they show. Text nodes
+ *  update in place; the two head <img> elements are created exactly once
+ *  (build time). */
 function paintFusion(vm: ViewModel) {
   for (const row of fusionRowEls.values()) {
     row.classList.remove('slot-1', 'slot-2', 'filtered');
@@ -319,26 +325,26 @@ function paintFusion(vm: ViewModel) {
 
   const p = fusionPanel;
   if (!p) return;
-  const f = vm.fusion;
-  const [a, b] = vm.fusionSlots;
+  const fp = vm.fusionPanel;
 
   // Pending states replace the body via hidden toggles; text nodes update in
   // place; the two head <img> elements are created exactly once (build time).
-  if (!a) {
+  if (fp.state === 'empty') {
     p.hint.textContent = vm.fusionHint;
     p.hint.hidden = false;
     p.head.hidden = true;
     p.evo.hidden = true;
-    (p.effA.parentElement as HTMLElement).hidden = true;
+    p.body.hidden = true;
     p.notes.hidden = true;
     return;
   }
-  p.head.hidden = false;
-  p.op.textContent = b ? '×' : '+ ?';
-  if (p.iconA.getAttribute('src') !== icon(a.icon)) p.iconA.src = icon(a.icon);
-  p.iconA.alt = a.name;
-  p.nameA.textContent = a.name;
-  if (!b || !f) {
+
+  if (fp.state === 'pending') {
+    p.head.hidden = false;
+    p.op.textContent = '+ ?';
+    if (p.iconA.getAttribute('src') !== icon(fp.first.icon)) p.iconA.src = icon(fp.first.icon);
+    p.iconA.alt = fp.first.name;
+    p.nameA.textContent = fp.first.name;
     // hide the second icon slot entirely — an src-less <img> renders as a
     // broken-image box
     p.iconB.style.display = 'none';
@@ -346,12 +352,18 @@ function paintFusion(vm: ViewModel) {
     p.hint.textContent = vm.fusionHint;
     p.hint.hidden = false;
     p.evo.hidden = true;
-    (p.effA.parentElement as HTMLElement).hidden = true;
+    p.body.hidden = true;
     p.notes.hidden = true;
     return;
   }
   // Both slots filled: the composed fusion replaces the hint entirely —
   // the "selection full" hint only matters in the pending states above.
+  const { fusion: f, a, b } = fp;
+  p.head.hidden = false;
+  p.op.textContent = '×';
+  if (p.iconA.getAttribute('src') !== icon(a.icon)) p.iconA.src = icon(a.icon);
+  p.iconA.alt = a.name;
+  p.nameA.textContent = a.name;
   p.hint.hidden = true;
   p.iconB.style.display = '';
   if (p.iconB.getAttribute('src') !== icon(b.icon)) p.iconB.src = icon(b.icon);
@@ -365,7 +377,7 @@ function paintFusion(vm: ViewModel) {
     strong.textContent = f.evolvesInstead.name;
     p.evo.append(strong, ' rather than fuse — the Fusion Reactor will not offer this pair.');
   }
-  (p.effA.parentElement as HTMLElement).hidden = false;
+  p.body.hidden = false;
   p.effA.textContent = f.paragraphs[0];
   p.effB.textContent = f.paragraphs[1];
   p.cross.hidden = !f.crossWire;

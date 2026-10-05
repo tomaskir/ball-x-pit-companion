@@ -244,15 +244,16 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
   // mutation-verified); aliased here so the bug is findable from the
   // regression index.
   it('fusion panel skeleton: every queried selector resolves (was nth-of-type nulls)', () => {
-    // renderer.test.ts owns the skeleton extraction; run its assertions here
-    // by importing and invoking them is overkill — instead assert the file
-    // exists and the skeleton uses dedicated hook classes, not positional
-    // selectors.
+    // renderer.test.ts owns the skeleton extraction (mutation-verified there);
+    // here pin that the skeleton still uses dedicated hook classes, not
+    // positional selectors — including the .fusion-body hook that replaced
+    // the effA.parentElement reach-through.
     const src = readFileSync('src/renderer.ts', 'utf8');
     expect(src).not.toMatch(/nth-of-type/);
-    for (const hook of ['.icon-a', '.name-a', '.icon-b', '.name-b', '.eff-a', '.eff-b']) {
+    for (const hook of ['.icon-a', '.name-a', '.icon-b', '.name-b', '.eff-a', '.eff-b', '.fusion-body']) {
       expect(src).toContain(`'${hook}'`);
     }
+    expect(src).not.toContain('parentElement as HTMLElement');
   });
 
   // Bug: the fusion panel toggles pieces via the hidden attribute, but
@@ -270,10 +271,30 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
 
   // Bug: the pending second head icon rendered as a broken-image box (an
   // src-less <img> is not invisible). Fix: display:none until a second ball
-  // is picked.
-  it('pending second head icon is display:none, not a broken-image box', () => {
-    const src = readFileSync('src/renderer.ts', 'utf8');
-    expect(src).toContain("p.iconB.style.display = 'none'");
+  // is picked. Pinned behaviorally in renderer.test.ts ("pending state:
+  // head shows the first ball…") — jsdom asserts iconB.style.display ===
+  // 'none' through paint() on the real skeleton, which is the bug's
+  // user-visible shape; the source-grep this test once was (p.iconB.style
+  // .display = 'none') died with the table-driven paintFusion rewrite.
+  // @vitest-environment jsdom
+  it('pending second head icon is display:none, not a broken-image box', async () => {
+    const { paint, buildAll } = await import('./renderer');
+    const { createViewState } = await import('./view-state');
+    for (const id of ['fusionPanel', 'ballsGrid', 'passivesGrid', 'charactersGrid', 'charChips', 'slotHint', 'fusionList']) {
+      if (!document.getElementById(id)) {
+        const el = document.createElement('div');
+        el.id = id;
+        document.body.appendChild(el);
+      }
+    }
+    buildAll(() => null);
+    const view = createViewState();
+    paint(view.dispatch({ type: 'toggleFusion', id: 'flash' }));
+    const iconB = document.querySelector<HTMLImageElement>('#fusionPanel .icon-b')!;
+    expect(iconB.style.display).toBe('none');
+    // and it comes back when the pair composes
+    paint(view.dispatch({ type: 'toggleFusion', id: 'glacier' }));
+    expect(iconB.style.display).toBe('');
   });
 
   // Bug: the fusion pick list's scrollbar was hover-only and blended into the
