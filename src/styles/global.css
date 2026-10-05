@@ -355,7 +355,10 @@ footer a { color: var(--gold); }
   display: flex;
   flex-direction: column;
   gap: 2px;
-  max-height: calc(100vh - 140px);
+  /* Budget: header ~57 + main padding 2×16 + footer ~89 + margin ≈ 190 —
+     the list must never push the page past the viewport (the whole-page
+     scroll it caused otherwise). */
+  max-height: calc(100vh - 190px);
   overflow-y: scroll; /* always show the scrollbar, not just on hover */
   /* Firefox: `thin` selects the custom-rendered scrollbar, which is a fixed
      size — it never expands on hover the way the classic (auto) scrollbar

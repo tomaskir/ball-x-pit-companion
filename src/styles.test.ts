@@ -21,6 +21,9 @@ describe('global stylesheet', () => {
     // the row borders). `stable` is not a valid scrollbar-width value.
     expect(block).toContain('scrollbar-width: thin');
     expect(block).toContain('padding-right: 12px');
+    // the list must never push the page past the viewport (was a whole-page
+    // scroll: max-height was 100vh-140px against a ~190px chrome+footer)
+    expect(block).toContain('max-height: calc(100vh - 190px)');
     // rows keep clearance from the scrollbar gutter (Firefox hover-expansion)
     expect(css).toMatch(/\.fusion-list > \.fusion-row\s*\{[^}]*margin-right: 6px/);
   });
