@@ -140,6 +140,8 @@ export function createViewState() {
     dispatch(action: Action): ViewModel {
       switch (action.type) {
         case 'toggleItem': selectedId = selectedId === action.id ? null : action.id; break;
+        // Character slots and fusion picks share stickyToggle's max-2
+        // sticky semantics (re-click deselects; a third pick is a no-op).
         case 'toggleChar':
           stickyToggle(selectedChars, action.id, (c) => c.id === action.id,
             () => CHARACTERS.find((c) => c.id === action.id));

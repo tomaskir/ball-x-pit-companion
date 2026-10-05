@@ -3,7 +3,7 @@
 // interface; all state and derivations live in src/view-state.ts behind one
 // dispatch(action) → ViewModel interface. See CONTEXT.md for the domain
 // glossary these contracts use.
-import { createViewState } from './view-state';
+import { createViewState, type Section } from './view-state';
 import { buildAll, paint } from './renderer';
 
 const view = createViewState();
@@ -30,18 +30,18 @@ function initTheme() {
 // `section` is pure UI routing (hash sync) — mirrored into view state only
 // so Esc/empty-space can clear the active section's selection.
 
-let section: 'balls' | 'passives' | 'characters' | 'fusions' = 'balls';
+let section: Section = 'balls';
 
 function initRouting() {
   const apply = () => {
     const hash = location.hash.replace(/^#\/?/, '') || 'balls';
-    if (['balls', 'passives', 'characters', 'fusions'].includes(hash)) showSection(hash as typeof section, false);
+    if (['balls', 'passives', 'characters', 'fusions'].includes(hash)) showSection(hash as Section, false);
   };
   addEventListener('hashchange', apply);
   apply();
 }
 
-function showSection(s: typeof section, updateHash = true) {
+function showSection(s: Section, updateHash = true) {
   section = s;
   if (updateHash) location.hash = `#/${s}`;
   for (const el of document.querySelectorAll<HTMLElement>('.section-view')) el.hidden = el.dataset.section !== s;
@@ -56,7 +56,7 @@ function init() {
   initTheme();
 
   for (const btn of document.querySelectorAll<HTMLElement>('.tab-btn'))
-    btn.addEventListener('click', () => showSection(btn.dataset.section as typeof section));
+    btn.addEventListener('click', () => showSection(btn.dataset.section as Section));
 
   const search = document.getElementById('search') as HTMLInputElement;
   search.addEventListener('input', () => paint(view.dispatch({ type: 'search', query: search.value })));

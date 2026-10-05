@@ -350,12 +350,10 @@ function paintFusion(vm: ViewModel) {
     p.notes.hidden = true;
     return;
   }
+  // Both slots filled: the composed fusion replaces the hint entirely —
+  // the "selection full" hint only matters in the pending states above.
   p.hint.hidden = true;
   p.iconB.style.display = '';
-  if (p.iconB.getAttribute('src') !== icon(b.icon)) p.iconB.src = icon(b.icon);
-  p.iconB.alt = b.name;
-  p.nameB.textContent = b.name;
-  p.hint.hidden = true;
   if (p.iconB.getAttribute('src') !== icon(b.icon)) p.iconB.src = icon(b.icon);
   p.iconB.alt = b.name;
   p.nameB.textContent = b.name;
