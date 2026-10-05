@@ -9,7 +9,9 @@
 //     on-hit (Black Hole × Sun), spawn carrier + spawn-bound status (Glacier
 //     × Maggot) — per the community composition rules (namu's 7 rules; the
 //     status-vs-spawn split) validated against the 1,035-observation corpus
-//     in docs/research/fusion-observations/
+//     in docs/research/fusion-observations/. crossWire() returns
+//     { line, disputed }: disputed marks a corpus-contradicted kill wire
+//     (flicker × reaper), which fuse() turns into a caveat note.
 //   - order side-effects and fixed composition caveats (both-cooldown pairs,
 //     same-property pairs, Destroy × Destroy, hit-once dominance over
 //     pass-through, spawn compensating Destroy, Dark's multiplier) are notes
@@ -198,26 +200,31 @@ const pairId = (a: Ball, b: Ball) => [a.id, b.id].sort().join('+');
  *  spawn-carrier × on-hit status, AOE-carrier × on-hit status, AOE-carrier ×
  *  kill-on-hit (Black Hole × Sun), and spawn-carrier × spawn-bound status
  *  (Glacier × Maggot: babies inherit the whole kit including its spikes). */
-/** Set by crossWire() when the emitted kill cross-wire is corpus-disputed
- *  (both polarities reported; fuse() turns this into a caveat note). */
-let killDisputed = false;
+/** Cross-wire result: the emitted line (or null) plus whether the emitted kill
+ *  cross-wire is corpus-disputed (both polarities reported; fuse() turns the
+ *  bit into a caveat note). The disputed bit travels with the line instead of
+ *  a module-level flag, so every caller gets both results from one call. */
+export interface CrossWireResult {
+  line: string | null;
+  disputed: boolean;
+}
 
-export function crossWire(a: Ball, b: Ball): string | null {
-  killDisputed = false;
+export function crossWire(a: Ball, b: Ball): CrossWireResult {
+  const NO_WIRE: CrossWireResult = { line: null, disputed: false };
   const isKill = (b: Ball) => KILL_EFFECT_IDS.has(b.id);
   const isStatus = (b: Ball) => statusChannel(b) === 'hit';
 
   // spawn carrier + partner's on-hit status (tooltip: Overgrowth × Maggot)
   const [spawner, st] = spawnable(a) && isStatus(b) ? [a, b]
     : spawnable(b) && isStatus(a) ? [b, a] : [null, null];
-  if (spawner && st) return `Spawned balls from ${spawner.name} have the same properties as ${st.name}.`;
+  if (spawner && st) return { line: `Spawned balls from ${spawner.name} have the same properties as ${st.name}.`, disputed: false };
 
   // AOE carrier + partner's on-hit status (tooltip: Overgrowth × Flash)
   const rank = (b: Ball) => (b.tags.includes('screen-clear') ? 2 : b.tags.includes('aoe') ? 1 : 0);
   const aoeCarrier = (b: Ball) => rank(b) > 0 && !AOE_EXCLUDED_IDS.has(b.id);
   const [carrier, st2] = aoeCarrier(a) && rank(a) > rank(b) && isStatus(b) ? [a, b]
     : aoeCarrier(b) && rank(b) > rank(a) && isStatus(a) ? [b, a] : [null, null];
-  if (carrier && st2) return `Area-of-effect damage from ${carrier.name} inflicts the status effect of ${st2.name}.`;
+  if (carrier && st2) return { line: `Area-of-effect damage from ${carrier.name} inflicts the status effect of ${st2.name}.`, disputed: false };
 
   // AOE carrier + partner's kill-on-hit (Black Hole × Sun — the corpus meta
   // pair; kamigame: "Black Hole's effect rides on Flash's screen-wide
@@ -241,8 +248,10 @@ export function crossWire(a: Ball, b: Ball): string | null {
   const [kCarrier, killer] = isKill(b) && !isKill(a) && killCarrierOk(a, b) ? [a, b]
     : isKill(a) && !isKill(b) && killCarrierOk(b, a) ? [b, a] : [null, null];
   if (kCarrier && killer) {
-    killDisputed = KILL_DISPUTED_PAIRS.has(pairId(a, b));
-    return `Area-of-effect damage from ${kCarrier.name} triggers the instant kill of ${killer.name}.`;
+    return {
+      line: `Area-of-effect damage from ${kCarrier.name} triggers the instant kill of ${killer.name}.`,
+      disputed: KILL_DISPUTED_PAIRS.has(pairId(a, b)),
+    };
   }
 
   // spawn carrier + partner's spawn-bound status (Glacier × Maggot — the
@@ -253,8 +262,8 @@ export function crossWire(a: Ball, b: Ball): string | null {
   const spawnStatus = (b: Ball) => statusChannel(b) === 'spawn';
   const [sp2, sst] = spawnable(a) && spawnStatus(b) ? [a, b]
     : spawnable(b) && spawnStatus(a) ? [b, a] : [null, null];
-  if (sp2 && sst) return `Spawned balls from ${sp2.name} have the same properties as ${sst.name}, including its spawned effects.`;
-  return null;
+  if (sp2 && sst) return { line: `Spawned balls from ${sp2.name} have the same properties as ${sst.name}, including its spawned effects.`, disputed: false };
+  return NO_WIRE;
 }
 
 /** If the pair is a 2-component evolution recipe the pair Evolves instead of
@@ -322,14 +331,14 @@ export function fuse(a: Ball, b: Ball): FusionResult | null {
   }
 
   const wire = crossWire(a, b);
-  if (killDisputed) {
+  if (wire.disputed) {
     notes.push('Corpus contradiction — reports disagree on whether the instant kill fires from the partner\'s hits here (see docs/research/fusion-observations/CONTRADICTIONS.md).');
   }
 
   return {
     name: fusionName(a, b),
     paragraphs: [applyFusedStats(a.id, a.effects), applyFusedStats(b.id, b.effects)].map(abstractDamage) as [string, string],
-    crossWire: wire,
+    crossWire: wire.line,
     evolvesInstead: evo ? { id: evo.id, name: evo.name } : null,
     notes,
   };

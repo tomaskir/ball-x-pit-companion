@@ -123,7 +123,8 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   dominance over pass-through, spawn compensates Destroy, Dark's
   multiplier), and the evolve-instead note for 2-component evolution
   recipes. Module: `src/fusion.ts` (`fuse(a, b)`, `fusionBalls()`,
-  `fusionName`, `abstractDamage`, `crossWire`, `evolvesInstead`) — the
+  `fusionName`, `abstractDamage`, `crossWire(a, b) → { line, disputed }`,
+  `evolvesInstead`) — the
   site's editorial model of fusion, not game data; the composition rules,
   their evidence, and the full 370-pair observation corpus live in
   `docs/research/fusion-observations/` (validation methodology:

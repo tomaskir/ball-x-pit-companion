@@ -47,25 +47,42 @@ describe('abstractDamage', () => {
 
 describe('crossWire', () => {
   it('spawn + status: spawned balls get the status (Overgrowth × Maggot)', () => {
-    expect(crossWire(ball('overgrowth'), ball('maggot'))).toBe(
-      'Spawned balls from Maggot have the same properties as Overgrowth.'
-    );
+    expect(crossWire(ball('overgrowth'), ball('maggot'))).toEqual({
+      line: 'Spawned balls from Maggot have the same properties as Overgrowth.',
+      disputed: false,
+    });
   });
 
   it('AOE + status: the AOE hits apply the status (Overgrowth × Flash)', () => {
-    expect(crossWire(ball('flash'), ball('overgrowth'))).toBe(
-      'Area-of-effect damage from Flash inflicts the status effect of Overgrowth.'
-    );
+    expect(crossWire(ball('flash'), ball('overgrowth'))).toEqual({
+      line: 'Area-of-effect damage from Flash inflicts the status effect of Overgrowth.',
+      disputed: false,
+    });
   });
 
   it('no cross-wire when neither channel carries (Flash × Glacier)', () => {
     // Glacier's freeze lives on spawned spikes, not a status on the ball;
     // Flash carries no status and Glacier is not a status ball.
-    expect(crossWire(ball('flash'), ball('glacier'))).toBeNull();
+    expect(crossWire(ball('flash'), ball('glacier'))).toEqual({ line: null, disputed: false });
   });
 
   it('status × status: no cross-wire line', () => {
-    expect(crossWire(ball('freeze'), ball('poison'))).toBeNull();
+    expect(crossWire(ball('freeze'), ball('poison'))).toEqual({ line: null, disputed: false });
+  });
+
+  it('corpus-disputed kill pair keeps the wire line and flags disputed (flicker × reaper)', () => {
+    // CONTRADICTIONS.md §10e: both polarities reported — fuse() turns this
+    // into a caveat note; the wire line itself stays.
+    expect(crossWire(ball('flicker'), ball('reaper'))).toEqual({
+      line: 'Area-of-effect damage from Flicker triggers the instant kill of Reaper.',
+      disputed: true,
+    });
+  });
+
+  it('undisputed kill pair reports disputed: false (Black Hole × Sun)', () => {
+    const r = crossWire(ball('black-hole'), ball('sun'));
+    expect(r.line).toContain('instant kill of Black Hole');
+    expect(r.disputed).toBe(false);
   });
 });
 
