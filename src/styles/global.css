@@ -163,11 +163,24 @@ header h1 span { color: var(--muted); font-style: italic; font-size: 14px; }
   background: var(--panel);
   border: 1px solid var(--gold-dim);
   border-radius: 4px;
-  padding: 4px 8px;
+  padding: 4px; /* square: both hold a single 16px glyph, no side text */
   cursor: pointer;
 }
 
-#themeToggle { font-size: 14px; }
+#themeToggle {
+  font-size: 16px;
+  /* The emoji glyph is not square and its ink height varies by glyph — the
+     button would track the glyph and drift away from .repo-link's 26×26
+     box. Pin the box and center whatever glyph shows; this pin, not the
+     shared padding, keeps the two buttons equal. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+}
 
 /* GitHub repo link — same visual size as #themeToggle (square 26×26 box);
    the svg inherits currentColor so it tracks the theme's text color */
@@ -177,10 +190,8 @@ header h1 span { color: var(--muted); font-style: italic; font-size: 14px; }
   justify-content: center;
   color: var(--text);
   line-height: 0;
-  padding: 4px; /* square, unlike the toggle's 4px 8px — the svg has no side text */
 }
 
-.repo-link:hover { border-color: var(--gold); }
 .repo-link svg { width: 16px; height: 16px; }
 
 /* ---------- grids ---------- */

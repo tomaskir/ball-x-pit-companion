@@ -31,11 +31,21 @@ describe('global stylesheet', () => {
 
   it('GitHub repo link matches the theme toggle button sizing', () => {
     const css = readFileSync('src/styles/global.css', 'utf8');
-    // the sizing props live in one shared rule for both controls
+    // the sizing props live in one shared rule for both controls; padding is
+    // square (4px) — both buttons hold a single 16px glyph, no side text
     const shared = css.match(/#themeToggle,\s*\n\.repo-link\s*\{[^}]*\}/)![0];
-    for (const prop of ['border-radius: 4px', 'padding: 4px 8px']) {
+    for (const prop of ['border-radius: 4px', 'padding: 4px;']) {
       expect(shared, `shared rule has ${prop}`).toContain(prop);
     }
+    // bug: the toggle's emoji glyph is not square, so the button tracked the
+    // glyph and drifted away from .repo-link's 26×26 box — the box is pinned
+    const toggle = css.match(/#themeToggle\s*\{[^}]*\}/)![0];
+    for (const prop of ['width: 26px', 'height: 26px']) {
+      expect(toggle, `theme toggle pins ${prop}`).toContain(prop);
+    }
+    // bug: .repo-link had a hover border effect the toggle lacked — the two
+    // buttons are a visual pair, one glowing on hover read as inconsistent
+    expect(css).not.toMatch(/\.repo-link:hover/);
   });
 
   it('repo link sits in the header-right cluster, right of the theme toggle', () => {
