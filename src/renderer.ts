@@ -1,12 +1,21 @@
 // Renderer module: all DOM painting for the island. One interface:
-// buildAll() builds the static DOM once (grids, character cards), then
-// paint(viewModel) repaints state on it — never recreating <img> elements
-// (rebuilding would blink the icons). The island (src/companion.ts) keeps
-// only event listening, theme, and hash routing; the ViewModel it paints
-// comes from src/view-state.ts — the fusion panel rides the named
+// buildAll(options) builds the static DOM once (grids, character cards),
+// then paint(viewModel) repaints state on it — never recreating <img>
+// elements (rebuilding would blink the icons). The island (src/companion.ts)
+// keeps only event listening, theme, and hash routing; the ViewModel it
+// paints comes from src/view-state.ts — the fusion panel rides the named
 // fusionPanel state (empty / pending / composed) and paintFusion switches
 // on it; the renderer holds no domain data of its own. The icon-URL join
 // comes from src/icon-url.ts.
+//
+// The build seam is the options object: { getVerdict, emit }. getVerdict
+// supplies the toast's per-item verdict against the current character
+// selection; emit is how built-in click handlers report selection toggles
+// back to the island — emit(type, id) names the view-state action
+// ('toggleItem' | 'toggleChar' | 'toggleFusion') and the clicked id. The
+// renderer never dispatches DOM events or touches view state: emit is just
+// a callback the island supplies (it dispatches and paints); hover/tap
+// toast listeners stay internal to the renderer.
 import { BALLS } from './data/balls';
 import { PASSIVES } from './data/passives';
 import { CHARACTERS, type Character } from './data/characters';
@@ -15,7 +24,7 @@ import { fusionBalls } from './fusion';
 import { recipeHtml } from './graph';
 import { iconUrl } from './icon-url';
 import type { Verdict } from './synergy';
-import type { ViewModel } from './view-state';
+import type { ToggleAction, ViewModel } from './view-state';
 
 const DEPTH_LABELS = ['Basic', 'Evolved', 'Tier-3'] as const;
 
@@ -23,9 +32,12 @@ const DEPTH_LABELS = ['Basic', 'Evolved', 'Tier-3'] as const;
  *  join with the configured base URL lives in src/icon-url.ts. */
 const icon = (p: string) => iconUrl(import.meta.env.BASE_URL, p);
 
-/** Verdict lookup for the toast, injected at build time: the island passes
- *  its view-state's verdictFor so hover always reads the current selection. */
+/** The build seam, captured once by buildAll: the toast's verdict lookup
+ *  (the island passes its view-state's verdictFor so hover always reads the
+ *  current selection) and the click→island callback (the island dispatches
+ *  the named view-state action and paints). */
 let toastVerdict: (item: Item) => Verdict | null = () => null;
+let emit: (type: ToggleAction['type'], id: string) => void = () => {};
 
 // ---------- grids ----------
 
@@ -58,7 +70,7 @@ function buildGrid(gridId: string, items: Item[]) {
       tile.innerHTML = `<img src="${icon(item.icon)}" alt="${item.name}" width="48" height="48" loading="lazy"><span class="nm">${item.name}</span>${comps}`;
       tile.addEventListener('click', (e) => {
         e.stopPropagation();
-        document.dispatchEvent(new CustomEvent('tile-select', { detail: item.id }));
+        emit('toggleItem', item.id);
       });
       attachToast(tile, () => item);
       tiles.set(item.id, { tile, item });
@@ -121,7 +133,7 @@ function buildCharacters() {
         ? `<div class="char-base" title="Base ball"><img src="${icon(base.icon)}" alt="${base.name}" width="24" height="24"><span>${base.name}</span></div>`
         : '<div class="char-base none">no base ball</div>'}`;
     card.addEventListener('click', () => {
-      document.dispatchEvent(new CustomEvent('char-select', { detail: ch.id }));
+      emit('toggleChar', ch.id);
     });
     // hovering the base-ball chip shows that ball's toast
     const baseChip = card.querySelector('.char-base');
@@ -162,7 +174,7 @@ function renderCharChips(vm: ViewModel) {
     chip.innerHTML = `<img src="${icon(ch.sprite)}" alt="" width="22" height="22"><span>${ch.name}</span>`;
     chip.title = 'Click to remove';
     chip.addEventListener('click', () => {
-      document.dispatchEvent(new CustomEvent('char-select', { detail: ch.id }));
+      emit('toggleChar', ch.id);
     });
     wrap.appendChild(chip);
   }
@@ -264,7 +276,7 @@ function buildFusionList() {
       row.innerHTML = `<img src="${icon(ball.icon)}" alt="${ball.name}" width="36" height="36" loading="lazy"><span class="nm">${ball.name}</span>`;
       row.addEventListener('click', (e) => {
         e.stopPropagation();
-        document.dispatchEvent(new CustomEvent('fusion-select', { detail: ball.id }));
+        emit('toggleFusion', ball.id);
       });
       fusionRowEls.set(ball.id, row);
       wrap.appendChild(row);
@@ -393,12 +405,22 @@ function paintFusion(vm: ViewModel) {
 
 // ---------- interface ----------
 
-/** Build all static DOM once: balls grid, passives grid, character cards,
- *  fusion pick list. Call once at startup, before the first paint().
+/** The build seam: everything the island injects at build time.
  *  `getVerdict` supplies the toast's per-item verdict against the current
- *  character selection. */
-export function buildAll(getVerdict: (item: Item) => Verdict | null): void {
+ *  character selection; `emit` is how the built-in click handlers report
+ *  selection toggles back — the island dispatches the named view-state
+ *  action and paints. The renderer stays paint-only: it never dispatches
+ *  DOM events and never touches view state. */
+export interface BuildOptions {
+  getVerdict: (item: Item) => Verdict | null;
+  emit: (type: ToggleAction['type'], id: string) => void;
+}
+
+/** Build all static DOM once: balls grid, passives grid, character cards,
+ *  fusion pick list. Call once at startup, before the first paint(). */
+export function buildAll({ getVerdict, emit: onEmit }: BuildOptions): void {
   toastVerdict = getVerdict;
+  emit = onEmit;
   buildGrid('ballsGrid', BALLS);
   buildGrid('passivesGrid', PASSIVES);
   buildCharacters();

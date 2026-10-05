@@ -256,6 +256,26 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
     expect(src).not.toContain('parentElement');
   });
 
+  // Bug: the renderer reported tile/card/row clicks as untyped string
+  // CustomEvents on the global document ('tile-select' / 'char-select' /
+  // 'fusion-select') — an invisible interface: nothing in buildAll's
+  // signature showed it, and the click→action wiring had no test surface.
+  // Fix: the build seam carries an `emit(type, id)` callback (the island
+  // dispatches the named view-state action and paints); the renderer no
+  // longer dispatches DOM events at all. Pinned behaviorally in
+  // renderer.test.ts ("build seam: clicks call emit"); aliased here for the
+  // regression index.
+  it('renderer reports clicks through the build seam, not a CustomEvent bus', () => {
+    const src = readFileSync('src/renderer.ts', 'utf8');
+    expect(src).not.toContain('CustomEvent');
+    expect(src).not.toContain('document.dispatchEvent');
+    for (const event of ['tile-select', 'char-select', 'fusion-select']) {
+      expect(src).not.toContain(event);
+    }
+    // the seam is in the signature, not hidden module state
+    expect(src).toMatch(/export function buildAll\(\{ getVerdict, emit/);
+  });
+
   // Bug: the fusion panel toggles pieces via the hidden attribute, but
   // .fusion-head { display: flex } (an author style) overrides the UA
   // stylesheet's [hidden] rule — author styles beat UA styles regardless of
@@ -287,7 +307,7 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
         document.body.appendChild(el);
       }
     }
-    buildAll(() => null);
+    buildAll({ getVerdict: () => null, emit: () => {} });
     const view = createViewState();
     paint(view.dispatch({ type: 'toggleFusion', id: 'flash' }));
     const iconB = document.querySelector<HTMLImageElement>('#fusionPanel .icon-b')!;

@@ -3,7 +3,7 @@
 // interface; all state and derivations live in src/view-state.ts behind one
 // dispatch(action) → ViewModel interface. See CONTEXT.md for the domain
 // glossary these contracts use.
-import { createViewState, type Section } from './view-state';
+import { createViewState, type Section, type Action } from './view-state';
 import { buildAll, paint } from './renderer';
 
 const view = createViewState();
@@ -71,13 +71,13 @@ function init() {
     if (!(e.target as HTMLElement).closest('.tile, .char-card, .chip, .toast, .fusion-row, .fusion-panel')) paint(view.dispatch({ type: 'clear', section }));
   });
 
-  // grid/card clicks come up as custom events so the renderer stays paint-only
-  document.addEventListener('tile-select', (e) => paint(view.dispatch({ type: 'toggleItem', id: (e as CustomEvent<string>).detail })));
-  document.addEventListener('char-select', (e) => paint(view.dispatch({ type: 'toggleChar', id: (e as CustomEvent<string>).detail })));
-  document.addEventListener('fusion-select', (e) => paint(view.dispatch({ type: 'toggleFusion', id: (e as CustomEvent<string>).detail })));
-
+  // grid/card/row clicks come back through the build seam's emit callback —
+  // the renderer stays paint-only, the island owns dispatching to view state
   initRouting();
-  buildAll((item) => view.verdictFor(item));
+  buildAll({
+    getVerdict: (item) => view.verdictFor(item),
+    emit: (type, id) => paint(view.dispatch({ type, id } as Action)),
+  });
   // initial paint: derive the view model once everything is built
   paint(view.derive());
 }

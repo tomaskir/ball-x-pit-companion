@@ -4,8 +4,11 @@
 // silently leaving the panel frozen. These tests parse the renderer's own
 // skeleton against the selectors it queries, and — through jsdom — paint a
 // full state sequence through paint() itself, asserting what the user sees.
+// The build seam (buildAll's options object) is pinned behaviorally too:
+// clicking a real tile / char card / chip / fusion row calls emit with the
+// right action type and id.
 // @vitest-environment jsdom
-import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { buildAll, paint } from './renderer';
 import { createViewState, type ViewModel, type Action } from './view-state';
@@ -75,7 +78,7 @@ beforeAll(() => {
     el.id = id;
     document.body.appendChild(el);
   }
-  buildAll(() => null);
+  buildAll({ getVerdict: () => null, emit: () => {} });
 });
 
 beforeEach(() => {
@@ -184,5 +187,51 @@ describe('fusion panel behavior (jsdom, through paint())', () => {
     );
     expect(q<HTMLImageElement>('.icon-a')).toBe(iconA);
     expect(q<HTMLImageElement>('.icon-b')).toBe(iconB);
+  });
+});
+
+// ---------- behavior: the build seam's emit callback ----------
+
+// Clicking a built tile / char card / chip / fusion row must report the
+// selection toggle through the emit callback the island supplies at build
+// time — the seam that replaced the untyped CustomEvent bus.
+describe('build seam: clicks call emit (jsdom)', () => {
+  it('tile click emits toggleItem with the item id', () => {
+    const emit = vi.fn();
+    buildAll({ getVerdict: () => null, emit });
+    const tile = document.querySelector<HTMLElement>('#ballsGrid .tile[data-id="flash"]')!;
+    expect(tile).toBeTruthy();
+    tile.click();
+    expect(emit).toHaveBeenCalledWith('toggleItem', 'flash');
+  });
+
+  it('char card click emits toggleChar with the character id', () => {
+    const emit = vi.fn();
+    buildAll({ getVerdict: () => null, emit });
+    const card = document.querySelector<HTMLElement>('#charactersGrid .char-card')!;
+    card.click();
+    expect(emit).toHaveBeenCalledTimes(1);
+    expect(emit).toHaveBeenCalledWith('toggleChar', card.dataset.id ?? expect.any(String));
+  });
+
+  it('fusion row click emits toggleFusion with the ball id', () => {
+    const emit = vi.fn();
+    buildAll({ getVerdict: () => null, emit });
+    const row = document.querySelector<HTMLElement>('#fusionList .fusion-row[data-id="flash"]')!;
+    expect(row).toBeTruthy();
+    row.click();
+    expect(emit).toHaveBeenCalledWith('toggleFusion', 'flash');
+  });
+
+  it('the emit callback actually reaches view state (the island path)', () => {
+    // the island's emit: dispatch + paint — clicking a tile must select it
+    const view = createViewState();
+    buildAll({
+      getVerdict: () => null,
+      emit: (type, id) => paint(view.dispatch({ type, id } as Action)),
+    });
+    document.querySelector<HTMLElement>('#ballsGrid .tile[data-id="flash"]')!.click();
+    paint(view.derive());
+    expect(document.querySelector('#ballsGrid .tile[data-id="flash"]')!.classList.contains('selected')).toBe(true);
   });
 });

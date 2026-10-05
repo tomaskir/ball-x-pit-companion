@@ -64,6 +64,14 @@ export type Action =
   /** Tab switch: clears every section's selection. */
   | { type: 'clearAll' };
 
+/** The selection-toggle actions — exactly the ones the renderer's click
+ *  handlers produce and hand back through the build seam's `emit` callback
+ *  (the island dispatches them verbatim). */
+export type ToggleAction = Extract<
+  Action,
+  { type: 'toggleItem' | 'toggleChar' | 'toggleFusion' }
+>;
+
 /** Balls offered by the fusion pick list: all fusable upgrade entities.
  *  Baby Ball is not one (research: it is not an upgrade entity). */
 const FUSION_BALLS = fusionBalls();

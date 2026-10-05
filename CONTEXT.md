@@ -73,30 +73,37 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   `src/view-state.ts` (`toggleChar` action).
 - **Toast** — the hover/tap detail popup with icon, full effect text, recipe,
   tags, and the item's current verdict. Its verdict function is injected at
-  build time (`buildAll(getVerdict)`), so hover always reads the current
-  selection. Lives in `src/renderer.ts`.
+  build time (`buildAll({ getVerdict, emit })`), so hover always reads the
+  current selection. Lives in `src/renderer.ts`.
+- **Build seam** — the options object `buildAll({ getVerdict, emit })` hands
+  the island's two callbacks to the renderer at build time: `getVerdict`
+  feeds the toast, `emit(type, id)` is how built-in click handlers report
+  selection toggles back (the island dispatches the named view-state action
+  and paints). The renderer stays paint-only — it never dispatches DOM
+  events and never imports view state (pinned in `src/regression.test.ts`;
+  the emit wiring is pinned behaviorally in `src/renderer.test.ts`).
 - **Island** — the single interactive script `src/companion.ts` mounted by
   the Astro page. Owns event listening, theme, and hash routing only;
   painting, verdict logic, graph math, and data live in their own modules.
-  (The renderer attaches hover/tap listeners for toasts — the island owns
-  the events that *dispatch to view state*; Esc and empty-space clicks clear
-  the active section's selection, switching sections clears every
-  selection.)
+  (The renderer attaches hover/tap listeners for toasts; tile/card/row
+  clicks come back through the build seam's `emit`, which the island wires
+  to dispatch + paint. Esc and empty-space clicks clear the active
+  section's selection, switching sections clears every selection.)
 - **Renderer** — all DOM painting for the island. Module: `src/renderer.ts`
   (recipe notation comes from `src/graph.ts`; the renderer only injects
   icon markup — see **Recipe notation**; the icon-URL join comes from
   `src/icon-url.ts`) — one interface:
-  `buildAll(getVerdict)` (builds grids, character cards, the fusion pick
-  list, and the fusion panel skeleton once, at startup) + `paint(viewModel)`
-  (repaints state on the existing DOM; never recreates `<img>` elements —
-  that would blink icons; the fusion panel's head icons are built once and
-  repainted in place). Tiles, character cards, chips, toasts, and the fusion
-  screen live here; the ViewModel is its input and the test surface stays
-  `view-state.ts`. The renderer holds no domain data of its own: its
-  fusion-row map is purely a DOM-row registry, and the fusion panel paints
-  by switching on the view model's named `fusionPanel` state — per state,
-  which hooks show and what they show (behavior pinned in
-  `src/renderer.test.ts` through jsdom).
+  `buildAll({ getVerdict, emit })` (builds grids, character cards, the
+  fusion pick list, and the fusion panel skeleton once, at startup) +
+  `paint(viewModel)` (repaints state on the existing DOM; never recreates
+  `<img>` elements — that would blink icons; the fusion panel's head icons
+  are built once and repainted in place). Tiles, character cards, chips,
+  toasts, and the fusion screen live here; the ViewModel is its input and
+  the test surface stays `view-state.ts`. The renderer holds no domain data
+  of its own: its fusion-row map is purely a DOM-row registry, and the
+  fusion panel paints by switching on the view model's named `fusionPanel`
+  state — per state, which hooks show and what they show (behavior pinned
+  in `src/renderer.test.ts` through jsdom).
 - **View state** — the island's state (item selection, character slots,
   fusion picks, search query) and every derivation from it (highlight walks,
   filters, verdict badges, the composed fusion). Module: `src/view-state.ts`
