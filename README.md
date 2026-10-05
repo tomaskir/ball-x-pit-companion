@@ -23,8 +23,16 @@ synergy verdicts, as a static site that works offline.
   everything that spawns or scales with them goes red).
 - **Character reference**: all 23 characters with base ball, quirk text, and
   unlock context.
-- **Search everything** by name or effect text. Dark and light themes.
-  No backend, no tracking. One static page.
+- **Fusions screen**: pick any two unfused level-3 balls and see the composed
+  fused ball — merged effect text, cross-wire interactions (e.g. a spawn
+  carrier delivering the partner's on-hit status), order side-effects, and
+  caveats. The game has no fusion table, so composition follows
+  community-observed rules validated against a 370-pair evidence corpus; this
+  is the site's editorial model, not game data (see
+  [`docs/research/fusion-mechanics.md`](docs/research/fusion-mechanics.md)).
+- **Search per screen** by name or effect text. Selections survive switching
+  between screens. Dark and light themes. No backend, no tracking. One static
+  page.
 
 ## Data
 
@@ -57,6 +65,7 @@ single-responsibility modules:
 | `src/companion.ts` | Island: event listening, theme, hash routing only |
 | `src/view-state.ts` | All state and derivations: `dispatch(action) → ViewModel` |
 | `src/renderer.ts` | All DOM painting: build once, repaint in place (icons never blink) |
+| `src/fusion.ts` | Pure fusion composer: `fuse(a, b)` → composed fused-ball text |
 | `src/graph.ts` | Pure evolution-graph helpers: depth, highlight walks, recipe notation |
 | `src/catalog.ts` | Indexed ball/passive collections; namespace resolution |
 | `src/synergy.ts` | Red/green verdict logic from tag overlap |
@@ -76,6 +85,13 @@ The data files in `src/data/` are **generated**, don't edit them by hand:
 3. `node --experimental-strip-types scripts/emit-data.ts` → `src/data/*.ts`.
    Synergy tags and per-character verdicts are hand-maintained inside this
    script; it validates every cross-reference before writing.
+
+The fusion model is separate: `src/fusion.ts` composes fused-ball text from
+the two components' effect text using community-observed rules, validated
+against the 370-pair evidence corpus in
+[`docs/research/fusion-observations/`](docs/research/fusion-observations/) —
+an executable spec (`src/corpus.test.ts`). The distilled mechanics live in
+[`docs/research/fusion-mechanics.md`](docs/research/fusion-mechanics.md).
 
 ### Deployment
 
