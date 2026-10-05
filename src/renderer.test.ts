@@ -54,9 +54,9 @@ describe('fusion panel skeleton (renderer.ts)', () => {
 // need their index.astro containers — provide the minimal set.
 const CONTAINERS = ['ballsGrid', 'passivesGrid', 'charactersGrid', 'charChips', 'slotHint', 'fusionList', 'fusionPanel'];
 
-/** Drive the real view-state + renderer pair: build once, then dispatch and
- *  paint each step — the same path the island runs. */
-function drive(steps: Action[]): ViewModel {
+/** Drive the real view-state + renderer pair: dispatch and paint each step —
+ *  the same path the island runs. Returns the last view model. */
+function drive(...steps: Action[]): ViewModel {
   let vm: ViewModel | null = null;
   for (const action of steps) {
     vm = view.dispatch(action);
@@ -97,8 +97,7 @@ describe('fusion panel behavior (jsdom, through paint())', () => {
   });
 
   it('pending state: head shows the first ball, second icon slot display:none, hint updates', () => {
-    const vm = view.dispatch({ type: 'toggleFusion', id: 'flash' });
-    paint(vm);
+    drive({ type: 'toggleFusion', id: 'flash' });
     const iconA = q<HTMLImageElement>('.icon-a');
     const iconB = q<HTMLImageElement>('.icon-b');
     expect(q('.fusion-head').hidden).toBe(false);
@@ -117,9 +116,7 @@ describe('fusion panel behavior (jsdom, through paint())', () => {
   });
 
   it('composed state: full panel — head, evo slot, body, cross, notes', () => {
-    let vm = view.dispatch({ type: 'toggleFusion', id: 'flash' });
-    vm = view.dispatch({ type: 'toggleFusion', id: 'glacier' });
-    paint(vm);
+    drive({ type: 'toggleFusion', id: 'flash' }, { type: 'toggleFusion', id: 'glacier' });
     const iconB = q<HTMLImageElement>('.icon-b');
     expect(q('.fusion-head').hidden).toBe(false);
     expect(q('.fusion-times').textContent).toBe('×');
@@ -136,31 +133,24 @@ describe('fusion panel behavior (jsdom, through paint())', () => {
   });
 
   it('evolve-instead pair shows the evo line', () => {
-    let vm = view.dispatch({ type: 'toggleFusion', id: 'bleed' });
-    vm = view.dispatch({ type: 'toggleFusion', id: 'poison' });
-    paint(vm);
+    drive({ type: 'toggleFusion', id: 'bleed' }, { type: 'toggleFusion', id: 'poison' });
     expect(q('.fusion-evo').hidden).toBe(false);
     expect(q('.fusion-evo').textContent).toContain('Virus');
   });
 
   it('cross-wire pair shows the cross line', () => {
-    let vm = view.dispatch({ type: 'toggleFusion', id: 'black-hole' });
-    vm = view.dispatch({ type: 'toggleFusion', id: 'sun' });
-    paint(vm);
+    drive({ type: 'toggleFusion', id: 'black-hole' }, { type: 'toggleFusion', id: 'sun' });
     expect(q('.fusion-cross').hidden).toBe(false);
     expect(q('.fusion-cross').textContent).toContain('Black Hole');
   });
 
   it('full sequence empty → pending → composed → back to pending repaints every piece in place', () => {
     // composed first (so the pending state must actively clear stale content)
-    let vm = view.dispatch({ type: 'toggleFusion', id: 'flash' });
-    vm = view.dispatch({ type: 'toggleFusion', id: 'glacier' });
-    paint(vm);
+    drive({ type: 'toggleFusion', id: 'flash' }, { type: 'toggleFusion', id: 'glacier' });
     expect(q('.fusion-body').hidden).toBe(false);
     expect(q('.fusion-notes').hidden).toBe(false);
 
-    vm = view.dispatch({ type: 'toggleFusion', id: 'glacier' }); // deselect → pending
-    paint(vm);
+    drive({ type: 'toggleFusion', id: 'glacier' }); // deselect → pending
     expect(q('.fusion-head').hidden).toBe(false);
     expect(q('.name-a').textContent).toBe(flash().name);
     expect(q('.fusion-times').textContent).toBe('+ ?');
@@ -171,15 +161,13 @@ describe('fusion panel behavior (jsdom, through paint())', () => {
     expect(q('.fusion-body').hidden).toBe(true);
     expect(q('.fusion-notes').hidden).toBe(true);
 
-    vm = view.dispatch({ type: 'toggleFusion', id: 'flash' }); // deselect → empty
-    paint(vm);
+    drive({ type: 'toggleFusion', id: 'flash' }); // deselect → empty
     expect(q('.fusion-hint').textContent).toContain('Pick two balls');
     expect(q('.fusion-head').hidden).toBe(true);
     expect(q('.fusion-body').hidden).toBe(true);
     expect(q('.fusion-notes').hidden).toBe(true);
 
-    vm = view.dispatch({ type: 'toggleFusion', id: 'glacier' }); // new pending
-    paint(vm);
+    drive({ type: 'toggleFusion', id: 'glacier' }); // new pending
     expect(q('.name-a').textContent).toBe(glacier().name);
     expect(q<HTMLImageElement>('.icon-a').getAttribute('src')).toBe(iconUrl('/', glacier().icon));
   });
@@ -187,18 +175,14 @@ describe('fusion panel behavior (jsdom, through paint())', () => {
   it('head <img> elements are never recreated across a full sequence', () => {
     const iconA = q<HTMLImageElement>('.icon-a');
     const iconB = q<HTMLImageElement>('.icon-b');
-    for (const id of ['flash', 'glacier', 'glacier', 'flash', 'maggot']) {
-      paint(view.dispatch({ type: 'toggleFusion', id }));
-    }
-    expect(q<HTMLImageElement>('.icon-a')).toBe(iconA);
-    expect(q<HTMLImageElement>('.icon-b')).toBe(iconB);
-  });
-
-  it('drive() helper runs dispatch+paint pairs', () => {
-    const vm = drive([
+    drive(
       { type: 'toggleFusion', id: 'flash' },
       { type: 'toggleFusion', id: 'glacier' },
-    ]);
-    expect(vm.fusionPanel.state).toBe('composed');
+      { type: 'toggleFusion', id: 'glacier' },
+      { type: 'toggleFusion', id: 'flash' },
+      { type: 'toggleFusion', id: 'maggot' },
+    );
+    expect(q<HTMLImageElement>('.icon-a')).toBe(iconA);
+    expect(q<HTMLImageElement>('.icon-b')).toBe(iconB);
   });
 });

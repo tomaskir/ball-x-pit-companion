@@ -253,7 +253,7 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
     for (const hook of ['.icon-a', '.name-a', '.icon-b', '.name-b', '.eff-a', '.eff-b', '.fusion-body']) {
       expect(src).toContain(`'${hook}'`);
     }
-    expect(src).not.toContain('parentElement as HTMLElement');
+    expect(src).not.toContain('parentElement');
   });
 
   // Bug: the fusion panel toggles pieces via the hidden attribute, but
