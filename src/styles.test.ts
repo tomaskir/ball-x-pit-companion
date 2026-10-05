@@ -65,6 +65,20 @@ describe('global stylesheet', () => {
     expect(css).toMatch(/header h1\s*\{[^}]*line-height:\s*1\.45/);
   });
 
+  it('every section-view carries its own search box with a matching data-section', () => {
+    // per-screen search is a shell contract: one .screen-search per
+    // section-view, data-section naming that section (the island reads it —
+    // a typo'd value silently kills that screen's search)
+    const html = readFileSync('src/pages/index.astro', 'utf8');
+    const sections = ['balls', 'passives', 'characters', 'fusions'];
+    for (const s of sections) {
+      const view = html.match(new RegExp(`<div class="section-view"[^>]*data-section="${s}"[\\s\\S]*?(?=<div class="section-view"|</main>)`))![0];
+      const input = view.match(/<input class="screen-search" data-section="([a-z]+)"/);
+      expect(input, `${s} view has a .screen-search`).not.toBeNull();
+      expect(input![1], `${s} search box names its section`).toBe(s);
+    }
+  });
+
   it('both picked slots highlight identically (slot-2 was visually subtle)', () => {
     const css = readFileSync('src/styles/global.css', 'utf8');
     const merged = css.match(/\.fusion-row\.slot-1,\s*\.fusion-row\.slot-2\s*\{[^}]*\}/);

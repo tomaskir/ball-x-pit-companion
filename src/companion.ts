@@ -64,22 +64,28 @@ function init() {
   // The section comes from a data-section attribute — the same pattern as the
   // tab buttons — not from munging the id string.
   for (const input of document.querySelectorAll<HTMLInputElement>('.screen-search[data-section]')) {
-    const section = input.dataset.section as Section;
-    input.addEventListener('input', () => paint(view.dispatch({ type: 'search', section, query: input.value })));
+    const inputSection = input.dataset.section as Section;
+    input.addEventListener('input', () => paint(view.dispatch({ type: 'search', section: inputSection, query: input.value })));
   }
 
   document.addEventListener('keydown', (e) => {
     // Esc clears the active section's selection (chars/fusions included);
     // switching sections keeps every screen's selection (cross-screen
-    // remembering)
-    if (e.key === 'Escape') paint(view.dispatch({ type: 'clear', section }));
+    // remembering). In a search input Esc clears the query instead — the
+    // browser's native type=search behavior — and must not also wipe the
+    // screen's selection.
+    if (e.key === 'Escape' && !(e.target as HTMLElement).closest('input')) {
+      paint(view.dispatch({ type: 'clear', section }));
+    }
   });
   document.addEventListener('click', (e) => {
     // empty space clears the active section's selection, same as Esc.
     // Header controls are not empty space — a tab click must not clear the
     // destination screen's remembered selection (cross-screen remembering).
+    // Search boxes are not empty space either — clicking one to type must
+    // not wipe the screen's selection.
     const target = e.target as HTMLElement;
-    if (target.closest('.tile, .char-card, .chip, .toast, .fusion-row, .fusion-panel, header')) return;
+    if (target.closest('.tile, .char-card, .chip, .toast, .fusion-row, .fusion-panel, header, .screen-search')) return;
     paint(view.dispatch({ type: 'clear', section }));
   });
 
