@@ -3,9 +3,10 @@
 // paint(viewModel) repaints state on it — never recreating <img> elements
 // (rebuilding would blink the icons). The island (src/companion.ts) keeps
 // only event listening, theme, and hash routing; the ViewModel it paints
-// comes from src/view-state.ts (including the resolved fusion picks — the
-// renderer holds no domain data of its own); the icon-URL join comes from
-// src/icon-url.ts.
+// comes from src/view-state.ts — the fusion panel rides the named
+// fusionPanel state (empty / pending / composed) and paintFusion switches
+// on it; the renderer holds no domain data of its own. The icon-URL join
+// comes from src/icon-url.ts.
 import { BALLS } from './data/balls';
 import { PASSIVES } from './data/passives';
 import { CHARACTERS, type Character } from './data/characters';
@@ -222,8 +223,8 @@ function hideToast() {
 // Fusion rows are built once (never recreate <img> — same invariant as the
 // grids); pick order and filtering repaint classes in place. The pick list
 // mirrors the game's Fusion Reactor: any two of the fusable upgrade entities.
-// Purely a DOM-row registry — the picked balls themselves ride the view
-// model (vm.fusionSlots carries the resolved items).
+// Purely a DOM-row registry — the panel's picks, state, and composed fusion
+// ride the view model (vm.fusionPanel).
 const fusionRowEls = new Map<string, HTMLElement>();
 // Panel skeleton is built once with icon-bearing slots; paint() toggles the
 // pieces in place — never recreating <img> (same invariant as the grids).
