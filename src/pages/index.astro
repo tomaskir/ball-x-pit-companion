@@ -34,26 +34,26 @@ import '../styles/global.css';
     <main>
       <div class="section-view" data-section="balls">
         <div class="screen-toolbar">
-          <input class="screen-search" id="search-balls" type="search" placeholder="Search name or effect…" autocomplete="off" />
+          <input class="screen-search" data-section="balls" id="search-balls" type="search" placeholder="Search name or effect…" autocomplete="off" />
         </div>
         <div id="ballsGrid"></div>
       </div>
       <div class="section-view" data-section="passives" hidden>
         <div class="screen-toolbar">
-          <input class="screen-search" id="search-passives" type="search" placeholder="Search name or effect…" autocomplete="off" />
+          <input class="screen-search" data-section="passives" id="search-passives" type="search" placeholder="Search name or effect…" autocomplete="off" />
         </div>
         <div id="passivesGrid"></div>
       </div>
       <div class="section-view" data-section="characters" hidden>
         <div class="screen-toolbar">
-          <input class="screen-search" id="search-characters" type="search" placeholder="Search name, quirk, or base ball…" autocomplete="off" />
+          <input class="screen-search" data-section="characters" id="search-characters" type="search" placeholder="Search name, quirk, or base ball…" autocomplete="off" />
         </div>
         <div id="charactersGrid" class="char-grid"></div>
       </div>
       <div class="section-view" data-section="fusions" hidden>
         <div class="fusion-layout">
           <div class="fusion-list-col">
-            <input class="screen-search" id="search-fusions" type="search" placeholder="Search balls…" autocomplete="off" />
+            <input class="screen-search" data-section="fusions" id="search-fusions" type="search" placeholder="Search balls…" autocomplete="off" />
             <div id="fusionList" class="fusion-list" aria-label="Pick two balls to fuse"></div>
           </div>
           <div id="fusionPanel" class="fusion-panel"></div>

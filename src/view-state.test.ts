@@ -138,15 +138,15 @@ describe('view state: search is per screen (each screen has its own box)', () =>
     expect(vm.charCards.get('the-warrior')!.filtered).toBe(false); // characters untouched
   });
 
-  it('queries survive a tab switch (clearAll wipes selections, not searches)', () => {
+  it('queries survive a tab switch (switching dispatches nothing — cross-screen remembering)', () => {
     const view = createViewState();
     view.dispatch({ type: 'search', section: 'balls', query: 'vamp' });
     view.dispatch({ type: 'toggleChar', id: 'the-warrior' });
     view.dispatch({ type: 'toggleFusion', id: 'flash' });
-    const vm = view.dispatch({ type: 'clearAll' });
+    const vm = view.derive();
     expect(vm.tiles.get('burn')!.filtered).toBe(true); // query persists
-    expect(vm.selectedChars).toHaveLength(0);
-    expect(vm.fusionPanel).toEqual({ state: 'empty' });
+    expect(vm.selectedChars).toHaveLength(1); // selection persists too
+    expect(vm.fusionPanel).toMatchObject({ state: 'pending' });
   });
 });
 

@@ -3,7 +3,8 @@
 // used to hand-wire between its event handlers. One interface:
 // dispatch(action) → ViewModel — 'clear' is section-scoped (the active
 // section's selection only); selections from different screens coexist, so
-// tab switching dispatches nothing.
+// tab switching dispatches nothing. Search is per screen: each section has
+// its own query (own search box), independent of every other screen's.
 // The island (src/companion.ts) keeps only event listening, theme, and hash
 // routing; painting lives in src/renderer.ts. Fusion composition lives in
 // src/fusion.ts. The view model carries resolved items, not bare ids:
@@ -59,8 +60,8 @@ export type Action =
   | { type: 'toggleItem'; id: string }
   | { type: 'toggleChar'; id: string }
   | { type: 'toggleFusion'; id: string }
-  /** Per-screen search: each section has its own query (own search box);
-   *  queries survive a tab switch (clearAll wipes selections only). */
+  /** Per-screen search: each section has its own query (own search box),
+   *  independent of every other screen's. */
   | { type: 'search'; section: Section; query: string }
   /** Esc / empty-space click: clears the named section's selection only. */
   | { type: 'clear'; section: Section };
@@ -98,8 +99,7 @@ function stickyToggle<T>(list: T[], id: string, match: (x: T) => boolean, make: 
 export function createViewState() {
   let selectedId: string | null = null;
   /** Per-screen search queries — each section has its own search box, so
-   *  each keeps its own query; a tab switch (clearAll) wipes selections
-   *  but keeps every query (the boxes stay as the user left them). */
+   *  each keeps its own query, independent of every other screen's. */
   const queries: Record<Section, string> = { balls: '', passives: '', characters: '', fusions: '' };
   const selectedChars: Character[] = [];
   /** Fusion picks in selection order, at most 2. */
@@ -114,25 +114,19 @@ export function createViewState() {
     const passiveQ = queries.passives.trim().toLowerCase();
     const charQ = queries.characters.trim().toLowerCase();
     const fusionQ = queries.fusions.trim().toLowerCase();
-    for (const item of BALLS) {
-      const v = verdictFor(item, selectedChars);
-      tiles.set(item.id, {
-        selected: selectedId === item.id,
-        related: !!selectedId && selectedId !== item.id && related.has(item.id),
-        dimmed: !!selectedId && !related.has(item.id),
-        filtered: !!ballQ && !(item.name.toLowerCase().includes(ballQ) || item.effects.toLowerCase().includes(ballQ)),
-        verdict: v,
-      });
-    }
-    for (const item of PASSIVES) {
-      const v = verdictFor(item, selectedChars);
-      tiles.set(item.id, {
-        selected: selectedId === item.id,
-        related: !!selectedId && selectedId !== item.id && related.has(item.id),
-        dimmed: !!selectedId && !related.has(item.id),
-        filtered: !!passiveQ && !(item.name.toLowerCase().includes(passiveQ) || item.effects.toLowerCase().includes(passiveQ)),
-        verdict: v,
-      });
+    // each namespace filters against its own screen's query — one loop shape,
+    // two (collection, query) pairs; the graphs themselves stay separate
+    for (const [items, q] of [[BALLS, ballQ], [PASSIVES, passiveQ]] as const) {
+      for (const item of items) {
+        const v = verdictFor(item, selectedChars);
+        tiles.set(item.id, {
+          selected: selectedId === item.id,
+          related: !!selectedId && selectedId !== item.id && related.has(item.id),
+          dimmed: !!selectedId && !related.has(item.id),
+          filtered: !!q && !(item.name.toLowerCase().includes(q) || item.effects.toLowerCase().includes(q)),
+          verdict: v,
+        });
+      }
     }
     for (const ch of CHARACTERS) {
       charCards.set(ch.id, {
