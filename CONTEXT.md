@@ -94,8 +94,9 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   plan via `src/share.ts` into a versioned base64url code in the hash
   (`#/plan?p=<code>`) and copies the link; opening it hydrates the plan —
   the link IS the plan, it replaces the recipient's stored plan. The
-  parameter is read once at startup (a hash change alone does not re-hydrate;
-  reload does); `decodePlan` returns null for anything that is not a v1
+  parameter is read once at startup and then stripped from the URL (the
+  link is one-shot — a Clear plus reload does not resurrect the sender's
+  plan); `decodePlan` returns null for anything that is not a v1
   code and the stored plan is used instead.
   Over-limit selections are kept and marked (red), never trimmed. The plan
   persists to localStorage (island's job: `hydrate` action on startup, save

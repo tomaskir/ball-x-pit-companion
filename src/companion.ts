@@ -128,11 +128,16 @@ function init() {
   const shareBtn = document.getElementById('planShare')!;
   shareBtn.addEventListener('click', () => {
     const url = `${location.origin}${location.pathname}#/plan?p=${encodePlan(view.planSnapshot())}`;
+    const idleLabel = shareBtn.textContent;
     const flash = () => {
       shareBtn.textContent = 'Copied!';
-      setTimeout(() => { shareBtn.textContent = 'Share'; }, 1500);
+      setTimeout(() => { shareBtn.textContent = idleLabel; }, 1500);
     };
-    navigator.clipboard?.writeText(url).then(flash).catch(() => window.prompt('Copy the plan link:', url));
+    // optional chaining would skip the whole chain when the API is absent
+    // (non-secure contexts) — the fallback must cover that case too
+    const copied = navigator.clipboard?.writeText(url);
+    if (copied) copied.then(flash).catch(() => window.prompt('Copy the plan link:', url));
+    else window.prompt('Copy the plan link:', url);
   });
 
   document.addEventListener('keydown', (e) => {
@@ -167,9 +172,14 @@ function init() {
   });
   // restore the plan before the initial paint: a share link's ?p= parameter
   // wins over the stored plan (the link IS the plan — opening it replicates
-  // the sender's build and replaces what was stored here)
+  // the sender's build and replaces what was stored here). The parameter is
+  // then stripped from the URL: the link is one-shot, so a recipient who
+  // Clear-plans and reloads is not handed the sender's build back.
   const shareParam = new URLSearchParams(location.hash.split('?')[1] ?? '').get('p');
   const sharePlan = shareParam ? decodePlan(shareParam) : null;
+  if (sharePlan) {
+    history.replaceState(null, '', `${location.pathname}#${location.hash.split('?')[0]}`);
+  }
   const stored = sharePlan ? null : loadPlan();
   const restored = sharePlan ?? stored;
   if (restored) update({ type: 'hydrate', plan: restored });
