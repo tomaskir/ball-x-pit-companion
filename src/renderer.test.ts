@@ -455,7 +455,8 @@ describe('fusion panel plan button (jsdom, through paint())', () => {
     const btn = q<HTMLButtonElement>('.fusion-plan-btn');
     expect(btn.hidden).toBe(false);
     expect(btn.disabled).toBe(true);
-    expect(btn.title).toContain('limit');
+    // the tooltip rides the row — a title on the disabled button never shows
+    expect(btn.parentElement!.title).toContain('limit');
     expect(btn.textContent).toBe('Add to plan');
   });
 

@@ -260,6 +260,7 @@ let fusionPanel: {
   cross: HTMLElement;
   notes: HTMLElement;
   planBtn: HTMLButtonElement;
+  planRow: HTMLElement;
 } | null = null;
 /** The fusion panel state paintFusion last painted — the plan button's
  *  click handler reads the compose order from it (the button is built
@@ -327,6 +328,7 @@ function buildFusionPanel() {
     cross: q('.fusion-cross') as HTMLElement,
     notes: q('.fusion-notes') as HTMLElement,
     planBtn: q('.fusion-plan-btn') as HTMLButtonElement,
+    planRow: q('.fusion-plan-row') as HTMLElement,
   };
   // the composed fusion's plan toggle reports through the build seam
   fusionPanel.planBtn.addEventListener('click', () => {
@@ -403,8 +405,11 @@ function paintFusion(vm: ViewModel) {
   p.iconB.alt = b.name;
   p.nameB.textContent = b.name;
   p.planBtn.textContent = fp.planned ? 'Remove from plan' : 'Add to plan';
-  p.planBtn.disabled = !fp.planned && fp.planFull;
-  p.planBtn.title = !fp.planned && fp.planFull ? 'Plan limit reached' : '';
+  const planAtLimit = !fp.planned && fp.planFull;
+  p.planBtn.disabled = planAtLimit;
+  // the title rides the row — a title on the disabled button never shows
+  p.planBtn.title = '';
+  p.planRow.title = planAtLimit ? PLAN_LIMIT_TITLE : '';
   p.evo.hidden = !f.evolvesInstead;
   if (f.evolvesInstead) {
     p.evo.textContent = '';
@@ -625,6 +630,10 @@ const FUSION_BTN_TITLES: Record<Exclude<SelectionBoxState['fusion'], null>, stri
   disabled: 'selection full — deselect one first',
   unfusable: 'Baby Ball cannot be fused',
 };
+/** Disabled buttons suppress mouse events, so a title on the button itself
+ *  never shows — the title rides the nearest container instead (with
+ *  pointer-events:none letting the hover reach it). */
+const PLAN_LIMIT_TITLE = 'Plan limit reached';
 
 function buildSelectionBox(screen: 'balls' | 'passives') {
   const root = document.getElementById(`selection-${screen}`)!;
@@ -657,12 +666,16 @@ function paintSelectionBoxes(vm: ViewModel) {
     els.name.textContent = state.item.name;
     els.planBtn.textContent = PLAN_BTN_LABELS[state.plan];
     els.planBtn.disabled = state.plan === 'disabled';
-    els.planBtn.title = state.plan === 'disabled' ? 'Plan limit reached' : '';
     if (els.fusionBtn && state.fusion) {
       els.fusionBtn.textContent = FUSION_BTN_LABELS[state.fusion];
       els.fusionBtn.disabled = state.fusion === 'disabled' || state.fusion === 'unfusable';
-      els.fusionBtn.title = FUSION_BTN_TITLES[state.fusion];
     }
+    // disabled buttons suppress mouse events, so the tooltips ride the box
+    const boxTitles = [
+      state.plan === 'disabled' ? PLAN_LIMIT_TITLE : '',
+      els.fusionBtn && state.fusion ? FUSION_BTN_TITLES[state.fusion] : '',
+    ].filter(Boolean);
+    els.root.title = boxTitles.join(' · ');
   }
 }
 

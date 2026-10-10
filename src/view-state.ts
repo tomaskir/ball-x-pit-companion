@@ -244,6 +244,7 @@ export function createViewState() {
     }
     const a = fusionPicks[0] ? ballMap.get(fusionPicks[0]) : null;
     const b = fusionPicks[1] ? ballMap.get(fusionPicks[1]) : null;
+    const ballSlots = planBalls.length + planFused.length;
     const fusionPanel: FusionPanelState = !a
       ? { state: 'empty' }
       : !b
@@ -254,14 +255,13 @@ export function createViewState() {
             a,
             b,
             planned: planFused.some((p) => samePair(p, a.id, b.id)),
-            planFull: planBalls.length + planFused.length >= activeLimits().balls,
+            planFull: ballSlots >= activeLimits().balls,
           };
     // The plan: resolved entries in pick order, marked over limit beyond the
     // active section limit (kept, never trimmed). Verdicts ride along so the
     // renderer paints them without re-deriving. Fused pairs count as ONE
     // ball slot each and are marked after the single balls.
     const limits = activeLimits();
-    const ballSlots = planBalls.length + planFused.length;
     const planBallsState = planBalls.map((id, i) => {
       const item = ballMap.get(id)!;
       return { item, overLimit: i >= limits.balls, verdict: verdictFor(item, selectedChars) };

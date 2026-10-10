@@ -85,7 +85,9 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   the reverse composition is the same planned pair), compose order is kept
   for display, and its plan entry shows both icons with a × plus one
   per-component verdict badge on each icon. The **End game upgrades**
-  toggle (on by default) sets the limits: 2/5/5 with it, 1/4/4 without.
+  toggle (on by default) sets the limits: 2/5/5 with it, 1/4/4 without; it
+  lives in the plan toolbar's right edge (`#planUpgradesSlot` — Clear left,
+  toggle right, one row), built by the renderer into the shell's slot.
   Over-limit selections are kept and marked (red), never trimmed. The plan
   persists to localStorage (island's job: `hydrate` action on startup, save
   on every dispatch) and is wiped only by the toolbar's Clear button —
@@ -156,7 +158,9 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   pick while two are held is a no-op); the view model carries the fusion
   screen's panel state as a named 3-state machine (`fusionPanel`: `empty` /
   `pending` with the first resolved Ball / `composed` with both resolved
-  Balls and the composed fusion from `src/fusion.ts`) — derived in one
+  Balls, the composed fusion from `src/fusion.ts`, the pair's `planned`
+  mark, and `planFull` — the plan's ball slots at their active limit, which
+  disables the panel's plan toggle) — derived in one
   place, so the renderer switches on the state instead of re-deriving picks
   from hidden toggles. The island listens to DOM events, dispatches, and
   hands the returned view model to the renderer; the view model is the test
