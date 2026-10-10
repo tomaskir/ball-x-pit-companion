@@ -172,17 +172,26 @@ const LIMITS: { on: PlanLimits; off: PlanLimits } = {
   off: { chars: 1, balls: 4, passives: 4 },
 };
 
-/** Shared sticky-toggle semantics for characters and fusion picks:
- *  re-clicking a member deselects it; adding past `max` is a no-op — one
- *  must be deselected first. Mutates `list` in place. */
-function stickyToggle<T>(list: T[], id: string, max: number, match: (x: T) => boolean, make: () => T | undefined) {
+/** Shared sticky-toggle semantics for characters, fusion picks and plan
+ *  items: re-clicking a member deselects it; adding while `hasRoom` says
+ *  the list is full is a no-op — one must be deselected first. Mutates
+ *  `list` in place. */
+function stickyToggle<T>(list: T[], hasRoom: (list: T[]) => boolean, match: (x: T) => boolean, make: () => T | undefined) {
   const idx = list.findIndex(match);
   if (idx >= 0) list.splice(idx, 1);
-  else if (list.length < max) {
+  else if (hasRoom(list)) {
     const x = make();
     if (x) list.push(x);
   }
 }
+
+/** Ball slots a plan occupies: every single ball is one slot, and a fused
+ *  pair is ONE slot (the pair replaces its two components). The one
+ *  definition every ball-side capacity read routes through. */
+const ballSlotsUsed = (balls: readonly string[], fused: readonly PlanFused[]): number =>
+  balls.length + fused.length;
+/** The ball-side slot capacity the plan's singles and fused pairs share. */
+const ballCapacity = (limits: PlanLimits): number => limits.balls;
 
 /** Fused-pair identity: the sorted id pair, so the reverse composition is
  *  the same planned pair. */
@@ -277,7 +286,7 @@ export function createViewState() {
             a,
             b,
             planned: planFused.some((p) => samePair(p, a.id, b.id)),
-            planFull: ballSlots >= activeLimits().balls,
+            planFull: ballSlots >= ballCapacity(limits),
           };
     // The plan: resolved entries in pick order, marked over limit beyond the
     // active section limit (kept, never trimmed). Verdicts ride along so the
@@ -304,7 +313,7 @@ export function createViewState() {
     });
     const overLimit =
       selectedChars.length > limits.chars ||
-      ballSlots > limits.balls ||
+      ballSlots > ballCapacity(limits) ||
       planPassives.length > limits.passives;
     const plan: PlanState = {
       upgradesOn,
@@ -330,7 +339,7 @@ export function createViewState() {
     const inPlan = selected ? (selectedIsPassive ? planPassives.includes(selected.id) : planBalls.includes(selected.id)) : false;
     const planLabel: SelectionBoxState['plan'] =
       inPlan ? 'remove'
-      : (selectedIsPassive ? planPassives.length : ballSlots) >= (selectedIsPassive ? limits.passives : limits.balls) ? 'disabled'
+      : (selectedIsPassive ? planPassives.length : ballSlots) >= (selectedIsPassive ? limits.passives : ballCapacity(limits)) ? 'disabled'
       : 'add';
     const fusionLabel: SelectionBoxState['fusion'] = !selected || selectedIsPassive
       ? null
@@ -394,37 +403,35 @@ export function createViewState() {
         case 'toggleChar': {
           const held = blockedPartner(selectedChars, activeLimits());
           if (held && held.id !== action.id && held.cannotPair.includes(action.id)) break;
-          stickyToggle(selectedChars, action.id, activeLimits().chars,
+          stickyToggle(selectedChars, (list) => list.length < activeLimits().chars,
             (c) => c.id === action.id, () => CHARACTERS.find((c) => c.id === action.id));
           break;
         }
         case 'toggleFusion':
-          stickyToggle(fusionPicks, action.id, 2, (id) => id === action.id, () => action.id);
+          stickyToggle(fusionPicks, (list) => list.length < 2, (id) => id === action.id, () => action.id);
           break;
         // Plan membership: the catalog decides the namespace (and rejects
         // unknown ids); re-click removes, adding past the active limit is a
         // no-op. Removal is always allowed — even over-limit entries.
-        // Fused pairs count as ball slots, so the ball limit is shared.
         case 'togglePlanItem': {
           if (!itemFor(action.id)) break;
           const passive = isPassive(action.id);
           const limits = activeLimits();
-          const list = passive ? planPassives : planBalls;
-          const idx = list.indexOf(action.id);
-          if (idx >= 0) list.splice(idx, 1);
-          else if (list.length < (passive ? limits.passives : limits.balls - planFused.length)) list.push(action.id);
+          stickyToggle(passive ? planPassives : planBalls,
+            // the passive list owns its limit outright; the ball list shares
+            // the ball capacity with the fused pairs (a pair is ONE slot), so
+            // room is "slots used < capacity", not this list's length
+            (list) => passive ? list.length < limits.passives : ballSlotsUsed(list, planFused) < ballCapacity(limits),
+            (id) => id === action.id, () => action.id);
           break;
         }
         // Fused-pair plan membership: identity is order-insensitive (the
         // reverse composition toggles the same pair); adding past the ball
         // limit is a no-op. Compose order is kept for display.
-        case 'togglePlanFusion': {
-          const limits = activeLimits();
-          const idx = planFused.findIndex((p) => samePair(p, action.a, action.b));
-          if (idx >= 0) planFused.splice(idx, 1);
-          else if (planBalls.length + planFused.length < limits.balls) planFused.push({ a: action.a, b: action.b });
+        case 'togglePlanFusion':
+          stickyToggle(planFused, (list) => ballSlotsUsed(planBalls, list) < ballCapacity(activeLimits()),
+            (p) => samePair(p, action.a, action.b), () => ({ a: action.a, b: action.b }));
           break;
-        }
         case 'toggleUpgrades': upgradesOn = !upgradesOn; break;
         case 'clearPlan':
           selectedChars.length = 0;
