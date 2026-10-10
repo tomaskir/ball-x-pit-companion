@@ -289,26 +289,39 @@ describe('view state: fusion picks (max 2, sticky selection)', () => {
   });
 });
 
-describe('view state: plan limits (End game upgrades toggle)', () => {
-  it('defaults: upgrades on, limits 2 chars / 5 balls / 5 passives, empty plan', () => {
-    const vm = createViewState().derive();
-    expect(vm.plan.upgradesOn).toBe(true);
-    expect(vm.plan.limits).toEqual({ chars: 2, balls: 5, passives: 5 });
-    expect(vm.plan.counts).toEqual({ chars: 0, balls: 0, passives: 0 });
-    expect(vm.plan.overLimit).toBe(false);
-  });
-
-  it('toggleUpgrades flips the toggle and shrinks the limits to 1/4/4', () => {
+// The plan's own semantics (limits, toggles, capacity, hydrate filtering,
+// fused-pair identity) are unit-tested in src/plan-state.test.ts through
+// createPlanState(); what stays here is the integration: the plan actions
+// forwarding through the one dispatch, the shared selectedChars feeding the
+// plan, and the ViewModel still carrying the plan fields for the renderer.
+describe('view state: plan actions forward to the plan state (integration)', () => {
+  it('plan actions reach vm.plan through the same dispatch (the ViewModel still carries plan fields for the renderer)', () => {
     const view = createViewState();
-    const vm = view.dispatch({ type: 'toggleUpgrades' });
-    expect(vm.plan.upgradesOn).toBe(false);
-    expect(vm.plan.limits).toEqual({ chars: 1, balls: 4, passives: 4 });
-    const vm2 = view.dispatch({ type: 'toggleUpgrades' });
-    expect(vm2.plan.upgradesOn).toBe(true);
-    expect(vm2.plan.limits).toEqual({ chars: 2, balls: 5, passives: 5 });
+    const vm = view.dispatch({ type: 'togglePlanItem', id: 'flash' });
+    expect(vm.plan.balls.map((e) => e.item.id)).toEqual(['flash']);
+    const vm2 = view.dispatch({ type: 'togglePlanFusion', a: 'glacier', b: 'maggot' });
+    expect(vm2.plan.fused.map((p) => p.name)).toEqual(['Glacier × Maggot']);
+    expect(vm2.plan.counts.balls).toBe(2); // a fused pair is ONE ball slot
+    const vm3 = view.dispatch({ type: 'toggleUpgrades' });
+    expect(vm3.plan.limits).toEqual({ chars: 1, balls: 4, passives: 4 });
+    const vm4 = view.dispatch({ type: 'clearPlan' });
+    expect(vm4.plan.counts).toEqual({ chars: 0, balls: 0, passives: 0 });
+    expect(vm4.plan.upgradesOn).toBe(true);
   });
 
-  it('a second character with upgrades off is a no-op and the hint reports full', () => {
+  it('the shared selectedChars feed the plan: character picks become plan entries with verdicts', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleChar', id: 'the-ballbearer' });
+    const vm = view.dispatch({ type: 'togglePlanItem', id: 'wagon-wheel' });
+    expect(vm.plan.characters.map((c) => c.character.id)).toEqual(['the-ballbearer']);
+    expect(vm.plan.passives[0].verdict).toMatchObject({ verdict: 'red' });
+    // deselecting the character updates the plan's verdicts on the next derive
+    const vm2 = view.dispatch({ type: 'toggleChar', id: 'the-ballbearer' });
+    expect(vm2.plan.characters).toHaveLength(0);
+    expect(vm2.plan.passives[0].verdict).toBeNull();
+  });
+
+  it('plan limits gate the character slots (the character limit rides the plan\'s upgrade toggle)', () => {
     const view = createViewState();
     view.dispatch({ type: 'toggleUpgrades' });
     view.dispatch({ type: 'toggleChar', id: 'the-warrior' });
@@ -337,211 +350,6 @@ describe('view state: plan limits (End game upgrades toggle)', () => {
     expect(vm.plan.characters.map((c) => c.character.id)).toEqual(['the-warrior']);
     expect(vm.plan.overLimit).toBe(false);
   });
-});
-
-describe('view state: plan items (balls/passives, pick order, limits)', () => {
-  it('togglePlanItem adds balls and passives in pick order, split by namespace', () => {
-    const view = createViewState();
-    const vm = view.dispatch({ type: 'togglePlanItem', id: 'flash' });
-    expect(vm.plan.balls.map((e) => e.item.id)).toEqual(['flash']);
-    expect(vm.plan.passives).toHaveLength(0);
-    const vm2 = view.dispatch({ type: 'togglePlanItem', id: 'wagon-wheel' });
-    expect(vm2.plan.passives.map((e) => e.item.id)).toEqual(['wagon-wheel']);
-    expect(vm2.plan.balls.map((e) => e.item.id)).toEqual(['flash']);
-  });
-
-  it('re-clicking a plan item removes it, keeping the others in pick order', () => {
-    const view = createViewState();
-    view.dispatch({ type: 'togglePlanItem', id: 'flash' });
-    view.dispatch({ type: 'togglePlanItem', id: 'glacier' });
-    const vm = view.dispatch({ type: 'togglePlanItem', id: 'flash' });
-    expect(vm.plan.balls.map((e) => e.item.id)).toEqual(['glacier']);
-  });
-
-  it('adding past the active ball limit is a no-op (5 with upgrades on)', () => {
-    const view = createViewState();
-    for (const id of ['flash', 'glacier', 'maggot', 'flicker', 'burn']) view.dispatch({ type: 'togglePlanItem', id });
-    const vm = view.dispatch({ type: 'togglePlanItem', id: 'vampire' });
-    expect(vm.plan.balls.map((e) => e.item.id)).toHaveLength(5);
-    expect(vm.plan.balls.some((e) => e.item.id === 'vampire')).toBe(false);
-  });
-
-  it('the passive limit is enforced separately (4 with upgrades off)', () => {
-    const view = createViewState();
-    view.dispatch({ type: 'toggleUpgrades' });
-    for (const id of ['wagon-wheel', 'ardent-tire', 'deadeyes-cross', 'deadeyes-impaler']) {
-      view.dispatch({ type: 'togglePlanItem', id });
-    }
-    const vm = view.dispatch({ type: 'togglePlanItem', id: 'magnet' });
-    expect(vm.plan.passives).toHaveLength(4);
-  });
-
-  it('toggling upgrades off with 5 balls keeps all, marks the 5th over limit', () => {
-    const view = createViewState();
-    for (const id of ['flash', 'glacier', 'maggot', 'flicker', 'burn']) view.dispatch({ type: 'togglePlanItem', id });
-    const vm = view.dispatch({ type: 'toggleUpgrades' });
-    expect(vm.plan.balls.map((e) => e.item.id)).toHaveLength(5);
-    expect(vm.plan.balls[4].overLimit).toBe(true);
-    expect(vm.plan.balls[3].overLimit).toBe(false);
-    expect(vm.plan.hint).toContain('Over the limit');
-  });
-
-  it('planHint clears when the over-limit pick is removed', () => {
-    const view = createViewState();
-    for (const id of ['flash', 'glacier', 'maggot', 'flicker', 'burn']) view.dispatch({ type: 'togglePlanItem', id });
-    view.dispatch({ type: 'toggleUpgrades' });
-    const vm = view.dispatch({ type: 'togglePlanItem', id: 'burn' });
-    expect(vm.plan.overLimit).toBe(false);
-    expect(vm.plan.hint).toBe('');
-  });
-
-  it('plan entries carry verdicts against the selected characters', () => {
-    const view = createViewState();
-    view.dispatch({ type: 'toggleChar', id: 'the-ballbearer' });
-    const vm = view.dispatch({ type: 'togglePlanItem', id: 'wagon-wheel' });
-    expect(vm.plan.passives[0].verdict).toMatchObject({ verdict: 'red' });
-  });
-
-  it('unknown ids are ignored', () => {
-    const view = createViewState();
-    const vm = view.dispatch({ type: 'togglePlanItem', id: 'not-a-real-id' });
-    expect(vm.plan.balls).toHaveLength(0);
-    expect(vm.plan.passives).toHaveLength(0);
-  });
-});
-
-describe('view state: clearPlan', () => {
-  it('clears characters, balls, passives and resets the toggle to on', () => {
-    const view = createViewState();
-    view.dispatch({ type: 'toggleChar', id: 'the-warrior' });
-    view.dispatch({ type: 'togglePlanItem', id: 'flash' });
-    view.dispatch({ type: 'togglePlanItem', id: 'wagon-wheel' });
-    view.dispatch({ type: 'toggleUpgrades' });
-    const vm = view.dispatch({ type: 'clearPlan' });
-    expect(vm.plan.counts).toEqual({ chars: 0, balls: 0, passives: 0 });
-    expect(vm.plan.upgradesOn).toBe(true);
-    expect(vm.selectedChars).toHaveLength(0);
-  });
-
-  it('leaves fusion picks, the item highlight, and search queries alone', () => {
-    const view = createViewState();
-    view.dispatch({ type: 'toggleFusion', id: 'flash' });
-    view.dispatch({ type: 'toggleItem', id: 'glacier' });
-    view.dispatch({ type: 'search', section: 'balls', query: 'vamp' });
-    const vm = view.dispatch({ type: 'clearPlan' });
-    expect(vm.fusionPanel).toMatchObject({ state: 'pending' });
-    expect(vm.tiles.get('glacier')!.selected).toBe(true);
-    expect(vm.tiles.get('burn')!.filtered).toBe(true);
-  });
-});
-
-describe('view state: hydrate (restored plan from storage)', () => {
-  it('restores characters, balls, passives and the toggle in pick order', () => {
-    const view = createViewState();
-    const vm = view.dispatch({
-      type: 'hydrate',
-      plan: {
-        upgradesOn: false,
-        chars: ['the-warrior', 'the-shade'],
-        balls: ['flash', 'glacier'],
-        passives: ['wagon-wheel'],
-        fused: [],
-      },
-    });
-    expect(vm.plan.upgradesOn).toBe(false);
-    expect(vm.plan.characters.map((c) => c.character.id)).toEqual(['the-warrior', 'the-shade']);
-    expect(vm.plan.balls.map((e) => e.item.id)).toEqual(['flash', 'glacier']);
-    expect(vm.plan.passives.map((e) => e.item.id)).toEqual(['wagon-wheel']);
-  });
-
-  it('filters unknown ids and duplicates', () => {
-    const view = createViewState();
-    const vm = view.dispatch({
-      type: 'hydrate',
-      plan: {
-        upgradesOn: true,
-        chars: ['the-warrior', 'ghost', 'the-warrior'],
-        balls: ['flash', 'not-a-ball', 'flash'],
-        passives: ['wagon-wheel', 'not-a-passive'],
-        fused: [],
-      },
-    });
-    expect(vm.plan.characters.map((c) => c.character.id)).toEqual(['the-warrior']);
-    expect(vm.plan.balls.map((e) => e.item.id)).toEqual(['flash']);
-    expect(vm.plan.passives.map((e) => e.item.id)).toEqual(['wagon-wheel']);
-  });
-
-  it('keeps over-limit selections without trimming (marked over limit instead)', () => {
-    const view = createViewState();
-    const vm = view.dispatch({
-      type: 'hydrate',
-      plan: {
-        upgradesOn: false,
-        chars: ['the-warrior', 'the-shade'],
-        balls: ['flash', 'glacier', 'maggot', 'flicker', 'burn'],
-        passives: [],
-        fused: [],
-      },
-    });
-    expect(vm.plan.characters[1].overLimit).toBe(true);
-    expect(vm.plan.balls[4].overLimit).toBe(true);
-    expect(vm.plan.overLimit).toBe(true);
-  });
-
-  it('planSnapshot round-trips through hydrate', () => {
-    const view = createViewState();
-    view.dispatch({ type: 'toggleChar', id: 'the-warrior' });
-    view.dispatch({ type: 'togglePlanItem', id: 'flash' });
-    view.dispatch({ type: 'toggleUpgrades' });
-    const snapshot = view.planSnapshot();
-    const restored = createViewState();
-    restored.dispatch({ type: 'hydrate', plan: snapshot });
-    expect(restored.planSnapshot()).toEqual(snapshot);
-  });
-});
-
-describe('view state: fused pairs in the plan', () => {
-  it('togglePlanFusion adds a pair in compose order, counted as one ball slot', () => {
-    const view = createViewState();
-    const vm = view.dispatch({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
-    expect(vm.plan.fused).toHaveLength(1);
-    expect(vm.plan.fused[0].a.id).toBe('flash');
-    expect(vm.plan.fused[0].b.id).toBe('glacier');
-    expect(vm.plan.fused[0].name).toBe('Flash × Glacier');
-    expect(vm.plan.counts.balls).toBe(1);
-  });
-
-  it('pair identity is order-insensitive: the reverse composition toggles it off', () => {
-    const view = createViewState();
-    view.dispatch({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
-    const vm = view.dispatch({ type: 'togglePlanFusion', a: 'glacier', b: 'flash' });
-    expect(vm.plan.fused).toHaveLength(0);
-    expect(vm.plan.counts.balls).toBe(0);
-  });
-
-  it('re-adding the same pair (same order) toggles it off', () => {
-    const view = createViewState();
-    view.dispatch({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
-    const vm = view.dispatch({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
-    expect(vm.plan.fused).toHaveLength(0);
-  });
-
-  it('a fused pair counts toward the ball limit: 4 singles + 1 fused fills the 5 limit', () => {
-    const view = createViewState();
-    for (const id of ['flash', 'glacier', 'maggot', 'flicker']) view.dispatch({ type: 'togglePlanItem', id });
-    view.dispatch({ type: 'togglePlanFusion', a: 'burn', b: 'vampire' });
-    const vm = view.dispatch({ type: 'togglePlanItem', id: 'wind' });
-    expect(vm.plan.balls.some((e) => e.item.id === 'wind')).toBe(false);
-    expect(vm.plan.counts.balls).toBe(5);
-  });
-
-  it('togglePlanFusion past the ball limit is a no-op', () => {
-    const view = createViewState();
-    for (const id of ['flash', 'glacier', 'maggot', 'flicker', 'burn']) view.dispatch({ type: 'togglePlanItem', id });
-    const vm = view.dispatch({ type: 'togglePlanFusion', a: 'vampire', b: 'wind' });
-    expect(vm.plan.fused).toHaveLength(0);
-    expect(vm.plan.counts.balls).toBe(5);
-  });
 
   it('fused pairs alone can fill the ball capacity: the composed panel reports planFull', () => {
     const view = createViewState();
@@ -554,58 +362,6 @@ describe('view state: fused pairs in the plan', () => {
     expect(vm.fusionPanel.state).toBe('composed');
     if (vm.fusionPanel.state === 'composed') expect(vm.fusionPanel.planFull).toBe(true);
     expect(vm.plan.counts.balls).toBe(4);
-  });
-
-  it('fused entries carry per-component verdicts and the over-limit mark', () => {
-    const view = createViewState();
-    view.dispatch({ type: 'toggleChar', id: 'the-ballbearer' });
-    for (const id of ['flash', 'glacier', 'maggot', 'flicker']) view.dispatch({ type: 'togglePlanItem', id });
-    view.dispatch({ type: 'togglePlanFusion', a: 'vampire', b: 'wind' });
-    // 5 slots filled; shrinking the limits marks the pair (5th slot) over limit
-    const vm = view.dispatch({ type: 'toggleUpgrades' });
-    expect(vm.plan.fused[0].overLimit).toBe(true);
-    expect(vm.plan.fused[0].verdicts).toHaveLength(2);
-  });
-
-  it('clearPlan clears fused pairs too', () => {
-    const view = createViewState();
-    view.dispatch({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
-    const vm = view.dispatch({ type: 'clearPlan' });
-    expect(vm.plan.fused).toHaveLength(0);
-    expect(vm.plan.counts.balls).toBe(0);
-  });
-
-  it('hydrate validates fused pairs: unknown/non-ball/degenerate/duplicate pairs are dropped', () => {
-    const view = createViewState();
-    const vm = view.dispatch({
-      type: 'hydrate',
-      plan: {
-        upgradesOn: true,
-        chars: [],
-        balls: [],
-        passives: [],
-        fused: [
-          { a: 'flash', b: 'glacier' },
-          { a: 'flash', b: 'not-a-ball' },
-          { a: 'wagon-wheel', b: 'magnet' }, // passives, not balls
-          { a: 'flash', b: 'flash' }, // degenerate
-          { a: 'glacier', b: 'flash' }, // duplicate of pair 1 (sorted identity)
-        ],
-      },
-    });
-    expect(vm.plan.fused).toHaveLength(1);
-    expect(vm.plan.fused[0].a.id).toBe('flash');
-    expect(vm.plan.fused[0].b.id).toBe('glacier');
-  });
-
-  it('planSnapshot includes fused pairs and round-trips through hydrate', () => {
-    const view = createViewState();
-    view.dispatch({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
-    const snapshot = view.planSnapshot();
-    expect(snapshot.fused).toEqual([{ a: 'flash', b: 'glacier' }]);
-    const restored = createViewState();
-    restored.dispatch({ type: 'hydrate', plan: snapshot });
-    expect(restored.planSnapshot()).toEqual(snapshot);
   });
 });
 

@@ -1,7 +1,6 @@
 // View-state module: the island's state (item selection, character slots,
-// fusion picks, the plan's selections and upgrade toggle, per-screen search
-// queries) and every derivation the island used to hand-wire between its
-// event handlers. One interface:
+// fusion picks, per-screen search queries) and every derivation the island
+// used to hand-wire between its event handlers. One interface:
 // dispatch(action) → ViewModel — 'clear' is section-scoped (the active
 // section's selection only; the plan is excluded — it is deliberate work,
 // only clearPlan wipes it); selections from different screens coexist, so
@@ -13,15 +12,26 @@
 // items, not bare ids: fusionPanel names the fusion screen's state machine
 // (empty / pending / composed) and carries the resolved Ball objects and
 // composed fusion so the renderer never re-derives them — it switches on
-// the named state and paints. The plan rides vm.plan the same way
-// (PlanState: resolved entries, verdicts, limits, over-limit marks).
+// the named state and paints. The plan rides vm.plan the same way — its
+// state and derivation live in src/plan-state.ts (PlanState: resolved
+// entries, verdicts, limits, over-limit marks); this module forwards the
+// plan actions to it and embeds the result in the ViewModel, handing the
+// shared selectedChars in on every derive/snapshot. The plan types are
+// re-exported here so companion.ts and share.ts keep their import paths.
 import { BALLS, type Ball } from './data/balls';
 import { PASSIVES } from './data/passives';
 import { CHARACTERS, type Character } from './data/characters';
 import { highlightSet } from './graph';
-import { ballMap, passiveMap, isPassive, itemFor, graphFor } from './catalog';
-import { fusionBalls, fusionName, fuse, type FusionResult } from './fusion';
+import { ballMap, isPassive, itemFor, graphFor } from './catalog';
+import { fusionBalls, fuse, type FusionResult } from './fusion';
 import { verdictFor, type Item, type Verdict } from './synergy';
+import { createPlanState, stickyToggle, hydrateList, isFusable } from './plan-state';
+import type { PlanAction, PlanLimits, PlanState, PlanSnapshot } from './plan-state';
+
+// The plan's types are plan-state's — re-exported so existing import paths
+// (companion.ts, share.ts) keep working. Types only: plan-state must never
+// be imported *by* view-state's consumers at runtime through here.
+export type { PlanAction, PlanCharState, PlanEntryState, PlanFused, PlanFusedState, PlanLimits, PlanSnapshot, PlanState } from './plan-state';
 
 export interface TileState { selected: boolean; related: boolean; dimmed: boolean; filtered: boolean; verdict: Verdict | null; }
 /** One character card. `blocked` is a Matchmaker pairing restriction (game
@@ -47,45 +57,6 @@ export type FusionPanelState =
   | { state: 'pending'; first: Ball }
   | { state: 'composed'; fusion: FusionResult; a: Ball; b: Ball; planned: boolean; planFull: boolean };
 
-/** The plan screen's slot limits: without end-game upgrades 1 character,
- *  4 balls, 4 passives; with them 2 / 5 / 5. */
-export interface PlanLimits { chars: number; balls: number; passives: number; }
-/** A planned fused pair — compose order (a first) for display, sorted ids
- *  for identity (the reverse composition is the same planned pair). */
-export interface PlanFused { a: string; b: string; }
-/** The plan as bare ids — the persistence currency. The island serializes
- *  this shape to localStorage and feeds it back through `hydrate`; one type
- *  pins both sides (and `planSnapshot(vm)` produces it from a view model). */
-export interface PlanSnapshot { upgradesOn: boolean; chars: string[]; balls: string[]; passives: string[]; fused: PlanFused[]; }
-/** One character in the plan: overLimit marks slots beyond the active
- *  limit (kept, never trimmed — the user decides what to remove).
- *  pairInvalid marks a Matchmaker-forbidden pair that arrived hydrated
- *  (Share link / localStorage) — also kept and marked, never trimmed; live
- *  selection can never produce one. */
-export interface PlanCharState { character: Character; overLimit: boolean; pairInvalid: boolean; }
-/** One ball/passive in the plan: the resolved item (renderer never
- *  re-resolves), its verdict against the selected characters, and the
- *  over-limit mark. */
-export interface PlanEntryState { item: Item; overLimit: boolean; verdict: Verdict | null; }
-/** One fused pair in the plan: resolved components in compose order, the
- *  composed display name, one verdict per component (badges ride each
- *  icon), and the over-limit mark. A pair counts as ONE ball slot. */
-export interface PlanFusedState { a: Ball; b: Ball; name: string; overLimit: boolean; verdicts: [Verdict | null, Verdict | null]; }
-/** The plan screen's whole state — the final build the user is assembling.
- *  Derived in one place so the renderer only paints. */
-export interface PlanState {
-  upgradesOn: boolean;
-  limits: PlanLimits;
-  counts: PlanLimits;
-  characters: PlanCharState[];
-  balls: PlanEntryState[];
-  passives: PlanEntryState[];
-  fused: PlanFusedState[];
-  /** Any section holds more than its active limit allows. */
-  overLimit: boolean;
-  /** Warning shown while over limit; '' otherwise. */
-  hint: string;
-}
 /** The balls/passives screens' selection box: the currently selected item
  *  (null = no box on that screen) and the label states for its buttons —
  *  derived here so the renderer only paints. `plan`/`fusion` label kinds:
@@ -113,7 +84,7 @@ export interface ViewModel {
   /** Hint for the fusion panel's pending states, mirroring slotHint's
    *  pick-a-second / selection-full wording for balls. */
   fusionHint: string;
-  /** The plan screen's state — see PlanState. */
+  /** The plan screen's state — see PlanState (src/plan-state.ts). */
   plan: PlanState;
   /** The balls/passives screens' selection boxes — see SelectionBoxState. */
   selectionBoxes: { balls: SelectionBoxState | null; passives: SelectionBoxState | null };
@@ -123,30 +94,17 @@ export type Action =
   | { type: 'toggleItem'; id: string }
   | { type: 'toggleChar'; id: string }
   | { type: 'toggleFusion'; id: string }
-  /** Plan membership toggle for a ball or passive — the namespace comes
-   *  from the catalog, callers pass the id only. */
-  | { type: 'togglePlanItem'; id: string }
-  /** Plan membership toggle for a fused pair (the fusion screen's composed
-   *  panel and the balls screen's selection box emit it). Identity is
-   *  order-insensitive: the pair is stored in compose order but matched by
-   *  sorted ids. Counts as ONE ball slot. */
-  | { type: 'togglePlanFusion'; a: string; b: string }
-  /** The plan screen's End game upgrades toggle (on by default). */
-  | { type: 'toggleUpgrades' }
-  /** The plan toolbar's Clear button: empties characters, balls, passives
-   *  and resets the toggle to its default (on). Nothing else is touched. */
-  | { type: 'clearPlan' }
-  /** Restore a persisted plan (the island reads localStorage at startup).
-   *  Unknown ids and duplicates are filtered; over-limit selections are
-   *  kept as-is and marked, not trimmed. */
-  | { type: 'hydrate'; plan: PlanSnapshot }
   /** Per-screen search: each section has its own query (own search box),
    *  independent of every other screen's. */
   | { type: 'search'; section: Section; query: string }
   /** Esc / empty-space click: clears the named section's selection only.
    *  The plan section is deliberately not clearable this way (its selection
    *  is deliberate work — only clearPlan wipes it). */
-  | { type: 'clear'; section: Section };
+  | { type: 'clear'; section: Section }
+  // The plan's actions, forwarded verbatim to the plan state
+  // (src/plan-state.ts) — same members, same shapes as before the
+  // extraction; see PlanAction there for the per-action contracts.
+  | PlanAction;
 
 /** The selection-toggle actions — exactly the ones the renderer's click
  *  handlers produce and hand back through the build seam's `emit` callback
@@ -166,54 +124,6 @@ const FUSION_BALLS = fusionBalls();
  *  the sticky-toggle semantics are shared, so is the wording. */
 const SELECTION_FULL = 'selection full — deselect one first';
 
-/** Slot limits by upgrade state: base game vs end-game upgrades. */
-const LIMITS: { on: PlanLimits; off: PlanLimits } = {
-  on: { chars: 2, balls: 5, passives: 5 },
-  off: { chars: 1, balls: 4, passives: 4 },
-};
-
-/** Shared sticky-toggle semantics for characters, fusion picks and plan
- *  items: re-clicking a member deselects it; adding while `hasRoom` says
- *  the list is full is a no-op — one must be deselected first. Mutates
- *  `list` in place. */
-function stickyToggle<T>(list: T[], hasRoom: (list: T[]) => boolean, match: (x: T) => boolean, make: () => T | undefined) {
-  const idx = list.findIndex(match);
-  if (idx >= 0) list.splice(idx, 1);
-  else if (hasRoom(list)) {
-    const x = make();
-    if (x) list.push(x);
-  }
-}
-
-/** Ball slots a plan occupies: every single ball is one slot, and a fused
- *  pair is ONE slot (the pair replaces its two components). The one
- *  definition every ball-side capacity read routes through. */
-const ballSlotsUsed = (balls: readonly string[], fused: readonly PlanFused[]): number =>
-  balls.length + fused.length;
-/** The ball-side slot capacity the plan's singles and fused pairs share. */
-const ballCapacity = (limits: PlanLimits): number => limits.balls;
-
-/** Fused-pair identity: the sorted id pair, so the reverse composition is
- *  the same planned pair. */
-const pairKey = (a: string, b: string): string => [a, b].sort().join('+');
-const samePair = (p: PlanFused, a: string, b: string): boolean => pairKey(p.a, p.b) === pairKey(a, b);
-
-/** Fusable upgrade entities, indexed once — Baby Ball is not one. */
-const FUSABLE = new Set(fusionBalls().map((b) => b.id));
-const isFusable = (id: string): boolean => FUSABLE.has(id);
-
-/** Hydrate's shared per-list restore: wipe `list`, then keep each source
- *  entry `resolve` accepts (unknown ids are dropped), skipping duplicates —
- *  first occurrence wins, `key` is the identity. Over-limit selections are
- *  kept, not trimmed: the guard is validity only. */
-function hydrateList<S, T>(list: T[], source: readonly S[], resolve: (x: S) => T | undefined, key: (x: T) => string): void {
-  list.length = 0;
-  for (const x of source) {
-    const t = resolve(x);
-    if (t !== undefined && !list.some((y) => key(y) === key(t))) list.push(t);
-  }
-}
-
 /** The held character whose partners are Matchmaker-blocked: exactly one
  *  character held and two allowed. Null otherwise (0 or 2 held, or limit 1
  *  — no second pick exists to block). One definition for the card state and
@@ -230,16 +140,11 @@ export function createViewState() {
   const selectedChars: Character[] = [];
   /** Fusion picks in selection order, at most 2. */
   const fusionPicks: string[] = [];
-  /** The plan's End game upgrades toggle — on by default. */
-  let upgradesOn = true;
-  /** Plan balls/passives in pick order. The plan's characters are the
-   *  shared selectedChars — one selection feeds verdicts, chips, plan. */
-  const planBalls: string[] = [];
-  const planPassives: string[] = [];
-  /** Planned fused pairs in compose order; identity is the sorted id pair. */
-  const planFused: PlanFused[] = [];
-  /** The limits in force right now — one place, three former call sites. */
-  const activeLimits = (): PlanLimits => (upgradesOn ? LIMITS.on : LIMITS.off);
+  /** The plan's state — upgrade toggle, planned balls/passives/fused pairs,
+   *  and the PlanState derivation. The plan's characters are the shared
+   *  selectedChars above: handed in on every derive/snapshot, cleared by
+   *  clearPlan here (plan-state never mutates them). */
+  const plan = createPlanState();
 
   const derive = (): ViewModel => {
     const tiles = new Map<string, TileState>();
@@ -267,7 +172,8 @@ export function createViewState() {
     // Matchmaker pairing restrictions: with exactly one character held (and
     // two allowed), forbidden partners are blocked — the game darkens them
     // on the select screen. With 0 or 2 held nothing is blocked.
-    const limits = activeLimits();
+    const planState = plan.derive(selectedChars);
+    const limits = planState.limits;
     const held = blockedPartner(selectedChars, limits);
     for (const ch of CHARACTERS) {
       const blocked = !!held && ch.cannotPair.includes(held.id);
@@ -287,7 +193,6 @@ export function createViewState() {
     }
     const a = fusionPicks[0] ? ballMap.get(fusionPicks[0]) : null;
     const b = fusionPicks[1] ? ballMap.get(fusionPicks[1]) : null;
-    const ballSlots = ballSlotsUsed(planBalls, planFused);
     const fusionPanel: FusionPanelState = !a
       ? { state: 'empty' }
       : !b
@@ -297,61 +202,19 @@ export function createViewState() {
             fusion: fuse(a, b),
             a,
             b,
-            planned: planFused.some((p) => samePair(p, a.id, b.id)),
-            planFull: ballSlots >= ballCapacity(limits),
+            planned: plan.hasPair(a.id, b.id),
+            planFull: planState.counts.balls >= planState.limits.balls,
           };
-    // The plan: resolved entries in pick order, marked over limit beyond the
-    // active section limit (kept, never trimmed). Verdicts ride along so the
-    // renderer paints them without re-deriving. Fused pairs count as ONE
-    // ball slot each and are marked after the single balls.
-    const planBallsState = planBalls.map((id, i) => {
-      const item = ballMap.get(id)!;
-      return { item, overLimit: i >= limits.balls, verdict: verdictFor(item, selectedChars) };
-    });
-    const planFusedState = planFused.map(({ a, b }, i) => {
-      const ballA = ballMap.get(a)!;
-      const ballB = ballMap.get(b)!;
-      return {
-        a: ballA,
-        b: ballB,
-        name: fusionName(ballA, ballB),
-        overLimit: planBalls.length + i >= limits.balls,
-        verdicts: [verdictFor(ballA, selectedChars), verdictFor(ballB, selectedChars)] as [Verdict | null, Verdict | null],
-      };
-    });
-    const planPassivesState = planPassives.map((id, i) => {
-      const item = passiveMap.get(id)!;
-      return { item, overLimit: i >= limits.passives, verdict: verdictFor(item, selectedChars) };
-    });
-    const overLimit =
-      selectedChars.length > limits.chars ||
-      ballSlots > ballCapacity(limits) ||
-      planPassives.length > limits.passives;
-    const plan: PlanState = {
-      upgradesOn,
-      limits,
-      counts: { chars: selectedChars.length, balls: ballSlots, passives: planPassives.length },
-      characters: selectedChars.map((c, i) => ({
-        character: c,
-        overLimit: i >= limits.chars,
-        pairInvalid:
-          selectedChars.length === 2 &&
-          selectedChars[1 - i].cannotPair.includes(c.id),
-      })),
-      balls: planBallsState,
-      passives: planPassivesState,
-      fused: planFusedState,
-      overLimit,
-      hint: overLimit ? 'Over the limit — remove the highlighted picks or re-enable End game upgrades.' : '',
-    };
     // The selection boxes: one per item screen, filled only when the
-    // selected item lives in that screen's namespace.
+    // selected item lives in that screen's namespace. Plan membership and
+    // capacity are queried from the plan state (has / counts / limits) —
+    // never read from its internals.
     const selected = selectedId ? itemFor(selectedId) : undefined;
     const selectedIsPassive = selected ? isPassive(selected.id) : false;
-    const inPlan = selected ? (selectedIsPassive ? planPassives.includes(selected.id) : planBalls.includes(selected.id)) : false;
+    const inPlan = selected ? plan.has(selected.id) : false;
     const planLabel: SelectionBoxState['plan'] =
       inPlan ? 'remove'
-      : (selectedIsPassive ? planPassives.length : ballSlots) >= (selectedIsPassive ? limits.passives : ballCapacity(limits)) ? 'disabled'
+      : (selectedIsPassive ? planState.counts.passives : planState.counts.balls) >= (selectedIsPassive ? limits.passives : limits.balls) ? 'disabled'
       : 'add';
     const fusionLabel: SelectionBoxState['fusion'] = !selected || selectedIsPassive
       ? null
@@ -377,7 +240,7 @@ export function createViewState() {
         fusionPicks.length === 0 ? 'Pick two balls to see their fusion.'
         : fusionPicks.length === 1 ? '…pick a second ball.'
         : SELECTION_FULL,
-      plan,
+      plan: planState,
       selectionBoxes,
     };
   };
@@ -389,16 +252,11 @@ export function createViewState() {
       return verdictFor(item, selectedChars);
     },
     /** The plan as bare ids — the island's persistence currency (saved to
-     *  localStorage, fed back through `hydrate`). Lives here so the island
-     *  never re-extracts ids from the resolved view model. */
+     *  localStorage, fed back through `hydrate`). The plan state serializes
+     *  it from its own lists plus the shared selection, so the island never
+     *  re-extracts ids from the resolved view model. */
     planSnapshot(): PlanSnapshot {
-      return {
-        upgradesOn,
-        chars: selectedChars.map((c) => c.id),
-        balls: [...planBalls],
-        passives: [...planPassives],
-        fused: planFused.map((p) => ({ ...p })),
-      };
+      return plan.snapshot(selectedChars);
     },
     /** Current view model without a state change — initial paint. */
     derive(): ViewModel {
@@ -413,60 +271,33 @@ export function createViewState() {
         // pairing restrictions (game data) block a forbidden second pick —
         // the game darkens them; here the toggle is a no-op.
         case 'toggleChar': {
-          const held = blockedPartner(selectedChars, activeLimits());
+          const held = blockedPartner(selectedChars, plan.limits());
           if (held && held.id !== action.id && held.cannotPair.includes(action.id)) break;
-          stickyToggle(selectedChars, (list) => list.length < activeLimits().chars,
+          stickyToggle(selectedChars, (list) => list.length < plan.limits().chars,
             (c) => c.id === action.id, () => CHARACTERS.find((c) => c.id === action.id));
           break;
         }
         case 'toggleFusion':
           stickyToggle(fusionPicks, (list) => list.length < 2, (id) => id === action.id, () => action.id);
           break;
-        // Plan membership: the catalog decides the namespace (and rejects
-        // unknown ids); re-click removes, adding past the active limit is a
-        // no-op. Removal is always allowed — even over-limit entries.
-        case 'togglePlanItem': {
-          if (!itemFor(action.id)) break;
-          const passive = isPassive(action.id);
-          const limits = activeLimits();
-          stickyToggle(passive ? planPassives : planBalls,
-            // the passive list owns its limit outright; the ball list shares
-            // the ball capacity with the fused pairs (a pair is ONE slot), so
-            // room is "slots used < capacity", not this list's length
-            (list) => passive ? list.length < limits.passives : ballSlotsUsed(list, planFused) < ballCapacity(limits),
-            (id) => id === action.id, () => action.id);
-          break;
-        }
-        // Fused-pair plan membership: identity is order-insensitive (the
-        // reverse composition toggles the same pair); adding past the ball
-        // limit is a no-op. Compose order is kept for display.
+        // Plan actions forward verbatim to the plan state. clearPlan also
+        // clears the shared selectedChars — they are the plan's characters,
+        // and view-state owns them. hydrate's chars field is restored here
+        // for the same reason; plan-state ignores it.
+        case 'togglePlanItem':
         case 'togglePlanFusion':
-          stickyToggle(planFused, (list) => ballSlotsUsed(planBalls, list) < ballCapacity(activeLimits()),
-            (p) => samePair(p, action.a, action.b), () => ({ a: action.a, b: action.b }));
+        case 'toggleUpgrades':
+          plan.dispatch(action);
           break;
-        case 'toggleUpgrades': upgradesOn = !upgradesOn; break;
         case 'clearPlan':
+          plan.dispatch(action);
           selectedChars.length = 0;
-          planBalls.length = 0;
-          planPassives.length = 0;
-          planFused.length = 0;
-          upgradesOn = true;
           break;
-        case 'hydrate': {
-          upgradesOn = action.plan.upgradesOn;
+        case 'hydrate':
+          plan.dispatch(action);
           hydrateList(selectedChars, action.plan.chars,
             (id) => CHARACTERS.find((c) => c.id === id), (c) => c.id);
-          hydrateList(planBalls, action.plan.balls, (id) => (ballMap.has(id) ? id : undefined), (id) => id);
-          hydrateList(planPassives, action.plan.passives, (id) => (passiveMap.has(id) ? id : undefined), (id) => id);
-          // both sides must be real, distinct, fusable balls; identity
-          // (sorted pair) dedupes — over-limit pairs are kept, not trimmed
-          hydrateList(planFused, action.plan.fused ?? [],
-            (p) => (ballMap.has(p.a) && ballMap.has(p.b) && p.a !== p.b && isFusable(p.a) && isFusable(p.b)
-              ? { a: p.a, b: p.b }
-              : undefined),
-            (p) => pairKey(p.a, p.b));
           break;
-        }
         case 'search': queries[action.section] = action.query; break;
         case 'clear':
           if (action.section === 'balls' || action.section === 'passives') selectedId = null;
