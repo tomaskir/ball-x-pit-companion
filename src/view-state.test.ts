@@ -550,9 +550,10 @@ describe('view state: fused pairs in the plan', () => {
       view.dispatch({ type: 'togglePlanFusion', a, b });
     }
     view.dispatch({ type: 'toggleFusion', id: 'bleed' });
-    const vm = view.dispatch({ type: 'toggleFusion', id: 'silver-bullet' });
-    expect(vm.plan.counts.balls).toBe(4);
+    const vm = view.dispatch({ type: 'toggleFusion', id: 'poison' });
+    expect(vm.fusionPanel.state).toBe('composed');
     if (vm.fusionPanel.state === 'composed') expect(vm.fusionPanel.planFull).toBe(true);
+    expect(vm.plan.counts.balls).toBe(4);
   });
 
   it('fused entries carry per-component verdicts and the over-limit mark', () => {

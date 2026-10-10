@@ -287,7 +287,7 @@ export function createViewState() {
     }
     const a = fusionPicks[0] ? ballMap.get(fusionPicks[0]) : null;
     const b = fusionPicks[1] ? ballMap.get(fusionPicks[1]) : null;
-    const ballSlots = planBalls.length + planFused.length;
+    const ballSlots = ballSlotsUsed(planBalls, planFused);
     const fusionPanel: FusionPanelState = !a
       ? { state: 'empty' }
       : !b
