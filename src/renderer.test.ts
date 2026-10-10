@@ -136,10 +136,15 @@ describe('fusion panel behavior (jsdom, through paint())', () => {
     expect(q('.fusion-notes').hidden).toBe(false);
   });
 
-  it('evolve-instead pair shows the evo line', () => {
+  it('evolve-instead pair shows the evo line and hides the fusion texts', () => {
     drive({ type: 'toggleFusion', id: 'bleed' }, { type: 'toggleFusion', id: 'poison' });
     expect(q('.fusion-evo').hidden).toBe(false);
     expect(q('.fusion-evo').textContent).toContain('Virus');
+    // the pair does not fuse — the composed effect paragraphs, cross-wire,
+    // and notes would be made-up content, so only balls + warning show
+    expect(q('.fusion-body').hidden).toBe(true);
+    expect(q('.fusion-cross').hidden).toBe(true);
+    expect(q('.fusion-notes').hidden).toBe(true);
   });
 
   it('cross-wire pair shows the cross line', () => {

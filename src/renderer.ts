@@ -408,6 +408,12 @@ function paintFusion(vm: ViewModel) {
     const strong = document.createElement('strong');
     strong.textContent = f.evolvesInstead.name;
     p.evo.append(strong, ' rather than fuse — the Fusion Reactor will not offer this pair.');
+    // the pair does not fuse — the composed paragraphs/cross/notes would be
+    // made-up content; only the balls and the evolution warning show
+    p.body.hidden = true;
+    p.notes.hidden = true;
+    p.planBtn.textContent = fp.planned ? 'Remove from plan' : 'Add to plan';
+    return;
   }
   p.body.hidden = false;
   p.effA.textContent = f.paragraphs[0];
