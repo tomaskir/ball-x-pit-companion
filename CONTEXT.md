@@ -185,7 +185,9 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   icon markup — see **Recipe notation**; the icon-URL join comes from
   `src/icon-url.ts`) — one interface:
   `buildAll({ getVerdict, emit })` (builds grids, character cards, the
-  fusion pick list, the fusion panel skeleton, and the plan screen skeleton
+  fusion pick list, the fusion panel skeleton — the named
+  `FUSION_PANEL_SKELETON` export, which the tests pin directly instead of
+  scraping source — and the plan screen skeleton
   once, at startup) +
   `paint(viewModel)` (repaints state on the existing DOM; never recreates
   `<img>` elements — that would blink icons; the fusion panel's head icons
