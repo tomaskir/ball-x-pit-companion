@@ -41,7 +41,7 @@ export interface FusionRowState { slot: 1 | 2 | null; filtered: boolean; }
 export type FusionPanelState =
   | { state: 'empty' }
   | { state: 'pending'; first: Ball }
-  | { state: 'composed'; fusion: FusionResult; a: Ball; b: Ball; planned: boolean };
+  | { state: 'composed'; fusion: FusionResult; a: Ball; b: Ball; planned: boolean; planFull: boolean };
 
 /** The plan screen's slot limits: without end-game upgrades 1 character,
  *  4 balls, 4 passives; with them 2 / 5 / 5. */
@@ -254,6 +254,7 @@ export function createViewState() {
             a,
             b,
             planned: planFused.some((p) => samePair(p, a.id, b.id)),
+            planFull: planBalls.length + planFused.length >= activeLimits().balls,
           };
     // The plan: resolved entries in pick order, marked over limit beyond the
     // active section limit (kept, never trimmed). Verdicts ride along so the

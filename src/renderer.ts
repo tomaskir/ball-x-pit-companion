@@ -356,8 +356,9 @@ function paintFusion(vm: ViewModel) {
   if (!p) return;
   const fp = vm.fusionPanel;
   fusionPanelState = fp;
-  // the plan toggle exists only in the composed state
-  p.planBtn.hidden = fp.state !== 'composed';
+  // the plan toggle exists only in the composed state — and not at all for
+  // evolve-instead pairs (they do not fuse, so there is nothing to plan)
+  p.planBtn.hidden = fp.state !== 'composed' || !!fp.fusion.evolvesInstead;
 
   // Pending states replace the body via hidden toggles; text nodes update in
   // place; the two head <img> elements are created exactly once (build time).
@@ -402,6 +403,8 @@ function paintFusion(vm: ViewModel) {
   p.iconB.alt = b.name;
   p.nameB.textContent = b.name;
   p.planBtn.textContent = fp.planned ? 'Remove from plan' : 'Add to plan';
+  p.planBtn.disabled = !fp.planned && fp.planFull;
+  p.planBtn.title = !fp.planned && fp.planFull ? 'Plan limit reached' : '';
   p.evo.hidden = !f.evolvesInstead;
   if (f.evolvesInstead) {
     p.evo.textContent = '';
@@ -456,10 +459,6 @@ const PLAN_EMPTY_HINTS = {
 function buildPlan() {
   const root = document.getElementById('planView')!;
   root.innerHTML = `
-    <label class="plan-upgrades">
-      <input type="checkbox" id="planUpgrades">
-      <span>End game upgrades</span>
-    </label>
     <p class="plan-hint" hidden></p>
     ${(['characters', 'balls', 'passives'] as const).map((key) => `
       <section class="plan-section" data-plan="${key}">
@@ -467,6 +466,14 @@ function buildPlan() {
         <p class="plan-empty">${PLAN_EMPTY_HINTS[key]}</p>
         <div class="plan-grid"></div>
       </section>`).join('')}`;
+  // the End game upgrades toggle lives in the shell's plan toolbar (Clear
+  // left, toggle right) — the renderer builds it into the slot
+  const upgradesRoot = document.getElementById('planUpgradesSlot')!;
+  upgradesRoot.innerHTML = `
+    <label class="plan-upgrades">
+      <input type="checkbox" id="planUpgrades">
+      <span>End game upgrades</span>
+    </label>`;
   const q = (s: string) => root.querySelector(s)!;
   const section = (key: string) => {
     const el = q(`.plan-section[data-plan="${key}"]`);
@@ -477,7 +484,7 @@ function buildPlan() {
     };
   };
   planEls = {
-    upgrades: q('#planUpgrades') as HTMLInputElement,
+    upgrades: upgradesRoot.querySelector('#planUpgrades') as HTMLInputElement,
     hint: q('.plan-hint') as HTMLElement,
     sections: { characters: section('characters'), balls: section('balls'), passives: section('passives') },
   };

@@ -56,7 +56,7 @@ describe('fusion panel skeleton (renderer.ts)', () => {
 
 // The panel is the last module buildAll() builds; the grids/cards before it
 // need their index.astro containers — provide the minimal set.
-const CONTAINERS = ['ballsGrid', 'passivesGrid', 'charactersGrid', 'charChips', 'slotHint', 'fusionList', 'fusionPanel', 'planView', 'selection-balls', 'selection-passives'];
+const CONTAINERS = ['ballsGrid', 'passivesGrid', 'charactersGrid', 'charChips', 'slotHint', 'fusionList', 'fusionPanel', 'planView', 'planUpgradesSlot', 'selection-balls', 'selection-passives'];
 
 /** Drive the real view-state + renderer pair: dispatch and paint each step —
  *  the same path the island runs. Returns the last view model. */
@@ -281,11 +281,13 @@ describe('build seam: clicks call emit (jsdom)', () => {
 
 const planView = () => document.getElementById('planView')!;
 const planQ = <T extends HTMLElement>(s: string) => planView().querySelector<T>(s)!;
+// the End game upgrades toggle lives in the shell's plan toolbar, outside planView
+const upgradesToggle = () => document.getElementById('planUpgrades') as HTMLInputElement;
 
 describe('plan screen behavior (jsdom, through paint())', () => {
   it('empty plan: toggle checked, counts 0 / limit, empty hints visible, no entries', () => {
     paint(view.derive());
-    const toggle = planQ<HTMLInputElement>('#planUpgrades');
+    const toggle = upgradesToggle();
     expect(toggle.checked).toBe(true);
     const counts = [...planView().querySelectorAll<HTMLElement>('.plan-count')].map((el) => el.textContent);
     expect(counts).toEqual(['0 / 2', '0 / 5', '0 / 5']);
@@ -328,7 +330,7 @@ describe('plan screen behavior (jsdom, through paint())', () => {
     buildAll({ getVerdict: () => null, emit });
     drive({ type: 'toggleUpgrades' });
     expect(emit).not.toHaveBeenCalled(); // paint alone must not emit
-    const toggle = planQ<HTMLInputElement>('#planUpgrades');
+    const toggle = upgradesToggle();
     expect(toggle.checked).toBe(false);
     expect([...planView().querySelectorAll<HTMLElement>('.plan-count')].map((el) => el.textContent))
       .toEqual(['0 / 1', '0 / 4', '0 / 4']);
@@ -433,6 +435,28 @@ describe('fusion panel plan button (jsdom, through paint())', () => {
     drive({ type: 'toggleFusion', id: 'glacier' });
     expect(q('.fusion-plan-btn').hidden).toBe(false);
     expect(q('.fusion-plan-btn').textContent).toBe('Add to plan');
+  });
+
+  it('hidden entirely for an evolve-instead pair (the pair does not fuse)', () => {
+    drive({ type: 'toggleFusion', id: 'bleed' }, { type: 'toggleFusion', id: 'poison' });
+    expect(q('.fusion-plan-btn').hidden).toBe(true);
+  });
+
+  it('disabled with a tooltip when the plan balls are at their limit', () => {
+    drive(
+      { type: 'toggleFusion', id: 'black-hole' },
+      { type: 'toggleFusion', id: 'sun' },
+      { type: 'togglePlanItem', id: 'flash' },
+      { type: 'togglePlanItem', id: 'glacier' },
+      { type: 'togglePlanItem', id: 'maggot' },
+      { type: 'togglePlanItem', id: 'flicker' },
+      { type: 'togglePlanItem', id: 'burn' },
+    );
+    const btn = q<HTMLButtonElement>('.fusion-plan-btn');
+    expect(btn.hidden).toBe(false);
+    expect(btn.disabled).toBe(true);
+    expect(btn.title).toContain('limit');
+    expect(btn.textContent).toBe('Add to plan');
   });
 
   it('click emits togglePlanFusion with the compose order; planned pair shows Remove from plan', () => {

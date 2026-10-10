@@ -611,11 +611,15 @@ footer a { color: var(--gold); }
 
 .plan-btn:hover { border-color: var(--gold); }
 
+/* the End game upgrades toggle rides the toolbar's right edge — Clear and
+   the toggle share one row */
+.plan-upgrades-slot { margin-left: auto; }
+
 .plan-upgrades {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin: 0 0 14px;
+  margin: 0;
   font-size: 13px;
   cursor: pointer;
   user-select: none;
@@ -624,7 +628,7 @@ footer a { color: var(--gold); }
 .plan-upgrades input { accent-color: var(--gold); cursor: pointer; }
 
 .plan-hint {
-  margin: -6px 0 14px;
+  margin: 0 0 14px;
   color: var(--red);
   font-style: italic;
   font-size: 12px;
@@ -649,7 +653,8 @@ footer a { color: var(--gold); }
 
 .plan-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  /* at most 5 entries per section — give each box room to breathe */
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 8px;
 }
 
@@ -666,7 +671,12 @@ footer a { color: var(--gold); }
 
 .plan-entry img { width: 48px; height: 48px; image-rendering: pixelated; }
 
-.plan-entry .plan-name { flex: 1; }
+.plan-entry .plan-name {
+  flex: 1;
+  /* long names must wrap, not push the base chip / X out of the box */
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 
 .plan-entry .plan-base {
   display: flex;
@@ -674,6 +684,7 @@ footer a { color: var(--gold); }
   gap: 4px;
   color: var(--muted);
   font-size: 11px;
+  flex-shrink: 0;
 }
 
 .plan-entry .plan-base img { width: 20px; height: 20px; }
@@ -705,6 +716,7 @@ footer a { color: var(--gold); }
   line-height: 1;
   padding: 2px 4px;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .plan-x:hover { color: var(--red); }

@@ -74,8 +74,10 @@ const faviconUrl = `${import.meta.env.BASE_URL}/favicon.ico`;
       </div>
       <div class="section-view" data-section="plan" hidden>
         <div class="screen-toolbar plan-toolbar">
-          <!-- the plan's action buttons: Clear now; share/link land here later -->
+          <!-- the plan's action row: Clear left, End game upgrades right —
+               share/link land here later -->
           <button id="planClear" class="plan-btn">Clear plan</button>
+          <div id="planUpgradesSlot" class="plan-upgrades-slot"></div>
         </div>
         <div id="planView"></div>
       </div>

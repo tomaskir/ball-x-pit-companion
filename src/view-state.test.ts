@@ -273,6 +273,20 @@ describe('view state: fusion picks (max 2, sticky selection)', () => {
       expect(vm.fusionPanel.fusion.evolvesInstead!.name).toBe('Virus');
     }
   });
+
+  it('the composed panel reports when the plan balls are at their limit', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleFusion', id: 'black-hole' });
+    const vm = view.dispatch({ type: 'toggleFusion', id: 'sun' });
+    if (vm.fusionPanel.state === 'composed') expect(vm.fusionPanel.planFull).toBe(false);
+    for (const id of ['flash', 'glacier', 'maggot', 'flicker', 'burn']) view.dispatch({ type: 'togglePlanItem', id });
+    const vm2 = view.derive();
+    if (vm2.fusionPanel.state === 'composed') expect(vm2.fusionPanel.planFull).toBe(true);
+    // a planned pair of the same pair frees nothing — but removing one ball does
+    view.dispatch({ type: 'togglePlanItem', id: 'burn' });
+    const vm3 = view.derive();
+    if (vm3.fusionPanel.state === 'composed') expect(vm3.fusionPanel.planFull).toBe(false);
+  });
 });
 
 describe('view state: plan limits (End game upgrades toggle)', () => {
