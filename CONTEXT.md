@@ -113,8 +113,11 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   Over-limit selections are kept and marked (red), never trimmed. The plan
   persists to localStorage (island's job: `hydrate` action on startup, save
   on every dispatch) and is wiped only by the toolbar's Clear button —
-  Esc/empty-space never touch it. Module: state in `src/view-state.ts`
-  (`PlanState`), painting in `src/renderer.ts` (`buildPlan`/`paintPlan`).
+  Esc/empty-space never touch it. Module: state in `src/plan-state.ts`
+  (`createPlanState` — the `PlanState` derivation, the `PlanSnapshot`
+  persistence currency, and the capacity/toggle invariants), forwarded and
+  embedded into the ViewModel by `src/view-state.ts`; painting in
+  `src/renderer.ts` (`buildPlan`/`paintPlan`).
 - **Selection box** — the balls/passives screens' view of the current
   single-item selection: shown in the screen toolbar (top left, search
   stays right; drops below the search row on mobile) only while an item of
@@ -125,7 +128,9 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   picks are held; Baby Ball is `unfusable` — it can never be picked).
   Selection survives adding. The fusion screen's composed panel carries the
   same plan toggle, centered below the body (`togglePlanFusion` with the
-  compose order). Module: state in `src/view-state.ts`
+  compose order). Plan membership and capacity are queried from the plan
+  state (`has`, `counts`, `limits` — see **Plan state**), never read from
+  plan internals. Module: state in `src/view-state.ts`
   (`SelectionBoxState`, derived per screen), painting in `src/renderer.ts`
   (`buildSelectionBox`/`paintSelectionBoxes`).
 - **Toast** — the hover/tap detail popup with icon, full effect text, recipe,
@@ -185,20 +190,39 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   fusion panel paints by switching on the view model's named `fusionPanel`
   state — per state, which hooks show and what they show (behavior pinned
   in `src/renderer.test.ts` through jsdom).
+- **Plan state** — the plan screen's state and derivation as their own
+  module: the End game upgrades toggle, the planned balls/passives/fused
+  pairs, and the resolved `PlanState` the renderer paints. Module:
+  `src/plan-state.ts` — one interface: `createPlanState()` →
+  `dispatch(planAction)` / `derive(selectedChars) → PlanState` /
+  `snapshot(selectedChars) → PlanSnapshot`, plus the membership queries the
+  rest of the app reads instead of plan internals (`has(id)`,
+  `hasPair(a, b)`) and `limits()`. The seam is "selectedChars in, PlanState
+  out": the plan's characters are the shared `selectedChars`, owned by
+  `src/view-state.ts` — plan-state never mutates them (hydrate's `chars`
+  field is ignored; clearPlan clears them in view-state). `PlanSnapshot`,
+  the persistence currency, lives here; view-state re-exports the plan
+  types so companion.ts and share.ts keep their import paths. The shared
+  remove-or-add toggle shape (`stickyToggle`), hydrate's per-list restore
+  (`hydrateList`), and `isFusable` are homed here too — view-state's
+  character slots and fusion picks import them, and plan-state must not
+  import view-state (no runtime cycle). The plan-capacity helpers
+  `ballSlotsUsed` / `ballCapacity` (a fused pair counts as ONE ball slot —
+  one definition, not one per call site) also live here.
 - **View state** — the island's state (item selection, character slots,
-  fusion picks, the plan's selections and upgrade toggle, per-screen search
-  queries) and every derivation from it (highlight walks, filters, verdict
-  badges, the composed fusion, the plan's resolved entries). Module:
-  `src/view-state.ts`
+  fusion picks, per-screen search queries) and every derivation from it
+  (highlight walks, filters, verdict badges, the composed fusion, the
+  selection boxes). Module: `src/view-state.ts`
   — one interface: `createViewState()` → `dispatch(action) → ViewModel`, plus
   `derive()` (same view model without a state change, for initial paint) and
-  `verdictFor(item)` (full verdict with note, for the toast). Fusion picks
+  `verdictFor(item)` (full verdict with note, for the toast). The plan is
+  not state of its own here any more — see **Plan state**: view-state
+  forwards the plan actions verbatim and embeds the derived `PlanState` in
+  the view model, handing the shared `selectedChars` in on every
+  derive/snapshot. Fusion picks
   share the character slots' sticky semantics (re-click deselects; a third
-  pick while two are held is a no-op), and the plan's toggles share it too:
-  `togglePlanItem` / `togglePlanFusion` go through the same remove-or-add
-  shape, gated by the plan-capacity helpers `ballSlotsUsed` / `ballCapacity`
-  (a fused pair counts as one ball slot — one definition, not one per call
-  site); the view model carries the fusion
+  pick while two are held is a no-op) — the same `stickyToggle` shape the
+  plan's toggles use; the view model carries the fusion
   screen's panel state as a named 3-state machine (`fusionPanel`: `empty` /
   `pending` with the first resolved Ball / `composed` with both resolved
   Balls, the composed fusion from `src/fusion.ts`, the pair's `planned`
