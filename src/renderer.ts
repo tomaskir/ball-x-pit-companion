@@ -401,6 +401,7 @@ function paintFusion(vm: ViewModel) {
   if (p.iconB.getAttribute('src') !== icon(b.icon)) p.iconB.src = icon(b.icon);
   p.iconB.alt = b.name;
   p.nameB.textContent = b.name;
+  p.planBtn.textContent = fp.planned ? 'Remove from plan' : 'Add to plan';
   p.evo.hidden = !f.evolvesInstead;
   if (f.evolvesInstead) {
     p.evo.textContent = '';
@@ -411,8 +412,8 @@ function paintFusion(vm: ViewModel) {
     // the pair does not fuse — the composed paragraphs/cross/notes would be
     // made-up content; only the balls and the evolution warning show
     p.body.hidden = true;
+    p.cross.hidden = true; // reset the attribute, not just the ancestor
     p.notes.hidden = true;
-    p.planBtn.textContent = fp.planned ? 'Remove from plan' : 'Add to plan';
     return;
   }
   p.body.hidden = false;
@@ -426,7 +427,6 @@ function paintFusion(vm: ViewModel) {
     li.textContent = n;
     return li;
   }));
-  p.planBtn.textContent = fp.planned ? 'Remove from plan' : 'Add to plan';
 }
 
 // ---------- plan screen ----------

@@ -147,6 +147,24 @@ describe('fusion panel behavior (jsdom, through paint())', () => {
     expect(q('.fusion-notes').hidden).toBe(true);
   });
 
+  it('a fusing pair with a cross-wire line followed by an evolve-instead pair leaves nothing stale', () => {
+    // cross-wire pair first (its cross line and notes show)…
+    drive({ type: 'toggleFusion', id: 'black-hole' }, { type: 'toggleFusion', id: 'sun' });
+    expect(q('.fusion-cross').hidden).toBe(false);
+    expect(q('.fusion-notes').hidden).toBe(false);
+    // …then an evolve-instead pair: the whole composed body must go
+    drive(
+      { type: 'toggleFusion', id: 'black-hole' },
+      { type: 'toggleFusion', id: 'sun' },
+      { type: 'toggleFusion', id: 'bleed' },
+      { type: 'toggleFusion', id: 'poison' },
+    );
+    expect(q('.fusion-evo').hidden).toBe(false);
+    expect(q('.fusion-body').hidden).toBe(true);
+    expect(q('.fusion-cross').hidden).toBe(true);
+    expect(q('.fusion-notes').hidden).toBe(true);
+  });
+
   it('cross-wire pair shows the cross line', () => {
     drive({ type: 'toggleFusion', id: 'black-hole' }, { type: 'toggleFusion', id: 'sun' });
     expect(q('.fusion-cross').hidden).toBe(false);
