@@ -56,9 +56,10 @@ let emit: (action: ToggleAction) => void = () => {};
 // key is the identity of what was last painted on it, held in a WeakMap:
 // nothing leaks into the DOM, and a container rebuilt by buildAll starts
 // unpainted. reconcile() repaints only when the key changed — a match
-// leaves the built DOM (especially <img>) untouched. The selection box's
-// once-built buttons read their item through the same map: the painted key
-// IS the item the buttons act on.
+// leaves the built DOM (especially <img>) untouched. The once-built buttons
+// (the selection boxes', the fusion panel's plan toggle) read what they act
+// on through the same map: the painted key IS the item/pair the buttons act
+// on — one channel, refreshed by every repaint, never a second stashed one.
 const paintedKeys = new WeakMap<HTMLElement, string>();
 
 /** The content key last painted on el — what once-built handlers read. */
@@ -262,10 +263,6 @@ let fusionPanel: {
   planBtn: HTMLButtonElement;
   planRow: HTMLElement;
 } | null = null;
-/** The fusion panel state paintFusion last painted — the plan button's
- *  click handler reads the compose order from it (the button is built
- *  once; the picks change under it). */
-let fusionPanelState: ViewModel['fusionPanel'] | null = null;
 
 function buildFusionList() {
   const wrap = document.getElementById('fusionList')!;
@@ -330,10 +327,15 @@ function buildFusionPanel() {
     planBtn: q('.fusion-plan-btn') as HTMLButtonElement,
     planRow: q('.fusion-plan-row') as HTMLElement,
   };
-  // the composed fusion's plan toggle reports through the build seam
+  // the composed fusion's plan toggle reports through the build seam. The
+  // button is built once; the picks change under it — the compose order it
+  // acts on rides the reconcile seam's painted key ("a|b"), the same channel
+  // the selection box's once-built buttons read their item through.
   fusionPanel.planBtn.addEventListener('click', () => {
-    const fp = fusionPanelState;
-    if (fp?.state === 'composed') emit({ type: 'togglePlanFusion', a: fp.a.id, b: fp.b.id });
+    const key = paintedKey(fusionPanel.planBtn);
+    if (!key) return;
+    const [a, b] = key.split('|');
+    emit({ type: 'togglePlanFusion', a, b });
   });
 }
 
@@ -357,10 +359,14 @@ function paintFusion(vm: ViewModel) {
   const p = fusionPanel;
   if (!p) return;
   const fp = vm.fusionPanel;
-  fusionPanelState = fp;
   // the plan toggle exists only in the composed state — and not at all for
   // evolve-instead pairs (they do not fuse, so there is nothing to plan)
   p.planBtn.hidden = fp.state !== 'composed' || !!fp.fusion.evolvesInstead;
+  // the once-built plan button reads its compose order from its painted key
+  // (see the click handler) — set on every composed paint, cleared otherwise
+  // so no stale pair survives a trip through empty/pending
+  if (fp.state === 'composed') paintedKeys.set(p.planBtn, `${fp.a.id}|${fp.b.id}`);
+  else paintedKeys.delete(p.planBtn);
 
   // Pending states replace the body via hidden toggles; text nodes update in
   // place; the two head <img> elements are created exactly once (build time).

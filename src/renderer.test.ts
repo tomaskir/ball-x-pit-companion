@@ -497,6 +497,27 @@ describe('fusion panel plan button (jsdom, through paint())', () => {
     expect(btn.textContent).toBe('Add to plan');
   });
 
+  it('the plan button reads the CURRENT compose order after a repaint with a different pair', () => {
+    // The button is built once; the picks change under it. Its handler must
+    // read the compose order through the same channel every repaint updates
+    // (the reconcile seam's painted key) — the bug class the old stashed
+    // fusionPanelState module variable enabled was a second channel that a
+    // repaint path could forget to refresh.
+    const emit = vi.fn();
+    buildAll({ getVerdict: () => null, emit });
+    drive({ type: 'toggleFusion', id: 'flash' }, { type: 'toggleFusion', id: 'glacier' });
+    q<HTMLElement>('.fusion-plan-btn').click();
+    expect(emit).toHaveBeenCalledWith({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
+    drive(
+      { type: 'toggleFusion', id: 'flash' },
+      { type: 'toggleFusion', id: 'glacier' },
+      { type: 'toggleFusion', id: 'black-hole' },
+      { type: 'toggleFusion', id: 'sun' },
+    );
+    q<HTMLElement>('.fusion-plan-btn').click();
+    expect(emit).toHaveBeenCalledWith({ type: 'togglePlanFusion', a: 'black-hole', b: 'sun' });
+  });
+
   it('click emits togglePlanFusion with the compose order; planned pair shows Remove from plan', () => {
     const emit = vi.fn();
     buildAll({ getVerdict: () => null, emit });
