@@ -5,6 +5,7 @@
 // CONTEXT.md for the domain glossary these contracts use.
 import { createViewState, type Action, type PlanFused, type PlanSnapshot, type Section } from './view-state';
 import { buildAll, paint } from './renderer';
+import { decodePlan, encodePlan } from './share';
 
 const view = createViewState();
 
@@ -73,7 +74,9 @@ let section: Section = 'balls';
 
 function initRouting() {
   const apply = () => {
-    const hash = location.hash.replace(/^#\/?/, '') || 'balls';
+    // the hash may carry a share parameter (#/plan?p=<code>) — routing reads
+    // the section only; the parameter is handled once at startup
+    const hash = (location.hash.replace(/^#\/?/, '').split('?')[0]) || 'balls';
     if (['balls', 'passives', 'characters', 'fusions', 'plan'].includes(hash)) showSection(hash as Section, false);
   };
   addEventListener('hashchange', apply);
@@ -119,6 +122,19 @@ function init() {
   // upgrade toggle) — the shell owns this one, like the tab buttons.
   document.getElementById('planClear')!.addEventListener('click', () => update({ type: 'clearPlan' }));
 
+  // The plan toolbar's Share button: encodes the current plan into a link
+  // and copies it. Opening the link hydrates the plan (and replaces the
+  // opener's stored plan on the recipient's machine — the link IS the plan).
+  const shareBtn = document.getElementById('planShare')!;
+  shareBtn.addEventListener('click', () => {
+    const url = `${location.origin}${location.pathname}#/plan?p=${encodePlan(view.planSnapshot())}`;
+    const flash = () => {
+      shareBtn.textContent = 'Copied!';
+      setTimeout(() => { shareBtn.textContent = 'Share'; }, 1500);
+    };
+    navigator.clipboard?.writeText(url).then(flash).catch(() => window.prompt('Copy the plan link:', url));
+  });
+
   document.addEventListener('keydown', (e) => {
     // Esc clears the active section's selection (chars/fusions included);
     // switching sections keeps every screen's selection (cross-screen
@@ -149,9 +165,14 @@ function init() {
     getVerdict: (item) => view.verdictFor(item),
     emit: (action) => update(action),
   });
-  // restore the persisted plan (if any) before the initial paint
-  const stored = loadPlan();
-  if (stored) update({ type: 'hydrate', plan: stored });
+  // restore the plan before the initial paint: a share link's ?p= parameter
+  // wins over the stored plan (the link IS the plan — opening it replicates
+  // the sender's build and replaces what was stored here)
+  const shareParam = new URLSearchParams(location.hash.split('?')[1] ?? '').get('p');
+  const sharePlan = shareParam ? decodePlan(shareParam) : null;
+  const stored = sharePlan ? null : loadPlan();
+  const restored = sharePlan ?? stored;
+  if (restored) update({ type: 'hydrate', plan: restored });
   // initial paint: derive the view model once everything is built
   paint(view.derive());
 }

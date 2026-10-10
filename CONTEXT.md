@@ -88,8 +88,15 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   the "×" between components — beside them, plus one per-component verdict
   badge on each icon. The **End game upgrades**
   toggle (on by default) sets the limits: 2/5/5 with it, 1/4/4 without; it
-  lives in the plan toolbar's right edge (`#planUpgradesSlot` — Clear left,
-  toggle right, one row), built by the renderer into the shell's slot.
+  lives in the plan toolbar's right edge (`#planUpgradesSlot` — Clear and
+  Share left, toggle right, one row), built by the renderer into the
+  shell's slot. **Share** (shell chrome, island-wired) encodes the current
+  plan via `src/share.ts` into a versioned base64url code in the hash
+  (`#/plan?p=<code>`) and copies the link; opening it hydrates the plan —
+  the link IS the plan, it replaces the recipient's stored plan. The
+  parameter is read once at startup (a hash change alone does not re-hydrate;
+  reload does); `decodePlan` returns null for anything that is not a v1
+  code and the stored plan is used instead.
   Over-limit selections are kept and marked (red), never trimmed. The plan
   persists to localStorage (island's job: `hydrate` action on startup, save
   on every dispatch) and is wiped only by the toolbar's Clear button —
