@@ -5,7 +5,7 @@
 // CONTEXT.md for the domain glossary these contracts use.
 import { createViewState, type Action, type PlanSnapshot, type Section } from './view-state';
 import { buildAll, paint } from './renderer';
-import { decodePlan, encodePlan, parsePlanSnapshot } from './share';
+import { parsePlanSnapshot, planLink, takeShareParam } from './share';
 
 const view = createViewState();
 
@@ -113,11 +113,12 @@ function init() {
   document.getElementById('planClear')!.addEventListener('click', () => update({ type: 'clearPlan' }));
 
   // The plan toolbar's Share button: encodes the current plan into a link
-  // and copies it. Opening the link hydrates the plan (and replaces the
-  // opener's stored plan on the recipient's machine — the link IS the plan).
+  // (share.ts's planLink) and copies it. Opening the link hydrates the plan
+  // (and replaces the opener's stored plan on the recipient's machine — the
+  // link IS the plan).
   const shareBtn = document.getElementById('planShare')!;
   shareBtn.addEventListener('click', () => {
-    const url = `${location.origin}${location.pathname}#/plan?p=${encodePlan(view.planSnapshot())}`;
+    const url = planLink(location.origin, location.pathname, view.planSnapshot());
     const idleLabel = shareBtn.textContent;
     const flash = () => {
       shareBtn.textContent = 'Copied!';
@@ -164,11 +165,13 @@ function init() {
   // wins over the stored plan (the link IS the plan — opening it replicates
   // the sender's build and replaces what was stored here). The parameter is
   // then stripped from the URL: the link is one-shot, so a recipient who
-  // Clear-plans and reloads is not handed the sender's build back.
-  const shareParam = new URLSearchParams(location.hash.split('?')[1] ?? '').get('p');
-  const sharePlan = shareParam ? decodePlan(shareParam) : null;
+  // Clear-plans and reloads is not handed the sender's build back. The strip
+  // happens only when the parameter actually decoded (share.ts's one-shot
+  // rule) — the island supplies the transport.
+  const share = takeShareParam(location.hash);
+  const sharePlan = share?.snapshot ?? null;
   if (sharePlan) {
-    history.replaceState(null, '', `${location.pathname}#${location.hash.split('?')[0]}`);
+    history.replaceState(null, '', `${location.pathname}${share!.strippedHash}`);
   }
   const stored = sharePlan ? null : loadPlan();
   const restored = sharePlan ?? stored;

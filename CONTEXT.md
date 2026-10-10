@@ -100,13 +100,16 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   lives in the plan toolbar's right edge (`#planUpgradesSlot` — Clear and
   Share left, toggle right, one row), built by the renderer into the
   shell's slot. **Share** (shell chrome, island-wired) encodes the current
-  plan via `src/share.ts` into a versioned base64url code in the hash
-  (`#/plan?p=<code>`) and copies the link; opening it hydrates the plan —
-  the link IS the plan, it replaces the recipient's stored plan. The
-  parameter is read once at startup and then stripped from the URL (the
-  link is one-shot — a Clear plus reload does not resurrect the sender's
-  plan); `decodePlan` returns null for anything that is not a v1
-  code and the stored plan is used instead.
+  plan via `src/share.ts` (`planLink`) into a versioned base64url code in
+  the hash (`#/plan?p=<code>`) and copies the link; opening it hydrates the
+  plan — the link IS the plan, it replaces the recipient's stored plan. The
+  parameter is read once at startup (`takeShareParam`) and then stripped
+  from the URL (the link is one-shot — a Clear plus reload does not
+  resurrect the sender's plan; the strip happens only when the parameter
+  actually decoded); `decodePlan` returns null for anything that is not a v1
+  code and the stored plan is used instead. The island keeps only transport
+  (clipboard, `history.replaceState`, location reads) — the whole link
+  lifecycle is pure functions in `src/share.ts`.
   Over-limit selections are kept and marked (red), never trimmed. The plan
   persists to localStorage (island's job: `hydrate` action on startup, save
   on every dispatch) and is wiped only by the toolbar's Clear button —
