@@ -101,7 +101,8 @@ export interface ShareParam {
  *  comes back as `{ snapshot: null, … }` so the caller can tell the two
  *  apart (only a decoded snapshot earns the strip). */
 export function takeShareParam(hash: string): ShareParam | null {
-  const param = new URLSearchParams(hash.split('?')[1] ?? '').get('p');
+  const [base, query] = hash.split('?');
+  const param = new URLSearchParams(query ?? '').get('p');
   if (param === null) return null;
-  return { snapshot: decodePlan(param), strippedHash: hash.split('?')[0] };
+  return { snapshot: decodePlan(param), strippedHash: base };
 }

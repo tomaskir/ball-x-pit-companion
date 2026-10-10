@@ -169,10 +169,10 @@ function init() {
   // happens only when the parameter actually decoded (share.ts's one-shot
   // rule) — the island supplies the transport.
   const share = takeShareParam(location.hash);
-  const sharePlan = share?.snapshot ?? null;
-  if (sharePlan) {
-    history.replaceState(null, '', `${location.pathname}${share!.strippedHash}`);
+  if (share?.snapshot) {
+    history.replaceState(null, '', `${location.pathname}${share.strippedHash}`);
   }
+  const sharePlan = share?.snapshot ?? null;
   const stored = sharePlan ? null : loadPlan();
   const restored = sharePlan ?? stored;
   if (restored) update({ type: 'hydrate', plan: restored });
