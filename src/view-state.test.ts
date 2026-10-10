@@ -633,6 +633,24 @@ describe('view state: selection box (balls/passives screens)', () => {
     const vm3 = view.dispatch({ type: 'toggleItem', id: 'baby-ball' });
     expect(vm3.selectionBoxes.balls!.fusion).toBe('unfusable');
   });
+
+  it('selection persists after adding to plan or fusion (box stays, highlight stays)', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleItem', id: 'flash' });
+    const vm = view.dispatch({ type: 'togglePlanItem', id: 'flash' });
+    expect(vm.tiles.get('flash')!.selected).toBe(true);
+    expect(vm.selectionBoxes.balls!.item.id).toBe('flash');
+    const vm2 = view.dispatch({ type: 'toggleFusion', id: 'flash' });
+    expect(vm2.tiles.get('flash')!.selected).toBe(true);
+    expect(vm2.selectionBoxes.balls!.item.id).toBe('flash');
+  });
+
+  it('adding to fusion from the selection box shows in the fusion screen slot badges', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleItem', id: 'flash' });
+    const vm = view.dispatch({ type: 'toggleFusion', id: 'flash' });
+    expect(vm.fusionRows.get('flash')!.slot).toBe(1);
+  });
 });
 
 describe('view state: synergy verdicts ride the view model', () => {

@@ -24,7 +24,7 @@ function loadPlan(): PlanSnapshot | null {
     const p = JSON.parse(raw) as Partial<PlanSnapshot>;
     if (typeof p !== 'object' || p === null) return null;
     const ids = (x: unknown): string[] => (Array.isArray(x) ? x.filter((id): id is string => typeof id === 'string') : []);
-    const pairs = (x: unknown): PlanFused[] =>
+    const fusedPairs = (x: unknown): PlanFused[] =>
       (Array.isArray(x) ? x : []).filter((q): q is PlanFused =>
         typeof q === 'object' && q !== null && typeof (q as PlanFused).a === 'string' && typeof (q as PlanFused).b === 'string');
     return {
@@ -32,7 +32,7 @@ function loadPlan(): PlanSnapshot | null {
       chars: ids(p.chars),
       balls: ids(p.balls),
       passives: ids(p.passives),
-      fused: pairs(p.fused),
+      fused: fusedPairs(p.fused),
     };
   } catch {
     return null; // corrupt storage must never break startup

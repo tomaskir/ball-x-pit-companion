@@ -544,19 +544,20 @@ function paintPlan(vm: ViewModel) {
   // over-limit marks and verdict badges — repaint in place, in entry order
   // (characters and fused pairs carry no entry-level verdict — the null
   // verdict paints no badge; fused pairs get per-component badges below)
+  const makeBadge = (v: Verdict) => {
+    const badge = document.createElement('span');
+    badge.className = `ind ${v.verdict}`;
+    badge.textContent = '!';
+    badge.title = v.note ?? v.verdict;
+    return badge;
+  };
   const repaint = (grid: HTMLElement, entries: { overLimit: boolean; verdict?: Verdict | null }[]) => {
     [...grid.querySelectorAll<HTMLElement>('.plan-entry')].forEach((entry, i) => {
       const e = entries[i];
       if (!e) return;
       entry.classList.toggle('over-limit', e.overLimit);
       entry.querySelectorAll('.ind').forEach((b) => b.remove());
-      if (e.verdict) {
-        const badge = document.createElement('span');
-        badge.className = `ind ${e.verdict.verdict}`;
-        badge.textContent = '!';
-        badge.title = e.verdict.note ?? e.verdict.verdict;
-        entry.appendChild(badge);
-      }
+      if (e.verdict) entry.appendChild(makeBadge(e.verdict));
     });
   };
   repaint(planEls.sections.characters.grid, plan.characters);
@@ -572,11 +573,7 @@ function paintPlan(vm: ViewModel) {
       if (!v) return;
       const wrap = entry.querySelectorAll<HTMLElement>('.plan-icon')[j];
       if (!wrap) return;
-      const badge = document.createElement('span');
-      badge.className = `ind ${v.verdict}`;
-      badge.textContent = '!';
-      badge.title = v.note ?? v.verdict;
-      wrap.appendChild(badge);
+      wrap.appendChild(makeBadge(v));
     });
   });
 }

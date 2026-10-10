@@ -182,6 +182,10 @@ function stickyToggle<T>(list: T[], id: string, max: number, match: (x: T) => bo
 const pairKey = (a: string, b: string): string => [a, b].sort().join('+');
 const samePair = (p: PlanFused, a: string, b: string): boolean => pairKey(p.a, p.b) === pairKey(a, b);
 
+/** Fusable upgrade entities, indexed once — Baby Ball is not one. */
+const FUSABLE = new Set(fusionBalls().map((b) => b.id));
+const isFusable = (id: string): boolean => FUSABLE.has(id);
+
 export function createViewState() {
   let selectedId: string | null = null;
   /** Per-screen search queries — each section has its own search box, so
@@ -294,14 +298,15 @@ export function createViewState() {
     // The selection boxes: one per item screen, filled only when the
     // selected item lives in that screen's namespace.
     const selected = selectedId ? itemFor(selectedId) : undefined;
-    const inPlan = selected ? (isPassive(selected.id) ? planPassives.includes(selected.id) : planBalls.includes(selected.id)) : false;
+    const selectedIsPassive = selected ? isPassive(selected.id) : false;
+    const inPlan = selected ? (selectedIsPassive ? planPassives.includes(selected.id) : planBalls.includes(selected.id)) : false;
     const planLabel: SelectionBoxState['plan'] =
       inPlan ? 'remove'
-      : (isPassive(selected?.id ?? '') ? planPassives.length : ballSlots) >= (isPassive(selected?.id ?? '') ? limits.passives : limits.balls) ? 'disabled'
+      : (selectedIsPassive ? planPassives.length : ballSlots) >= (selectedIsPassive ? limits.passives : limits.balls) ? 'disabled'
       : 'add';
-    const fusionLabel: SelectionBoxState['fusion'] = !selected || isPassive(selected.id)
+    const fusionLabel: SelectionBoxState['fusion'] = !selected || selectedIsPassive
       ? null
-      : !fusionBalls().some((b) => b.id === selected.id) ? 'unfusable'
+      : !isFusable(selected.id) ? 'unfusable'
       : fusionPicks.includes(selected.id) ? 'remove'
       : fusionPicks.length >= 2 ? 'disabled'
       : 'add';
@@ -412,7 +417,7 @@ export function createViewState() {
             // (sorted pair) dedupes — over-limit pairs are kept, not trimmed
             if (
               ballMap.has(p.a) && ballMap.has(p.b) && p.a !== p.b &&
-              fusionBalls().some((f) => f.id === p.a) && fusionBalls().some((f) => f.id === p.b) &&
+              isFusable(p.a) && isFusable(p.b) &&
               !planFused.some((q) => samePair(q, p.a, p.b))
             ) planFused.push({ a: p.a, b: p.b });
           }

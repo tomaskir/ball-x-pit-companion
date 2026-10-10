@@ -715,8 +715,10 @@ footer a { color: var(--gold); }
 /* per-component verdict badges ride the icon wrapper */
 .plan-entry .plan-icon { position: relative; display: inline-flex; }
 
-/* the composed fusion's plan toggle — centered below the panel body */
-.fusion-plan-row { display: flex; justify-content: center; margin-top: 14px; }
+/* the composed fusion's plan toggle — centered below the panel body (the
+   margin rides the button, not the row: a hidden button must leave no
+   phantom gap in the pending/empty states) */
+.fusion-plan-row { display: flex; justify-content: center; }
 
 .fusion-plan-btn {
   background: none;
@@ -726,6 +728,7 @@ footer a { color: var(--gold); }
   font: inherit;
   font-size: 13px;
   padding: 6px 14px;
+  margin-top: 14px;
   cursor: pointer;
 }
 
