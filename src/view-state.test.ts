@@ -543,6 +543,18 @@ describe('view state: fused pairs in the plan', () => {
     expect(vm.plan.counts.balls).toBe(5);
   });
 
+  it('fused pairs alone can fill the ball capacity: the composed panel reports planFull', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleUpgrades' }); // limit 4
+    for (const [a, b] of [['flash', 'glacier'], ['maggot', 'flicker'], ['burn', 'vampire'], ['wind', 'poison']] as const) {
+      view.dispatch({ type: 'togglePlanFusion', a, b });
+    }
+    view.dispatch({ type: 'toggleFusion', id: 'bleed' });
+    const vm = view.dispatch({ type: 'toggleFusion', id: 'silver-bullet' });
+    expect(vm.plan.counts.balls).toBe(4);
+    if (vm.fusionPanel.state === 'composed') expect(vm.fusionPanel.planFull).toBe(true);
+  });
+
   it('fused entries carry per-component verdicts and the over-limit mark', () => {
     const view = createViewState();
     view.dispatch({ type: 'toggleChar', id: 'the-ballbearer' });
@@ -632,6 +644,24 @@ describe('view state: selection box (balls/passives screens)', () => {
     expect(vm2.selectionBoxes.balls!.plan).toBe('disabled');
     // removing one frees the slot again (selection unchanged — derive only)
     view.dispatch({ type: 'togglePlanItem', id: 'flash' });
+    const vm3 = view.derive();
+    expect(vm3.selectionBoxes.balls!.plan).toBe('add');
+  });
+
+  it('the plan label counts fused pairs as ball slots (mixed single + fused at the boundary)', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleUpgrades' }); // limit 4
+    view.dispatch({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
+    view.dispatch({ type: 'togglePlanFusion', a: 'maggot', b: 'flicker' });
+    view.dispatch({ type: 'togglePlanItem', id: 'burn' });
+    const vm = view.dispatch({ type: 'toggleItem', id: 'vampire' });
+    // 2 pairs + 1 single = 3 of 4 slots — one left
+    expect(vm.selectionBoxes.balls!.plan).toBe('add');
+    view.dispatch({ type: 'togglePlanItem', id: 'wind' });
+    const vm2 = view.derive();
+    expect(vm2.selectionBoxes.balls!.plan).toBe('disabled');
+    // removing a fused pair frees its slot
+    view.dispatch({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
     const vm3 = view.derive();
     expect(vm3.selectionBoxes.balls!.plan).toBe('add');
   });
