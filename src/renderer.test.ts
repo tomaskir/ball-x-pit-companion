@@ -37,6 +37,7 @@ describe('fusion panel skeleton (renderer.ts)', () => {
       '.fusion-hint', '.fusion-head',
       '.icon-a', '.name-a', '.fusion-times', '.icon-b', '.name-b',
       '.fusion-evo', '.fusion-body', '.eff-a', '.eff-b', '.fusion-cross', '.fusion-notes',
+      '.fusion-plan-btn',
     ];
     const missing = selectors.filter((s) => !q(s));
     expect(missing, `selectors matching nothing: ${missing.join(', ')}`).toEqual([]);
@@ -55,7 +56,7 @@ describe('fusion panel skeleton (renderer.ts)', () => {
 
 // The panel is the last module buildAll() builds; the grids/cards before it
 // need their index.astro containers — provide the minimal set.
-const CONTAINERS = ['ballsGrid', 'passivesGrid', 'charactersGrid', 'charChips', 'slotHint', 'fusionList', 'fusionPanel', 'planView'];
+const CONTAINERS = ['ballsGrid', 'passivesGrid', 'charactersGrid', 'charChips', 'slotHint', 'fusionList', 'fusionPanel', 'planView', 'selection-balls', 'selection-passives'];
 
 /** Drive the real view-state + renderer pair: dispatch and paint each step —
  *  the same path the island runs. Returns the last view model. */
@@ -331,5 +332,93 @@ describe('plan screen behavior (jsdom, through paint())', () => {
     drive({ type: 'toggleChar', id: 'the-ballbearer' });
     // Wagon Wheel vs The Ballbearer's *passives wildcard → red
     expect(planView().querySelector('.plan-entry .ind.red')).toBeTruthy();
+  });
+
+  it('fused pairs render as one entry: both icons, ×, name, one X (emits togglePlanFusion)', () => {
+    const emit = vi.fn();
+    buildAll({ getVerdict: () => null, emit });
+    drive({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
+    const entries = [...planView().querySelectorAll<HTMLElement>('.plan-entry')];
+    expect(entries).toHaveLength(1);
+    expect(entries[0].textContent).toContain('Flash × Glacier');
+    const imgs = [...entries[0].querySelectorAll('img')];
+    expect(imgs.some((i) => i.getAttribute('src')!.includes('flash'))).toBe(true);
+    expect(imgs.some((i) => i.getAttribute('src')!.includes('glacier'))).toBe(true);
+    entries[0].querySelector<HTMLElement>('.plan-x')!.click();
+    expect(emit).toHaveBeenCalledWith({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
+  });
+});
+
+// ---------- behavior: the selection box (jsdom, through paint()) ----------
+
+describe('selection box behavior (jsdom, through paint())', () => {
+  it('hidden when nothing is selected; shows name + buttons for a selected ball', () => {
+    paint(view.derive());
+    expect(document.getElementById('selection-balls')!.hidden).toBe(true);
+    drive({ type: 'toggleItem', id: 'flash' });
+    const box = document.getElementById('selection-balls')!;
+    expect(box.hidden).toBe(false);
+    expect(box.textContent).toContain('Selection:');
+    expect(box.textContent).toContain('Flash');
+    const buttons = [...box.querySelectorAll<HTMLElement>('.selection-btn')];
+    expect(buttons).toHaveLength(2);
+    expect(buttons[0].textContent).toBe('Add to plan');
+    expect(buttons[1].textContent).toBe('Add to fusion');
+  });
+
+  it('buttons emit togglePlanItem / toggleFusion through the seam', () => {
+    const emit = vi.fn();
+    buildAll({ getVerdict: () => null, emit });
+    drive({ type: 'toggleItem', id: 'flash' });
+    const buttons = [...document.getElementById('selection-balls')!.querySelectorAll<HTMLElement>('.selection-btn')];
+    buttons[0].click();
+    expect(emit).toHaveBeenCalledWith({ type: 'togglePlanItem', id: 'flash' });
+    buttons[1].click();
+    expect(emit).toHaveBeenCalledWith({ type: 'toggleFusion', id: 'flash' });
+  });
+
+  it('a selected passive: passives box filled, no fusion button; balls box hidden', () => {
+    drive({ type: 'toggleItem', id: 'wagon-wheel' });
+    expect(document.getElementById('selection-passives')!.hidden).toBe(false);
+    expect(document.getElementById('selection-balls')!.hidden).toBe(true);
+    const buttons = [...document.getElementById('selection-passives')!.querySelectorAll<HTMLElement>('.selection-btn')];
+    expect(buttons).toHaveLength(1);
+    expect(buttons[0].textContent).toBe('Add to plan');
+  });
+
+  it('label states: in plan → Remove from plan; fusion picks full → disabled Add to fusion', () => {
+    drive(
+      { type: 'toggleItem', id: 'flash' },
+      { type: 'togglePlanItem', id: 'flash' },
+      { type: 'toggleFusion', id: 'glacier' },
+      { type: 'toggleFusion', id: 'maggot' },
+    );
+    const box = document.getElementById('selection-balls')!;
+    const buttons = [...box.querySelectorAll<HTMLElement>('.selection-btn')];
+    expect(buttons[0].textContent).toBe('Remove from plan');
+    expect(buttons[1].textContent).toBe('Add to fusion');
+    expect((buttons[1] as HTMLButtonElement).disabled).toBe(true);
+  });
+});
+
+// ---------- behavior: the fusion panel's Add to plan button ----------
+
+describe('fusion panel plan button (jsdom, through paint())', () => {
+  it('hidden in empty/pending states; visible with Add to plan when composed', () => {
+    drive({ type: 'toggleFusion', id: 'flash' });
+    expect(q('.fusion-plan-btn').hidden).toBe(true);
+    drive({ type: 'toggleFusion', id: 'glacier' });
+    expect(q('.fusion-plan-btn').hidden).toBe(false);
+    expect(q('.fusion-plan-btn').textContent).toBe('Add to plan');
+  });
+
+  it('click emits togglePlanFusion with the compose order; planned pair shows Remove from plan', () => {
+    const emit = vi.fn();
+    buildAll({ getVerdict: () => null, emit });
+    drive({ type: 'toggleFusion', id: 'flash' }, { type: 'toggleFusion', id: 'glacier' });
+    q<HTMLElement>('.fusion-plan-btn').click();
+    expect(emit).toHaveBeenCalledWith({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
+    drive({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
+    expect(q('.fusion-plan-btn').textContent).toBe('Remove from plan');
   });
 });

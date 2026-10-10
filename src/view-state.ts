@@ -20,7 +20,7 @@ import { PASSIVES } from './data/passives';
 import { CHARACTERS, type Character } from './data/characters';
 import { highlightSet } from './graph';
 import { ballMap, passiveMap, isPassive, itemFor, graphFor } from './catalog';
-import { fusionBalls, fuse, type FusionResult } from './fusion';
+import { fusionBalls, fusionName, fuse, type FusionResult } from './fusion';
 import { verdictFor, type Item, type Verdict } from './synergy';
 
 export interface TileState { selected: boolean; related: boolean; dimmed: boolean; filtered: boolean; verdict: Verdict | null; }
@@ -41,15 +41,18 @@ export interface FusionRowState { slot: 1 | 2 | null; filtered: boolean; }
 export type FusionPanelState =
   | { state: 'empty' }
   | { state: 'pending'; first: Ball }
-  | { state: 'composed'; fusion: FusionResult; a: Ball; b: Ball };
+  | { state: 'composed'; fusion: FusionResult; a: Ball; b: Ball; planned: boolean };
 
 /** The plan screen's slot limits: without end-game upgrades 1 character,
  *  4 balls, 4 passives; with them 2 / 5 / 5. */
 export interface PlanLimits { chars: number; balls: number; passives: number; }
+/** A planned fused pair — compose order (a first) for display, sorted ids
+ *  for identity (the reverse composition is the same planned pair). */
+export interface PlanFused { a: string; b: string; }
 /** The plan as bare ids — the persistence currency. The island serializes
  *  this shape to localStorage and feeds it back through `hydrate`; one type
  *  pins both sides (and `planSnapshot(vm)` produces it from a view model). */
-export interface PlanSnapshot { upgradesOn: boolean; chars: string[]; balls: string[]; passives: string[]; }
+export interface PlanSnapshot { upgradesOn: boolean; chars: string[]; balls: string[]; passives: string[]; fused: PlanFused[]; }
 /** One character in the plan: overLimit marks slots beyond the active
  *  limit (kept, never trimmed — the user decides what to remove). */
 export interface PlanCharState { character: Character; overLimit: boolean; }
@@ -57,6 +60,10 @@ export interface PlanCharState { character: Character; overLimit: boolean; }
  *  re-resolves), its verdict against the selected characters, and the
  *  over-limit mark. */
 export interface PlanEntryState { item: Item; overLimit: boolean; verdict: Verdict | null; }
+/** One fused pair in the plan: resolved components in compose order, the
+ *  composed display name, one verdict per component (badges ride each
+ *  icon), and the over-limit mark. A pair counts as ONE ball slot. */
+export interface PlanFusedState { a: Ball; b: Ball; name: string; overLimit: boolean; verdicts: [Verdict | null, Verdict | null]; }
 /** The plan screen's whole state — the final build the user is assembling.
  *  Derived in one place so the renderer only paints. */
 export interface PlanState {
@@ -66,10 +73,22 @@ export interface PlanState {
   characters: PlanCharState[];
   balls: PlanEntryState[];
   passives: PlanEntryState[];
+  fused: PlanFusedState[];
   /** Any section holds more than its active limit allows. */
   overLimit: boolean;
   /** Warning shown while over limit; '' otherwise. */
   hint: string;
+}
+/** The balls/passives screens' selection box: the currently selected item
+ *  (null = no box on that screen) and the label states for its buttons —
+ *  derived here so the renderer only paints. `plan`/`fusion` label kinds:
+ *  add / remove (toggle) / disabled (at limit or, for fusion, picks full) /
+ *  unfusable (Baby Ball). `fusion` is null where there is no fusion button
+ *  (passives). */
+export interface SelectionBoxState {
+  item: Item;
+  plan: 'add' | 'remove' | 'disabled';
+  fusion: 'add' | 'remove' | 'disabled' | 'unfusable' | null;
 }
 export interface ViewModel {
   tiles: Map<string, TileState>;
@@ -89,6 +108,8 @@ export interface ViewModel {
   fusionHint: string;
   /** The plan screen's state — see PlanState. */
   plan: PlanState;
+  /** The balls/passives screens' selection boxes — see SelectionBoxState. */
+  selectionBoxes: { balls: SelectionBoxState | null; passives: SelectionBoxState | null };
 }
 export type Section = 'balls' | 'passives' | 'characters' | 'fusions' | 'plan';
 export type Action =
@@ -98,6 +119,11 @@ export type Action =
   /** Plan membership toggle for a ball or passive — the namespace comes
    *  from the catalog, callers pass the id only. */
   | { type: 'togglePlanItem'; id: string }
+  /** Plan membership toggle for a fused pair (the fusion screen's composed
+   *  panel and the balls screen's selection box emit it). Identity is
+   *  order-insensitive: the pair is stored in compose order but matched by
+   *  sorted ids. Counts as ONE ball slot. */
+  | { type: 'togglePlanFusion'; a: string; b: string }
   /** The plan screen's End game upgrades toggle (on by default). */
   | { type: 'toggleUpgrades' }
   /** The plan toolbar's Clear button: empties characters, balls, passives
@@ -122,7 +148,7 @@ export type Action =
  *  it from a type/id pair. */
 export type ToggleAction = Extract<
   Action,
-  { type: 'toggleItem' | 'toggleChar' | 'toggleFusion' | 'togglePlanItem' | 'toggleUpgrades' }
+  { type: 'toggleItem' | 'toggleChar' | 'toggleFusion' | 'togglePlanItem' | 'togglePlanFusion' | 'toggleUpgrades' }
 >;
 
 /** Balls offered by the fusion pick list: all fusable upgrade entities.
@@ -151,6 +177,11 @@ function stickyToggle<T>(list: T[], id: string, max: number, match: (x: T) => bo
   }
 }
 
+/** Fused-pair identity: the sorted id pair, so the reverse composition is
+ *  the same planned pair. */
+const pairKey = (a: string, b: string): string => [a, b].sort().join('+');
+const samePair = (p: PlanFused, a: string, b: string): boolean => pairKey(p.a, p.b) === pairKey(a, b);
+
 export function createViewState() {
   let selectedId: string | null = null;
   /** Per-screen search queries — each section has its own search box, so
@@ -166,6 +197,8 @@ export function createViewState() {
    *  shared selectedChars — one selection feeds verdicts, chips, plan. */
   const planBalls: string[] = [];
   const planPassives: string[] = [];
+  /** Planned fused pairs in compose order; identity is the sorted id pair. */
+  const planFused: PlanFused[] = [];
   /** The limits in force right now — one place, three former call sites. */
   const activeLimits = (): PlanLimits => (upgradesOn ? LIMITS.on : LIMITS.off);
 
@@ -211,14 +244,33 @@ export function createViewState() {
       ? { state: 'empty' }
       : !b
         ? { state: 'pending', first: a }
-        : { state: 'composed', fusion: fuse(a, b), a, b };
+        : {
+            state: 'composed',
+            fusion: fuse(a, b),
+            a,
+            b,
+            planned: planFused.some((p) => samePair(p, a.id, b.id)),
+          };
     // The plan: resolved entries in pick order, marked over limit beyond the
     // active section limit (kept, never trimmed). Verdicts ride along so the
-    // renderer paints them without re-deriving.
+    // renderer paints them without re-deriving. Fused pairs count as ONE
+    // ball slot each and are marked after the single balls.
     const limits = activeLimits();
+    const ballSlots = planBalls.length + planFused.length;
     const planBallsState = planBalls.map((id, i) => {
       const item = ballMap.get(id)!;
       return { item, overLimit: i >= limits.balls, verdict: verdictFor(item, selectedChars) };
+    });
+    const planFusedState = planFused.map(({ a, b }, i) => {
+      const ballA = ballMap.get(a)!;
+      const ballB = ballMap.get(b)!;
+      return {
+        a: ballA,
+        b: ballB,
+        name: fusionName(ballA, ballB),
+        overLimit: planBalls.length + i >= limits.balls,
+        verdicts: [verdictFor(ballA, selectedChars), verdictFor(ballB, selectedChars)] as [Verdict | null, Verdict | null],
+      };
     });
     const planPassivesState = planPassives.map((id, i) => {
       const item = passiveMap.get(id)!;
@@ -226,17 +278,36 @@ export function createViewState() {
     });
     const overLimit =
       selectedChars.length > limits.chars ||
-      planBalls.length > limits.balls ||
+      ballSlots > limits.balls ||
       planPassives.length > limits.passives;
     const plan: PlanState = {
       upgradesOn,
       limits,
-      counts: { chars: selectedChars.length, balls: planBalls.length, passives: planPassives.length },
+      counts: { chars: selectedChars.length, balls: ballSlots, passives: planPassives.length },
       characters: selectedChars.map((c, i) => ({ character: c, overLimit: i >= limits.chars })),
       balls: planBallsState,
       passives: planPassivesState,
+      fused: planFusedState,
       overLimit,
       hint: overLimit ? 'Over the limit — remove the highlighted picks or re-enable End game upgrades.' : '',
+    };
+    // The selection boxes: one per item screen, filled only when the
+    // selected item lives in that screen's namespace.
+    const selected = selectedId ? itemFor(selectedId) : undefined;
+    const inPlan = selected ? (isPassive(selected.id) ? planPassives.includes(selected.id) : planBalls.includes(selected.id)) : false;
+    const planLabel: SelectionBoxState['plan'] =
+      inPlan ? 'remove'
+      : (isPassive(selected?.id ?? '') ? planPassives.length : ballSlots) >= (isPassive(selected?.id ?? '') ? limits.passives : limits.balls) ? 'disabled'
+      : 'add';
+    const fusionLabel: SelectionBoxState['fusion'] = !selected || isPassive(selected.id)
+      ? null
+      : !fusionBalls().some((b) => b.id === selected.id) ? 'unfusable'
+      : fusionPicks.includes(selected.id) ? 'remove'
+      : fusionPicks.length >= 2 ? 'disabled'
+      : 'add';
+    const selectionBoxes: ViewModel['selectionBoxes'] = {
+      balls: selected && !isPassive(selected.id) ? { item: selected, plan: planLabel, fusion: fusionLabel } : null,
+      passives: selected && isPassive(selected.id) ? { item: selected, plan: planLabel, fusion: fusionLabel } : null,
     };
     return {
       tiles,
@@ -253,6 +324,7 @@ export function createViewState() {
         : fusionPicks.length === 1 ? '…pick a second ball.'
         : SELECTION_FULL,
       plan,
+      selectionBoxes,
     };
   };
 
@@ -271,6 +343,7 @@ export function createViewState() {
         chars: selectedChars.map((c) => c.id),
         balls: [...planBalls],
         passives: [...planPassives],
+        fused: planFused.map((p) => ({ ...p })),
       };
     },
     /** Current view model without a state change — initial paint. */
@@ -293,6 +366,7 @@ export function createViewState() {
         // Plan membership: the catalog decides the namespace (and rejects
         // unknown ids); re-click removes, adding past the active limit is a
         // no-op. Removal is always allowed — even over-limit entries.
+        // Fused pairs count as ball slots, so the ball limit is shared.
         case 'togglePlanItem': {
           if (!itemFor(action.id)) break;
           const passive = isPassive(action.id);
@@ -300,7 +374,17 @@ export function createViewState() {
           const list = passive ? planPassives : planBalls;
           const idx = list.indexOf(action.id);
           if (idx >= 0) list.splice(idx, 1);
-          else if (list.length < (passive ? limits.passives : limits.balls)) list.push(action.id);
+          else if (list.length < (passive ? limits.passives : limits.balls - planFused.length)) list.push(action.id);
+          break;
+        }
+        // Fused-pair plan membership: identity is order-insensitive (the
+        // reverse composition toggles the same pair); adding past the ball
+        // limit is a no-op. Compose order is kept for display.
+        case 'togglePlanFusion': {
+          const limits = activeLimits();
+          const idx = planFused.findIndex((p) => samePair(p, action.a, action.b));
+          if (idx >= 0) planFused.splice(idx, 1);
+          else if (planBalls.length + planFused.length < limits.balls) planFused.push({ a: action.a, b: action.b });
           break;
         }
         case 'toggleUpgrades': upgradesOn = !upgradesOn; break;
@@ -308,6 +392,7 @@ export function createViewState() {
           selectedChars.length = 0;
           planBalls.length = 0;
           planPassives.length = 0;
+          planFused.length = 0;
           upgradesOn = true;
           break;
         case 'hydrate': {
@@ -321,6 +406,16 @@ export function createViewState() {
           for (const id of action.plan.balls) if (ballMap.has(id) && !planBalls.includes(id)) planBalls.push(id);
           planPassives.length = 0;
           for (const id of action.plan.passives) if (passiveMap.has(id) && !planPassives.includes(id)) planPassives.push(id);
+          planFused.length = 0;
+          for (const p of action.plan.fused ?? []) {
+            // both sides must be real, distinct, fusable balls; identity
+            // (sorted pair) dedupes — over-limit pairs are kept, not trimmed
+            if (
+              ballMap.has(p.a) && ballMap.has(p.b) && p.a !== p.b &&
+              fusionBalls().some((f) => f.id === p.a) && fusionBalls().some((f) => f.id === p.b) &&
+              !planFused.some((q) => samePair(q, p.a, p.b))
+            ) planFused.push({ a: p.a, b: p.b });
+          }
           break;
         }
         case 'search': queries[action.section] = action.query; break;

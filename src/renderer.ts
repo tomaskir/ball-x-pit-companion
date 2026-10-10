@@ -28,7 +28,7 @@ import { fusionBalls } from './fusion';
 import { recipeHtml } from './graph';
 import { iconUrl } from './icon-url';
 import type { Verdict } from './synergy';
-import type { ToggleAction, ViewModel } from './view-state';
+import type { SelectionBoxState, ToggleAction, ViewModel } from './view-state';
 
 const DEPTH_LABELS = ['Basic', 'Evolved', 'Tier-3'] as const;
 
@@ -259,7 +259,12 @@ let fusionPanel: {
   effB: HTMLElement;
   cross: HTMLElement;
   notes: HTMLElement;
+  planBtn: HTMLButtonElement;
 } | null = null;
+/** The fusion panel state paintFusion last painted — the plan button's
+ *  click handler reads the compose order from it (the button is built
+ *  once; the picks change under it). */
+let fusionPanelState: ViewModel['fusionPanel'] | null = null;
 
 function buildFusionList() {
   const wrap = document.getElementById('fusionList')!;
@@ -303,7 +308,8 @@ function buildFusionPanel() {
       <p class="fusion-eff eff-b"></p>
       <p class="fusion-cross" hidden></p>
     </div>
-    <ul class="fusion-notes" hidden></ul>`;
+    <ul class="fusion-notes" hidden></ul>
+    <div class="fusion-plan-row"><button class="fusion-plan-btn" hidden></button></div>`;
   const q = (s: string) => root.querySelector(s)!;
   fusionPanel = {
     root,
@@ -320,7 +326,13 @@ function buildFusionPanel() {
     effB: q('.eff-b') as HTMLElement,
     cross: q('.fusion-cross') as HTMLElement,
     notes: q('.fusion-notes') as HTMLElement,
+    planBtn: q('.fusion-plan-btn') as HTMLButtonElement,
   };
+  // the composed fusion's plan toggle reports through the build seam
+  fusionPanel.planBtn.addEventListener('click', () => {
+    const fp = fusionPanelState;
+    if (fp?.state === 'composed') emit({ type: 'togglePlanFusion', a: fp.a.id, b: fp.b.id });
+  });
 }
 
 /** Repaint pick order, filtering, and the fusion panel. The panel is a
@@ -343,6 +355,9 @@ function paintFusion(vm: ViewModel) {
   const p = fusionPanel;
   if (!p) return;
   const fp = vm.fusionPanel;
+  fusionPanelState = fp;
+  // the plan toggle exists only in the composed state
+  p.planBtn.hidden = fp.state !== 'composed';
 
   // Pending states replace the body via hidden toggles; text nodes update in
   // place; the two head <img> elements are created exactly once (build time).
@@ -405,6 +420,7 @@ function paintFusion(vm: ViewModel) {
     li.textContent = n;
     return li;
   }));
+  p.planBtn.textContent = fp.planned ? 'Remove from plan' : 'Add to plan';
 }
 
 // ---------- plan screen ----------
@@ -483,7 +499,7 @@ function paintPlan(vm: ViewModel) {
 
   // rebuild only when a section's entry set (or the toggle) changed — the
   // chips' diff pattern
-  const key = `${plan.upgradesOn}|${plan.characters.map((c) => c.character.id).join(',')}|${plan.balls.map((e) => e.item.id).join(',')}|${plan.passives.map((e) => e.item.id).join(',')}`;
+  const key = `${plan.upgradesOn}|${plan.characters.map((c) => c.character.id).join(',')}|${plan.balls.map((e) => e.item.id).join(',')}|${plan.passives.map((e) => e.item.id).join(',')}|${plan.fused.map((f) => `${f.a.id}+${f.b.id}`).join(',')}`;
   if (key !== paintedPlanKey) {
     paintedPlanKey = key;
     const charEntries = plan.characters.map(({ character: ch }) => {
@@ -499,8 +515,19 @@ function paintPlan(vm: ViewModel) {
         `<img src="${icon(item.icon)}" alt="${item.name}" width="48" height="48" loading="lazy"><span class="plan-name">${item.name}</span>`,
         () => emit({ type: 'togglePlanItem', id: item.id }),
       ));
+    // fused pairs: both icons with a × between, composed name, one X for the
+    // pair — a pair is ONE entry (one ball slot). Each icon sits in a
+    // wrapper so the per-component verdict badge can ride it.
+    const fusedEntries = plan.fused.map(({ a, b, name }) =>
+      planEntry(
+        `<span class="plan-icon"><img src="${icon(a.icon)}" alt="${a.name}" width="48" height="48" loading="lazy"></span>` +
+        `<span class="plan-times">×</span>` +
+        `<span class="plan-icon"><img src="${icon(b.icon)}" alt="${b.name}" width="48" height="48" loading="lazy"></span>` +
+        `<span class="plan-name">${name}</span>`,
+        () => emit({ type: 'togglePlanFusion', a: a.id, b: b.id }),
+      ));
     planEls.sections.characters.grid.replaceChildren(...charEntries);
-    planEls.sections.balls.grid.replaceChildren(...itemEntries(plan.balls));
+    planEls.sections.balls.grid.replaceChildren(...itemEntries(plan.balls), ...fusedEntries);
     planEls.sections.passives.grid.replaceChildren(...itemEntries(plan.passives));
   }
 
@@ -515,13 +542,14 @@ function paintPlan(vm: ViewModel) {
   }
 
   // over-limit marks and verdict badges — repaint in place, in entry order
-  // (characters carry no verdict — the null verdict paints no badge)
+  // (characters and fused pairs carry no entry-level verdict — the null
+  // verdict paints no badge; fused pairs get per-component badges below)
   const repaint = (grid: HTMLElement, entries: { overLimit: boolean; verdict?: Verdict | null }[]) => {
     [...grid.querySelectorAll<HTMLElement>('.plan-entry')].forEach((entry, i) => {
       const e = entries[i];
       if (!e) return;
       entry.classList.toggle('over-limit', e.overLimit);
-      entry.querySelector('.ind')?.remove();
+      entry.querySelectorAll('.ind').forEach((b) => b.remove());
       if (e.verdict) {
         const badge = document.createElement('span');
         badge.className = `ind ${e.verdict.verdict}`;
@@ -532,8 +560,100 @@ function paintPlan(vm: ViewModel) {
     });
   };
   repaint(planEls.sections.characters.grid, plan.characters);
-  repaint(planEls.sections.balls.grid, plan.balls);
+  // the balls grid holds the single balls followed by the fused pairs
+  repaint(planEls.sections.balls.grid, [...plan.balls, ...plan.fused]);
   repaint(planEls.sections.passives.grid, plan.passives);
+  // fused pairs: one verdict badge per component icon
+  const fusedEls = [...planEls.sections.balls.grid.querySelectorAll<HTMLElement>('.plan-entry')].slice(-plan.fused.length);
+  plan.fused.forEach((f, i) => {
+    const entry = fusedEls[i];
+    if (!entry) return;
+    f.verdicts.forEach((v, j) => {
+      if (!v) return;
+      const wrap = entry.querySelectorAll<HTMLElement>('.plan-icon')[j];
+      if (!wrap) return;
+      const badge = document.createElement('span');
+      badge.className = `ind ${v.verdict}`;
+      badge.textContent = '!';
+      badge.title = v.note ?? v.verdict;
+      wrap.appendChild(badge);
+    });
+  });
+}
+
+// ---------- selection box (balls/passives screens) ----------
+
+// One box per item screen, built once into its index.astro container;
+// paint() toggles hidden, the label, and the button labels/disabled states
+// from vm.selectionBoxes. Buttons emit through the seam like every other
+// built-in click handler.
+interface SelectionBoxEls {
+  root: HTMLElement;
+  name: HTMLElement;
+  planBtn: HTMLButtonElement;
+  fusionBtn: HTMLButtonElement | null;
+  /** The currently painted item's id — the click handlers read it (the
+   *  buttons are built once; the selection changes under them). */
+  itemId: string | null;
+}
+const selectionBoxes: Record<'balls' | 'passives', SelectionBoxEls | null> = { balls: null, passives: null };
+
+const PLAN_BTN_LABELS: Record<SelectionBoxState['plan'], string> = {
+  add: 'Add to plan',
+  remove: 'Remove from plan',
+  disabled: 'Add to plan',
+};
+const FUSION_BTN_LABELS: Record<Exclude<SelectionBoxState['fusion'], null>, string> = {
+  add: 'Add to fusion',
+  remove: 'Remove from fusion',
+  disabled: 'Add to fusion',
+  unfusable: 'Add to fusion',
+};
+const FUSION_BTN_TITLES: Record<Exclude<SelectionBoxState['fusion'], null>, string> = {
+  add: '',
+  remove: '',
+  disabled: 'selection full — deselect one first',
+  unfusable: 'Baby Ball cannot be fused',
+};
+
+function buildSelectionBox(screen: 'balls' | 'passives') {
+  const root = document.getElementById(`selection-${screen}`)!;
+  const withFusion = screen === 'balls';
+  root.innerHTML = `
+    <span class="selection-label">Selection: <b class="selection-name"></b></span>
+    <button class="selection-btn" data-kind="plan"></button>
+    ${withFusion ? '<button class="selection-btn" data-kind="fusion"></button>' : ''}`;
+  const planBtn = root.querySelector<HTMLButtonElement>('.selection-btn[data-kind="plan"]')!;
+  const fusionBtn = root.querySelector<HTMLButtonElement>('.selection-btn[data-kind="fusion"]');
+  planBtn.addEventListener('click', () => {
+    const id = selectionBoxes[screen]?.itemId;
+    if (id) emit({ type: 'togglePlanItem', id });
+  });
+  fusionBtn?.addEventListener('click', () => {
+    const id = selectionBoxes[screen]?.itemId;
+    if (id) emit({ type: 'toggleFusion', id });
+  });
+  selectionBoxes[screen] = { root, name: root.querySelector('.selection-name') as HTMLElement, planBtn, fusionBtn, itemId: null };
+}
+
+function paintSelectionBoxes(vm: ViewModel) {
+  for (const screen of ['balls', 'passives'] as const) {
+    const els = selectionBoxes[screen];
+    if (!els) continue;
+    const state = vm.selectionBoxes[screen];
+    els.root.hidden = !state;
+    els.itemId = state?.item.id ?? null;
+    if (!state) continue;
+    els.name.textContent = state.item.name;
+    els.planBtn.textContent = PLAN_BTN_LABELS[state.plan];
+    els.planBtn.disabled = state.plan === 'disabled';
+    els.planBtn.title = state.plan === 'disabled' ? 'Plan limit reached' : '';
+    if (els.fusionBtn && state.fusion) {
+      els.fusionBtn.textContent = FUSION_BTN_LABELS[state.fusion];
+      els.fusionBtn.disabled = state.fusion === 'disabled' || state.fusion === 'unfusable';
+      els.fusionBtn.title = FUSION_BTN_TITLES[state.fusion];
+    }
+  }
 }
 
 // ---------- interface ----------
@@ -561,6 +681,8 @@ export function buildAll({ getVerdict, emit: onEmit }: BuildOptions): void {
   buildFusionList();
   buildFusionPanel();
   buildPlan();
+  buildSelectionBox('balls');
+  buildSelectionBox('passives');
 }
 
 /** Repaint state (selection/related/dimmed/filtered, verdict badges,
@@ -576,4 +698,5 @@ export function paint(vm: ViewModel): void {
   renderCharChips(vm);
   paintFusion(vm);
   paintPlan(vm);
+  paintSelectionBoxes(vm);
 }

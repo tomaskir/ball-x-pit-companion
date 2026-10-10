@@ -139,11 +139,14 @@ header h1 span { color: var(--muted); font-style: italic; font-size: 14px; }
 .header-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
 
 /* Per-screen search boxes — one per section, not a global header input.
-   Grid/char screens: a toolbar row, box pushed top right. Fusion screen: the
-   box sits on top of the pick list (inside the list column). */
+   Grid/char screens: a toolbar row, box pushed top right (the selection box,
+   when visible, takes the left side — the search keeps margin-left:auto).
+   Fusion screen: the box sits on top of the pick list (inside the list
+   column). */
 .screen-toolbar {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 8px;
 }
 
@@ -155,6 +158,48 @@ header h1 span { color: var(--muted); font-style: italic; font-size: 14px; }
   font: inherit;
   padding: 6px 10px;
   min-width: 200px;
+}
+
+/* Grid-screen toolbars: the selection box takes the left side when visible;
+   the search keeps the right edge either way (justify-content:flex-end would
+   strand it left when the box is display:none). Scoped to .screen-toolbar —
+   the fusion screen's search sits in a column flex, where auto margins
+   would un-stretch it. */
+.screen-toolbar .screen-search { margin-left: auto; }
+
+/* the balls/passives selection box: label + action buttons */
+.selection-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--gold-dim);
+  border-radius: 4px;
+  background: var(--panel);
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.selection-label { color: var(--muted); white-space: nowrap; }
+.selection-label b { color: var(--text); font-weight: normal; }
+
+.selection-btn {
+  background: none;
+  border: 1px solid var(--gold-dim);
+  border-radius: 4px;
+  color: var(--gold);
+  font: inherit;
+  font-size: 12px;
+  padding: 3px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.selection-btn:hover:not(:disabled) { border-color: var(--gold); }
+
+.selection-btn:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .fusion-list-col {
@@ -550,7 +595,6 @@ footer a { color: var(--gold); }
 
 .plan-toolbar {
   /* room for the plan's action buttons — Clear now, share/link later */
-  justify-content: flex-start;
   gap: 8px;
 }
 
@@ -665,12 +709,38 @@ footer a { color: var(--gold); }
 
 .plan-x:hover { color: var(--red); }
 
+/* fused pair entries: the × between the two icons */
+.plan-entry .plan-times { color: var(--gold); font-size: 14px; align-self: center; }
+
+/* per-component verdict badges ride the icon wrapper */
+.plan-entry .plan-icon { position: relative; display: inline-flex; }
+
+/* the composed fusion's plan toggle — centered below the panel body */
+.fusion-plan-row { display: flex; justify-content: center; margin-top: 14px; }
+
+.fusion-plan-btn {
+  background: none;
+  border: 1px solid var(--gold-dim);
+  border-radius: 4px;
+  color: var(--gold);
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+
+.fusion-plan-btn:hover:not(:disabled) { border-color: var(--gold); }
+
 /* ---------- mobile (ticket 07) ---------- */
 
 @media (max-width: 640px) {
   .tile-grid { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); }
   .char-grid { grid-template-columns: repeat(2, 1fr); }
   .plan-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  /* the selection box drops below the search row on mobile */
+  .screen-toolbar { flex-wrap: wrap; }
+  .screen-toolbar .selection-box { order: 2; width: 100%; }
+  .screen-toolbar .screen-search { order: 1; }
   .screen-toolbar .screen-search { min-width: 0; flex: 1; }
   .fusion-list-col .screen-search { min-width: 0; }
   .fusion-layout { grid-template-columns: 1fr; }

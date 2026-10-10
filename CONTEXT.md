@@ -80,13 +80,30 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   plan's characters are the shared `selectedChars` (one selection feeds
   verdicts, chips, and the plan); balls/passives ride `planBalls` /
   `planPassives` in pick order (`togglePlanItem` — the catalog resolves the
-  namespace). The **End game upgrades** toggle (on by default) sets the
-  limits: 2/5/5 with it, 1/4/4 without. Over-limit selections are kept and
-  marked (red), never trimmed. The plan persists to localStorage (island's
-  job: `hydrate` action on startup, save on every dispatch) and is wiped
-  only by the toolbar's Clear button — Esc/empty-space never touch it.
-  Module: state in `src/view-state.ts` (`PlanState`), painting in
-  `src/renderer.ts` (`buildPlan`/`paintPlan`).
+  namespace). **Fused pairs** ride `planFused` (`togglePlanFusion`): a pair
+  counts as ONE ball slot, its identity is order-insensitive (sorted ids —
+  the reverse composition is the same planned pair), compose order is kept
+  for display, and its plan entry shows both icons with a × plus one
+  per-component verdict badge on each icon. The **End game upgrades**
+  toggle (on by default) sets the limits: 2/5/5 with it, 1/4/4 without.
+  Over-limit selections are kept and marked (red), never trimmed. The plan
+  persists to localStorage (island's job: `hydrate` action on startup, save
+  on every dispatch) and is wiped only by the toolbar's Clear button —
+  Esc/empty-space never touch it. Module: state in `src/view-state.ts`
+  (`PlanState`), painting in `src/renderer.ts` (`buildPlan`/`paintPlan`).
+- **Selection box** — the balls/passives screens' view of the current
+  single-item selection: shown in the screen toolbar (top left, search
+  stays right; drops below the search row on mobile) only while an item of
+  that screen's namespace is selected. `Selection: <name>` plus buttons:
+  balls get `Add to plan` + `Add to fusion`, passives only `Add to plan`.
+  Labels toggle (remove) when the item is already in the plan / fusion
+  picks, and disable at the active limit (fusion also disables when both
+  picks are held; Baby Ball is `unfusable` — it can never be picked).
+  Selection survives adding. The fusion screen's composed panel carries the
+  same plan toggle, centered below the body (`togglePlanFusion` with the
+  compose order). Module: state in `src/view-state.ts`
+  (`SelectionBoxState`, derived per screen), painting in `src/renderer.ts`
+  (`buildSelectionBox`/`paintSelectionBoxes`).
 - **Toast** — the hover/tap detail popup with icon, full effect text, recipe,
   tags, and the item's current verdict. Its verdict function is injected at
   build time (`buildAll({ getVerdict, emit })`), so hover always reads the

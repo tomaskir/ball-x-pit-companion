@@ -431,6 +431,7 @@ describe('view state: hydrate (restored plan from storage)', () => {
         chars: ['the-warrior', 'the-shade'],
         balls: ['flash', 'glacier'],
         passives: ['wagon-wheel'],
+        fused: [],
       },
     });
     expect(vm.plan.upgradesOn).toBe(false);
@@ -448,6 +449,7 @@ describe('view state: hydrate (restored plan from storage)', () => {
         chars: ['the-warrior', 'ghost', 'the-warrior'],
         balls: ['flash', 'not-a-ball', 'flash'],
         passives: ['wagon-wheel', 'not-a-passive'],
+        fused: [],
       },
     });
     expect(vm.plan.characters.map((c) => c.character.id)).toEqual(['the-warrior']);
@@ -464,6 +466,7 @@ describe('view state: hydrate (restored plan from storage)', () => {
         chars: ['the-warrior', 'the-shade'],
         balls: ['flash', 'glacier', 'maggot', 'flicker', 'burn'],
         passives: [],
+        fused: [],
       },
     });
     expect(vm.plan.characters[1].overLimit).toBe(true);
@@ -480,6 +483,155 @@ describe('view state: hydrate (restored plan from storage)', () => {
     const restored = createViewState();
     restored.dispatch({ type: 'hydrate', plan: snapshot });
     expect(restored.planSnapshot()).toEqual(snapshot);
+  });
+});
+
+describe('view state: fused pairs in the plan', () => {
+  it('togglePlanFusion adds a pair in compose order, counted as one ball slot', () => {
+    const view = createViewState();
+    const vm = view.dispatch({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
+    expect(vm.plan.fused).toHaveLength(1);
+    expect(vm.plan.fused[0].a.id).toBe('flash');
+    expect(vm.plan.fused[0].b.id).toBe('glacier');
+    expect(vm.plan.fused[0].name).toBe('Flash × Glacier');
+    expect(vm.plan.counts.balls).toBe(1);
+  });
+
+  it('pair identity is order-insensitive: the reverse composition toggles it off', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
+    const vm = view.dispatch({ type: 'togglePlanFusion', a: 'glacier', b: 'flash' });
+    expect(vm.plan.fused).toHaveLength(0);
+    expect(vm.plan.counts.balls).toBe(0);
+  });
+
+  it('re-adding the same pair (same order) toggles it off', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
+    const vm = view.dispatch({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
+    expect(vm.plan.fused).toHaveLength(0);
+  });
+
+  it('a fused pair counts toward the ball limit: 4 singles + 1 fused fills the 5 limit', () => {
+    const view = createViewState();
+    for (const id of ['flash', 'glacier', 'maggot', 'flicker']) view.dispatch({ type: 'togglePlanItem', id });
+    view.dispatch({ type: 'togglePlanFusion', a: 'burn', b: 'vampire' });
+    const vm = view.dispatch({ type: 'togglePlanItem', id: 'wind' });
+    expect(vm.plan.balls.some((e) => e.item.id === 'wind')).toBe(false);
+    expect(vm.plan.counts.balls).toBe(5);
+  });
+
+  it('togglePlanFusion past the ball limit is a no-op', () => {
+    const view = createViewState();
+    for (const id of ['flash', 'glacier', 'maggot', 'flicker', 'burn']) view.dispatch({ type: 'togglePlanItem', id });
+    const vm = view.dispatch({ type: 'togglePlanFusion', a: 'vampire', b: 'wind' });
+    expect(vm.plan.fused).toHaveLength(0);
+    expect(vm.plan.counts.balls).toBe(5);
+  });
+
+  it('fused entries carry per-component verdicts and the over-limit mark', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleChar', id: 'the-ballbearer' });
+    for (const id of ['flash', 'glacier', 'maggot', 'flicker']) view.dispatch({ type: 'togglePlanItem', id });
+    view.dispatch({ type: 'togglePlanFusion', a: 'vampire', b: 'wind' });
+    // 5 slots filled; shrinking the limits marks the pair (5th slot) over limit
+    const vm = view.dispatch({ type: 'toggleUpgrades' });
+    expect(vm.plan.fused[0].overLimit).toBe(true);
+    expect(vm.plan.fused[0].verdicts).toHaveLength(2);
+  });
+
+  it('clearPlan clears fused pairs too', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
+    const vm = view.dispatch({ type: 'clearPlan' });
+    expect(vm.plan.fused).toHaveLength(0);
+    expect(vm.plan.counts.balls).toBe(0);
+  });
+
+  it('hydrate validates fused pairs: unknown/non-ball/degenerate/duplicate pairs are dropped', () => {
+    const view = createViewState();
+    const vm = view.dispatch({
+      type: 'hydrate',
+      plan: {
+        upgradesOn: true,
+        chars: [],
+        balls: [],
+        passives: [],
+        fused: [
+          { a: 'flash', b: 'glacier' },
+          { a: 'flash', b: 'not-a-ball' },
+          { a: 'wagon-wheel', b: 'magnet' }, // passives, not balls
+          { a: 'flash', b: 'flash' }, // degenerate
+          { a: 'glacier', b: 'flash' }, // duplicate of pair 1 (sorted identity)
+        ],
+      },
+    });
+    expect(vm.plan.fused).toHaveLength(1);
+    expect(vm.plan.fused[0].a.id).toBe('flash');
+    expect(vm.plan.fused[0].b.id).toBe('glacier');
+  });
+
+  it('planSnapshot includes fused pairs and round-trips through hydrate', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
+    const snapshot = view.planSnapshot();
+    expect(snapshot.fused).toEqual([{ a: 'flash', b: 'glacier' }]);
+    const restored = createViewState();
+    restored.dispatch({ type: 'hydrate', plan: snapshot });
+    expect(restored.planSnapshot()).toEqual(snapshot);
+  });
+});
+
+describe('view state: selection box (balls/passives screens)', () => {
+  it('no selection: both boxes are null', () => {
+    const vm = createViewState().derive();
+    expect(vm.selectionBoxes.balls).toBeNull();
+    expect(vm.selectionBoxes.passives).toBeNull();
+  });
+
+  it('a selected ball fills the balls box (plan + fusion labels) and leaves the passives box null', () => {
+    const view = createViewState();
+    const vm = view.dispatch({ type: 'toggleItem', id: 'flash' });
+    expect(vm.selectionBoxes.passives).toBeNull();
+    const box = vm.selectionBoxes.balls!;
+    expect(box.item.id).toBe('flash');
+    expect(box.plan).toBe('add');
+    expect(box.fusion).toBe('add');
+  });
+
+  it('a selected passive fills the passives box (plan only, no fusion button)', () => {
+    const view = createViewState();
+    const vm = view.dispatch({ type: 'toggleItem', id: 'wagon-wheel' });
+    expect(vm.selectionBoxes.balls).toBeNull();
+    expect(vm.selectionBoxes.passives!.item.id).toBe('wagon-wheel');
+    expect(vm.selectionBoxes.passives!.plan).toBe('add');
+    expect(vm.selectionBoxes.passives!.fusion).toBeNull();
+  });
+
+  it('an item already in the plan shows the remove label; at the limit shows disabled', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'togglePlanItem', id: 'flash' });
+    const vm = view.dispatch({ type: 'toggleItem', id: 'flash' });
+    expect(vm.selectionBoxes.balls!.plan).toBe('remove');
+    for (const id of ['glacier', 'maggot', 'flicker', 'burn']) view.dispatch({ type: 'togglePlanItem', id });
+    const vm2 = view.dispatch({ type: 'toggleItem', id: 'vampire' });
+    expect(vm2.selectionBoxes.balls!.plan).toBe('disabled');
+    // removing one frees the slot again (selection unchanged — derive only)
+    view.dispatch({ type: 'togglePlanItem', id: 'flash' });
+    const vm3 = view.derive();
+    expect(vm3.selectionBoxes.balls!.plan).toBe('add');
+  });
+
+  it('fusion label: picked ball shows remove, full picks show disabled, Baby Ball is unfusable', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleFusion', id: 'flash' });
+    const vm = view.dispatch({ type: 'toggleItem', id: 'flash' });
+    expect(vm.selectionBoxes.balls!.fusion).toBe('remove');
+    view.dispatch({ type: 'toggleFusion', id: 'glacier' });
+    const vm2 = view.dispatch({ type: 'toggleItem', id: 'maggot' });
+    expect(vm2.selectionBoxes.balls!.fusion).toBe('disabled');
+    const vm3 = view.dispatch({ type: 'toggleItem', id: 'baby-ball' });
+    expect(vm3.selectionBoxes.balls!.fusion).toBe('unfusable');
   });
 });
 

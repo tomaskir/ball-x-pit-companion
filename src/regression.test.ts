@@ -302,7 +302,7 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
   it('pending second head icon is display:none, not a broken-image box', async () => {
     const { paint, buildAll } = await import('./renderer');
     const { createViewState } = await import('./view-state');
-    for (const id of ['fusionPanel', 'ballsGrid', 'passivesGrid', 'charactersGrid', 'charChips', 'slotHint', 'fusionList', 'planView']) {
+    for (const id of ['fusionPanel', 'ballsGrid', 'passivesGrid', 'charactersGrid', 'charChips', 'slotHint', 'fusionList', 'planView', 'selection-balls', 'selection-passives']) {
       if (!document.getElementById(id)) {
         const el = document.createElement('div');
         el.id = id;
