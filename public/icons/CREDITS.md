@@ -14,6 +14,10 @@ All game icons in this directory were downloaded from
 | `character-portraits/` | 23 | Full character portraits (`The_<Name>.png` on the wiki, 230–345 px) |
 
 Total: **208 PNG files** (185 entity icons + 23 character portraits).
+
+The site favicon (`public/favicon.ico`, 32×32) is the wiki's site favicon —
+the game's ball icon — downloaded from the same source on 2026-10-10; same
+rights holder and disclaimer as above.
 Filenames are kebab-case versions of the entity names (e.g.
 `vampire-lord.png`, `archers-effigy.png`, `the-itchy-finger.png`). All files
 verified as valid PNGs (magic bytes, non-zero size).
