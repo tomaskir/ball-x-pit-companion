@@ -406,16 +406,19 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
   // then the document handler dispatched clear with that destination —
   // wiping the screen you had just arrived on. Harmless before (showSection
   // dispatched clearAll anyway), fatal after tab switching stopped
-  // clearing. Fix: header controls are not empty space — the exclusion
-  // selector includes `header`. Pinned at the source level (companion.ts
-  // has no DOM test surface; the behavioral shape — no clear on tab click —
-  // is the island's runtime wiring, jsdom-hostile to import for its
-  // top-level init()).
-  it('empty-space clear excludes header controls (tab click wiped the destination screen)', () => {
+  // clearing. Fix: header controls are not empty space — the exemption
+  // selector includes `header`. The decision itself is now behavioral —
+  // shouldClear + the CLEAR_EXEMPT_SELECTOR tokens in
+  // src/companion-core.test.ts — but the island's wiring (that its handlers
+  // route events through those exported selectors, not some drifted inline
+  // copy) is still source-only: companion.ts remains jsdom-hostile to
+  // import for its top-level init().
+  it('clear handlers route through companion-core\'s exempt selectors (tab click wiped the destination screen)', () => {
     const src = readFileSync('src/companion.ts', 'utf8');
     const handler = src.match(/document\.addEventListener\('click'[\s\S]*?\n  \}\);/);
     expect(handler, 'empty-space click handler not found').toBeTruthy();
-    expect(handler![0]).toMatch(/closest\('[^']*header/);
+    expect(handler![0]).toMatch(/closest\(CLEAR_EXEMPT_SELECTOR\)/);
+    expect(src).toMatch(/closest\(ESC_EXEMPT_SELECTOR\)/);
   });
 });
 

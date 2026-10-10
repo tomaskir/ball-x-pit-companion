@@ -1,11 +1,21 @@
 // Interactive island: event listening, theme, hash routing, and plan
-// persistence only. All DOM painting lives in src/renderer.ts behind one
-// buildAll() + paint(vm) interface; all state and derivations live in
-// src/view-state.ts behind one dispatch(action) → ViewModel interface. See
-// CONTEXT.md for the domain glossary these contracts use.
+// persistence only — the decisions behind those are pure functions in
+// src/companion-core.ts; this module is the transport that reads real
+// events/storage and applies their results to the DOM. All DOM painting
+// lives in src/renderer.ts behind one buildAll() + paint(vm) interface; all
+// state and derivations live in src/view-state.ts behind one dispatch(action)
+// → ViewModel interface. See CONTEXT.md for the domain glossary these
+// contracts use.
 import { createViewState, type Action, type PlanSnapshot, type Section } from './view-state';
 import { buildAll, paint } from './renderer';
 import { parsePlanSnapshot, planLink, takeShareParam } from './share';
+import {
+  CLEAR_EXEMPT_SELECTOR,
+  ESC_EXEMPT_SELECTOR,
+  sectionFromHash,
+  shouldClear,
+  themeFromStorage,
+} from './companion-core';
 
 const view = createViewState();
 
@@ -47,7 +57,7 @@ function initTheme() {
     root.dataset.theme = t;
     (document.getElementById('themeToggle') as HTMLButtonElement).textContent = t === 'dark' ? '☀️' : '🌙';
   };
-  apply(stored === 'light' || stored === 'dark' ? stored : matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  apply(themeFromStorage(stored, matchMedia('(prefers-color-scheme: light)').matches));
   document.getElementById('themeToggle')!.addEventListener('click', () => {
     const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
     localStorage.setItem('theme', next);
@@ -64,10 +74,10 @@ let section: Section = 'balls';
 
 function initRouting() {
   const apply = () => {
-    // the hash may carry a share parameter (#/plan?p=<code>) — routing reads
-    // the section only; the parameter is handled once at startup
-    const hash = (location.hash.replace(/^#\/?/, '').split('?')[0]) || 'balls';
-    if (['balls', 'passives', 'characters', 'fusions', 'plan'].includes(hash)) showSection(hash as Section, false);
+    // sectionFromHash absorbs the whitelist, the share-parameter split, and
+    // the empty-hash default; null (unknown hash) means "don't switch"
+    const s = sectionFromHash(location.hash);
+    if (s) showSection(s, false);
   };
   addEventListener('hashchange', apply);
   apply();
@@ -138,19 +148,17 @@ function init() {
     // work, only the Clear button wipes it. In a search input Esc clears the
     // query instead — the browser's native type=search behavior — and must
     // not also wipe the screen's selection.
-    if (e.key === 'Escape' && section !== 'plan' && !(e.target as HTMLElement).closest('input')) {
+    if (e.key === 'Escape' && shouldClear(section, !!(e.target as HTMLElement).closest(ESC_EXEMPT_SELECTOR))) {
       update({ type: 'clear', section });
     }
   });
   document.addEventListener('click', (e) => {
-    // empty space clears the active section's selection, same as Esc (the
-    // plan screen is exempt, same reason). Header controls are not empty
-    // space — a tab click must not clear the destination screen's remembered
-    // selection (cross-screen remembering). Search boxes are not empty space
-    // either — clicking one to type must not wipe the screen's selection.
-    if (section === 'plan') return;
-    const target = e.target as HTMLElement;
-    if (target.closest('.tile, .char-card, .chip, .toast, .fusion-row, .fusion-panel, header, .screen-search')) return;
+    // empty space clears the active section's selection, same as Esc — the
+    // policy (plan exempt; interactive regions exempt) is companion-core's
+    // shouldClear, the exempt regions its CLEAR_EXEMPT_SELECTOR. Header
+    // controls are not empty space — a tab click must not clear the
+    // destination screen's remembered selection (cross-screen remembering).
+    if (!shouldClear(section, !!(e.target as HTMLElement).closest(CLEAR_EXEMPT_SELECTOR))) return;
     update({ type: 'clear', section });
   });
 

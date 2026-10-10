@@ -149,7 +149,13 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   clicks come back through the build seam's `emit`, which the island wires
   to dispatch + paint. Esc and empty-space clicks clear the active
   section's selection; nothing is cleared on a tab switch, so selections
-  survive switching away and back — cross-screen remembering.)
+  survive switching away and back — cross-screen remembering.) The decisions
+  behind the routing, the clear policy, and theme resolution are pure
+  functions in **`src/companion-core.ts`** (`sectionFromHash`,
+  `shouldClear` + the exempt selectors, `themeFromStorage`) — the island is
+  their transport, reading real events/storage and applying the results to
+  the DOM; that keeps the decisions unit-testable where companion.ts itself
+  is jsdom-hostile to import (top-level `init()`).
 - **Renderer** — all DOM painting for the island. Module: `src/renderer.ts`
   (recipe notation comes from `src/graph.ts`; the renderer only injects
   icon markup — see **Recipe notation**; the icon-URL join comes from
