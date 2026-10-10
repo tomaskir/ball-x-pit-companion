@@ -3,9 +3,9 @@
 // buildAll() + paint(vm) interface; all state and derivations live in
 // src/view-state.ts behind one dispatch(action) → ViewModel interface. See
 // CONTEXT.md for the domain glossary these contracts use.
-import { createViewState, type Action, type PlanFused, type PlanSnapshot, type Section } from './view-state';
+import { createViewState, type Action, type PlanSnapshot, type Section } from './view-state';
 import { buildAll, paint } from './renderer';
-import { decodePlan, encodePlan } from './share';
+import { decodePlan, encodePlan, parsePlanSnapshot } from './share';
 
 const view = createViewState();
 
@@ -22,19 +22,9 @@ function loadPlan(): PlanSnapshot | null {
   try {
     const raw = localStorage.getItem(PLAN_KEY);
     if (!raw) return null;
-    const p = JSON.parse(raw) as Partial<PlanSnapshot>;
-    if (typeof p !== 'object' || p === null) return null;
-    const ids = (x: unknown): string[] => (Array.isArray(x) ? x.filter((id): id is string => typeof id === 'string') : []);
-    const fusedPairs = (x: unknown): PlanFused[] =>
-      (Array.isArray(x) ? x : []).filter((q): q is PlanFused =>
-        typeof q === 'object' && q !== null && typeof (q as PlanFused).a === 'string' && typeof (q as PlanFused).b === 'string');
-    return {
-      upgradesOn: typeof p.upgradesOn === 'boolean' ? p.upgradesOn : true,
-      chars: ids(p.chars),
-      balls: ids(p.balls),
-      passives: ids(p.passives),
-      fused: fusedPairs(p.fused),
-    };
+    // field validation lives in share.ts's parsePlanSnapshot — the same
+    // normalizer the share-link decoder uses
+    return parsePlanSnapshot(JSON.parse(raw));
   } catch {
     return null; // corrupt storage must never break startup
   }
