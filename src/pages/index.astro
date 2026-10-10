@@ -22,6 +22,8 @@ import '../styles/global.css';
         <button class="tab-btn" data-section="passives">Passives</button>
         <span class="tab-sep" aria-hidden="true"></span>
         <button class="tab-btn" data-section="characters">Characters</button>
+        <span class="tab-sep" aria-hidden="true"></span>
+        <button class="tab-btn" data-section="plan">Plan</button>
       </nav>
       <div class="chips" id="charChips"></div>
       <span class="hint" id="slotHint"></span>
@@ -60,6 +62,13 @@ import '../styles/global.css';
           </div>
           <div id="fusionPanel" class="fusion-panel"></div>
         </div>
+      </div>
+      <div class="section-view" data-section="plan" hidden>
+        <div class="screen-toolbar plan-toolbar">
+          <!-- the plan's action buttons: Clear now; share/link land here later -->
+          <button id="planClear" class="plan-btn">Clear plan</button>
+        </div>
+        <div id="planView"></div>
       </div>
     </main>
 

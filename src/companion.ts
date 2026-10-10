@@ -1,12 +1,55 @@
-// Interactive island: event listening, theme, and hash routing only. All
-// DOM painting lives in src/renderer.ts behind one buildAll() + paint(vm)
-// interface; all state and derivations live in src/view-state.ts behind one
-// dispatch(action) → ViewModel interface. See CONTEXT.md for the domain
-// glossary these contracts use.
-import { createViewState, type Section } from './view-state';
+// Interactive island: event listening, theme, hash routing, and plan
+// persistence only. All DOM painting lives in src/renderer.ts behind one
+// buildAll() + paint(vm) interface; all state and derivations live in
+// src/view-state.ts behind one dispatch(action) → ViewModel interface. See
+// CONTEXT.md for the domain glossary these contracts use.
+import { createViewState, type Action, type Section, type ViewModel } from './view-state';
 import { buildAll, paint } from './renderer';
 
 const view = createViewState();
+
+// ---------- plan persistence ----------
+
+// The plan (characters, balls, passives, upgrade toggle) survives reloads
+// via localStorage — same treatment as the theme. The view state stays
+// environment-free: the island reads storage at startup and dispatches a
+// hydrate action, and saves after every dispatch. Fusion picks and search
+// queries are transient and not persisted.
+const PLAN_KEY = 'ball-x-pit-plan';
+
+interface StoredPlan { upgradesOn: boolean; chars: string[]; balls: string[]; passives: string[]; }
+
+function loadPlan(): StoredPlan | null {
+  try {
+    const raw = localStorage.getItem(PLAN_KEY);
+    if (!raw) return null;
+    const p = JSON.parse(raw) as Partial<StoredPlan>;
+    if (typeof p !== 'object' || p === null) return null;
+    const ids = (x: unknown): string[] => (Array.isArray(x) ? x.filter((id): id is string => typeof id === 'string') : []);
+    return {
+      upgradesOn: typeof p.upgradesOn === 'boolean' ? p.upgradesOn : true,
+      chars: ids(p.chars),
+      balls: ids(p.balls),
+      passives: ids(p.passives),
+    };
+  } catch {
+    return null; // corrupt storage must never break startup
+  }
+}
+
+function savePlan(vm: ViewModel) {
+  try {
+    const plan: StoredPlan = {
+      upgradesOn: vm.plan.upgradesOn,
+      chars: vm.plan.characters.map((c) => c.character.id),
+      balls: vm.plan.balls.map((e) => e.item.id),
+      passives: vm.plan.passives.map((e) => e.item.id),
+    };
+    localStorage.setItem(PLAN_KEY, JSON.stringify(plan));
+  } catch {
+    // storage full/unavailable — the plan still works, it just won't persist
+  }
+}
 
 // ---------- theming ----------
 
@@ -35,7 +78,7 @@ let section: Section = 'balls';
 function initRouting() {
   const apply = () => {
     const hash = location.hash.replace(/^#\/?/, '') || 'balls';
-    if (['balls', 'passives', 'characters', 'fusions'].includes(hash)) showSection(hash as Section, false);
+    if (['balls', 'passives', 'characters', 'fusions', 'plan'].includes(hash)) showSection(hash as Section, false);
   };
   addEventListener('hashchange', apply);
   apply();
@@ -58,6 +101,14 @@ function init() {
   for (const btn of document.querySelectorAll<HTMLElement>('.tab-btn'))
     btn.addEventListener('click', () => showSection(btn.dataset.section as Section));
 
+  // Every dispatch goes through update(): dispatch + persist + paint — the
+  // plan is saved on every state change, wherever it comes from.
+  const update = (action: Action) => {
+    const vm = view.dispatch(action);
+    savePlan(vm);
+    paint(vm);
+  };
+
   // Each screen has its own search box; its input dispatches a section-scoped
   // search action. Switching sections repaints from the view state, so each
   // box's saved query re-applies on return (queries survive tab switches).
@@ -65,28 +116,34 @@ function init() {
   // tab buttons — not from munging the id string.
   for (const input of document.querySelectorAll<HTMLInputElement>('.screen-search[data-section]')) {
     const inputSection = input.dataset.section as Section;
-    input.addEventListener('input', () => paint(view.dispatch({ type: 'search', section: inputSection, query: input.value })));
+    input.addEventListener('input', () => update({ type: 'search', section: inputSection, query: input.value }));
   }
+
+  // The plan toolbar's Clear button: resets the plan (selections + the
+  // upgrade toggle) — the shell owns this one, like the tab buttons.
+  document.getElementById('planClear')!.addEventListener('click', () => update({ type: 'clearPlan' }));
 
   document.addEventListener('keydown', (e) => {
     // Esc clears the active section's selection (chars/fusions included);
     // switching sections keeps every screen's selection (cross-screen
-    // remembering). In a search input Esc clears the query instead — the
-    // browser's native type=search behavior — and must not also wipe the
-    // screen's selection.
-    if (e.key === 'Escape' && !(e.target as HTMLElement).closest('input')) {
-      paint(view.dispatch({ type: 'clear', section }));
+    // remembering). The plan screen is exempt — its selection is deliberate
+    // work, only the Clear button wipes it. In a search input Esc clears the
+    // query instead — the browser's native type=search behavior — and must
+    // not also wipe the screen's selection.
+    if (e.key === 'Escape' && section !== 'plan' && !(e.target as HTMLElement).closest('input')) {
+      update({ type: 'clear', section });
     }
   });
   document.addEventListener('click', (e) => {
-    // empty space clears the active section's selection, same as Esc.
-    // Header controls are not empty space — a tab click must not clear the
-    // destination screen's remembered selection (cross-screen remembering).
-    // Search boxes are not empty space either — clicking one to type must
-    // not wipe the screen's selection.
+    // empty space clears the active section's selection, same as Esc (the
+    // plan screen is exempt, same reason). Header controls are not empty
+    // space — a tab click must not clear the destination screen's remembered
+    // selection (cross-screen remembering). Search boxes are not empty space
+    // either — clicking one to type must not wipe the screen's selection.
+    if (section === 'plan') return;
     const target = e.target as HTMLElement;
     if (target.closest('.tile, .char-card, .chip, .toast, .fusion-row, .fusion-panel, header, .screen-search')) return;
-    paint(view.dispatch({ type: 'clear', section }));
+    update({ type: 'clear', section });
   });
 
   // grid/card/row clicks come back through the build seam's emit callback —
@@ -94,8 +151,11 @@ function init() {
   initRouting();
   buildAll({
     getVerdict: (item) => view.verdictFor(item),
-    emit: (action) => paint(view.dispatch(action)),
+    emit: (action) => update(action),
   });
+  // restore the persisted plan (if any) before the initial paint
+  const stored = loadPlan();
+  if (stored) update({ type: 'hydrate', ...stored });
   // initial paint: derive the view model once everything is built
   paint(view.derive());
 }

@@ -275,6 +275,197 @@ describe('view state: fusion picks (max 2, sticky selection)', () => {
   });
 });
 
+describe('view state: plan limits (End game upgrades toggle)', () => {
+  it('defaults: upgrades on, limits 2 chars / 5 balls / 5 passives, empty plan', () => {
+    const vm = createViewState().derive();
+    expect(vm.plan.upgradesOn).toBe(true);
+    expect(vm.plan.limits).toEqual({ chars: 2, balls: 5, passives: 5 });
+    expect(vm.plan.counts).toEqual({ chars: 0, balls: 0, passives: 0 });
+    expect(vm.plan.overLimit).toBe(false);
+  });
+
+  it('toggleUpgrades flips the toggle and shrinks the limits to 1/4/4', () => {
+    const view = createViewState();
+    const vm = view.dispatch({ type: 'toggleUpgrades' });
+    expect(vm.plan.upgradesOn).toBe(false);
+    expect(vm.plan.limits).toEqual({ chars: 1, balls: 4, passives: 4 });
+    const vm2 = view.dispatch({ type: 'toggleUpgrades' });
+    expect(vm2.plan.upgradesOn).toBe(true);
+    expect(vm2.plan.limits).toEqual({ chars: 2, balls: 5, passives: 5 });
+  });
+
+  it('a second character with upgrades off is a no-op and the hint reports full', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleUpgrades' });
+    view.dispatch({ type: 'toggleChar', id: 'the-warrior' });
+    const vm = view.dispatch({ type: 'toggleChar', id: 'the-shade' });
+    expect(vm.selectedChars.map((c) => c.id)).toEqual(['the-warrior']);
+    expect(vm.slotHint).toBe('selection full — deselect one first');
+  });
+
+  it('toggling upgrades off with two characters keeps both, marks the second over limit', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleChar', id: 'the-warrior' });
+    view.dispatch({ type: 'toggleChar', id: 'the-shade' });
+    const vm = view.dispatch({ type: 'toggleUpgrades' });
+    expect(vm.plan.characters.map((c) => c.character.id)).toEqual(['the-warrior', 'the-shade']);
+    expect(vm.plan.characters[0].overLimit).toBe(false);
+    expect(vm.plan.characters[1].overLimit).toBe(true);
+    expect(vm.plan.overLimit).toBe(true);
+  });
+
+  it('an over-limit character can still be removed by re-click', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleChar', id: 'the-warrior' });
+    view.dispatch({ type: 'toggleChar', id: 'the-shade' });
+    view.dispatch({ type: 'toggleUpgrades' });
+    const vm = view.dispatch({ type: 'toggleChar', id: 'the-shade' });
+    expect(vm.plan.characters.map((c) => c.character.id)).toEqual(['the-warrior']);
+    expect(vm.plan.overLimit).toBe(false);
+  });
+});
+
+describe('view state: plan items (balls/passives, pick order, limits)', () => {
+  it('togglePlanItem adds balls and passives in pick order, split by namespace', () => {
+    const view = createViewState();
+    const vm = view.dispatch({ type: 'togglePlanItem', id: 'flash' });
+    expect(vm.plan.balls.map((e) => e.item.id)).toEqual(['flash']);
+    expect(vm.plan.passives).toHaveLength(0);
+    const vm2 = view.dispatch({ type: 'togglePlanItem', id: 'wagon-wheel' });
+    expect(vm2.plan.passives.map((e) => e.item.id)).toEqual(['wagon-wheel']);
+    expect(vm2.plan.balls.map((e) => e.item.id)).toEqual(['flash']);
+  });
+
+  it('re-clicking a plan item removes it, keeping the others in pick order', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'togglePlanItem', id: 'flash' });
+    view.dispatch({ type: 'togglePlanItem', id: 'glacier' });
+    const vm = view.dispatch({ type: 'togglePlanItem', id: 'flash' });
+    expect(vm.plan.balls.map((e) => e.item.id)).toEqual(['glacier']);
+  });
+
+  it('adding past the active ball limit is a no-op (5 with upgrades on)', () => {
+    const view = createViewState();
+    for (const id of ['flash', 'glacier', 'maggot', 'flicker', 'burn']) view.dispatch({ type: 'togglePlanItem', id });
+    const vm = view.dispatch({ type: 'togglePlanItem', id: 'vampire' });
+    expect(vm.plan.balls.map((e) => e.item.id)).toHaveLength(5);
+    expect(vm.plan.balls.some((e) => e.item.id === 'vampire')).toBe(false);
+  });
+
+  it('the passive limit is enforced separately (4 with upgrades off)', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleUpgrades' });
+    for (const id of ['wagon-wheel', 'ardent-tire', 'deadeyes-cross', 'deadeyes-impaler']) {
+      view.dispatch({ type: 'togglePlanItem', id });
+    }
+    const vm = view.dispatch({ type: 'togglePlanItem', id: 'magnet' });
+    expect(vm.plan.passives).toHaveLength(4);
+  });
+
+  it('toggling upgrades off with 5 balls keeps all, marks the 5th over limit', () => {
+    const view = createViewState();
+    for (const id of ['flash', 'glacier', 'maggot', 'flicker', 'burn']) view.dispatch({ type: 'togglePlanItem', id });
+    const vm = view.dispatch({ type: 'toggleUpgrades' });
+    expect(vm.plan.balls.map((e) => e.item.id)).toHaveLength(5);
+    expect(vm.plan.balls[4].overLimit).toBe(true);
+    expect(vm.plan.balls[3].overLimit).toBe(false);
+    expect(vm.plan.hint).toContain('Over the limit');
+  });
+
+  it('planHint clears when the over-limit pick is removed', () => {
+    const view = createViewState();
+    for (const id of ['flash', 'glacier', 'maggot', 'flicker', 'burn']) view.dispatch({ type: 'togglePlanItem', id });
+    view.dispatch({ type: 'toggleUpgrades' });
+    const vm = view.dispatch({ type: 'togglePlanItem', id: 'burn' });
+    expect(vm.plan.overLimit).toBe(false);
+    expect(vm.plan.hint).toBe('');
+  });
+
+  it('plan entries carry verdicts against the selected characters', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleChar', id: 'the-ballbearer' });
+    const vm = view.dispatch({ type: 'togglePlanItem', id: 'wagon-wheel' });
+    expect(vm.plan.passives[0].verdict).toMatchObject({ verdict: 'red' });
+  });
+
+  it('unknown ids are ignored', () => {
+    const view = createViewState();
+    const vm = view.dispatch({ type: 'togglePlanItem', id: 'not-a-real-id' });
+    expect(vm.plan.balls).toHaveLength(0);
+    expect(vm.plan.passives).toHaveLength(0);
+  });
+});
+
+describe('view state: clearPlan', () => {
+  it('clears characters, balls, passives and resets the toggle to on', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleChar', id: 'the-warrior' });
+    view.dispatch({ type: 'togglePlanItem', id: 'flash' });
+    view.dispatch({ type: 'togglePlanItem', id: 'wagon-wheel' });
+    view.dispatch({ type: 'toggleUpgrades' });
+    const vm = view.dispatch({ type: 'clearPlan' });
+    expect(vm.plan.counts).toEqual({ chars: 0, balls: 0, passives: 0 });
+    expect(vm.plan.upgradesOn).toBe(true);
+    expect(vm.selectedChars).toHaveLength(0);
+  });
+
+  it('leaves fusion picks, the item highlight, and search queries alone', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleFusion', id: 'flash' });
+    view.dispatch({ type: 'toggleItem', id: 'glacier' });
+    view.dispatch({ type: 'search', section: 'balls', query: 'vamp' });
+    const vm = view.dispatch({ type: 'clearPlan' });
+    expect(vm.fusionPanel).toMatchObject({ state: 'pending' });
+    expect(vm.tiles.get('glacier')!.selected).toBe(true);
+    expect(vm.tiles.get('burn')!.filtered).toBe(true);
+  });
+});
+
+describe('view state: hydrate (restored plan from storage)', () => {
+  it('restores characters, balls, passives and the toggle in pick order', () => {
+    const view = createViewState();
+    const vm = view.dispatch({
+      type: 'hydrate',
+      upgradesOn: false,
+      chars: ['the-warrior', 'the-shade'],
+      balls: ['flash', 'glacier'],
+      passives: ['wagon-wheel'],
+    });
+    expect(vm.plan.upgradesOn).toBe(false);
+    expect(vm.plan.characters.map((c) => c.character.id)).toEqual(['the-warrior', 'the-shade']);
+    expect(vm.plan.balls.map((e) => e.item.id)).toEqual(['flash', 'glacier']);
+    expect(vm.plan.passives.map((e) => e.item.id)).toEqual(['wagon-wheel']);
+  });
+
+  it('filters unknown ids and duplicates', () => {
+    const view = createViewState();
+    const vm = view.dispatch({
+      type: 'hydrate',
+      upgradesOn: true,
+      chars: ['the-warrior', 'ghost', 'the-warrior'],
+      balls: ['flash', 'not-a-ball', 'flash'],
+      passives: ['wagon-wheel', 'not-a-passive'],
+    });
+    expect(vm.plan.characters.map((c) => c.character.id)).toEqual(['the-warrior']);
+    expect(vm.plan.balls.map((e) => e.item.id)).toEqual(['flash']);
+    expect(vm.plan.passives.map((e) => e.item.id)).toEqual(['wagon-wheel']);
+  });
+
+  it('keeps over-limit selections without trimming (marked over limit instead)', () => {
+    const view = createViewState();
+    const vm = view.dispatch({
+      type: 'hydrate',
+      upgradesOn: false,
+      chars: ['the-warrior', 'the-shade'],
+      balls: ['flash', 'glacier', 'maggot', 'flicker', 'burn'],
+      passives: [],
+    });
+    expect(vm.plan.characters[1].overLimit).toBe(true);
+    expect(vm.plan.balls[4].overLimit).toBe(true);
+    expect(vm.plan.overLimit).toBe(true);
+  });
+});
+
 describe('view state: synergy verdicts ride the view model', () => {
   it('selected character drives verdict on tiles (The Ballbearer wildcard)', () => {
     const view = createViewState();

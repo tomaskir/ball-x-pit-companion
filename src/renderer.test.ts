@@ -55,7 +55,7 @@ describe('fusion panel skeleton (renderer.ts)', () => {
 
 // The panel is the last module buildAll() builds; the grids/cards before it
 // need their index.astro containers — provide the minimal set.
-const CONTAINERS = ['ballsGrid', 'passivesGrid', 'charactersGrid', 'charChips', 'slotHint', 'fusionList', 'fusionPanel'];
+const CONTAINERS = ['ballsGrid', 'passivesGrid', 'charactersGrid', 'charChips', 'slotHint', 'fusionList', 'fusionPanel', 'planView'];
 
 /** Drive the real view-state + renderer pair: dispatch and paint each step —
  *  the same path the island runs. Returns the last view model. */
@@ -214,7 +214,7 @@ describe('build seam: clicks call emit (jsdom)', () => {
     expect(emit).toHaveBeenCalledWith({ type: 'toggleChar', id: card.dataset.id ?? expect.any(String) });
   });
 
-  it('char chip click emits toggleChar with the chip character id', () => {
+  it('the chip X button emits toggleChar; the chip body is inert (removal is X-only)', () => {
     const emit = vi.fn();
     buildAll({ getVerdict: () => null, emit });
     // chips only exist once a character is selected — paint the selection first
@@ -223,6 +223,11 @@ describe('build seam: clicks call emit (jsdom)', () => {
     const chip = document.querySelector<HTMLElement>('#charChips .chip')!;
     expect(chip).toBeTruthy();
     chip.click();
+    expect(emit).not.toHaveBeenCalled();
+    const x = chip.querySelector<HTMLElement>('.chip-x')!;
+    expect(x).toBeTruthy();
+    x.click();
+    expect(emit).toHaveBeenCalledTimes(1);
     expect(emit).toHaveBeenCalledWith({ type: 'toggleChar', id: 'the-warrior' });
   });
 
@@ -245,5 +250,86 @@ describe('build seam: clicks call emit (jsdom)', () => {
     document.querySelector<HTMLElement>('#ballsGrid .tile[data-id="flash"]')!.click();
     paint(view.derive());
     expect(document.querySelector('#ballsGrid .tile[data-id="flash"]')!.classList.contains('selected')).toBe(true);
+  });
+});
+
+// ---------- behavior: the plan screen (jsdom, through paint()) ----------
+
+const planView = () => document.getElementById('planView')!;
+const planQ = <T extends HTMLElement>(s: string) => planView().querySelector<T>(s)!;
+
+describe('plan screen behavior (jsdom, through paint())', () => {
+  it('empty plan: toggle checked, counts 0 / limit, empty hints visible, no entries', () => {
+    paint(view.derive());
+    const toggle = planQ<HTMLInputElement>('#planUpgrades');
+    expect(toggle.checked).toBe(true);
+    const counts = [...planView().querySelectorAll<HTMLElement>('.plan-count')].map((el) => el.textContent);
+    expect(counts).toEqual(['0 / 2', '0 / 5', '0 / 5']);
+    const empties = [...planView().querySelectorAll<HTMLElement>('.plan-empty')];
+    expect(empties.every((el) => !el.hidden && el.textContent!.length > 0)).toBe(true);
+    expect(planView().querySelectorAll('.plan-entry')).toHaveLength(0);
+  });
+
+  it('plan entries render in pick order with icons, names, and X remove buttons', () => {
+    drive(
+      { type: 'toggleChar', id: 'the-warrior' },
+      { type: 'togglePlanItem', id: 'flash' },
+      { type: 'togglePlanItem', id: 'wagon-wheel' },
+    );
+    const entries = [...planView().querySelectorAll<HTMLElement>('.plan-entry')];
+    expect(entries).toHaveLength(3);
+    expect(entries[0].querySelector('img')!.getAttribute('src')).toContain('the-warrior');
+    expect(entries[0].textContent).toContain('The Warrior');
+    expect(entries[1].textContent).toContain('Flash');
+    expect(entries[2].textContent).toContain('Wagon Wheel');
+    // every entry has a remove button wired through the seam
+    drive(
+      { type: 'toggleChar', id: 'the-warrior' },
+      { type: 'togglePlanItem', id: 'flash' },
+      { type: 'togglePlanItem', id: 'wagon-wheel' },
+    );
+    const emit = vi.fn();
+    buildAll({ getVerdict: () => null, emit });
+    drive({ type: 'toggleChar', id: 'the-warrior' }, { type: 'togglePlanItem', id: 'flash' });
+    const xs = [...planView().querySelectorAll<HTMLElement>('.plan-entry .plan-x')];
+    expect(xs).toHaveLength(2);
+    xs[1].click();
+    expect(emit).toHaveBeenCalledWith({ type: 'togglePlanItem', id: 'flash' });
+    xs[0].click();
+    expect(emit).toHaveBeenCalledWith({ type: 'toggleChar', id: 'the-warrior' });
+  });
+
+  it('the upgrade toggle emits toggleUpgrades and repaints checked + limits', () => {
+    const emit = vi.fn();
+    buildAll({ getVerdict: () => null, emit });
+    drive({ type: 'toggleUpgrades' });
+    expect(emit).not.toHaveBeenCalled(); // paint alone must not emit
+    const toggle = planQ<HTMLInputElement>('#planUpgrades');
+    expect(toggle.checked).toBe(false);
+    expect([...planView().querySelectorAll<HTMLElement>('.plan-count')].map((el) => el.textContent))
+      .toEqual(['0 / 1', '0 / 4', '0 / 4']);
+    toggle.click();
+    expect(emit).toHaveBeenCalledWith({ type: 'toggleUpgrades' });
+  });
+
+  it('over-limit entries get the over-limit class and the hint shows', () => {
+    drive(
+      { type: 'toggleChar', id: 'the-warrior' },
+      { type: 'toggleChar', id: 'the-shade' },
+      { type: 'toggleUpgrades' },
+    );
+    const entries = [...planView().querySelectorAll<HTMLElement>('.plan-entry')];
+    expect(entries[0].classList.contains('over-limit')).toBe(false);
+    expect(entries[1].classList.contains('over-limit')).toBe(true);
+    expect(planQ('.plan-hint').hidden).toBe(false);
+    expect(planQ('.plan-hint').textContent).toContain('Over the limit');
+  });
+
+  it('plan entry badges reflect verdicts against the selected characters', () => {
+    drive({ type: 'togglePlanItem', id: 'wagon-wheel' });
+    expect(planView().querySelector('.plan-entry .ind')).toBeNull();
+    drive({ type: 'toggleChar', id: 'the-ballbearer' });
+    // Wagon Wheel vs The Ballbearer's *passives wildcard → red
+    expect(planView().querySelector('.plan-entry .ind.red')).toBeTruthy();
   });
 });

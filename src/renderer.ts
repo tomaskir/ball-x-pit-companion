@@ -1,12 +1,16 @@
 // Renderer module: all DOM painting for the island. One interface:
-// buildAll(options) builds the static DOM once (grids, character cards),
-// then paint(viewModel) repaints state on it — never recreating <img>
-// elements (rebuilding would blink the icons). The island (src/companion.ts)
-// keeps only event listening, theme, and hash routing; the ViewModel it
-// paints comes from src/view-state.ts — the fusion panel rides the named
-// fusionPanel state (empty / pending / composed) and paintFusion switches
-// on it; the renderer holds no domain data of its own. The icon-URL join
-// comes from src/icon-url.ts.
+// buildAll(options) builds the static DOM once (grids, character cards, the
+// fusion panel, the plan screen skeleton), then paint(viewModel) repaints
+// state on it — never recreating <img> elements (rebuilding would blink the
+// icons; the plan's entries and the character chips are the one accepted
+// exception, rebuilding only when their selection changes — the chips' diff
+// pattern). The island (src/companion.ts)
+// keeps only event listening, theme, hash routing, and plan persistence; the
+// ViewModel it paints comes from src/view-state.ts — the fusion panel rides
+// the named fusionPanel state (empty / pending / composed) and paintFusion
+// switches on it; the plan rides vm.plan and paintPlan paints per section;
+// the renderer holds no domain data of its own. The icon-URL join comes
+// from src/icon-url.ts.
 //
 // The build seam is the options object: { getVerdict, emit }. getVerdict
 // supplies the toast's per-item verdict against the current character
@@ -169,11 +173,11 @@ function renderCharChips(vm: ViewModel) {
   const wrap = document.getElementById('charChips')!;
   wrap.innerHTML = '';
   for (const ch of vm.selectedChars) {
-    const chip = document.createElement('button');
+    // the chip body is inert — removal is the X button's job only
+    const chip = document.createElement('span');
     chip.className = 'chip';
-    chip.innerHTML = `<img src="${icon(ch.sprite)}" alt="" width="22" height="22"><span>${ch.name}</span>`;
-    chip.title = 'Click to remove';
-    chip.addEventListener('click', () => {
+    chip.innerHTML = `<img src="${icon(ch.sprite)}" alt="" width="22" height="22"><span>${ch.name}</span><button class="chip-x" aria-label="Remove ${ch.name}">×</button>`;
+    chip.querySelector('.chip-x')!.addEventListener('click', () => {
       emit({ type: 'toggleChar', id: ch.id });
     });
     wrap.appendChild(chip);
@@ -403,6 +407,135 @@ function paintFusion(vm: ViewModel) {
   }));
 }
 
+// ---------- plan screen ----------
+
+// The plan screen's skeleton is built once; entries rebuild only when the
+// selection or the upgrade toggle changes (the chips' diff pattern — the
+// one accepted exception to never-recreate, since entry sets are dynamic).
+// Badges and over-limit marks repaint in place every paint, so a character
+// toggle (which changes verdicts but not the entry set) never rebuilds.
+let planEls: {
+  upgrades: HTMLInputElement;
+  hint: HTMLElement;
+  sections: {
+    characters: { count: HTMLElement; empty: HTMLElement; grid: HTMLElement };
+    balls: { count: HTMLElement; empty: HTMLElement; grid: HTMLElement };
+    passives: { count: HTMLElement; empty: HTMLElement; grid: HTMLElement };
+  };
+} | null = null;
+let paintedPlanKey = '';
+
+const PLAN_EMPTY_HINTS = {
+  characters: 'Pick characters on the Characters screen — they appear here.',
+  balls: 'Balls you pick on the Balls screen will appear here.',
+  passives: 'Passives you pick on the Passives screen will appear here.',
+} as const;
+
+function buildPlan() {
+  const root = document.getElementById('planView')!;
+  root.innerHTML = `
+    <label class="plan-upgrades">
+      <input type="checkbox" id="planUpgrades">
+      <span>End game upgrades</span>
+    </label>
+    <p class="plan-hint" hidden></p>
+    ${(['characters', 'balls', 'passives'] as const).map((key) => `
+      <section class="plan-section" data-plan="${key}">
+        <h2 class="plan-heading"><span class="plan-title">${key[0].toUpperCase() + key.slice(1)}</span> <span class="plan-count"></span></h2>
+        <p class="plan-empty">${PLAN_EMPTY_HINTS[key]}</p>
+        <div class="plan-grid"></div>
+      </section>`).join('')}`;
+  const q = (s: string) => root.querySelector(s)!;
+  const section = (key: string) => {
+    const el = q(`.plan-section[data-plan="${key}"]`);
+    return {
+      count: el.querySelector('.plan-count') as HTMLElement,
+      empty: el.querySelector('.plan-empty') as HTMLElement,
+      grid: el.querySelector('.plan-grid') as HTMLElement,
+    };
+  };
+  planEls = {
+    upgrades: q('#planUpgrades') as HTMLInputElement,
+    hint: q('.plan-hint') as HTMLElement,
+    sections: { characters: section('characters'), balls: section('balls'), passives: section('passives') },
+  };
+  // the upgrade toggle reports through the build seam, like every other
+  // built-in click handler — the renderer never touches view state
+  planEls.upgrades.addEventListener('change', () => {
+    emit({ type: 'toggleUpgrades' });
+  });
+}
+
+function planEntry(inner: string, onRemove: () => void): HTMLElement {
+  const entry = document.createElement('div');
+  entry.className = 'plan-entry';
+  entry.innerHTML = `${inner}<button class="plan-x" aria-label="Remove">×</button>`;
+  entry.querySelector('.plan-x')!.addEventListener('click', () => onRemove());
+  return entry;
+}
+
+function paintPlan(vm: ViewModel) {
+  if (!planEls) return;
+  const plan = vm.plan;
+  planEls.upgrades.checked = plan.upgradesOn;
+  planEls.hint.textContent = plan.hint;
+  planEls.hint.hidden = !plan.hint;
+
+  // rebuild only when a section's entry set (or the toggle) changed — the
+  // chips' diff pattern
+  const key = `${plan.upgradesOn}|${plan.characters.map((c) => c.character.id).join(',')}|${plan.balls.map((e) => e.item.id).join(',')}|${plan.passives.map((e) => e.item.id).join(',')}`;
+  if (key !== paintedPlanKey) {
+    paintedPlanKey = key;
+    const charEntries = plan.characters.map(({ character: ch }) => {
+      const base = ch.baseBallId ? ballMap.get(ch.baseBallId) : null;
+      return planEntry(
+        `<img src="${icon(ch.sprite)}" alt="${ch.name}" width="48" height="48" loading="lazy"><span class="plan-name">${ch.name}</span>` +
+        (base ? `<span class="plan-base" title="Base ball"><img src="${icon(base.icon)}" alt="${base.name}" width="20" height="20">${base.name}</span>` : ''),
+        () => emit({ type: 'toggleChar', id: ch.id }),
+      );
+    });
+    const itemEntries = (entries: typeof plan.balls) => entries.map(({ item }) =>
+      planEntry(
+        `<img src="${icon(item.icon)}" alt="${item.name}" width="48" height="48" loading="lazy"><span class="plan-name">${item.name}</span>`,
+        () => emit({ type: 'togglePlanItem', id: item.id }),
+      ));
+    planEls.sections.characters.grid.replaceChildren(...charEntries);
+    planEls.sections.balls.grid.replaceChildren(...itemEntries(plan.balls));
+    planEls.sections.passives.grid.replaceChildren(...itemEntries(plan.passives));
+  }
+
+  // counts and empty hints
+  for (const [count, limit, els] of [
+    [plan.counts.chars, plan.limits.chars, planEls.sections.characters],
+    [plan.counts.balls, plan.limits.balls, planEls.sections.balls],
+    [plan.counts.passives, plan.limits.passives, planEls.sections.passives],
+  ] as const) {
+    els.count.textContent = `${count} / ${limit}`;
+    els.empty.hidden = count > 0;
+  }
+
+  // over-limit marks and verdict badges — repaint in place, in entry order
+  // (characters carry no verdict — the null verdict paints no badge)
+  const repaint = (grid: HTMLElement, entries: { overLimit: boolean; verdict?: Verdict | null }[]) => {
+    [...grid.querySelectorAll<HTMLElement>('.plan-entry')].forEach((entry, i) => {
+      const e = entries[i];
+      if (!e) return;
+      entry.classList.toggle('over-limit', e.overLimit);
+      entry.querySelector('.ind')?.remove();
+      if (e.verdict) {
+        const badge = document.createElement('span');
+        badge.className = `ind ${e.verdict.verdict}`;
+        badge.textContent = '!';
+        badge.title = e.verdict.note ?? e.verdict.verdict;
+        entry.appendChild(badge);
+      }
+    });
+  };
+  repaint(planEls.sections.characters.grid, plan.characters);
+  repaint(planEls.sections.balls.grid, plan.balls);
+  repaint(planEls.sections.passives.grid, plan.passives);
+}
+
 // ---------- interface ----------
 
 /** The build seam: everything the island injects at build time.
@@ -417,7 +550,8 @@ export interface BuildOptions {
 }
 
 /** Build all static DOM once: balls grid, passives grid, character cards,
- *  fusion pick list. Call once at startup, before the first paint(). */
+ *  fusion pick list, plan screen skeleton. Call once at startup, before the
+ *  first paint(). */
 export function buildAll({ getVerdict, emit: onEmit }: BuildOptions): void {
   toastVerdict = getVerdict;
   emit = onEmit;
@@ -426,16 +560,20 @@ export function buildAll({ getVerdict, emit: onEmit }: BuildOptions): void {
   buildCharacters();
   buildFusionList();
   buildFusionPanel();
+  buildPlan();
 }
 
 /** Repaint state (selection/related/dimmed/filtered, verdict badges,
- *  character cards and chips, fusion picks and panel) on the existing DOM.
- *  Safe to call before buildAll() (no-op — nothing built yet). Idempotent;
- *  never recreates <img> elements — the fusion panel's skeleton (with its
- *  two head icons) is built once and repainted in place. */
+ *  character cards and chips, fusion picks and panel, the plan screen) on
+ *  the existing DOM. Safe to call before buildAll() (no-op — nothing built
+ *  yet). Idempotent; never recreates <img> elements — the fusion panel's
+ *  skeleton (with its two head icons) is built once and repainted in place,
+ *  and the plan's entries rebuild only when the selection or upgrade toggle
+ *  changes (the chips' diff pattern). */
 export function paint(vm: ViewModel): void {
   paintTiles(vm);
   paintCharCards(vm);
   renderCharChips(vm);
   paintFusion(vm);
+  paintPlan(vm);
 }

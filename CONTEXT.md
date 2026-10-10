@@ -65,12 +65,28 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   and notes join with ` · `. Module: `src/synergy.ts`
   (`verdictFor(item, selectedChars)`) — namespace resolution is internal,
   callers pass the item only.
-- **Character slot** — the selected-character list holds at most 2. Selection
-  is sticky (shared with fusion picks): re-clicking a pick deselects it; a
-  third selection while two are held is a no-op — one must be deselected
-  first, and the hint says so ("selection full — deselect one first"). One
-  selected character shows the "pick a second character…" hint. State:
-  `src/view-state.ts` (`toggleChar` action).
+- **Character slot** — the selected-character list holds at most the plan's
+  active character limit (2 with end-game upgrades, 1 without). Selection is
+  sticky (shared with fusion picks): re-clicking a pick deselects it; adding
+  past the active limit is a no-op — one must be deselected first, and the
+  hint says so ("selection full — deselect one first"). One selected
+  character shows the "pick a second character…" hint — only when two are
+  allowed. State: `src/view-state.ts` (`toggleChar` action). The header
+  chips are the selection's top-bar view; their X button is the only removal
+  (the chip body is inert).
+- **Plan screen** — the final-build planner: the user's end-of-run selection
+  of characters, balls, and passives, shown with count badges against the
+  active limits, per-entry synergy verdicts, and over-limit marks. The
+  plan's characters are the shared `selectedChars` (one selection feeds
+  verdicts, chips, and the plan); balls/passives ride `planBalls` /
+  `planPassives` in pick order (`togglePlanItem` — the catalog resolves the
+  namespace). The **End game upgrades** toggle (on by default) sets the
+  limits: 2/5/5 with it, 1/4/4 without. Over-limit selections are kept and
+  marked (red), never trimmed. The plan persists to localStorage (island's
+  job: `hydrate` action on startup, save on every dispatch) and is wiped
+  only by the toolbar's Clear button — Esc/empty-space never touch it.
+  Module: state in `src/view-state.ts` (`PlanState`), painting in
+  `src/renderer.ts` (`buildPlan`/`paintPlan`).
 - **Toast** — the hover/tap detail popup with icon, full effect text, recipe,
   tags, and the item's current verdict. Its verdict function is injected at
   build time (`buildAll({ getVerdict, emit })`), so hover always reads the
@@ -84,8 +100,10 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   (its view-state imports are types only; pinned in `src/regression.test.ts`,
   the emit wiring behaviorally in `src/renderer.test.ts`).
 - **Island** — the single interactive script `src/companion.ts` mounted by
-  the Astro page. Owns event listening, theme, and hash routing only;
-  painting, verdict logic, graph math, and data live in their own modules.
+  the Astro page. Owns event listening, theme, hash routing, and plan
+  persistence (localStorage read→`hydrate` at startup, save on every
+  dispatch) only; painting, verdict logic, graph math, and data live in
+  their own modules.
   (The renderer attaches hover/tap listeners for toasts; tile/card/row
   clicks come back through the build seam's `emit`, which the island wires
   to dispatch + paint. Esc and empty-space clicks clear the active
@@ -96,19 +114,23 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   icon markup — see **Recipe notation**; the icon-URL join comes from
   `src/icon-url.ts`) — one interface:
   `buildAll({ getVerdict, emit })` (builds grids, character cards, the
-  fusion pick list, and the fusion panel skeleton once, at startup) +
+  fusion pick list, the fusion panel skeleton, and the plan screen skeleton
+  once, at startup) +
   `paint(viewModel)` (repaints state on the existing DOM; never recreates
   `<img>` elements — that would blink icons; the fusion panel's head icons
-  are built once and repainted in place). Tiles, character cards, chips,
-  toasts, and the fusion screen live here; the ViewModel is its input and
+  are built once and repainted in place; the plan's entries and the
+  character chips rebuild only when their selection changes — the chips'
+  diff pattern). Tiles, character cards, chips, toasts, the fusion screen,
+  and the plan screen live here; the ViewModel is its input and
   the test surface stays `view-state.ts`. The renderer holds no domain data
   of its own: its fusion-row map is purely a DOM-row registry, and the
   fusion panel paints by switching on the view model's named `fusionPanel`
   state — per state, which hooks show and what they show (behavior pinned
   in `src/renderer.test.ts` through jsdom).
 - **View state** — the island's state (item selection, character slots,
-  fusion picks, per-screen search queries) and every derivation from it
-  (highlight walks, filters, verdict badges, the composed fusion). Module:
+  fusion picks, the plan's selections and upgrade toggle, per-screen search
+  queries) and every derivation from it (highlight walks, filters, verdict
+  badges, the composed fusion, the plan's resolved entries). Module:
   `src/view-state.ts`
   — one interface: `createViewState()` → `dispatch(action) → ViewModel`, plus
   `derive()` (same view model without a state change, for initial paint) and
