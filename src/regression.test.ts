@@ -422,6 +422,34 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
   });
 });
 
+describe('regression: toast touch dismissal (promised in a comment, never wired)', () => {
+  // Bug (2026-10-10): the toast's attach comment promised "mobile: tap
+  // shows toast, next tap elsewhere dismisses", but hideToast was wired
+  // only to mouseleave — no dismissal path existed for touch, so a toast
+  // showed and stayed until another toast replaced it. Fix: the toast
+  // lifecycle moved into the src/toast.ts adapter, which owns a
+  // document-level pointerdown listener hiding the toast on any tap
+  // outside it and outside the bound anchors (the island and its clear
+  // policy are untouched). Full behavior pinned in src/toast.test.ts;
+  // here through the real renderer wiring.
+  it('a toast shown from a tile hides on a tap elsewhere on the document', async () => {
+    const { buildAll } = await import('./renderer');
+    for (const id of ['ballsGrid', 'passivesGrid', 'charactersGrid', 'charChips', 'slotHint', 'fusionList', 'fusionPanel', 'planView', 'planUpgradesSlot', 'selection-balls', 'selection-passives']) {
+      if (!document.getElementById(id)) {
+        const el = document.createElement('div');
+        el.id = id;
+        document.body.appendChild(el);
+      }
+    }
+    buildAll({ getVerdict: () => null, emit: () => {} });
+    const tile = document.querySelector<HTMLElement>('#ballsGrid .tile[data-id="flash"]')!;
+    tile.dispatchEvent(new MouseEvent('mouseenter'));
+    expect(document.querySelector('body > .toast')).toBeTruthy();
+    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    expect(document.querySelector('body > .toast')).toBeNull();
+  });
+});
+
 describe('regression: share-link one-shot strip left a doubled \'#\' that defeated hash routing', () => {
   // The island's old inline strip built `${pathname}#${hash.split('?')[0]}` —
   // but the hash already starts with '#', so the one-shot replaceState left

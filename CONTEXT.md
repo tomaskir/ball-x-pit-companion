@@ -131,7 +131,16 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
 - **Toast** — the hover/tap detail popup with icon, full effect text, recipe,
   tags, and the item's current verdict. Its verdict function is injected at
   build time (`buildAll({ getVerdict, emit })`), so hover always reads the
-  current selection. Lives in `src/renderer.ts`.
+  current selection. Module: `src/toast.ts` (`createToast({ getVerdict })` →
+  `{ showFor(anchor, item), hide(), bind(anchor, getItem), destroy() }`) —
+  the whole lifecycle (build, show, hide, position, one-at-a-time
+  replacement, anchor binding, and the document-level outside-tap
+  dismissal) lives there; the renderer creates the adapter once per
+  `buildAll` and only binds anchors (tiles and base-ball chips) to it. The
+  dismissal is the adapter's own document `pointerdown` listener — a tap
+  outside the toast and outside the bound anchors hides it (the touch
+  dismissal the old renderer comment promised but never wired); it neither
+  dispatches nor interferes with the island's empty-space clear policy.
 - **Build seam** — the options object `buildAll({ getVerdict, emit })` hands
   the island's two callbacks to the renderer at build time: `getVerdict`
   feeds the toast, `emit(action)` is how built-in click handlers report

@@ -4,7 +4,9 @@
 // state on it — never recreating <img> elements (rebuilding would blink the
 // icons; the plan's entries and the character chips are the one accepted
 // exception, rebuilding only when their content key changes — the reconcile
-// seam below). The island (src/companion.ts) is transport only — event
+// seam below). The toast subsystem is an adapter from src/toast.ts — the
+// renderer creates it once at build time and only binds anchors to it.
+// The island (src/companion.ts) is transport only — event
 // listening, storage/history/clipboard, with the routing, clear-policy, and
 // theme decisions in src/companion-core.ts and plan persistence via
 // src/share.ts; the
@@ -15,13 +17,14 @@
 // from src/icon-url.ts.
 //
 // The build seam is the options object: { getVerdict, emit }. getVerdict
-// supplies the toast's per-item verdict against the current character
-// selection; emit is how built-in click handlers report selection toggles
-// back to the island — emit(action) hands over the whole view-state
+// supplies the toast adapter's per-item verdict against the current
+// character selection; emit is how built-in click handlers report selection
+// toggles back to the island — emit(action) hands over the whole view-state
 // ToggleAction (the island dispatches it verbatim). The
 // renderer never dispatches DOM events or touches view state: emit is just
 // a callback the island supplies (it dispatches and paints); hover/tap
-// toast listeners stay internal to the renderer.
+// toast listeners stay internal to the renderer (binding anchors to the
+// toast adapter).
 import { BALLS } from './data/balls';
 import { PASSIVES } from './data/passives';
 import { CHARACTERS, type Character } from './data/characters';
@@ -29,6 +32,7 @@ import { ballMap, itemFor, type Item } from './catalog';
 import { fusionBalls } from './fusion';
 import { recipeHtml } from './graph';
 import { iconUrl } from './icon-url';
+import { createToast, type ToastAdapter } from './toast';
 import type { Verdict } from './synergy';
 import type { SelectionBoxState, ToggleAction, ViewModel } from './view-state';
 
@@ -38,11 +42,9 @@ const DEPTH_LABELS = ['Basic', 'Evolved', 'Tier-3'] as const;
  *  join with the configured base URL lives in src/icon-url.ts. */
 const icon = (p: string) => iconUrl(import.meta.env.BASE_URL, p);
 
-/** The build seam, captured once by buildAll: the toast's verdict lookup
- *  (the island passes its view-state's verdictFor so hover always reads the
- *  current selection) and the click→island callback (the island dispatches
- *  the named view-state action and paints). */
-let toastVerdict: (item: Item) => Verdict | null = () => null;
+/** The build seam, captured once by buildAll: the click→island callback
+ *  (the island dispatches the named view-state action and paints). The
+ *  toast's verdict lookup rides the same seam into src/toast.ts's adapter. */
 let emit: (action: ToggleAction) => void = () => {};
 
 // ---------- reconcile ----------
@@ -217,52 +219,19 @@ function renderCharChips(vm: ViewModel) {
 
 // ---------- toast ----------
 
-let toastEl: HTMLElement | null = null;
+// The toast lifecycle (build, show, hide, position, one-at-a-time
+// replacement, and the document-level outside-tap dismissal) lives in
+// src/toast.ts — the renderer only creates the adapter at build time and
+// binds anchors to it (attachToast's free functions and module vars are
+// gone). Re-created per buildAll; the previous instance is destroyed so its
+// document-level dismissal listener never leaks.
+let toast: ToastAdapter | null = null;
 
+/** Bind an anchor to the toast adapter: hover/tap shows the toast for the
+ *  item getItem() returns at show time, mouseleave hides, and a tap
+ *  elsewhere on the document dismisses (the adapter owns that listener). */
 function attachToast(anchor: HTMLElement, getItem: () => Item | null) {
-  const show = () => {
-    const item = getItem();
-    if (!item) return;
-    hideToast();
-    toastEl = buildToast(item);
-    document.body.appendChild(toastEl);
-    positionToast(anchor, toastEl);
-  };
-  anchor.addEventListener('mouseenter', show);
-  anchor.addEventListener('mouseleave', hideToast);
-  // mobile: tap shows toast, next tap elsewhere dismisses
-  anchor.addEventListener('touchstart', show, { passive: true });
-}
-
-function buildToast(item: Item) {
-  const el = document.createElement('div');
-  el.className = 'toast';
-  // recipes are OR-of-ANDs — same compact per-slot notation as the tiles
-  const comps = item.recipes.length ? recipeMarkup(item) : '';
-  const v = toastVerdict(item);
-  el.innerHTML = `
-    <h4><img src="${icon(item.icon)}" alt="" width="20" height="20">${item.name}</h4>
-    <p class="eff">${item.effects}</p>
-    ${comps ? `<div class="rec">${comps}</div>` : ''}
-    ${v ? `<div class="verdicts"><span class="${v.verdict}">${v.verdict === 'red' ? '▲ red' : '✓ green'}${v.note ? ` — ${v.note}` : ''}</span></div>` : ''}
-    ${item.tags.length ? `<div class="tags">${item.tags.map((t) => `<span>${t}</span>`).join('')}</div>` : ''}`;
-  return el;
-}
-
-function positionToast(tile: HTMLElement, toast: HTMLElement) {
-  const r = tile.getBoundingClientRect();
-  const tw = toast.offsetWidth, th = toast.offsetHeight;
-  let x = r.left + r.width / 2 - tw / 2;
-  let y = r.bottom + 8;
-  x = Math.max(8, Math.min(x, innerWidth - tw - 8));
-  if (y + th > innerHeight - 8) y = Math.max(8, r.top - th - 8);
-  toast.style.left = `${x}px`;
-  toast.style.top = `${y}px`;
-}
-
-function hideToast() {
-  toastEl?.remove();
-  toastEl = null;
+  toast?.bind(anchor, getItem);
 }
 
 // ---------- fusion screen ----------
@@ -759,21 +728,23 @@ function paintSelectionBoxes(vm: ViewModel) {
 // ---------- interface ----------
 
 /** The build seam: everything the island injects at build time.
- *  `getVerdict` supplies the toast's per-item verdict against the current
- *  character selection; `emit` is how the built-in click handlers report
- *  selection toggles back — the island dispatches the whole ToggleAction
- *  and paints. The renderer stays paint-only: it never dispatches
- *  DOM events and never touches view state. */
+ *  `getVerdict` supplies the toast adapter's per-item verdict against the
+ *  current character selection; `emit` is how the built-in click handlers
+ *  report selection toggles back — the island dispatches the whole
+ *  ToggleAction and paints. The renderer stays paint-only: it never
+ *  dispatches DOM events and never touches view state. */
 export interface BuildOptions {
   getVerdict: (item: Item) => Verdict | null;
   emit: (action: ToggleAction) => void;
 }
 
 /** Build all static DOM once: balls grid, passives grid, character cards,
- *  fusion pick list, plan screen skeleton. Call once at startup, before the
- *  first paint(). */
+ *  fusion pick list, plan screen skeleton — and the toast adapter (from
+ *  src/toast.ts), which the grid tiles and base-ball chips bind to. Call
+ *  once at startup, before the first paint(). */
 export function buildAll({ getVerdict, emit: onEmit }: BuildOptions): void {
-  toastVerdict = getVerdict;
+  toast?.destroy();
+  toast = createToast({ getVerdict });
   emit = onEmit;
   buildGrid('ballsGrid', BALLS);
   buildGrid('passivesGrid', PASSIVES);
