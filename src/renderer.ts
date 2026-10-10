@@ -716,10 +716,25 @@ function paintPlan(vm: ViewModel) {
 
 // The two build-graph panels paint from vm.buildGraph's laid-out models
 // (src/build-graph.ts derives and lays out; this only paints). The canvas
-// rebuilds only when the graph's content changed (reconcile's diff — nodes
-// and edges are dynamic content, same exception as the plan entries); the
-// focus/related/dimmed highlight repaints in place every paint, found by
-// each node's data-id and each edge's stamped endpoints.
+// rebuilds only when the graph's structure changed (reconcile's diff —
+// nodes and edges are dynamic content, same exception as the plan entries);
+// everything else — counts, done/suppressed, positions, edge paths, the
+// focus highlight — repaints in place, found by each node's data-id and
+// each edge's stamped endpoints.
+
+/** One edge's identity: the stamped endpoints, shared by the reconcile key,
+ *  the path lookup, and the DOM dataset stamp — one spelling, all uses. */
+const edgeKey = (from: string, to: string): string => `${from}>${to}`;
+
+/** Position one node card inside the canvas — the single geometry write,
+ *  used by the rebuild and the in-place repaint alike so they cannot
+ *  drift. */
+function placeNode(el: HTMLElement, n: { x: number; y: number; w: number }): void {
+  el.style.left = `${n.x}px`;
+  el.style.top = `${n.y}px`;
+  el.style.width = `${n.w}px`;
+  el.style.height = `${BUILD_GRAPH_METRICS.nodeH}px`;
+}
 function paintBuildGraphs(vm: ViewModel) {
   if (!planEls) return;
   const bg = vm.buildGraph;
@@ -744,13 +759,14 @@ function paintBuildGraphs(vm: ViewModel) {
       continue;
     }
 
-    // the key is STRUCTURE only (which nodes, which edges): per-node state —
-    // remaining counts, done/suppressed, check visibility — repaints in place
-    // below, so a done-mark toggle never rebuilds the canvas's <img>s
+    // the key is STRUCTURE only — which nodes and which edges exist, sorted
+    // so a pure reorder (done marks move disabled nodes right) is NOT a
+    // rebuild: per-node state AND positions repaint in place below, so a
+    // done-mark toggle never recreates the canvas's <img>s
     const key =
-      layout.nodes.map((n) => `${n.id}|${n.final ? 1 : 0}`).join(',') +
+      layout.nodes.map((n) => `${n.id}|${n.final ? 1 : 0}`).sort().join(',') +
       '#' +
-      layout.edges.map((e) => `${e.from}>${e.to}`).join(',');
+      layout.edges.map((e) => edgeKey(e.from, e.to)).sort().join(',');
     reconcile(els.canvas, key, () => {
       // rebuild = replace: clear the previous node cards first (the svg edge
       // layer lives inside the canvas and stays) — appending would stack a
@@ -776,10 +792,7 @@ function paintBuildGraphs(vm: ViewModel) {
           `build-node${n.final ? ' final' : ''}${n.row === 3 ? ' fused' : ''}` +
           `${n.done ? ' done' : ''}${n.suppressed ? ' suppressed' : ''}`;
         el.dataset.id = n.id;
-        el.style.left = `${n.x}px`;
-        el.style.top = `${n.y}px`;
-        el.style.width = `${n.w}px`;
-        el.style.height = `${BUILD_GRAPH_METRICS.nodeH}px`;
+        placeNode(el, n);
         // icons ride one row wrapper — the fused pair's two icons sit side by
         // side (bare second img would stack under the first in the column)
         const imgs = n.row === 3
@@ -804,12 +817,14 @@ function paintBuildGraphs(vm: ViewModel) {
     });
 
     // per-node state repaints in place, found by data-id (never a rebuild —
-    // the graph's <img>s stay put through done toggles and focus changes)
+    // the graph's <img>s stay put through done toggles and focus changes);
+    // positions update too, because done toggles reorder rows
     const nodeById = new Map(layout.nodes.map((n) => [n.id, n]));
     for (const el of els.canvas.querySelectorAll<HTMLElement>('.build-node')) {
       const id = el.dataset.id ?? '';
       const n = nodeById.get(id);
       if (!n) continue;
+      placeNode(el, n);
       // focus highlight
       el.classList.toggle('focused', bg.focus === id);
       el.classList.toggle('related', bg.focus !== null && bg.focus !== id && bg.related.has(id));
@@ -829,8 +844,12 @@ function paintBuildGraphs(vm: ViewModel) {
         check.title = n.done ? 'Not done yet' : 'Done this run';
       }
     }
-    // an edge lights when both its endpoints sit in the focused chain
+    // edges: paths follow their endpoints' new positions after a reorder;
+    // an edge lights when both endpoints sit in the focused chain
+    const edgePath = new Map(layout.edges.map((e) => [edgeKey(e.from, e.to), e.path]));
     for (const path of els.svg.querySelectorAll<SVGPathElement>('path')) {
+      const d = edgePath.get(edgeKey(path.dataset.from ?? '', path.dataset.to ?? ''));
+      if (d) path.setAttribute('d', d);
       const lit = bg.focus !== null && bg.related.has(path.dataset.from ?? '') && bg.related.has(path.dataset.to ?? '');
       path.classList.toggle('lit', lit);
     }

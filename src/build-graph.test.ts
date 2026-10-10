@@ -269,3 +269,49 @@ describe('build graph: done tracking', () => {
     expect(node(done, 'laser-horizontal')).toMatchObject({ min: 0, max: 1, suppressed: false });
   });
 });
+
+describe('build graph: done/suppressed nodes sort to the right of their row', () => {
+  it('freed base balls move right of still-needed ones; order among themselves preserved', () => {
+    // Freeze Ray done → Freeze + both lasers freed (0 remaining); the Time
+    // Bomb branch stays live. Row 0 must read: live balls left, freed right.
+    const model = deriveBuildGraph(
+      { singles: [], pairs: [{ a: 'freeze-ray', b: 'time-bomb' }] },
+      ballMap,
+      { fusionRow: true, done: new Set(['freeze-ray']) },
+    );
+    const row0 = model.nodes.filter((n) => n.row === 0).map((n) => n.id);
+    const freed = new Set(['freeze', 'laser-horizontal', 'laser-vertical']);
+    const live = row0.filter((id) => !freed.has(id));
+    const done = row0.filter((id) => freed.has(id));
+    expect(live).toEqual(['burn', 'iron', 'time']);
+    expect(done).toEqual(['freeze', 'laser-horizontal', 'laser-vertical']);
+    expect(row0.indexOf('freeze')).toBeGreaterThan(row0.indexOf('time'));
+  });
+
+  it('a done-marked node with remaining demand also moves right', () => {
+    // Bomb done while still demanded (single + Time Bomb): it reads disabled,
+    // so it goes right within row 1
+    const model = deriveBuildGraph(
+      { singles: ['bomb', 'time-bomb'], pairs: [] },
+      ballMap,
+      { fusionRow: true, done: new Set(['bomb']) },
+    );
+    const row1 = model.nodes.filter((n) => n.row === 1).map((n) => n.id);
+    expect(row1[row1.length - 1]).toBe('bomb');
+  });
+
+  it('layout positions follow: a freed node sits right of the live ones', () => {
+    const layout = layoutBuildGraph(
+      deriveBuildGraph(
+        { singles: [], pairs: [{ a: 'freeze-ray', b: 'time-bomb' }] },
+        ballMap,
+        { fusionRow: true, done: new Set(['freeze-ray']) },
+      ),
+      4,
+    );
+    const row0 = layout.nodes.filter((n) => n.row === 0);
+    const freeze = row0.find((n) => n.id === 'freeze')!;
+    const burn = row0.find((n) => n.id === 'burn')!;
+    expect(freeze.x).toBeGreaterThan(burn.x);
+  });
+});

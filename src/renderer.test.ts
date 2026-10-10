@@ -705,9 +705,28 @@ describe('plan build graphs: in-place done state (jsdom, through paint())', () =
   it('done toggles repaint state in place — no build-node <img> is recreated (invariant 2)', () => {
     drive({ type: 'togglePlanFusion', a: 'freeze-ray', b: 'time-bomb' });
     const img = byId('freeze')!.querySelector('img')!;
+    const xBefore = byId('freeze')!.style.left;
     drive({ type: 'toggleGraphDone', id: 'freeze-ray' });
+    // the freed base moved right of the live ones — in place, same element
+    expect(byId('freeze')!.querySelector('img')!).toBe(img);
+    expect(parseInt(byId('freeze')!.style.left, 10)).toBeGreaterThan(parseInt(xBefore, 10));
     drive({ type: 'toggleGraphDone', id: 'freeze-ray' });
     expect(byId('freeze')!.querySelector('img')!).toBe(img);
+    expect(byId('freeze')!.style.left).toBe(xBefore);
     expect(byId('freeze-ray')!.querySelector('.build-count')!.textContent).toBe('1');
+  });
+});
+
+describe('plan build graphs: structural changes still rebuild (jsdom, through paint())', () => {
+  const canvas = () => document.querySelector<HTMLElement>('.plan-graph[data-graph="balls"] .plan-graph-canvas')!;
+
+  it('adding a planned ball rebuilds the canvas (new node + new imgs), not an in-place patch', () => {
+    drive({ type: 'togglePlanFusion', a: 'freeze-ray', b: 'time-bomb' });
+    const img = canvas().querySelector('.build-node[data-id="freeze"] img')!;
+    expect(canvas().querySelectorAll('.build-node')).toHaveLength(10);
+    drive({ type: 'togglePlanItem', id: 'holy-laser' });
+    // a structural change: new nodes, new edges — the sorted key changes
+    expect(canvas().querySelectorAll('.build-node').length).toBeGreaterThan(10);
+    expect(canvas().querySelector('.build-node[data-id="freeze"] img')).not.toBe(img);
   });
 });

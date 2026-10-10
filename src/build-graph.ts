@@ -25,7 +25,9 @@
 //   alternates: the line shows the possible path.
 // - Rows are fixed (callers pass the row count; empty rows keep their band
 //   so the panel's height never jumps). Within a row, nodes sort by
-//   complexity (graph.complexity, most complex left), ties in catalog order.
+//   complexity (graph.complexity, most complex left), ties in catalog order;
+//   done/suppressed nodes read as disabled and move right of everything
+//   still needed in their row.
 import { type GraphItem, complexity, componentsOf, recipeSlots } from './graph';
 
 /** The plan-side input: which entities the graph must show the build for.
@@ -237,6 +239,9 @@ export function deriveBuildGraph<T extends GraphItem & { name: string; icon: str
   }
   nodes.sort((x, y) =>
     x.row - y.row ||
+    // done/suppressed nodes read as disabled — they move right of everything
+    // still needed in their row (layout positions follow the model order)
+    Number(x.done || x.suppressed) - Number(y.done || y.suppressed) ||
     complexityOf(y.id) - complexityOf(x.id) ||
     (orderOf.get(x.id) ?? 0) - (orderOf.get(y.id) ?? 0),
   );

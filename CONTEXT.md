@@ -148,7 +148,9 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   elements never nest); a done node stops contributing demand, so all
   counts read REMAINING copies this run, and a node whose remaining demand
   hit zero only through done marks is suppressed (dimmed, no check — base
-  balls free themselves this way). Done marks, focus, and collapse flags
+  balls free themselves this way). Done/suppressed nodes read as disabled
+  and sort to the right of everything still needed in their row. Done
+  marks, focus, and collapse flags
   are session-only (never persisted; clearPlan wipes the marks).
   Over-limit entries stay out
   of the graph; a panel with nothing to show carries a hint. Pure
@@ -158,9 +160,11 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   `src/view-state.ts` (`vm.buildGraph`; focus, collapse, and done marks ride
   `toggleGraphFocus`/`toggleGraphCollapse`/`toggleGraphDone` through the
   build seam); painting in `src/renderer.ts` (`paintBuildGraphs` — the
-  canvas rebuilds through the reconcile seam on structural change only;
-  counts, done/suppressed state, and the focus highlight repaint in place
-  by `data-id`, so a done-mark toggle never recreates the graph's imgs).
+  canvas rebuilds through the reconcile seam on structural change only
+  (which nodes/edges exist — the key is order-insensitive, so a pure
+  reorder is not a rebuild); counts, done/suppressed state, positions,
+  edge paths, and the focus highlight repaint in place by `data-id`, so a
+  done-mark toggle never recreates the graph's imgs).
 - **Selection box** — the balls/passives screens' view of the current
   single-item selection: shown in the screen toolbar (top left, search
   stays right; drops below the search row on mobile) only while an item of
