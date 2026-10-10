@@ -368,8 +368,9 @@ describe('plan screen behavior (jsdom, through paint())', () => {
     const entries = [...planView().querySelectorAll<HTMLElement>('.plan-entry')];
     expect(entries).toHaveLength(1);
     expect(entries[0].textContent).toContain('Flash × Glacier');
-    // icons row on top, full-width name below (long names wrap, not squeeze)
-    expect(entries[0].querySelector('.plan-body .plan-icons')).toBeTruthy();
+    // two compact icons beside the name — same shape as single-ball entries
+    expect(entries[0].querySelector('.plan-body')).toBeNull();
+    expect(entries[0].querySelectorAll('.plan-icon')).toHaveLength(2);
     const imgs = [...entries[0].querySelectorAll('img')];
     expect(imgs.some((i) => i.getAttribute('src')!.includes('flash'))).toBe(true);
     expect(imgs.some((i) => i.getAttribute('src')!.includes('glacier'))).toBe(true);

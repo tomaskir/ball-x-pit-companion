@@ -83,8 +83,10 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   namespace). **Fused pairs** ride `planFused` (`togglePlanFusion`): a pair
   counts as ONE ball slot, its identity is order-insensitive (sorted ids —
   the reverse composition is the same planned pair), compose order is kept
-  for display, and its plan entry shows both icons with a × plus one
-  per-component verdict badge on each icon. The **End game upgrades**
+  for display, and its plan entry matches the single-ball shape: two
+  compact icons side by side (36px) with the composed name — which carries
+  the "×" between components — beside them, plus one per-component verdict
+  badge on each icon. The **End game upgrades**
   toggle (on by default) sets the limits: 2/5/5 with it, 1/4/4 without; it
   lives in the plan toolbar's right edge (`#planUpgradesSlot` — Clear left,
   toggle right, one row), built by the renderer into the shell's slot.

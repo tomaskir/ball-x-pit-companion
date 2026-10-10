@@ -737,9 +737,16 @@ footer a { color: var(--gold); }
 
 .plan-x:hover { color: var(--red); }
 
-/* fused pair entries: the × between the two icons, name below */
-.plan-entry .plan-icons { display: flex; align-items: center; gap: 4px; }
-.plan-entry .plan-times { color: var(--gold); font-size: 14px; align-self: center; }
+/* fused pair entries: two compact icons side by side, composed name beside
+   them — the same shape as the single-ball entries */
+.plan-entry .plan-icons {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.plan-entry .plan-icons img { width: 36px; height: 36px; }
 
 /* per-component verdict badges ride the icon wrapper */
 .plan-entry .plan-icon { position: relative; display: inline-flex; }
