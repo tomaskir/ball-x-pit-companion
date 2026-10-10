@@ -160,8 +160,10 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   `paint(viewModel)` (repaints state on the existing DOM; never recreates
   `<img>` elements — that would blink icons; the fusion panel's head icons
   are built once and repainted in place; the plan's entries and the
-  character chips rebuild only when their selection changes — the chips'
-  diff pattern). Tiles, character cards, chips, toasts, the fusion screen,
+  character chips rebuild only when their content key changes — the
+  renderer's internal **reconcile seam**, one painted-key map shared by the
+  chips, the plan sections, the panel icons, and the selection boxes).
+  Tiles, character cards, chips, toasts, the fusion screen,
   and the plan screen live here; the ViewModel is its input and
   the test surface stays `view-state.ts`. The renderer holds no domain data
   of its own: its fusion-row map is purely a DOM-row registry, and the

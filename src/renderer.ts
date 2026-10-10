@@ -64,8 +64,8 @@ const paintedKey = (el: HTMLElement): string | undefined => paintedKeys.get(el);
  *  one. */
 function reconcile(el: HTMLElement, key: string, repaint: () => void): void {
   if (paintedKeys.get(el) === key) return;
-  paintedKeys.set(el, key);
   repaint();
+  paintedKeys.set(el, key);
 }
 
 // ---------- grids ----------
@@ -542,6 +542,20 @@ function planEntry(inner: string, onRemove: () => void): HTMLElement {
   return entry;
 }
 
+/** A plan entry's identity: the reconcile key material and the data-entry
+ *  stamp the badge repaint looks entries up by — one spelling, both uses. */
+const entryKey = (prefix: string, id: string) => `${prefix}:${id}`;
+
+/** One single-ball/passive entry, stamped with its identity. */
+const itemEntry = (item: Item, prefix: string, onRemove: () => void): HTMLElement => {
+  const entry = planEntry(
+    `<img src="${icon(item.icon)}" alt="${item.name}" width="48" height="48" loading="lazy"><span class="plan-name">${item.name}</span>`,
+    onRemove,
+  );
+  entry.dataset.entry = entryKey(prefix, item.id);
+  return entry;
+};
+
 function paintPlan(vm: ViewModel) {
   if (!planEls) return;
   const plan = vm.plan;
@@ -554,7 +568,7 @@ function paintPlan(vm: ViewModel) {
   // changed — reconcile diffs the entry identities. Every built entry is
   // stamped with its identity (data-entry) so the badge repaint below finds
   // entries by key, never by grid position.
-  reconcile(sections.characters.grid, plan.characters.map((e) => `char:${e.character.id}`).join(','), () => {
+  reconcile(sections.characters.grid, plan.characters.map((e) => entryKey('char', e.character.id)).join(','), () => {
     sections.characters.grid.replaceChildren(...plan.characters.map(({ character: ch }) => {
       const base = ch.baseBallId ? ballMap.get(ch.baseBallId) : null;
       // the body is a column: name over base chip — the sprite and X stay
@@ -566,23 +580,16 @@ function paintPlan(vm: ViewModel) {
         `</span>`,
         () => emit({ type: 'toggleChar', id: ch.id }),
       );
-      entry.dataset.entry = `char:${ch.id}`;
+      entry.dataset.entry = entryKey('char', ch.id);
       return entry;
     }));
   });
   reconcile(
     sections.balls.grid,
-    [...plan.balls.map((e) => `ball:${e.item.id}`), ...plan.fused.map((f) => `fused:${f.a.id}+${f.b.id}`)].join(','),
+    [...plan.balls.map((e) => entryKey('ball', e.item.id)), ...plan.fused.map((f) => entryKey('fused', `${f.a.id}+${f.b.id}`))].join(','),
     () => {
       sections.balls.grid.replaceChildren(
-        ...plan.balls.map((e) => {
-          const entry = planEntry(
-            `<img src="${icon(e.item.icon)}" alt="${e.item.name}" width="48" height="48" loading="lazy"><span class="plan-name">${e.item.name}</span>`,
-            () => emit({ type: 'togglePlanItem', id: e.item.id }),
-          );
-          entry.dataset.entry = `ball:${e.item.id}`;
-          return entry;
-        }),
+        ...plan.balls.map((e) => itemEntry(e.item, 'ball', () => emit({ type: 'togglePlanItem', id: e.item.id }))),
         // fused pairs: both icons side by side (compact, so the composed name
         // fits beside them — same shape as the single-ball entries), name right,
         // one X for the pair — a pair is ONE entry (one ball slot). The name
@@ -597,21 +604,14 @@ function paintPlan(vm: ViewModel) {
             `<span class="plan-name">${f.name}</span>`,
             () => emit({ type: 'togglePlanFusion', a: f.a.id, b: f.b.id }),
           );
-          entry.dataset.entry = `fused:${f.a.id}+${f.b.id}`;
+          entry.dataset.entry = entryKey('fused', `${f.a.id}+${f.b.id}`);
           return entry;
         }),
       );
     },
   );
-  reconcile(sections.passives.grid, plan.passives.map((e) => `passive:${e.item.id}`).join(','), () => {
-    sections.passives.grid.replaceChildren(...plan.passives.map((e) => {
-      const entry = planEntry(
-        `<img src="${icon(e.item.icon)}" alt="${e.item.name}" width="48" height="48" loading="lazy"><span class="plan-name">${e.item.name}</span>`,
-        () => emit({ type: 'togglePlanItem', id: e.item.id }),
-      );
-      entry.dataset.entry = `passive:${e.item.id}`;
-      return entry;
-    }));
+  reconcile(sections.passives.grid, plan.passives.map((e) => entryKey('passive', e.item.id)).join(','), () => {
+    sections.passives.grid.replaceChildren(...plan.passives.map((e) => itemEntry(e.item, 'passive', () => emit({ type: 'togglePlanItem', id: e.item.id }))));
   });
 
   // counts and empty hints
@@ -649,14 +649,14 @@ function paintPlan(vm: ViewModel) {
     if (e.verdict) entry.appendChild(makeBadge(e.verdict));
   };
   const charEntries = entryIndex(sections.characters.grid);
-  plan.characters.forEach((e) => repaintEntry(charEntries.get(`char:${e.character.id}`), e));
+  plan.characters.forEach((e) => repaintEntry(charEntries.get(entryKey('char', e.character.id)), e));
   const ballEntries = entryIndex(sections.balls.grid);
-  plan.balls.forEach((e) => repaintEntry(ballEntries.get(`ball:${e.item.id}`), e));
+  plan.balls.forEach((e) => repaintEntry(ballEntries.get(entryKey('ball', e.item.id)), e));
   const passiveEntries = entryIndex(sections.passives.grid);
-  plan.passives.forEach((e) => repaintEntry(passiveEntries.get(`passive:${e.item.id}`), e));
+  plan.passives.forEach((e) => repaintEntry(passiveEntries.get(entryKey('passive', e.item.id)), e));
   // fused pairs: one verdict badge per component icon
   plan.fused.forEach((f) => {
-    const entry = ballEntries.get(`fused:${f.a.id}+${f.b.id}`);
+    const entry = ballEntries.get(entryKey('fused', `${f.a.id}+${f.b.id}`));
     if (!entry) return;
     repaintEntry(entry, f);
     f.verdicts.forEach((v, j) => {
