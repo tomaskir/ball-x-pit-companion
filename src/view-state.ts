@@ -202,6 +202,18 @@ const samePair = (p: PlanFused, a: string, b: string): boolean => pairKey(p.a, p
 const FUSABLE = new Set(fusionBalls().map((b) => b.id));
 const isFusable = (id: string): boolean => FUSABLE.has(id);
 
+/** Hydrate's shared per-list restore: wipe `list`, then keep each source
+ *  entry `resolve` accepts (unknown ids are dropped), skipping duplicates —
+ *  first occurrence wins, `key` is the identity. Over-limit selections are
+ *  kept, not trimmed: the guard is validity only. */
+function hydrateList<S, T>(list: T[], source: readonly S[], resolve: (x: S) => T | undefined, key: (x: T) => string): void {
+  list.length = 0;
+  for (const x of source) {
+    const t = resolve(x);
+    if (t !== undefined && !list.some((y) => key(y) === key(t))) list.push(t);
+  }
+}
+
 /** The held character whose partners are Matchmaker-blocked: exactly one
  *  character held and two allowed. Null otherwise (0 or 2 held, or limit 1
  *  — no second pick exists to block). One definition for the card state and
@@ -442,25 +454,17 @@ export function createViewState() {
           break;
         case 'hydrate': {
           upgradesOn = action.plan.upgradesOn;
-          selectedChars.length = 0;
-          for (const id of action.plan.chars) {
-            const ch = CHARACTERS.find((c) => c.id === id);
-            if (ch && !selectedChars.some((c) => c.id === id)) selectedChars.push(ch);
-          }
-          planBalls.length = 0;
-          for (const id of action.plan.balls) if (ballMap.has(id) && !planBalls.includes(id)) planBalls.push(id);
-          planPassives.length = 0;
-          for (const id of action.plan.passives) if (passiveMap.has(id) && !planPassives.includes(id)) planPassives.push(id);
-          planFused.length = 0;
-          for (const p of action.plan.fused ?? []) {
-            // both sides must be real, distinct, fusable balls; identity
-            // (sorted pair) dedupes — over-limit pairs are kept, not trimmed
-            if (
-              ballMap.has(p.a) && ballMap.has(p.b) && p.a !== p.b &&
-              isFusable(p.a) && isFusable(p.b) &&
-              !planFused.some((q) => samePair(q, p.a, p.b))
-            ) planFused.push({ a: p.a, b: p.b });
-          }
+          hydrateList(selectedChars, action.plan.chars,
+            (id) => CHARACTERS.find((c) => c.id === id), (c) => c.id);
+          hydrateList(planBalls, action.plan.balls, (id) => (ballMap.has(id) ? id : undefined), (id) => id);
+          hydrateList(planPassives, action.plan.passives, (id) => (passiveMap.has(id) ? id : undefined), (id) => id);
+          // both sides must be real, distinct, fusable balls; identity
+          // (sorted pair) dedupes — over-limit pairs are kept, not trimmed
+          hydrateList(planFused, action.plan.fused ?? [],
+            (p) => (ballMap.has(p.a) && ballMap.has(p.b) && p.a !== p.b && isFusable(p.a) && isFusable(p.b)
+              ? { a: p.a, b: p.b }
+              : undefined),
+            (p) => pairKey(p.a, p.b));
           break;
         }
         case 'search': queries[action.section] = action.query; break;
