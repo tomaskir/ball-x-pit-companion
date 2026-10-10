@@ -9,6 +9,7 @@ import { CHARACTERS } from './data/characters';
 import { ballMap, passiveMap } from './catalog';
 import { highlightSet, factorizesIntoSlots } from './graph';
 import { verdictFor } from './synergy';
+import { encodePlan, takeShareParam } from './share';
 import { readFileSync } from 'node:fs';
 
 describe('regression: structural depth (was wiki labels — Tumor et al. misplaced)', () => {
@@ -415,5 +416,19 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
     const handler = src.match(/document\.addEventListener\('click'[\s\S]*?\n  \}\);/);
     expect(handler, 'empty-space click handler not found').toBeTruthy();
     expect(handler![0]).toMatch(/closest\('[^']*header/);
+  });
+});
+
+describe('regression: share-link one-shot strip left a doubled \'#\' that defeated hash routing', () => {
+  // The island's old inline strip built `${pathname}#${hash.split('?')[0]}` —
+  // but the hash already starts with '#', so the one-shot replaceState left
+  // `…/##/plan` in the URL bar; initRouting's `replace(/^#\/?/)` then failed
+  // to parse it on the recipient's next reload (plan hydrated, wrong tab).
+  // takeShareParam now returns the stripped hash itself, single '#'.
+  it('strippedHash is the bare hash — single #, no doubled hash', () => {
+    const code = encodePlan({ upgradesOn: true, chars: [], balls: [], passives: [], fused: [] });
+    const taken = takeShareParam(`#/plan?p=${code}`)!;
+    expect(taken.strippedHash).toBe('#/plan');
+    expect(taken.strippedHash.startsWith('##')).toBe(false);
   });
 });
