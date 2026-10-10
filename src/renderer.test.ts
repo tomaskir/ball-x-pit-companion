@@ -564,3 +564,82 @@ describe('pairing restrictions in the DOM (jsdom, through paint())', () => {
     expect(entries.every((e) => !e.classList.contains('invalid-pair') && e.title === '')).toBe(true);
   });
 });
+
+// ---------- plan build graphs (jsdom, through paint()) ----------
+
+describe('plan build graphs (jsdom, through paint())', () => {
+  const FID = 'fusion:freeze-ray+time-bomb';
+  const graphEl = (ns: 'balls' | 'passives') =>
+    document.querySelector<HTMLElement>(`.plan-graph[data-graph="${ns}"]`)!;
+  const canvas = (ns: 'balls' | 'passives') =>
+    graphEl(ns).querySelector<HTMLElement>('.plan-graph-canvas')!;
+
+  it('both panels exist with toggles, row labels, and empty hints; canvases hide when empty', () => {
+    paint(view.derive());
+    const graphs = [...planView().querySelectorAll<HTMLElement>('.plan-graph')];
+    expect(graphs.map((g) => g.dataset.graph)).toEqual(['balls', 'passives']);
+    // balls get the fusion row label, passives don't (no passive fusions)
+    expect(graphs[0].querySelectorAll('.plan-graph-rowlabel')).toHaveLength(4);
+    expect(graphs[1].querySelectorAll('.plan-graph-rowlabel')).toHaveLength(3);
+    for (const ns of ['balls', 'passives'] as const) {
+      expect(graphEl(ns).querySelector<HTMLElement>('.plan-graph-empty')!.hidden).toBe(false);
+      expect(graphEl(ns).querySelector<HTMLElement>('.plan-graph-cols')!.hidden).toBe(true);
+      expect(canvas(ns).querySelectorAll('.build-node')).toHaveLength(0);
+    }
+  });
+
+  it('a planned fusion paints the layered graph: counts, final styling, pair icons, edges', () => {
+    drive({ type: 'togglePlanFusion', a: 'freeze-ray', b: 'time-bomb' });
+    const nodes = [...canvas('balls').querySelectorAll<HTMLElement>('.build-node')];
+    const byId = (id: string) => nodes.find((n) => n.dataset.id === id)!;
+    expect(byId('freeze')!.querySelector('.build-count')!.textContent).toBe('1');
+    expect(byId('laser-horizontal')!.querySelector('.build-count')!.textContent).toBe('0-1');
+    expect(byId('freeze-ray')!.classList.contains('final')).toBe(false);
+    expect(byId('freeze-ray')!.querySelector('.build-name')!.textContent).toBe('Freeze Ray');
+    const fusion = byId(FID)!;
+    expect(fusion.classList.contains('final')).toBe(true);
+    expect(fusion.classList.contains('fused')).toBe(true);
+    expect(fusion.querySelectorAll('img')).toHaveLength(2);
+    expect(fusion.querySelector('.build-name')!.textContent).toBe('Freeze Ray × Time Bomb');
+    const svg = graphEl('balls').querySelector<SVGSVGElement>('.plan-graph-edges')!;
+    expect(svg.querySelectorAll('path').length).toBeGreaterThanOrEqual(7);
+  });
+
+  it('clicking a node emits toggleGraphFocus through the seam; focus lights the chain in place', () => {
+    const emit = vi.fn();
+    buildAll({ getVerdict: () => null, emit });
+    drive({ type: 'togglePlanFusion', a: 'freeze-ray', b: 'time-bomb' });
+    canvas('balls').querySelector<HTMLElement>('.build-node[data-id="burn"]')!.click();
+    expect(emit).toHaveBeenCalledWith({ type: 'toggleGraphFocus', id: 'burn' });
+    // through the real view-state: the focused node, its downstream chain,
+    // and the fusion riding in via its component — the rest dims
+    drive({ type: 'toggleGraphFocus', id: 'burn' });
+    const byId = (id: string) => canvas('balls').querySelector<HTMLElement>(`.build-node[data-id="${id}"]`)!;
+    expect(byId('burn').classList.contains('focused')).toBe(true);
+    expect(byId('bomb').classList.contains('related')).toBe(true);
+    expect(byId(FID).classList.contains('related')).toBe(true);
+    expect(byId('freeze').classList.contains('dimmed')).toBe(true);
+    // the lit edges are exactly the focused chain's:
+    // burn→bomb, bomb→time-bomb, time-bomb→fusion
+    const lit = [...graphEl('balls').querySelectorAll<SVGPathElement>('path.lit')];
+    expect(lit.map((p) => `${p.dataset.from}>${p.dataset.to}`).sort())
+      .toEqual(['bomb>time-bomb', 'burn>bomb', `time-bomb>${FID}`]);
+    drive({ type: 'toggleGraphFocus', id: 'burn' });
+    expect(byId('burn').classList.contains('focused')).toBe(false);
+    expect(byId('freeze').classList.contains('dimmed')).toBe(false);
+  });
+
+  it('the collapse toggle emits toggleGraphCollapse; paint reflects the collapsed panel', () => {
+    const emit = vi.fn();
+    buildAll({ getVerdict: () => null, emit });
+    drive({ type: 'togglePlanFusion', a: 'freeze-ray', b: 'time-bomb' });
+    graphEl('balls').querySelector<HTMLButtonElement>('.plan-graph-toggle')!.click();
+    expect(emit).toHaveBeenCalledWith({ type: 'toggleGraphCollapse', which: 'balls' });
+    drive({ type: 'toggleGraphCollapse', which: 'balls' });
+    const section = graphEl('balls');
+    expect(section.classList.contains('collapsed')).toBe(true);
+    expect(section.querySelector('.plan-graph-toggle')!.getAttribute('aria-expanded')).toBe('false');
+    drive({ type: 'toggleGraphCollapse', which: 'balls' });
+    expect(section.classList.contains('collapsed')).toBe(false);
+  });
+});

@@ -8,6 +8,7 @@ import { PASSIVES } from './data/passives';
 import { CHARACTERS } from './data/characters';
 import { ballMap, passiveMap } from './catalog';
 import { highlightSet, factorizesIntoSlots } from './graph';
+import { deriveBuildGraph, FUSION_ID_PREFIX } from './build-graph';
 import { verdictFor } from './synergy';
 import { encodePlan, takeShareParam } from './share';
 import { readFileSync } from 'node:fs';
@@ -399,6 +400,24 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
   // pinned behaviorally in renderer.test.ts ("the upgrades toggle is shell
   // chrome"); the wiring/source-shape half lives in the hygiene section
   // below.
+});
+
+// ---------- regression: plan build graphs (2026-10-11 session) ----------
+
+describe('regression: build-graph fusion node ids are namespaced (the fusion row lives outside the ball namespace)', () => {
+  // an unprefixed "a+b" pair id could collide with a ball id and corrupt the
+  // graph's node identity — the same no-collision invariant the catalog owns
+  it('fusion-row nodes carry the fusion: prefix; every other node is a real catalog id', () => {
+    const model = deriveBuildGraph(
+      { singles: [], pairs: [{ a: 'freeze-ray', b: 'time-bomb' }] },
+      ballMap,
+      { fusionRow: true },
+    );
+    const fusionNodes = model.nodes.filter((n) => n.row === 3);
+    expect(fusionNodes).toHaveLength(1);
+    expect(fusionNodes[0].id.startsWith(FUSION_ID_PREFIX)).toBe(true);
+    expect(model.nodes.every((n) => n.row === 3 || ballMap.has(n.id))).toBe(true);
+  });
 });
 
 // ---------- source hygiene (grep pins) ----------

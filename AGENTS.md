@@ -21,6 +21,7 @@ Not an npm package (`"private": true`). Code is MIT-licensed; game art in
 - `src/renderer.ts` — all DOM painting; `buildAll({ getVerdict, emit })` once, then `paint(vm)` in place.
 - `src/fusion.ts` — pure fusion composer (`fuse(a, b)`); the site's editorial model of fusion, not game data.
 - `src/graph.ts` — pure evolution-graph helpers (depth, highlight walks, recipe notation).
+- `src/build-graph.ts` — pure Plan-screen build-graph derivation + layout (`deriveBuildGraph`/`layoutBuildGraph`); the renderer only paints it.
 - `src/catalog.ts` — ball/passive collections indexed; **namespace resolution lives here and nowhere else**.
 - `src/synergy.ts` — red/green verdict from tag overlap.
 - `src/icon-url.ts` — the base-URL × icon-path join.

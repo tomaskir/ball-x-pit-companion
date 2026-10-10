@@ -123,7 +123,35 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   (`createPlanState` — the `PlanState` derivation, the `PlanSnapshot`
   persistence currency, and the capacity/toggle invariants), forwarded and
   embedded into the ViewModel by `src/view-state.ts`; painting in
-  `src/renderer.ts` (`buildPlan`/`paintPlan`).
+  `src/renderer.ts` (`buildPlan`/`paintPlan`, plus the build graphs —
+  see **Build graph**).
+- **Build graph** — the Plan screen's layered "how do I build this" view
+  (one collapsible panel per namespace, under the plan sections): every
+  planned item plus its full component ancestry as ONE deduped graph —
+  fixed rows Base → Evolved → Tier-3, plus a Fusions row for balls only
+  (passives have no fusions). Nodes are one per id with a copies-needed
+  count: min-sum/max-sum over alternate paths — a mandatory recipe slot
+  adds {1,1}, a per-slot alternate {0,1} — so shared bases sum across
+  targets and alternates read as ranges ("0-1", "1-2"); a ball both
+  planned and demanded by a planned fusion counts twice (physical copies).
+  Planned targets are styled `final` in place; a planned pair that Evolves
+  instead of Fusing is just a way of building the evolved ball, so it
+  becomes a single target of the result. SVG connector edges run
+  component → builder (alternates included — the line shows the possible
+  path). Fusion-row node ids carry the `fusion:` prefix: the row lives
+  outside the catalog namespace (the no-collision invariant). Clicking a
+  node focuses it — the node plus its full upstream AND downstream chains
+  light, the rest dims (a base ball has no upstream, a fusion no
+  downstream; "both directions" covers both). Over-limit entries stay out
+  of the graph; a panel with nothing to show carries a hint; the collapse
+  flags are session-only (never persisted). Pure derivation + layout in
+  `src/build-graph.ts` (`deriveBuildGraph`/`layoutBuildGraph`, unit-tested
+  in `src/build-graph.test.ts`); targets resolved from the plan by
+  `src/view-state.ts` (`vm.buildGraph`; focus/collapse ride
+  `toggleGraphFocus`/`toggleGraphCollapse` through the build seam);
+  painting in `src/renderer.ts` (`paintBuildGraphs` — the canvas rebuilds
+  through the reconcile seam, the highlight repaints in place by
+  `data-id`).
 - **Selection box** — the balls/passives screens' view of the current
   single-item selection: shown in the screen toolbar (top left, search
   stays right; drops below the search row on mobile) only while an item of

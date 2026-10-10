@@ -552,3 +552,87 @@ describe('view state: Matchmaker pairing restrictions (game data, character-pair
     expect(vm.plan.characters[1].pairInvalid).toBe(false);
   });
 });
+
+// ---------- plan build graphs ----------
+
+describe('view state: plan build graphs', () => {
+  const fusionId = 'fusion:freeze-ray+time-bomb';
+
+  it('a planned fusion aggregates the full build graph, fusion row included', () => {
+    const view = createViewState();
+    const vm = view.dispatch({ type: 'togglePlanFusion', a: 'freeze-ray', b: 'time-bomb' });
+    const g = vm.buildGraph.balls;
+    const ids = g.nodes.map((n) => n.id);
+    // the user's example, end to end: bases, intermediates, the T3, the pair
+    for (const id of ['freeze', 'laser-horizontal', 'laser-vertical', 'burn', 'iron', 'time', 'freeze-ray', 'bomb', 'time-bomb', fusionId]) {
+      expect(ids, id).toContain(id);
+    }
+    expect(g.nodes.find((n) => n.id === fusionId)!.final).toBe(true);
+    // the passive graph stays empty — namespaces strictly separate
+    expect(vm.buildGraph.passives.nodes).toHaveLength(0);
+  });
+
+  it('over-limit entries stay out of the graph', () => {
+    const view = createViewState();
+    // live selection can never exceed the limit (sticky toggle blocks it) —
+    // over-limit arrives hydrated, kept and marked, never trimmed
+    const vm = view.dispatch({
+      type: 'hydrate',
+      plan: {
+        upgradesOn: false,
+        chars: [],
+        balls: ['bomb', 'inferno', 'frozen-flame', 'elemental', 'time-bomb'],
+        passives: [],
+        fused: [],
+      },
+    });
+    // paint order is complexity-sorted, so the marked tail entry is the
+    // least complex pick (Frozen Flame), not the last-picked one
+    expect(vm.plan.balls[4].overLimit).toBe(true);
+    const tail = vm.plan.balls[4];
+    expect(tail.kind === 'single' && tail.item.id).toBe('frozen-flame');
+    expect(vm.buildGraph.balls.nodes.some((n) => n.id === 'frozen-flame')).toBe(false);
+    expect(vm.buildGraph.balls.nodes.some((n) => n.id === 'time-bomb')).toBe(true);
+  });
+
+  it('a planned pair that evolves instead becomes a single target of the evolved ball', () => {
+    const view = createViewState();
+    const vm = view.dispatch({ type: 'togglePlanFusion', a: 'freeze', b: 'laser-horizontal' });
+    const g = vm.buildGraph.balls;
+    expect(g.nodes.find((n) => n.id === 'freeze-ray')!.final).toBe(true);
+    expect(g.nodes.some((n) => n.row === 3)).toBe(false);
+  });
+
+  it('focus walks both directions; a fusion focus lights the pair chain; re-click clears', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'togglePlanFusion', a: 'freeze-ray', b: 'time-bomb' });
+    let vm = view.dispatch({ type: 'toggleGraphFocus', id: 'burn' });
+    expect(vm.buildGraph.focus).toBe('burn');
+    expect(vm.buildGraph.related.has('bomb')).toBe(true); // downstream
+    expect(vm.buildGraph.related.has(fusionId)).toBe(true); // rides in via bomb
+    vm = view.dispatch({ type: 'toggleGraphFocus', id: fusionId });
+    expect(vm.buildGraph.related.has('freeze')).toBe(true); // upstream
+    vm = view.dispatch({ type: 'toggleGraphFocus', id: fusionId });
+    expect(vm.buildGraph.focus).toBe(null);
+    expect(vm.buildGraph.related.size).toBe(0);
+  });
+
+  it('focus on an id outside the graph highlights nothing', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'togglePlanFusion', a: 'freeze-ray', b: 'time-bomb' });
+    const vm = view.dispatch({ type: 'toggleGraphFocus', id: 'bleed' });
+    expect(vm.buildGraph.focus).toBe(null);
+    expect(vm.buildGraph.related.size).toBe(0);
+  });
+
+  it('passives build their own graph; collapse flags are session-only panel state', () => {
+    const view = createViewState();
+    const vm = view.dispatch({ type: 'togglePlanItem', id: 'deadeyes-impaler' });
+    expect(vm.buildGraph.passives.nodes.some((n) => n.id === 'deadeyes-impaler' && n.final)).toBe(true);
+    expect(vm.buildGraph.balls.nodes).toHaveLength(0);
+    const vm2 = view.dispatch({ type: 'toggleGraphCollapse', which: 'balls' });
+    expect(vm2.buildGraph.collapsed).toEqual({ balls: true, passives: false });
+    const vm3 = view.dispatch({ type: 'toggleGraphCollapse', which: 'balls' });
+    expect(vm3.buildGraph.collapsed.balls).toBe(false);
+  });
+});

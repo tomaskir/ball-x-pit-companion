@@ -30,6 +30,7 @@ import { PASSIVES } from './data/passives';
 import { CHARACTERS, type Character } from './data/characters';
 import { ballMap, itemFor, type Item } from './catalog';
 import { fusionBalls } from './fusion';
+import { BUILD_GRAPH_METRICS } from './build-graph';
 import { recipeHtml } from './graph';
 import { iconUrl } from './icon-url';
 import { createToast, type ToastAdapter } from './toast';
@@ -463,6 +464,20 @@ function paintFusion(vm: ViewModel) {
 // marks repaint in place every paint, found by each entry's stamped
 // identity, so a character toggle (which changes verdicts but not the entry
 // set) never rebuilds.
+//
+// Below the three sections sit the build graphs (one per namespace) — the
+// same built-once/repaint-through-reconcile pattern: the canvas rebuilds
+// only when the derived graph's content key changed; focus/related/dimmed
+// highlight repaint in place, found by each node's data-id.
+interface GraphSectionEls {
+  section: HTMLElement;
+  toggle: HTMLButtonElement;
+  empty: HTMLElement;
+  cols: HTMLElement;
+  canvas: HTMLElement;
+  svg: SVGSVGElement;
+}
+
 let planEls: {
   hint: HTMLElement;
   sections: {
@@ -470,12 +485,24 @@ let planEls: {
     balls: { count: HTMLElement; empty: HTMLElement; grid: HTMLElement };
     passives: { count: HTMLElement; empty: HTMLElement; grid: HTMLElement };
   };
+  graphs: { balls: GraphSectionEls; passives: GraphSectionEls };
 } | null = null;
 
 const PLAN_EMPTY_HINTS = {
   characters: 'Pick characters on the Characters screen — they appear here.',
   balls: 'Balls you pick on the Balls screen will appear here.',
   passives: 'Passives you pick on the Passives screen will appear here.',
+} as const;
+
+const GRAPH_EMPTY_HINTS = {
+  balls: 'Balls or fused pairs in your plan will show every step to build them here.',
+  passives: 'Passives in your plan will show every step to build them here.',
+} as const;
+
+const GRAPH_TITLES = { balls: 'Ball build graph', passives: 'Passive build graph' } as const;
+const GRAPH_ROW_LABELS = {
+  balls: [...DEPTH_LABELS, 'Fusions'],
+  passives: [...DEPTH_LABELS],
 } as const;
 
 function buildPlan() {
@@ -487,6 +514,22 @@ function buildPlan() {
         <h2 class="plan-heading"><span class="plan-title">${key[0].toUpperCase() + key.slice(1)}</span> <span class="plan-count"></span></h2>
         <p class="plan-empty">${PLAN_EMPTY_HINTS[key]}</p>
         <div class="plan-grid"></div>
+      </section>`).join('')}
+    ${(['balls', 'passives'] as const).map((ns) => `
+      <section class="plan-graph" data-graph="${ns}">
+        <button class="plan-graph-toggle" type="button" aria-expanded="true">
+          <span class="plan-graph-title">${GRAPH_TITLES[ns]}</span>
+          <span class="plan-graph-caret" aria-hidden="true">▾</span>
+        </button>
+        <div class="plan-graph-body">
+          <p class="plan-graph-empty">${GRAPH_EMPTY_HINTS[ns]}</p>
+          <div class="plan-graph-cols">
+            <div class="plan-graph-rowlabels" aria-hidden="true">
+              ${GRAPH_ROW_LABELS[ns].map((l) => `<span class="plan-graph-rowlabel" style="height:${BUILD_GRAPH_METRICS.rowH}px">${l}</span>`).join('')}
+            </div>
+            <div class="plan-graph-scroll"><div class="plan-graph-canvas"><svg class="plan-graph-edges" aria-hidden="true"></svg></div></div>
+          </div>
+        </div>
       </section>`).join('')}`;
   const q = (s: string) => root.querySelector(s)!;
   const section = (key: string) => {
@@ -497,9 +540,25 @@ function buildPlan() {
       grid: el.querySelector('.plan-grid') as HTMLElement,
     };
   };
+  const graphSection = (ns: 'balls' | 'passives'): GraphSectionEls => {
+    const el = q(`.plan-graph[data-graph="${ns}"]`);
+    const toggle = el.querySelector('.plan-graph-toggle') as HTMLButtonElement;
+    // the collapse toggle reports through the build seam like every other
+    // built-in click handler
+    toggle.addEventListener('click', () => emit({ type: 'toggleGraphCollapse', which: ns }));
+    return {
+      section: el as HTMLElement,
+      toggle,
+      empty: el.querySelector('.plan-graph-empty') as HTMLElement,
+      cols: el.querySelector('.plan-graph-cols') as HTMLElement,
+      canvas: el.querySelector('.plan-graph-canvas') as HTMLElement,
+      svg: el.querySelector('.plan-graph-edges') as SVGSVGElement,
+    };
+  };
   planEls = {
     hint: q('.plan-hint') as HTMLElement,
     sections: { characters: section('characters'), balls: section('balls'), passives: section('passives') },
+    graphs: { balls: graphSection('balls'), passives: graphSection('passives') },
   };
 }
 
@@ -653,6 +712,93 @@ function paintPlan(vm: ViewModel) {
   plan.passives.forEach((e) => repaintEntry(passiveEntries.get(entryKey('passive', e.item.id)), e));
 }
 
+// ---------- plan build graphs ----------
+
+// The two build-graph panels paint from vm.buildGraph's laid-out models
+// (src/build-graph.ts derives and lays out; this only paints). The canvas
+// rebuilds only when the graph's content changed (reconcile's diff — nodes
+// and edges are dynamic content, same exception as the plan entries); the
+// focus/related/dimmed highlight repaints in place every paint, found by
+// each node's data-id and each edge's stamped endpoints.
+function paintBuildGraphs(vm: ViewModel) {
+  if (!planEls) return;
+  const bg = vm.buildGraph;
+  for (const ns of ['balls', 'passives'] as const) {
+    const els = planEls.graphs[ns];
+    const layout = bg[ns];
+    els.section.classList.toggle('collapsed', bg.collapsed[ns]);
+    els.toggle.setAttribute('aria-expanded', String(!bg.collapsed[ns]));
+    const empty = layout.nodes.length === 0;
+    els.empty.hidden = !empty;
+    els.cols.hidden = empty;
+    if (empty) {
+      // clear through reconcile too — a plan that empties must not leave the
+      // previous graph's nodes behind (the svg edge layer lives inside the
+      // canvas, so the clear removes everything but it)
+      reconcile(els.canvas, '', () => {
+        for (const el of [...els.canvas.children]) if (el !== els.svg) el.remove();
+        els.svg.replaceChildren();
+        els.canvas.style.width = '';
+        els.canvas.style.height = '';
+      });
+      continue;
+    }
+
+    const key =
+      layout.nodes.map((n) => `${n.id}|${n.min}-${n.max}|${n.final ? 1 : 0}`).join(',') +
+      '#' +
+      layout.edges.map((e) => `${e.from}>${e.to}`).join(',');
+    reconcile(els.canvas, key, () => {
+      els.canvas.style.width = `${layout.width}px`;
+      els.canvas.style.height = `${layout.height}px`;
+      els.svg.setAttribute('width', String(layout.width));
+      els.svg.setAttribute('height', String(layout.height));
+      els.svg.setAttribute('viewBox', `0 0 ${layout.width} ${layout.height}`);
+      els.svg.replaceChildren(...layout.edges.map((e) => {
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', e.path);
+        path.dataset.from = e.from;
+        path.dataset.to = e.to;
+        return path;
+      }));
+      for (const n of layout.nodes) {
+        const el = document.createElement('button');
+        el.type = 'button';
+        el.className = `build-node${n.final ? ' final' : ''}${n.row === 3 ? ' fused' : ''}`;
+        el.dataset.id = n.id;
+        el.style.left = `${n.x}px`;
+        el.style.top = `${n.y}px`;
+        el.style.width = `${n.w}px`;
+        el.style.height = `${BUILD_GRAPH_METRICS.nodeH}px`;
+        // fusion nodes show both pair icons; the count reads "n" when every
+        // path needs that many copies, "min-max" when alternates widen it
+        const icons = n.row === 3
+          ? `<img src="${icon(n.icon)}" alt="" width="28" height="28"><img src="${icon(n.icon2!)}" alt="" width="28" height="28">`
+          : `<img src="${icon(n.icon)}" alt="${n.name}" width="28" height="28">`;
+        const count = n.min === n.max ? `${n.min}` : `${n.min}-${n.max}`;
+        el.innerHTML = `${icons}<span class="build-name">${n.name}</span><span class="build-count">${count}</span>`;
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          emit({ type: 'toggleGraphFocus', id: n.id });
+        });
+        els.canvas.appendChild(el);
+      }
+    });
+
+    for (const el of els.canvas.querySelectorAll<HTMLElement>('.build-node')) {
+      const id = el.dataset.id ?? '';
+      el.classList.toggle('focused', bg.focus === id);
+      el.classList.toggle('related', bg.focus !== null && bg.focus !== id && bg.related.has(id));
+      el.classList.toggle('dimmed', bg.focus !== null && !bg.related.has(id));
+    }
+    // an edge lights when both its endpoints sit in the focused chain
+    for (const path of els.svg.querySelectorAll<SVGPathElement>('path')) {
+      const lit = bg.focus !== null && bg.related.has(path.dataset.from ?? '') && bg.related.has(path.dataset.to ?? '');
+      path.classList.toggle('lit', lit);
+    }
+  }
+}
+
 // ---------- selection box (balls/passives screens) ----------
 
 // One box per item screen, built once into its index.astro container;
@@ -783,5 +929,6 @@ export function paint(vm: ViewModel): void {
   renderCharChips(vm);
   paintFusion(vm);
   paintPlan(vm);
+  paintBuildGraphs(vm);
   paintSelectionBoxes(vm);
 }

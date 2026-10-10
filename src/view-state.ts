@@ -21,9 +21,10 @@
 import { BALLS, type Ball } from './data/balls';
 import { PASSIVES } from './data/passives';
 import { CHARACTERS, type Character } from './data/characters';
-import { highlightSet } from './graph';
-import { ballMap, isPassive, itemFor, graphFor } from './catalog';
-import { fusionBalls, fuse, type FusionResult } from './fusion';
+import { highlightSet, closure, union } from './graph';
+import { ballMap, isPassive, itemFor, graphFor, passiveMap } from './catalog';
+import { deriveBuildGraph, layoutBuildGraph, FUSION_ID_PREFIX, type BuildGraphLayout } from './build-graph';
+import { fusionBalls, fuse, evolvesInstead, type FusionResult } from './fusion';
 import { verdictFor, type Item, type Verdict } from './synergy';
 import { createPlanState, stickyToggle, hydrateList, isFusable } from './plan-state';
 import type { PlanAction, PlanLimits, PlanState, PlanSnapshot } from './plan-state';
@@ -86,8 +87,23 @@ export interface ViewModel {
   fusionHint: string;
   /** The plan screen's state — see PlanState (src/plan-state.ts). */
   plan: PlanState;
+  /** The plan screen's build graphs — see BuildGraphViewState. */
+  buildGraph: BuildGraphViewState;
   /** The balls/passives screens' selection boxes — see SelectionBoxState. */
   selectionBoxes: { balls: SelectionBoxState | null; passives: SelectionBoxState | null };
+}
+/** The Plan screen's build graphs: one laid-out model per namespace (balls
+ *  with a fusion row, passives without — the graphs stay strictly separate),
+ *  the focused node id (null = nothing focused), the related set the
+ *  renderer lights for it (the focus plus its full upstream AND downstream
+ *  chains — for a fusion node, the pair balls and their ancestries), and
+ *  the session-only collapsed flags for the two panels. */
+export interface BuildGraphViewState {
+  balls: BuildGraphLayout;
+  passives: BuildGraphLayout;
+  focus: string | null;
+  related: Set<string>;
+  collapsed: { balls: boolean; passives: boolean };
 }
 export type Section = 'balls' | 'passives' | 'characters' | 'fusions' | 'plan';
 export type Action =
@@ -101,6 +117,11 @@ export type Action =
    *  The plan section is deliberately not clearable this way (its selection
    *  is deliberate work — only clearPlan wipes it). */
   | { type: 'clear'; section: Section }
+  /** The plan screen's build graph: focus (or unfocus) a node — the graph's
+   *  highlight. The id is a catalog id or a `fusion:`-prefixed pair node. */
+  | { type: 'toggleGraphFocus'; id: string }
+  /** Collapse/expand one of the plan screen's build-graph panels. */
+  | { type: 'toggleGraphCollapse'; which: 'balls' | 'passives' }
   // The plan's actions, forwarded verbatim to the plan state
   // (src/plan-state.ts) — same members, same shapes as before the
   // extraction; see PlanAction there for the per-action contracts.
@@ -114,7 +135,7 @@ export type Action =
  *  static shell markup the island wires directly, like Clear and Share.) */
 export type ToggleAction = Extract<
   Action,
-  { type: 'toggleItem' | 'toggleChar' | 'toggleFusion' | 'togglePlanItem' | 'togglePlanFusion' }
+  { type: 'toggleItem' | 'toggleChar' | 'toggleFusion' | 'togglePlanItem' | 'togglePlanFusion' | 'toggleGraphFocus' | 'toggleGraphCollapse' }
 >;
 
 /** Balls offered by the fusion pick list: all fusable upgrade entities.
@@ -141,6 +162,11 @@ export function createViewState() {
   const selectedChars: Character[] = [];
   /** Fusion picks in selection order, at most 2. */
   const fusionPicks: string[] = [];
+  /** The build graph's focused node (null = none) and the two panels'
+   *  collapsed flags — session-only UI state, not part of the plan
+   *  snapshot. */
+  let graphFocus: string | null = null;
+  const graphCollapsed = { balls: false, passives: false };
   /** The plan's state — upgrade toggle, planned balls/passives/fused pairs,
    *  and the PlanState derivation. The plan's characters are the shared
    *  selectedChars above: handed in on every derive/snapshot, cleared by
@@ -227,6 +253,53 @@ export function createViewState() {
       balls: selected && !isPassive(selected.id) ? { item: selected, plan: planLabel, fusion: fusionLabel } : null,
       passives: selected && isPassive(selected.id) ? { item: selected, plan: planLabel, fusion: fusionLabel } : null,
     };
+    // The build graphs: targets are the plan's kept (non-over-limit)
+    // entries — over-limit and everything else the plan merely marks stays
+    // out of the picture. A planned pair that Evolves instead of Fusing is
+    // just a way of building the evolved ball, so it becomes a single
+    // target of the result (deduped against a directly planned single by
+    // the derivation's id set).
+    const ballTargets = { singles: [] as string[], pairs: [] as { a: string; b: string }[] };
+    for (const e of planState.balls) {
+      if (e.overLimit) continue;
+      if (e.kind === 'single') ballTargets.singles.push(e.item.id);
+      else {
+        const evo = evolvesInstead(e.a, e.b);
+        if (evo) ballTargets.singles.push(evo.id);
+        else ballTargets.pairs.push({ a: e.a.id, b: e.b.id });
+      }
+    }
+    const passiveTargets = {
+      singles: planState.passives.filter((e) => !e.overLimit).map((e) => e.item.id),
+      pairs: [] as { a: string; b: string }[],
+    };
+    const ballsGraph = layoutBuildGraph(deriveBuildGraph(ballTargets, ballMap, { fusionRow: true }), 4);
+    const passivesGraph = layoutBuildGraph(deriveBuildGraph(passiveTargets, passiveMap, { fusionRow: false }), 3);
+    // Focus highlight: the focused node plus its full upstream AND downstream
+    // chains in its own namespace (a base ball has no upstream, a fusion no
+    // downstream — "both directions" covers both). A fusion node lights its
+    // pair balls and their ancestries; a lit ball rides its fusion nodes in.
+    let focus = graphFocus;
+    if (focus && ![...ballsGraph.nodes, ...passivesGraph.nodes].some((n) => n.id === focus)) focus = null;
+    const graphRelated = new Set<string>();
+    if (focus) {
+      if (focus.startsWith(FUSION_ID_PREFIX)) {
+        const [a, b] = focus.slice(FUSION_ID_PREFIX.length).split('+');
+        graphRelated.add(focus);
+        graphRelated.add(a);
+        graphRelated.add(b);
+        for (const id of closure([a, b], ballMap, false)) graphRelated.add(id);
+      } else {
+        const g = graphFor(focus);
+        for (const id of union(closure([focus], g, false), closure([focus], g, true))) graphRelated.add(id);
+        graphRelated.add(focus);
+        for (const n of ballsGraph.nodes) {
+          if (n.row !== 3) continue;
+          const [a, b] = n.id.slice(FUSION_ID_PREFIX.length).split('+');
+          if (graphRelated.has(a) || graphRelated.has(b)) graphRelated.add(n.id);
+        }
+      }
+    }
     return {
       tiles,
       charCards,
@@ -242,6 +315,7 @@ export function createViewState() {
         : fusionPicks.length === 1 ? '…pick a second ball.'
         : SELECTION_FULL,
       plan: planState,
+      buildGraph: { balls: ballsGraph, passives: passivesGraph, focus, related: graphRelated, collapsed: { ...graphCollapsed } },
       selectionBoxes,
     };
   };
@@ -289,6 +363,15 @@ export function createViewState() {
         case 'togglePlanFusion':
         case 'toggleUpgrades':
           plan.dispatch(action);
+          break;
+        // Build-graph UI state: focus toggles (re-click clears); a stale
+        // focus (its node left the graph) simply highlights nothing. The
+        // collapsed flags are session-only — never persisted.
+        case 'toggleGraphFocus':
+          graphFocus = graphFocus === action.id ? null : action.id;
+          break;
+        case 'toggleGraphCollapse':
+          graphCollapsed[action.which] = !graphCollapsed[action.which];
           break;
         case 'clearPlan':
           plan.dispatch(action);
