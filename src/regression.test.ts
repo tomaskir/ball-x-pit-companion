@@ -407,19 +407,12 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
   // wiping the screen you had just arrived on. Harmless before (showSection
   // dispatched clearAll anyway), fatal after tab switching stopped
   // clearing. Fix: header controls are not empty space — the exemption
-  // selector includes `header`. The decision itself is now behavioral —
-  // shouldClear + the CLEAR_EXEMPT_SELECTOR tokens in
-  // src/companion-core.test.ts — but the island's wiring (that its handlers
-  // route events through those exported selectors, not some drifted inline
-  // copy) is still source-only: companion.ts remains jsdom-hostile to
-  // import for its top-level init().
-  it('clear handlers route through companion-core\'s exempt selectors (tab click wiped the destination screen)', () => {
-    const src = readFileSync('src/companion.ts', 'utf8');
-    const handler = src.match(/document\.addEventListener\('click'[\s\S]*?\n  \}\);/);
-    expect(handler, 'empty-space click handler not found').toBeTruthy();
-    expect(handler![0]).toMatch(/closest\(CLEAR_EXEMPT_SELECTOR\)/);
-    expect(src).toMatch(/closest\(ESC_EXEMPT_SELECTOR\)/);
-  });
+  // selector includes `header`. This used to be a grep over companion.ts's
+  // source (the island was jsdom-hostile to import for its top-level
+  // init()); the island is now callable — startIsland(ports) — and the bug
+  // is pinned behaviorally in src/companion.test.ts ("clear policy wiring"):
+  // a tab click keeps the destination screen's remembered selection, an
+  // empty-space click clears, Esc in a search input clears only the query.
 
   // Bug (seam hygiene, 2026-10-10): the End game upgrades toggle was built
   // by the renderer into the shell's #planUpgradesSlot — the one place the

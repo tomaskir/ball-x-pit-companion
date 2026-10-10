@@ -170,8 +170,16 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   functions in **`src/companion-core.ts`** (`sectionFromHash`,
   `shouldClear` + the exempt selectors, `themeFromStorage`) — the island is
   their transport, reading real events/storage and applying the results to
-  the DOM; that keeps the decisions unit-testable where companion.ts itself
-  is jsdom-hostile to import (top-level `init()`).
+  the DOM. The startup sequence itself is callable: **`startIsland(ports)`**
+  composes those pure decisions with injected **ports** for every
+  environment touchpoint (storage, location/history, clipboard, the OS
+  color-scheme query) and returns a disposer for its document/window
+  listeners; the module top level keeps only a guard that calls
+  `startIsland(realPorts())` when the mount point (`#ballsGrid`) exists, so
+  the browser path is unchanged and jsdom imports and drives the island
+  with stub ports (`src/companion.test.ts` — startup precedence, the
+  one-shot strip, corrupt-storage survival, save-on-every-dispatch, the
+  clipboard fallback chain are all pinned behaviorally there).
 - **Renderer** — all DOM painting for the island. Module: `src/renderer.ts`
   (recipe notation comes from `src/graph.ts`; the renderer only injects
   icon markup — see **Recipe notation**; the icon-URL join comes from

@@ -4,8 +4,10 @@
 // active section's selection (shouldClear), and which theme a stored value
 // plus OS preference resolve to (themeFromStorage). The island keeps the
 // transport: it reads real events/storage, calls these, and applies the
-// results to the DOM. Keeping the decisions here makes them unit-testable —
-// companion.ts's top-level init() makes it jsdom-hostile to import.
+// results to the DOM. Keeping the decisions here makes them unit-testable
+// independently of the DOM — and companion.ts itself is now callable too
+// (startIsland(ports), with the environment injected as ports), so the
+// island's wiring is pinned behaviorally in src/companion.test.ts.
 import type { Section } from './view-state';
 
 // ---------- routing ----------
