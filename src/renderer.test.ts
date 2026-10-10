@@ -361,6 +361,38 @@ describe('plan screen behavior (jsdom, through paint())', () => {
     expect(planView().querySelector('.plan-entry .ind.red')).toBeTruthy();
   });
 
+  it('fused badges land by pair identity, not grid position (was slice(-plan.fused.length))', () => {
+    // The fused-badge pass used to derive "the fused entries are the last N
+    // children" positionally. Interleave the balls grid — fused entry moved
+    // ahead of the single balls — and repaint: the badges must still land on
+    // the pair's own entry.
+    drive(
+      { type: 'toggleChar', id: 'the-ballbearer' }, // green on both components (aoe)
+      { type: 'togglePlanItem', id: 'flash' },
+      { type: 'togglePlanItem', id: 'glacier' },
+      { type: 'togglePlanFusion', a: 'flash', b: 'glacier' },
+    );
+    const grid = planView().querySelector<HTMLElement>('.plan-section[data-plan="balls"] .plan-grid')!;
+    const entryNamed = (name: string) =>
+      [...grid.querySelectorAll<HTMLElement>('.plan-entry')]
+        .find((e) => e.querySelector('.plan-name')!.textContent === name)!;
+    const fused = entryNamed('Flash × Glacier');
+    // one green badge per component icon, and no entry-level badge
+    expect(fused.querySelectorAll('.plan-icon .ind')).toHaveLength(2);
+    expect(fused.querySelectorAll('.plan-icon .ind.green')).toHaveLength(2);
+    expect(fused.querySelector(':scope > .ind')).toBeNull();
+
+    // interleave: the fused entry is no longer the last child
+    grid.insertBefore(fused, grid.firstElementChild);
+    paint(view.derive()); // same entry set → no rebuild; badges must re-land by identity
+    expect(fused.querySelectorAll('.plan-icon .ind')).toHaveLength(2);
+    expect(fused.querySelectorAll('.plan-icon .ind.green')).toHaveLength(2);
+    expect(fused.querySelector(':scope > .ind')).toBeNull();
+    // the single balls keep their own verdict badges
+    expect(entryNamed('Flash').querySelector('.ind.green')).toBeTruthy();
+    expect(entryNamed('Glacier').querySelector('.ind.green')).toBeTruthy();
+  });
+
   it('fused pairs render as one entry: both icons, ×, name, one X (emits togglePlanFusion)', () => {
     const emit = vi.fn();
     buildAll({ getVerdict: () => null, emit });

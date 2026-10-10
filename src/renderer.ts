@@ -3,8 +3,8 @@
 // fusion panel, the plan screen skeleton), then paint(viewModel) repaints
 // state on it — never recreating <img> elements (rebuilding would blink the
 // icons; the plan's entries and the character chips are the one accepted
-// exception, rebuilding only when their selection changes — the chips' diff
-// pattern). The island (src/companion.ts)
+// exception, rebuilding only when their content key changes — the reconcile
+// seam below). The island (src/companion.ts)
 // keeps only event listening, theme, hash routing, and plan persistence; the
 // ViewModel it paints comes from src/view-state.ts — the fusion panel rides
 // the named fusionPanel state (empty / pending / composed) and paintFusion
@@ -42,6 +42,31 @@ const icon = (p: string) => iconUrl(import.meta.env.BASE_URL, p);
  *  the named view-state action and paints). */
 let toastVerdict: (item: Item) => Verdict | null = () => null;
 let emit: (action: ToggleAction) => void = () => {};
+
+// ---------- reconcile ----------
+
+// One seam for the renderer's built-once/repaint-in-place pattern — the
+// content-diff bookkeeping four sites used to hand-roll (the chips' id-array
+// compare, the plan's serialized whole-plan key, the panel icons' src
+// compares, the selection boxes' stashed item id). A container's painted
+// key is the identity of what was last painted on it, held in a WeakMap:
+// nothing leaks into the DOM, and a container rebuilt by buildAll starts
+// unpainted. reconcile() repaints only when the key changed — a match
+// leaves the built DOM (especially <img>) untouched. The selection box's
+// once-built buttons read their item through the same map: the painted key
+// IS the item the buttons act on.
+const paintedKeys = new WeakMap<HTMLElement, string>();
+
+/** The content key last painted on el — what once-built handlers read. */
+const paintedKey = (el: HTMLElement): string | undefined => paintedKeys.get(el);
+
+/** Repaint el's content: run repaint unless key matches the last painted
+ *  one. */
+function reconcile(el: HTMLElement, key: string, repaint: () => void): void {
+  if (paintedKeys.get(el) === key) return;
+  paintedKeys.set(el, key);
+  repaint();
+}
 
 // ---------- grids ----------
 
@@ -167,27 +192,25 @@ function paintCharCards(vm: ViewModel) {
 
 // ---------- character chips ----------
 
-// Chips rebuild only when the character selection changes — paint() diffs
-// against the last painted set so search/selection repaints skip the rebuild.
-let paintedCharIds: string[] = [];
-
+// Chips rebuild only when the character selection changes — reconcile diffs
+// the painted id set on the chip strip, so search/selection repaints skip
+// the rebuild.
 function renderCharChips(vm: ViewModel) {
   document.getElementById('slotHint')!.textContent = vm.slotHint;
-  const ids = vm.selectedChars.map((c) => c.id);
-  if (ids.length === paintedCharIds.length && ids.every((id, i) => id === paintedCharIds[i])) return;
-  paintedCharIds = ids;
   const wrap = document.getElementById('charChips')!;
-  wrap.innerHTML = '';
-  for (const ch of vm.selectedChars) {
-    // the chip body is inert — removal is the X button's job only
-    const chip = document.createElement('span');
-    chip.className = 'chip';
-    chip.innerHTML = `<img src="${icon(ch.sprite)}" alt="" width="22" height="22"><span>${ch.name}</span><button class="chip-x" aria-label="Remove ${ch.name}" title="Click × to remove">×</button>`;
-    chip.querySelector('.chip-x')!.addEventListener('click', () => {
-      emit({ type: 'toggleChar', id: ch.id });
-    });
-    wrap.appendChild(chip);
-  }
+  reconcile(wrap, vm.selectedChars.map((c) => c.id).join(','), () => {
+    wrap.innerHTML = '';
+    for (const ch of vm.selectedChars) {
+      // the chip body is inert — removal is the X button's job only
+      const chip = document.createElement('span');
+      chip.className = 'chip';
+      chip.innerHTML = `<img src="${icon(ch.sprite)}" alt="" width="22" height="22"><span>${ch.name}</span><button class="chip-x" aria-label="Remove ${ch.name}" title="Click × to remove">×</button>`;
+      chip.querySelector('.chip-x')!.addEventListener('click', () => {
+        emit({ type: 'toggleChar', id: ch.id });
+      });
+      wrap.appendChild(chip);
+    }
+  });
 }
 
 // ---------- toast ----------
@@ -383,7 +406,10 @@ function paintFusion(vm: ViewModel) {
   if (fp.state === 'pending') {
     p.head.hidden = false;
     p.op.textContent = '+ ?';
-    if (p.iconA.getAttribute('src') !== icon(fp.first.icon)) p.iconA.src = icon(fp.first.icon);
+    // the head icons re-point only when their ball changes — reconcile's
+    // key is the icon path, so a match leaves the <img> untouched
+    const srcA = icon(fp.first.icon);
+    reconcile(p.iconA, srcA, () => { p.iconA.src = srcA; });
     p.iconA.alt = fp.first.name;
     p.nameA.textContent = fp.first.name;
     // hide the second icon slot entirely — an src-less <img> renders as a
@@ -402,12 +428,14 @@ function paintFusion(vm: ViewModel) {
   const { fusion: f, a, b } = fp;
   p.head.hidden = false;
   p.op.textContent = '×';
-  if (p.iconA.getAttribute('src') !== icon(a.icon)) p.iconA.src = icon(a.icon);
+  const srcA = icon(a.icon);
+  reconcile(p.iconA, srcA, () => { p.iconA.src = srcA; });
   p.iconA.alt = a.name;
   p.nameA.textContent = a.name;
   p.hint.hidden = true;
   p.iconB.style.display = '';
-  if (p.iconB.getAttribute('src') !== icon(b.icon)) p.iconB.src = icon(b.icon);
+  const srcB = icon(b.icon);
+  reconcile(p.iconB, srcB, () => { p.iconB.src = srcB; });
   p.iconB.alt = b.name;
   p.nameB.textContent = b.name;
   p.planBtn.textContent = fp.planned ? 'Remove from plan' : 'Add to plan';
@@ -445,11 +473,12 @@ function paintFusion(vm: ViewModel) {
 
 // ---------- plan screen ----------
 
-// The plan screen's skeleton is built once; entries rebuild only when the
-// selection or the upgrade toggle changes (the chips' diff pattern — the
-// one accepted exception to never-recreate, since entry sets are dynamic).
-// Badges and over-limit marks repaint in place every paint, so a character
-// toggle (which changes verdicts but not the entry set) never rebuilds.
+// The plan screen's skeleton is built once; entries rebuild only when their
+// section's entry set changed (reconcile's diff — the one accepted exception
+// to never-recreate, since entry sets are dynamic). Badges and over-limit
+// marks repaint in place every paint, found by each entry's stamped
+// identity, so a character toggle (which changes verdicts but not the entry
+// set) never rebuilds.
 let planEls: {
   upgrades: HTMLInputElement;
   hint: HTMLElement;
@@ -459,7 +488,6 @@ let planEls: {
     passives: { count: HTMLElement; empty: HTMLElement; grid: HTMLElement };
   };
 } | null = null;
-let paintedPlanKey = '';
 
 const PLAN_EMPTY_HINTS = {
   characters: 'Pick characters on the Characters screen — they appear here.',
@@ -517,64 +545,90 @@ function planEntry(inner: string, onRemove: () => void): HTMLElement {
 function paintPlan(vm: ViewModel) {
   if (!planEls) return;
   const plan = vm.plan;
+  const { sections } = planEls;
   planEls.upgrades.checked = plan.upgradesOn;
   planEls.hint.textContent = plan.hint;
   planEls.hint.hidden = !plan.hint;
 
-  // rebuild only when a section's entry set (or the toggle) changed — the
-  // chips' diff pattern
-  const key = `${plan.upgradesOn}|${plan.characters.map((c) => c.character.id).join(',')}|${plan.balls.map((e) => e.item.id).join(',')}|${plan.passives.map((e) => e.item.id).join(',')}|${plan.fused.map((f) => `${f.a.id}+${f.b.id}`).join(',')}`;
-  if (key !== paintedPlanKey) {
-    paintedPlanKey = key;
-    const charEntries = plan.characters.map(({ character: ch }) => {
+  // each section's entries rebuild only when that section's entry set
+  // changed — reconcile diffs the entry identities. Every built entry is
+  // stamped with its identity (data-entry) so the badge repaint below finds
+  // entries by key, never by grid position.
+  reconcile(sections.characters.grid, plan.characters.map((e) => `char:${e.character.id}`).join(','), () => {
+    sections.characters.grid.replaceChildren(...plan.characters.map(({ character: ch }) => {
       const base = ch.baseBallId ? ballMap.get(ch.baseBallId) : null;
       // the body is a column: name over base chip — the sprite and X stay
       // put while the name wraps at word boundaries
-      return planEntry(
+      const entry = planEntry(
         `<img src="${icon(ch.sprite)}" alt="${ch.name}" width="48" height="48" loading="lazy">` +
         `<span class="plan-body"><span class="plan-name">${ch.name}</span>` +
         (base ? `<span class="plan-base" title="Base ball"><img src="${icon(base.icon)}" alt="${base.name}" width="20" height="20">${base.name}</span>` : '') +
         `</span>`,
         () => emit({ type: 'toggleChar', id: ch.id }),
       );
-    });
-    const itemEntries = (entries: typeof plan.balls) => entries.map(({ item }) =>
-      planEntry(
-        `<img src="${icon(item.icon)}" alt="${item.name}" width="48" height="48" loading="lazy"><span class="plan-name">${item.name}</span>`,
-        () => emit({ type: 'togglePlanItem', id: item.id }),
-      ));
-    // fused pairs: both icons side by side (compact, so the composed name
-    // fits beside them — same shape as the single-ball entries), name right,
-    // one X for the pair — a pair is ONE entry (one ball slot). The name
-    // carries the "×" between the components. Each icon sits in a wrapper
-    // so the per-component verdict badge can ride it.
-    const fusedEntries = plan.fused.map(({ a, b, name }) =>
-      planEntry(
-        `<span class="plan-icons">` +
-        `<span class="plan-icon"><img src="${icon(a.icon)}" alt="${a.name}" width="36" height="36" loading="lazy"></span>` +
-        `<span class="plan-icon"><img src="${icon(b.icon)}" alt="${b.name}" width="36" height="36" loading="lazy"></span>` +
-        `</span>` +
-        `<span class="plan-name">${name}</span>`,
-        () => emit({ type: 'togglePlanFusion', a: a.id, b: b.id }),
-      ));
-    planEls.sections.characters.grid.replaceChildren(...charEntries);
-    planEls.sections.balls.grid.replaceChildren(...itemEntries(plan.balls), ...fusedEntries);
-    planEls.sections.passives.grid.replaceChildren(...itemEntries(plan.passives));
-  }
+      entry.dataset.entry = `char:${ch.id}`;
+      return entry;
+    }));
+  });
+  reconcile(
+    sections.balls.grid,
+    [...plan.balls.map((e) => `ball:${e.item.id}`), ...plan.fused.map((f) => `fused:${f.a.id}+${f.b.id}`)].join(','),
+    () => {
+      sections.balls.grid.replaceChildren(
+        ...plan.balls.map((e) => {
+          const entry = planEntry(
+            `<img src="${icon(e.item.icon)}" alt="${e.item.name}" width="48" height="48" loading="lazy"><span class="plan-name">${e.item.name}</span>`,
+            () => emit({ type: 'togglePlanItem', id: e.item.id }),
+          );
+          entry.dataset.entry = `ball:${e.item.id}`;
+          return entry;
+        }),
+        // fused pairs: both icons side by side (compact, so the composed name
+        // fits beside them — same shape as the single-ball entries), name right,
+        // one X for the pair — a pair is ONE entry (one ball slot). The name
+        // carries the "×" between the components. Each icon sits in a wrapper
+        // so the per-component verdict badge can ride it.
+        ...plan.fused.map((f) => {
+          const entry = planEntry(
+            `<span class="plan-icons">` +
+            `<span class="plan-icon"><img src="${icon(f.a.icon)}" alt="${f.a.name}" width="36" height="36" loading="lazy"></span>` +
+            `<span class="plan-icon"><img src="${icon(f.b.icon)}" alt="${f.b.name}" width="36" height="36" loading="lazy"></span>` +
+            `</span>` +
+            `<span class="plan-name">${f.name}</span>`,
+            () => emit({ type: 'togglePlanFusion', a: f.a.id, b: f.b.id }),
+          );
+          entry.dataset.entry = `fused:${f.a.id}+${f.b.id}`;
+          return entry;
+        }),
+      );
+    },
+  );
+  reconcile(sections.passives.grid, plan.passives.map((e) => `passive:${e.item.id}`).join(','), () => {
+    sections.passives.grid.replaceChildren(...plan.passives.map((e) => {
+      const entry = planEntry(
+        `<img src="${icon(e.item.icon)}" alt="${e.item.name}" width="48" height="48" loading="lazy"><span class="plan-name">${e.item.name}</span>`,
+        () => emit({ type: 'togglePlanItem', id: e.item.id }),
+      );
+      entry.dataset.entry = `passive:${e.item.id}`;
+      return entry;
+    }));
+  });
 
   // counts and empty hints
   for (const [count, limit, els] of [
-    [plan.counts.chars, plan.limits.chars, planEls.sections.characters],
-    [plan.counts.balls, plan.limits.balls, planEls.sections.balls],
-    [plan.counts.passives, plan.limits.passives, planEls.sections.passives],
+    [plan.counts.chars, plan.limits.chars, sections.characters],
+    [plan.counts.balls, plan.limits.balls, sections.balls],
+    [plan.counts.passives, plan.limits.passives, sections.passives],
   ] as const) {
     els.count.textContent = `${count} / ${limit}`;
     els.empty.hidden = count > 0;
   }
 
-  // over-limit marks and verdict badges — repaint in place, in entry order
-  // (characters and fused pairs carry no entry-level verdict — the null
-  // verdict paints no badge; fused pairs get per-component badges below)
+  // over-limit marks and verdict badges — repaint in place, found by each
+  // entry's stamped identity (never grid position, so fused pairs stay put
+  // however the grid orders them). Characters and fused pairs carry no
+  // entry-level verdict — the null verdict paints no badge; fused pairs get
+  // their per-component badges below.
   const makeBadge = (v: Verdict) => {
     const badge = document.createElement('span');
     badge.className = `ind ${v.verdict}`;
@@ -582,28 +636,29 @@ function paintPlan(vm: ViewModel) {
     badge.title = v.note ?? v.verdict;
     return badge;
   };
-  const repaint = (grid: HTMLElement, entries: { overLimit: boolean; pairInvalid?: boolean; verdict?: Verdict | null }[]) => {
-    [...grid.querySelectorAll<HTMLElement>('.plan-entry')].forEach((entry, i) => {
-      const e = entries[i];
-      if (!e) return;
-      entry.classList.toggle('over-limit', e.overLimit);
-      // a hydrated Matchmaker-forbidden pair: kept, marked red — same
-      // never-trim philosophy as over-limit
-      entry.classList.toggle('invalid-pair', !!e.pairInvalid);
-      entry.title = e.pairInvalid ? "these two can't team up in a run" : '';
-      entry.querySelectorAll('.ind').forEach((b) => b.remove());
-      if (e.verdict) entry.appendChild(makeBadge(e.verdict));
-    });
-  };
-  repaint(planEls.sections.characters.grid, plan.characters);
-  // the balls grid holds the single balls followed by the fused pairs
-  repaint(planEls.sections.balls.grid, [...plan.balls, ...plan.fused]);
-  repaint(planEls.sections.passives.grid, plan.passives);
-  // fused pairs: one verdict badge per component icon
-  const fusedEls = [...planEls.sections.balls.grid.querySelectorAll<HTMLElement>('.plan-entry')].slice(-plan.fused.length);
-  plan.fused.forEach((f, i) => {
-    const entry = fusedEls[i];
+  const entryIndex = (grid: HTMLElement) =>
+    new Map([...grid.querySelectorAll<HTMLElement>('.plan-entry')].map((el) => [el.dataset.entry ?? '', el]));
+  const repaintEntry = (entry: HTMLElement | undefined, e: { overLimit: boolean; pairInvalid?: boolean; verdict?: Verdict | null }) => {
     if (!entry) return;
+    entry.classList.toggle('over-limit', e.overLimit);
+    // a hydrated Matchmaker-forbidden pair: kept, marked red — same
+    // never-trim philosophy as over-limit
+    entry.classList.toggle('invalid-pair', !!e.pairInvalid);
+    entry.title = e.pairInvalid ? "these two can't team up in a run" : '';
+    entry.querySelectorAll('.ind').forEach((b) => b.remove());
+    if (e.verdict) entry.appendChild(makeBadge(e.verdict));
+  };
+  const charEntries = entryIndex(sections.characters.grid);
+  plan.characters.forEach((e) => repaintEntry(charEntries.get(`char:${e.character.id}`), e));
+  const ballEntries = entryIndex(sections.balls.grid);
+  plan.balls.forEach((e) => repaintEntry(ballEntries.get(`ball:${e.item.id}`), e));
+  const passiveEntries = entryIndex(sections.passives.grid);
+  plan.passives.forEach((e) => repaintEntry(passiveEntries.get(`passive:${e.item.id}`), e));
+  // fused pairs: one verdict badge per component icon
+  plan.fused.forEach((f) => {
+    const entry = ballEntries.get(`fused:${f.a.id}+${f.b.id}`);
+    if (!entry) return;
+    repaintEntry(entry, f);
     f.verdicts.forEach((v, j) => {
       if (!v) return;
       const wrap = entry.querySelectorAll<HTMLElement>('.plan-icon')[j];
@@ -624,9 +679,9 @@ interface SelectionBoxEls {
   name: HTMLElement;
   planBtn: HTMLButtonElement;
   fusionBtn: HTMLButtonElement | null;
-  /** The currently painted item's id — the click handlers read it (the
-   *  buttons are built once; the selection changes under them). */
-  itemId: string | null;
+  // The click handlers read the currently painted item's id from the root's
+  // painted key (the buttons are built once; the selection changes under
+  // them) — see the reconcile seam.
 }
 const selectionBoxes: Record<'balls' | 'passives', SelectionBoxEls | null> = { balls: null, passives: null };
 
@@ -662,14 +717,14 @@ function buildSelectionBox(screen: 'balls' | 'passives') {
   const planBtn = root.querySelector<HTMLButtonElement>('.selection-btn[data-kind="plan"]')!;
   const fusionBtn = root.querySelector<HTMLButtonElement>('.selection-btn[data-kind="fusion"]');
   planBtn.addEventListener('click', () => {
-    const id = selectionBoxes[screen]?.itemId;
+    const id = paintedKey(root);
     if (id) emit({ type: 'togglePlanItem', id });
   });
   fusionBtn?.addEventListener('click', () => {
-    const id = selectionBoxes[screen]?.itemId;
+    const id = paintedKey(root);
     if (id) emit({ type: 'toggleFusion', id });
   });
-  selectionBoxes[screen] = { root, name: root.querySelector('.selection-name') as HTMLElement, planBtn, fusionBtn, itemId: null };
+  selectionBoxes[screen] = { root, name: root.querySelector('.selection-name') as HTMLElement, planBtn, fusionBtn };
 }
 
 function paintSelectionBoxes(vm: ViewModel) {
@@ -678,7 +733,10 @@ function paintSelectionBoxes(vm: ViewModel) {
     if (!els) continue;
     const state = vm.selectionBoxes[screen];
     els.root.hidden = !state;
-    els.itemId = state?.item.id ?? null;
+    // the painted key is the item the once-built buttons act on; a null
+    // state clears it so no stale id survives the hidden box
+    if (state) paintedKeys.set(els.root, state.item.id);
+    else paintedKeys.delete(els.root);
     if (!state) continue;
     els.name.textContent = state.item.name;
     els.planBtn.textContent = PLAN_BTN_LABELS[state.plan];
@@ -730,8 +788,8 @@ export function buildAll({ getVerdict, emit: onEmit }: BuildOptions): void {
  *  the existing DOM. Safe to call before buildAll() (no-op — nothing built
  *  yet). Idempotent; never recreates <img> elements — the fusion panel's
  *  skeleton (with its two head icons) is built once and repainted in place,
- *  and the plan's entries rebuild only when the selection or upgrade toggle
- *  changes (the chips' diff pattern). */
+ *  and the plan's entries rebuild only when their section's entry set
+ *  changes (the reconcile seam). */
 export function paint(vm: ViewModel): void {
   paintTiles(vm);
   paintCharCards(vm);
