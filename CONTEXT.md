@@ -97,9 +97,11 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   the "×" between components — beside them, plus one per-component verdict
   badge on each icon. The **End game upgrades**
   toggle (on by default) sets the limits: 2/5/5 with it, 1/4/4 without; it
-  lives in the plan toolbar's right edge (`#planUpgradesSlot` — Clear and
-  Share left, toggle right, one row), built by the renderer into the
-  shell's slot. **Share** (shell chrome, island-wired) encodes the current
+  lives in the plan toolbar's right edge (Clear and Share left, toggle
+  right, one row) as static shell markup in `index.astro` — the island
+  wires its change event through the same `update()` path as the other
+  toolbar buttons, and `paintPlan` only reflects the checked state on it
+  (the renderer builds no shell chrome). **Share** (shell chrome, island-wired) encodes the current
   plan via `src/share.ts` (`planLink`) into a versioned base64url code in
   the hash (`#/plan?p=<code>`) and copies the link; opening it hydrates the
   plan — the link IS the plan, it replaces the recipient's stored plan. The
@@ -182,11 +184,16 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   are built once and repainted in place; the plan's entries and the
   character chips rebuild only when their content key changes — the
   renderer's internal **reconcile seam**, one painted-key map shared by the
-  chips, the plan sections, the panel icons, and the selection boxes).
+  chips, the plan sections, the panel icons, the selection boxes, and the
+  panel's plan button — whose once-built click handler reads the compose
+  order from its painted key, the same channel every repaint refreshes; no
+  second stashed state lives beside it).
   Tiles, character cards, chips, toasts, the fusion screen,
   and the plan screen live here; the ViewModel is its input and
   the test surface stays `view-state.ts`. The renderer holds no domain data
-  of its own: its fusion-row map is purely a DOM-row registry, and the
+  of its own and builds no shell chrome (the plan toolbar — Clear, Share,
+  and the End game upgrades toggle — is static `index.astro` markup wired by
+  the island): its fusion-row map is purely a DOM-row registry, and the
   fusion panel paints by switching on the view model's named `fusionPanel`
   state — per state, which hooks show and what they show (behavior pinned
   in `src/renderer.test.ts` through jsdom).

@@ -55,8 +55,10 @@ describe('fusion panel skeleton (renderer.ts)', () => {
 // ---------- behavior: paint() through a state sequence ----------
 
 // The panel is the last module buildAll() builds; the grids/cards before it
-// need their index.astro containers — provide the minimal set.
-const CONTAINERS = ['ballsGrid', 'passivesGrid', 'charactersGrid', 'charChips', 'slotHint', 'fusionList', 'fusionPanel', 'planView', 'planUpgradesSlot', 'selection-balls', 'selection-passives'];
+// need their index.astro containers — provide the minimal set. The plan
+// toolbar (with the End game upgrades toggle) is static index.astro markup —
+// the tests provide it like the other shell containers.
+const CONTAINERS = ['ballsGrid', 'passivesGrid', 'charactersGrid', 'charChips', 'slotHint', 'fusionList', 'fusionPanel', 'planView', 'selection-balls', 'selection-passives'];
 
 /** Drive the real view-state + renderer pair: dispatch and paint each step —
  *  the same path the island runs. Returns the last view model. */
@@ -79,6 +81,12 @@ beforeAll(() => {
     el.id = id;
     document.body.appendChild(el);
   }
+  // the plan toolbar is shell markup (index.astro): Clear + Share left,
+  // the End game upgrades toggle right
+  const toolbar = document.createElement('div');
+  toolbar.className = 'plan-toolbar';
+  toolbar.innerHTML = '<label class="plan-upgrades"><input type="checkbox" id="planUpgrades"><span>End game upgrades</span></label>';
+  document.body.appendChild(toolbar);
   buildAll({ getVerdict: () => null, emit: () => {} });
 });
 
@@ -281,7 +289,7 @@ describe('build seam: clicks call emit (jsdom)', () => {
 
 const planView = () => document.getElementById('planView')!;
 const planQ = <T extends HTMLElement>(s: string) => planView().querySelector<T>(s)!;
-// the End game upgrades toggle lives in the shell's plan toolbar, outside planView
+// the End game upgrades toggle is static shell markup (index.astro), outside planView
 const upgradesToggle = () => document.getElementById('planUpgrades') as HTMLInputElement;
 
 describe('plan screen behavior (jsdom, through paint())', () => {
@@ -327,17 +335,20 @@ describe('plan screen behavior (jsdom, through paint())', () => {
     expect(emit).toHaveBeenCalledWith({ type: 'toggleChar', id: 'the-warrior' });
   });
 
-  it('the upgrade toggle emits toggleUpgrades and repaints checked + limits', () => {
-    const emit = vi.fn();
-    buildAll({ getVerdict: () => null, emit });
+  it('the upgrades toggle is shell chrome: paint reflects state on the static element; the island wires change → toggleUpgrades', () => {
+    // paint alone reflects the state on the static shell element (the
+    // renderer builds nothing here and never emits)
     drive({ type: 'toggleUpgrades' });
-    expect(emit).not.toHaveBeenCalled(); // paint alone must not emit
     const toggle = upgradesToggle();
     expect(toggle.checked).toBe(false);
     expect([...planView().querySelectorAll<HTMLElement>('.plan-count')].map((el) => el.textContent))
       .toEqual(['0 / 1', '0 / 4', '0 / 4']);
+    // the island's wiring (companion.ts's update()): change → dispatch + paint
+    toggle.addEventListener('change', () => paint(view.dispatch({ type: 'toggleUpgrades' })));
     toggle.click();
-    expect(emit).toHaveBeenCalledWith({ type: 'toggleUpgrades' });
+    expect(toggle.checked).toBe(true);
+    expect([...planView().querySelectorAll<HTMLElement>('.plan-count')].map((el) => el.textContent))
+      .toEqual(['0 / 2', '0 / 5', '0 / 5']);
   });
 
   it('over-limit entries get the over-limit class and the hint shows', () => {

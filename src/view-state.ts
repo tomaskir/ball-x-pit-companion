@@ -110,10 +110,11 @@ export type Action =
  *  handlers produce and hand back through the build seam's `emit` callback
  *  (the island dispatches them verbatim). ToggleAction is the seam's
  *  currency: emit carries the whole action, so callers never reassemble
- *  it from a type/id pair. */
+ *  it from a type/id pair. (`toggleUpgrades` is not one: its toggle is
+ *  static shell markup the island wires directly, like Clear and Share.) */
 export type ToggleAction = Extract<
   Action,
-  { type: 'toggleItem' | 'toggleChar' | 'toggleFusion' | 'togglePlanItem' | 'togglePlanFusion' | 'toggleUpgrades' }
+  { type: 'toggleItem' | 'toggleChar' | 'toggleFusion' | 'togglePlanItem' | 'togglePlanFusion' }
 >;
 
 /** Balls offered by the fusion pick list: all fusable upgrade entities.

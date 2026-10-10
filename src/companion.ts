@@ -122,6 +122,11 @@ function init() {
   // upgrade toggle) — the shell owns this one, like the tab buttons.
   document.getElementById('planClear')!.addEventListener('click', () => update({ type: 'clearPlan' }));
 
+  // The plan toolbar's End game upgrades toggle: static shell markup like
+  // Clear and Share — its change event dispatches toggleUpgrades through the
+  // same update() path (the renderer only paints the checked state).
+  document.getElementById('planUpgrades')!.addEventListener('change', () => update({ type: 'toggleUpgrades' }));
+
   // The plan toolbar's Share button: encodes the current plan into a link
   // (share.ts's planLink) and copies it. Opening the link hydrates the plan
   // (and replaces the opener's stored plan on the recipient's machine — the

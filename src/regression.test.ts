@@ -303,7 +303,7 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
   it('pending second head icon is display:none, not a broken-image box', async () => {
     const { paint, buildAll } = await import('./renderer');
     const { createViewState } = await import('./view-state');
-    for (const id of ['fusionPanel', 'ballsGrid', 'passivesGrid', 'charactersGrid', 'charChips', 'slotHint', 'fusionList', 'planView', 'planUpgradesSlot', 'selection-balls', 'selection-passives']) {
+    for (const id of ['fusionPanel', 'ballsGrid', 'passivesGrid', 'charactersGrid', 'charChips', 'slotHint', 'fusionList', 'planView', 'planUpgrades', 'selection-balls', 'selection-passives']) {
       if (!document.getElementById(id)) {
         const el = document.createElement('div');
         el.id = id;
@@ -420,6 +420,22 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
     expect(handler![0]).toMatch(/closest\(CLEAR_EXEMPT_SELECTOR\)/);
     expect(src).toMatch(/closest\(ESC_EXEMPT_SELECTOR\)/);
   });
+
+  // Bug (seam hygiene, 2026-10-10): the End game upgrades toggle was built
+  // by the renderer into the shell's #planUpgradesSlot — the one place the
+  // renderer crossed the shell/island seam, and a whole build step needed
+  // only because paintPlan sets .checked. Fix: static markup in index.astro
+  // next to Clear and Share; the island wires its change event through the
+  // same update() path as the other toolbar buttons, and paintPlan only
+  // reflects the checked state on the static element.
+  it('the upgrades toggle is island-wired shell chrome, not renderer-built (renderer no longer crosses the shell seam)', () => {
+    const island = readFileSync('src/companion.ts', 'utf8');
+    expect(island).toMatch(/getElementById\('planUpgrades'\)\s*!\s*\.addEventListener\('change'/);
+    expect(island).toMatch(/update\(\{\s*type:\s*'toggleUpgrades'\s*\}\)/);
+    const renderer = readFileSync('src/renderer.ts', 'utf8');
+    expect(renderer).not.toContain('planUpgradesSlot');
+    expect(renderer).not.toMatch(/addEventListener\('change'/);
+  });
 });
 
 describe('regression: toast touch dismissal (promised in a comment, never wired)', () => {
@@ -434,7 +450,7 @@ describe('regression: toast touch dismissal (promised in a comment, never wired)
   // here through the real renderer wiring.
   it('a toast shown from a tile hides on a tap elsewhere on the document', async () => {
     const { buildAll } = await import('./renderer');
-    for (const id of ['ballsGrid', 'passivesGrid', 'charactersGrid', 'charChips', 'slotHint', 'fusionList', 'fusionPanel', 'planView', 'planUpgradesSlot', 'selection-balls', 'selection-passives']) {
+    for (const id of ['ballsGrid', 'passivesGrid', 'charactersGrid', 'charChips', 'slotHint', 'fusionList', 'fusionPanel', 'planView', 'planUpgrades', 'selection-balls', 'selection-passives']) {
       if (!document.getElementById(id)) {
         const el = document.createElement('div');
         el.id = id;

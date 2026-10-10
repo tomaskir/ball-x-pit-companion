@@ -457,7 +457,6 @@ function paintFusion(vm: ViewModel) {
 // identity, so a character toggle (which changes verdicts but not the entry
 // set) never rebuilds.
 let planEls: {
-  upgrades: HTMLInputElement;
   hint: HTMLElement;
   sections: {
     characters: { count: HTMLElement; empty: HTMLElement; grid: HTMLElement };
@@ -482,14 +481,6 @@ function buildPlan() {
         <p class="plan-empty">${PLAN_EMPTY_HINTS[key]}</p>
         <div class="plan-grid"></div>
       </section>`).join('')}`;
-  // the End game upgrades toggle lives in the shell's plan toolbar (Clear
-  // left, toggle right) — the renderer builds it into the slot
-  const upgradesRoot = document.getElementById('planUpgradesSlot')!;
-  upgradesRoot.innerHTML = `
-    <label class="plan-upgrades">
-      <input type="checkbox" id="planUpgrades">
-      <span>End game upgrades</span>
-    </label>`;
   const q = (s: string) => root.querySelector(s)!;
   const section = (key: string) => {
     const el = q(`.plan-section[data-plan="${key}"]`);
@@ -500,15 +491,9 @@ function buildPlan() {
     };
   };
   planEls = {
-    upgrades: upgradesRoot.querySelector('#planUpgrades') as HTMLInputElement,
     hint: q('.plan-hint') as HTMLElement,
     sections: { characters: section('characters'), balls: section('balls'), passives: section('passives') },
   };
-  // the upgrade toggle reports through the build seam, like every other
-  // built-in click handler — the renderer never touches view state
-  planEls.upgrades.addEventListener('change', () => {
-    emit({ type: 'toggleUpgrades' });
-  });
 }
 
 function planEntry(inner: string, onRemove: () => void): HTMLElement {
@@ -537,7 +522,11 @@ function paintPlan(vm: ViewModel) {
   if (!planEls) return;
   const plan = vm.plan;
   const { sections } = planEls;
-  planEls.upgrades.checked = plan.upgradesOn;
+  // the End game upgrades toggle is static shell markup (index.astro, next
+  // to Clear and Share) — the renderer only reflects the state on it; its
+  // change event is wired by the island, like the other toolbar buttons
+  const upgrades = document.getElementById('planUpgrades') as HTMLInputElement | null;
+  if (upgrades) upgrades.checked = plan.upgradesOn;
   planEls.hint.textContent = plan.hint;
   planEls.hint.hidden = !plan.hint;
 
