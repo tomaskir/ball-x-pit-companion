@@ -426,10 +426,12 @@ describe('view state: hydrate (restored plan from storage)', () => {
     const view = createViewState();
     const vm = view.dispatch({
       type: 'hydrate',
-      upgradesOn: false,
-      chars: ['the-warrior', 'the-shade'],
-      balls: ['flash', 'glacier'],
-      passives: ['wagon-wheel'],
+      plan: {
+        upgradesOn: false,
+        chars: ['the-warrior', 'the-shade'],
+        balls: ['flash', 'glacier'],
+        passives: ['wagon-wheel'],
+      },
     });
     expect(vm.plan.upgradesOn).toBe(false);
     expect(vm.plan.characters.map((c) => c.character.id)).toEqual(['the-warrior', 'the-shade']);
@@ -441,10 +443,12 @@ describe('view state: hydrate (restored plan from storage)', () => {
     const view = createViewState();
     const vm = view.dispatch({
       type: 'hydrate',
-      upgradesOn: true,
-      chars: ['the-warrior', 'ghost', 'the-warrior'],
-      balls: ['flash', 'not-a-ball', 'flash'],
-      passives: ['wagon-wheel', 'not-a-passive'],
+      plan: {
+        upgradesOn: true,
+        chars: ['the-warrior', 'ghost', 'the-warrior'],
+        balls: ['flash', 'not-a-ball', 'flash'],
+        passives: ['wagon-wheel', 'not-a-passive'],
+      },
     });
     expect(vm.plan.characters.map((c) => c.character.id)).toEqual(['the-warrior']);
     expect(vm.plan.balls.map((e) => e.item.id)).toEqual(['flash']);
@@ -455,14 +459,27 @@ describe('view state: hydrate (restored plan from storage)', () => {
     const view = createViewState();
     const vm = view.dispatch({
       type: 'hydrate',
-      upgradesOn: false,
-      chars: ['the-warrior', 'the-shade'],
-      balls: ['flash', 'glacier', 'maggot', 'flicker', 'burn'],
-      passives: [],
+      plan: {
+        upgradesOn: false,
+        chars: ['the-warrior', 'the-shade'],
+        balls: ['flash', 'glacier', 'maggot', 'flicker', 'burn'],
+        passives: [],
+      },
     });
     expect(vm.plan.characters[1].overLimit).toBe(true);
     expect(vm.plan.balls[4].overLimit).toBe(true);
     expect(vm.plan.overLimit).toBe(true);
+  });
+
+  it('planSnapshot round-trips through hydrate', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleChar', id: 'the-warrior' });
+    view.dispatch({ type: 'togglePlanItem', id: 'flash' });
+    view.dispatch({ type: 'toggleUpgrades' });
+    const snapshot = view.planSnapshot();
+    const restored = createViewState();
+    restored.dispatch({ type: 'hydrate', plan: snapshot });
+    expect(restored.planSnapshot()).toEqual(snapshot);
   });
 });
 

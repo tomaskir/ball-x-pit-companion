@@ -46,6 +46,10 @@ export type FusionPanelState =
 /** The plan screen's slot limits: without end-game upgrades 1 character,
  *  4 balls, 4 passives; with them 2 / 5 / 5. */
 export interface PlanLimits { chars: number; balls: number; passives: number; }
+/** The plan as bare ids — the persistence currency. The island serializes
+ *  this shape to localStorage and feeds it back through `hydrate`; one type
+ *  pins both sides (and `planSnapshot(vm)` produces it from a view model). */
+export interface PlanSnapshot { upgradesOn: boolean; chars: string[]; balls: string[]; passives: string[]; }
 /** One character in the plan: overLimit marks slots beyond the active
  *  limit (kept, never trimmed — the user decides what to remove). */
 export interface PlanCharState { character: Character; overLimit: boolean; }
@@ -102,7 +106,7 @@ export type Action =
   /** Restore a persisted plan (the island reads localStorage at startup).
    *  Unknown ids and duplicates are filtered; over-limit selections are
    *  kept as-is and marked, not trimmed. */
-  | { type: 'hydrate'; upgradesOn: boolean; chars: string[]; balls: string[]; passives: string[] }
+  | { type: 'hydrate'; plan: PlanSnapshot }
   /** Per-screen search: each section has its own query (own search box),
    *  independent of every other screen's. */
   | { type: 'search'; section: Section; query: string }
@@ -162,6 +166,8 @@ export function createViewState() {
    *  shared selectedChars — one selection feeds verdicts, chips, plan. */
   const planBalls: string[] = [];
   const planPassives: string[] = [];
+  /** The limits in force right now — one place, three former call sites. */
+  const activeLimits = (): PlanLimits => (upgradesOn ? LIMITS.on : LIMITS.off);
 
   const derive = (): ViewModel => {
     const tiles = new Map<string, TileState>();
@@ -209,7 +215,7 @@ export function createViewState() {
     // The plan: resolved entries in pick order, marked over limit beyond the
     // active section limit (kept, never trimmed). Verdicts ride along so the
     // renderer paints them without re-deriving.
-    const limits = upgradesOn ? LIMITS.on : LIMITS.off;
+    const limits = activeLimits();
     const planBallsState = planBalls.map((id, i) => {
       const item = ballMap.get(id)!;
       return { item, overLimit: i >= limits.balls, verdict: verdictFor(item, selectedChars) };
@@ -256,6 +262,17 @@ export function createViewState() {
     verdictFor(item: Item) {
       return verdictFor(item, selectedChars);
     },
+    /** The plan as bare ids — the island's persistence currency (saved to
+     *  localStorage, fed back through `hydrate`). Lives here so the island
+     *  never re-extracts ids from the resolved view model. */
+    planSnapshot(): PlanSnapshot {
+      return {
+        upgradesOn,
+        chars: selectedChars.map((c) => c.id),
+        balls: [...planBalls],
+        passives: [...planPassives],
+      };
+    },
     /** Current view model without a state change — initial paint. */
     derive(): ViewModel {
       return derive();
@@ -267,7 +284,7 @@ export function createViewState() {
         // semantics (re-click deselects; adding past the limit is a no-op).
         // The character limit rides the plan's upgrade toggle.
         case 'toggleChar':
-          stickyToggle(selectedChars, action.id, upgradesOn ? LIMITS.on.chars : LIMITS.off.chars,
+          stickyToggle(selectedChars, action.id, activeLimits().chars,
             (c) => c.id === action.id, () => CHARACTERS.find((c) => c.id === action.id));
           break;
         case 'toggleFusion':
@@ -279,7 +296,7 @@ export function createViewState() {
         case 'togglePlanItem': {
           if (!itemFor(action.id)) break;
           const passive = isPassive(action.id);
-          const limits = upgradesOn ? LIMITS.on : LIMITS.off;
+          const limits = activeLimits();
           const list = passive ? planPassives : planBalls;
           const idx = list.indexOf(action.id);
           if (idx >= 0) list.splice(idx, 1);
@@ -294,16 +311,16 @@ export function createViewState() {
           upgradesOn = true;
           break;
         case 'hydrate': {
-          upgradesOn = action.upgradesOn;
+          upgradesOn = action.plan.upgradesOn;
           selectedChars.length = 0;
-          for (const id of action.chars) {
+          for (const id of action.plan.chars) {
             const ch = CHARACTERS.find((c) => c.id === id);
             if (ch && !selectedChars.some((c) => c.id === id)) selectedChars.push(ch);
           }
           planBalls.length = 0;
-          for (const id of action.balls) if (ballMap.has(id) && !planBalls.includes(id)) planBalls.push(id);
+          for (const id of action.plan.balls) if (ballMap.has(id) && !planBalls.includes(id)) planBalls.push(id);
           planPassives.length = 0;
-          for (const id of action.passives) if (passiveMap.has(id) && !planPassives.includes(id)) planPassives.push(id);
+          for (const id of action.plan.passives) if (passiveMap.has(id) && !planPassives.includes(id)) planPassives.push(id);
           break;
         }
         case 'search': queries[action.section] = action.query; break;

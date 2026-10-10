@@ -3,7 +3,7 @@
 // buildAll() + paint(vm) interface; all state and derivations live in
 // src/view-state.ts behind one dispatch(action) → ViewModel interface. See
 // CONTEXT.md for the domain glossary these contracts use.
-import { createViewState, type Action, type Section, type ViewModel } from './view-state';
+import { createViewState, type Action, type PlanSnapshot, type Section } from './view-state';
 import { buildAll, paint } from './renderer';
 
 const view = createViewState();
@@ -13,17 +13,15 @@ const view = createViewState();
 // The plan (characters, balls, passives, upgrade toggle) survives reloads
 // via localStorage — same treatment as the theme. The view state stays
 // environment-free: the island reads storage at startup and dispatches a
-// hydrate action, and saves after every dispatch. Fusion picks and search
-// queries are transient and not persisted.
+// hydrate action, and saves the view state's planSnapshot after every
+// dispatch. Fusion picks and search queries are transient and not persisted.
 const PLAN_KEY = 'ball-x-pit-plan';
 
-interface StoredPlan { upgradesOn: boolean; chars: string[]; balls: string[]; passives: string[]; }
-
-function loadPlan(): StoredPlan | null {
+function loadPlan(): PlanSnapshot | null {
   try {
     const raw = localStorage.getItem(PLAN_KEY);
     if (!raw) return null;
-    const p = JSON.parse(raw) as Partial<StoredPlan>;
+    const p = JSON.parse(raw) as Partial<PlanSnapshot>;
     if (typeof p !== 'object' || p === null) return null;
     const ids = (x: unknown): string[] => (Array.isArray(x) ? x.filter((id): id is string => typeof id === 'string') : []);
     return {
@@ -37,15 +35,9 @@ function loadPlan(): StoredPlan | null {
   }
 }
 
-function savePlan(vm: ViewModel) {
+function savePlan() {
   try {
-    const plan: StoredPlan = {
-      upgradesOn: vm.plan.upgradesOn,
-      chars: vm.plan.characters.map((c) => c.character.id),
-      balls: vm.plan.balls.map((e) => e.item.id),
-      passives: vm.plan.passives.map((e) => e.item.id),
-    };
-    localStorage.setItem(PLAN_KEY, JSON.stringify(plan));
+    localStorage.setItem(PLAN_KEY, JSON.stringify(view.planSnapshot()));
   } catch {
     // storage full/unavailable — the plan still works, it just won't persist
   }
@@ -105,7 +97,7 @@ function init() {
   // plan is saved on every state change, wherever it comes from.
   const update = (action: Action) => {
     const vm = view.dispatch(action);
-    savePlan(vm);
+    savePlan();
     paint(vm);
   };
 
@@ -155,7 +147,7 @@ function init() {
   });
   // restore the persisted plan (if any) before the initial paint
   const stored = loadPlan();
-  if (stored) update({ type: 'hydrate', ...stored });
+  if (stored) update({ type: 'hydrate', plan: stored });
   // initial paint: derive the view model once everything is built
   paint(view.derive());
 }

@@ -176,7 +176,7 @@ function renderCharChips(vm: ViewModel) {
     // the chip body is inert — removal is the X button's job only
     const chip = document.createElement('span');
     chip.className = 'chip';
-    chip.innerHTML = `<img src="${icon(ch.sprite)}" alt="" width="22" height="22"><span>${ch.name}</span><button class="chip-x" aria-label="Remove ${ch.name}">×</button>`;
+    chip.innerHTML = `<img src="${icon(ch.sprite)}" alt="" width="22" height="22"><span>${ch.name}</span><button class="chip-x" aria-label="Remove ${ch.name}" title="Click × to remove">×</button>`;
     chip.querySelector('.chip-x')!.addEventListener('click', () => {
       emit({ type: 'toggleChar', id: ch.id });
     });
