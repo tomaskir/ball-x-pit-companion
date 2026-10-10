@@ -204,3 +204,68 @@ describe('build graph layout', () => {
     expect(edge.path.endsWith(`${bomb.x + bomb.w / 2} ${bomb.y}`)).toBe(true);
   });
 });
+
+describe('build graph: done tracking', () => {
+  it('a done node stops contributing demand — base balls show what is still needed', () => {
+    const all = deriveBuildGraph(
+      { singles: [], pairs: [{ a: 'freeze-ray', b: 'time-bomb' }] },
+      ballMap,
+      { fusionRow: true },
+    );
+    const done = deriveBuildGraph(
+      { singles: [], pairs: [{ a: 'freeze-ray', b: 'time-bomb' }] },
+      ballMap,
+      { fusionRow: true, done: new Set(['freeze-ray']) },
+    );
+    // Freeze Ray done: Freeze and both lasers drop to zero remaining demand
+    expect(node(done, 'freeze')).toMatchObject({ min: 0, max: 0 });
+    expect(node(done, 'laser-horizontal')).toMatchObject({ min: 0, max: 0 });
+    // the done node itself keeps its count and carries the flag
+    expect(node(done, 'freeze-ray')).toMatchObject({ min: 1, max: 1, done: true });
+    // untouched branches keep their counts (same model without done marks)
+    expect(node(done, 'bomb')).toMatchObject({ min: 1, max: 1, done: false });
+    expect(node(done, 'burn')).toMatchObject({ min: 1, max: 1 });
+    // sanity: without the mark nothing is done or freed
+    expect(node(all, 'freeze')).toMatchObject({ min: 1, max: 1 });
+  });
+
+  it('a done fusion frees its pair balls; freed base balls are suppressed', () => {
+    const done = deriveBuildGraph(
+      { singles: [], pairs: [{ a: 'freeze-ray', b: 'time-bomb' }] },
+      ballMap,
+      { fusionRow: true, done: new Set(['fusion:freeze-ray+time-bomb']) },
+    );
+    const fid = fusionNodeId('freeze-ray', 'time-bomb');
+    expect(node(done, fid)!.done).toBe(true);
+    // Time Bomb's demand came only from the fusion → freed; Bomb stays
+    // demanded by nothing else here... Bomb was only needed by Time Bomb → 0
+    expect(node(done, 'time-bomb')).toMatchObject({ min: 0, max: 0 });
+    expect(node(done, 'bomb')).toMatchObject({ min: 0, max: 0, suppressed: true });
+    expect(node(done, 'time')).toMatchObject({ min: 0, max: 0, suppressed: true });
+    // Freeze Ray was only the fusion's component → freed too
+    expect(node(done, 'freeze-ray')).toMatchObject({ min: 0, max: 0, suppressed: true });
+    expect(node(done, 'freeze')).toMatchObject({ min: 0, max: 0, suppressed: true });
+  });
+
+  it('partial done: a shared base stays demanded while one of its consumers is done', () => {
+    // Bomb planned as a single AND inside Time Bomb; Time Bomb done leaves
+    // the single's copy — Burn still needs 1
+    const done = deriveBuildGraph(
+      { singles: ['bomb', 'time-bomb'], pairs: [] },
+      ballMap,
+      { fusionRow: true, done: new Set(['time-bomb']) },
+    );
+    expect(node(done, 'bomb')).toMatchObject({ min: 1, max: 1, done: false });
+    expect(node(done, 'burn')).toMatchObject({ min: 1, max: 1 });
+    expect(node(done, 'time')).toMatchObject({ min: 0, max: 0, suppressed: true });
+  });
+
+  it('a pure-alternate base (0-1) is never suppressed while its max is above zero', () => {
+    const done = deriveBuildGraph(
+      { singles: [], pairs: [{ a: 'freeze-ray', b: 'time-bomb' }] },
+      ballMap,
+      { fusionRow: true, done: new Set<string>() },
+    );
+    expect(node(done, 'laser-horizontal')).toMatchObject({ min: 0, max: 1, suppressed: false });
+  });
+});

@@ -878,6 +878,46 @@ footer a { color: var(--gold); }
 
 .build-node img { width: 28px; height: 28px; image-rendering: pixelated; }
 
+/* the icon row: the fused pair's two icons sit side by side inside it */
+.build-node .build-icons {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* the done check: green when marked, outline when not — its own button so
+   the node's focus click never fires */
+.build-node .build-check {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--green);
+  border-radius: 50%;
+  background: var(--panel);
+  color: var(--green);
+  font: inherit;
+  font-size: 11px;
+  line-height: 16px;
+  text-align: center;
+  padding: 0;
+  cursor: pointer;
+}
+
+.build-node .build-check:hover { background: var(--green); color: #fff; }
+
+/* done: the card's content dims but the check stays vivid — it is the
+   thing being looked at */
+.build-node.done .build-icons,
+.build-node.done .build-name,
+.build-node.done .build-count { opacity: 0.45; }
+
+.build-node.done .build-check { background: var(--green); color: #fff; }
+
+/* nothing left to build on any path here — dimmed without a check */
+.build-node.suppressed { opacity: 0.3; }
+
 .build-node .build-name {
   font-size: 10px;
   line-height: 12px;

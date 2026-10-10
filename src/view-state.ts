@@ -122,6 +122,9 @@ export type Action =
   | { type: 'toggleGraphFocus'; id: string }
   /** Collapse/expand one of the plan screen's build-graph panels. */
   | { type: 'toggleGraphCollapse'; which: 'balls' | 'passives' }
+  /** Mark/unmark a build-graph node as done this run (the green check):
+   *  the node stops contributing demand to everything it is built from. */
+  | { type: 'toggleGraphDone'; id: string }
   // The plan's actions, forwarded verbatim to the plan state
   // (src/plan-state.ts) — same members, same shapes as before the
   // extraction; see PlanAction there for the per-action contracts.
@@ -135,7 +138,7 @@ export type Action =
  *  static shell markup the island wires directly, like Clear and Share.) */
 export type ToggleAction = Extract<
   Action,
-  { type: 'toggleItem' | 'toggleChar' | 'toggleFusion' | 'togglePlanItem' | 'togglePlanFusion' | 'toggleGraphFocus' | 'toggleGraphCollapse' }
+  { type: 'toggleItem' | 'toggleChar' | 'toggleFusion' | 'togglePlanItem' | 'togglePlanFusion' | 'toggleGraphFocus' | 'toggleGraphCollapse' | 'toggleGraphDone' }
 >;
 
 /** Balls offered by the fusion pick list: all fusable upgrade entities.
@@ -162,11 +165,12 @@ export function createViewState() {
   const selectedChars: Character[] = [];
   /** Fusion picks in selection order, at most 2. */
   const fusionPicks: string[] = [];
-  /** The build graph's focused node (null = none) and the two panels'
-   *  collapsed flags — session-only UI state, not part of the plan
-   *  snapshot. */
+  /** The build graph's focused node (null = none), the two panels' collapsed
+   *  flags, and the done marks (nodes the player has already built this run)
+   *  — session-only UI state, not part of the plan snapshot. */
   let graphFocus: string | null = null;
   const graphCollapsed = { balls: false, passives: false };
+  const graphDone = new Set<string>();
   /** The plan's state — upgrade toggle, planned balls/passives/fused pairs,
    *  and the PlanState derivation. The plan's characters are the shared
    *  selectedChars above: handed in on every derive/snapshot, cleared by
@@ -273,8 +277,8 @@ export function createViewState() {
       singles: planState.passives.filter((e) => !e.overLimit).map((e) => e.item.id),
       pairs: [] as { a: string; b: string }[],
     };
-    const ballsGraph = layoutBuildGraph(deriveBuildGraph(ballTargets, ballMap, { fusionRow: true }), 4);
-    const passivesGraph = layoutBuildGraph(deriveBuildGraph(passiveTargets, passiveMap, { fusionRow: false }), 3);
+    const ballsGraph = layoutBuildGraph(deriveBuildGraph(ballTargets, ballMap, { fusionRow: true, done: graphDone }), 4);
+    const passivesGraph = layoutBuildGraph(deriveBuildGraph(passiveTargets, passiveMap, { fusionRow: false, done: graphDone }), 3);
     // Focus highlight: the focused node plus its full upstream AND downstream
     // chains in its own namespace (a base ball has no upstream, a fusion no
     // downstream — "both directions" covers both). A fusion node lights its
@@ -373,9 +377,14 @@ export function createViewState() {
         case 'toggleGraphCollapse':
           graphCollapsed[action.which] = !graphCollapsed[action.which];
           break;
+        case 'toggleGraphDone':
+          if (graphDone.has(action.id)) graphDone.delete(action.id);
+          else graphDone.add(action.id);
+          break;
         case 'clearPlan':
           plan.dispatch(action);
           selectedChars.length = 0;
+          graphDone.clear(); // a wiped plan has nothing left to track
           break;
         case 'hydrate':
           plan.dispatch(action);

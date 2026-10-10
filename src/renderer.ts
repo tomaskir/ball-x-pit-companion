@@ -744,11 +744,18 @@ function paintBuildGraphs(vm: ViewModel) {
       continue;
     }
 
+    // the key is STRUCTURE only (which nodes, which edges): per-node state —
+    // remaining counts, done/suppressed, check visibility — repaints in place
+    // below, so a done-mark toggle never rebuilds the canvas's <img>s
     const key =
-      layout.nodes.map((n) => `${n.id}|${n.min}-${n.max}|${n.final ? 1 : 0}`).join(',') +
+      layout.nodes.map((n) => `${n.id}|${n.final ? 1 : 0}`).join(',') +
       '#' +
       layout.edges.map((e) => `${e.from}>${e.to}`).join(',');
     reconcile(els.canvas, key, () => {
+      // rebuild = replace: clear the previous node cards first (the svg edge
+      // layer lives inside the canvas and stays) — appending would stack a
+      // second graph under the first
+      for (const child of [...els.canvas.children]) if (child !== els.svg) child.remove();
       els.canvas.style.width = `${layout.width}px`;
       els.canvas.style.height = `${layout.height}px`;
       els.svg.setAttribute('width', String(layout.width));
@@ -762,34 +769,65 @@ function paintBuildGraphs(vm: ViewModel) {
         return path;
       }));
       for (const n of layout.nodes) {
-        const el = document.createElement('button');
-        el.type = 'button';
-        el.className = `build-node${n.final ? ' final' : ''}${n.row === 3 ? ' fused' : ''}`;
+        // a div, not a button: done-able nodes carry their own check button
+        // inside (no nested interactive elements)
+        const el = document.createElement('div');
+        el.className =
+          `build-node${n.final ? ' final' : ''}${n.row === 3 ? ' fused' : ''}` +
+          `${n.done ? ' done' : ''}${n.suppressed ? ' suppressed' : ''}`;
         el.dataset.id = n.id;
         el.style.left = `${n.x}px`;
         el.style.top = `${n.y}px`;
         el.style.width = `${n.w}px`;
         el.style.height = `${BUILD_GRAPH_METRICS.nodeH}px`;
-        // fusion nodes show both pair icons; the count reads "n" when every
-        // path needs that many copies, "min-max" when alternates widen it
-        const icons = n.row === 3
+        // icons ride one row wrapper — the fused pair's two icons sit side by
+        // side (bare second img would stack under the first in the column)
+        const imgs = n.row === 3
           ? `<img src="${icon(n.icon)}" alt="" width="28" height="28"><img src="${icon(n.icon2!)}" alt="" width="28" height="28">`
           : `<img src="${icon(n.icon)}" alt="${n.name}" width="28" height="28">`;
-        const count = n.min === n.max ? `${n.min}` : `${n.min}-${n.max}`;
-        el.innerHTML = `${icons}<span class="build-name">${n.name}</span><span class="build-count">${count}</span>`;
+        // the done check: evolved/T3/fusion nodes only — base balls dim
+        // automatically when their remaining demand hits zero. State
+        // (label, hidden) paints in place below; the button exists whenever
+        // the node kind does.
+        const check = n.row > 0 ? '<button class="build-check" type="button" hidden>✓</button>' : '';
+        el.innerHTML = `<span class="build-icons">${imgs}</span><span class="build-name">${n.name}</span><span class="build-count"></span>${check}`;
         el.addEventListener('click', (e) => {
           e.stopPropagation();
           emit({ type: 'toggleGraphFocus', id: n.id });
+        });
+        el.querySelector('.build-check')?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          emit({ type: 'toggleGraphDone', id: n.id });
         });
         els.canvas.appendChild(el);
       }
     });
 
+    // per-node state repaints in place, found by data-id (never a rebuild —
+    // the graph's <img>s stay put through done toggles and focus changes)
+    const nodeById = new Map(layout.nodes.map((n) => [n.id, n]));
     for (const el of els.canvas.querySelectorAll<HTMLElement>('.build-node')) {
       const id = el.dataset.id ?? '';
+      const n = nodeById.get(id);
+      if (!n) continue;
+      // focus highlight
       el.classList.toggle('focused', bg.focus === id);
       el.classList.toggle('related', bg.focus !== null && bg.focus !== id && bg.related.has(id));
       el.classList.toggle('dimmed', bg.focus !== null && !bg.related.has(id));
+      // remaining copies: "n" when every path needs that many, "min-max"
+      // when alternates widen it, "0" once done marks freed every path
+      const countEl = el.querySelector('.build-count');
+      if (countEl) countEl.textContent = n.min === n.max ? `${n.min}` : `${n.min}-${n.max}`;
+      el.classList.toggle('done', n.done);
+      el.classList.toggle('suppressed', n.suppressed);
+      // the check's state: a suppressed node needs no check — it already
+      // sits at zero through other nodes' done marks
+      const check = el.querySelector<HTMLButtonElement>('.build-check');
+      if (check) {
+        check.hidden = n.suppressed;
+        check.ariaLabel = n.done ? 'Mark as not done' : 'Mark as done';
+        check.title = n.done ? 'Not done yet' : 'Done this run';
+      }
     }
     // an edge lights when both its endpoints sit in the focused chain
     for (const path of els.svg.querySelectorAll<SVGPathElement>('path')) {

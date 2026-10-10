@@ -142,16 +142,25 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   outside the catalog namespace (the no-collision invariant). Clicking a
   node focuses it — the node plus its full upstream AND downstream chains
   light, the rest dims (a base ball has no upstream, a fusion no
-  downstream; "both directions" covers both). Over-limit entries stay out
-  of the graph; a panel with nothing to show carries a hint; the collapse
-  flags are session-only (never persisted). Pure derivation + layout in
+  downstream; "both directions" covers both). **Done marks** track a run:
+  evolved/T3/fusion nodes carry a green check (`toggleGraphDone`, its own
+  button inside the node card — the card itself is a div so interactive
+  elements never nest); a done node stops contributing demand, so all
+  counts read REMAINING copies this run, and a node whose remaining demand
+  hit zero only through done marks is suppressed (dimmed, no check — base
+  balls free themselves this way). Done marks, focus, and collapse flags
+  are session-only (never persisted; clearPlan wipes the marks).
+  Over-limit entries stay out
+  of the graph; a panel with nothing to show carries a hint. Pure
+  derivation + layout in
   `src/build-graph.ts` (`deriveBuildGraph`/`layoutBuildGraph`, unit-tested
   in `src/build-graph.test.ts`); targets resolved from the plan by
-  `src/view-state.ts` (`vm.buildGraph`; focus/collapse ride
-  `toggleGraphFocus`/`toggleGraphCollapse` through the build seam);
-  painting in `src/renderer.ts` (`paintBuildGraphs` — the canvas rebuilds
-  through the reconcile seam, the highlight repaints in place by
-  `data-id`).
+  `src/view-state.ts` (`vm.buildGraph`; focus, collapse, and done marks ride
+  `toggleGraphFocus`/`toggleGraphCollapse`/`toggleGraphDone` through the
+  build seam); painting in `src/renderer.ts` (`paintBuildGraphs` — the
+  canvas rebuilds through the reconcile seam on structural change only;
+  counts, done/suppressed state, and the focus highlight repaint in place
+  by `data-id`, so a done-mark toggle never recreates the graph's imgs).
 - **Selection box** — the balls/passives screens' view of the current
   single-item selection: shown in the screen toolbar (top left, search
   stays right; drops below the search row on mobile) only while an item of

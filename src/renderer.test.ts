@@ -643,3 +643,71 @@ describe('plan build graphs (jsdom, through paint())', () => {
     expect(section.classList.contains('collapsed')).toBe(false);
   });
 });
+
+describe('plan build graphs: fused-node layout + done checks (jsdom, through paint())', () => {
+  const FID = 'fusion:freeze-ray+time-bomb';
+  const canvas = () => document.querySelector<HTMLElement>('.plan-graph[data-graph="balls"] .plan-graph-canvas')!;
+  const byId = (id: string) => canvas().querySelector<HTMLElement>(`.build-node[data-id="${id}"]`)!;
+
+  it('the fused pair node lays its two icons side by side in one row wrapper', () => {
+    drive({ type: 'togglePlanFusion', a: 'freeze-ray', b: 'time-bomb' });
+    const fusion = byId(FID)!;
+    // regression: bare imgs stacked vertically in the flex column and the
+    // name overflowed out of the fixed box
+    const icons = fusion.querySelector('.build-icons')!;
+    expect(icons.querySelectorAll('img')).toHaveLength(2);
+    expect(fusion.querySelector('.build-name')!.textContent).toBe('Freeze Ray × Time Bomb');
+  });
+
+  it('evolved/T3/fusion nodes carry a done check; base balls do not; clicking emits toggleGraphDone', () => {
+    const emit = vi.fn();
+    buildAll({ getVerdict: () => null, emit });
+    drive({ type: 'togglePlanFusion', a: 'freeze-ray', b: 'time-bomb' });
+    expect(byId('freeze')!.querySelector('.build-check')).toBeNull();
+    for (const id of ['freeze-ray', 'time-bomb', FID]) {
+      expect(byId(id)!.querySelector('.build-check')).toBeTruthy();
+    }
+    byId('freeze-ray')!.querySelector<HTMLButtonElement>('.build-check')!.click();
+    expect(emit).toHaveBeenCalledWith({ type: 'toggleGraphDone', id: 'freeze-ray' });
+  });
+
+  it('a done mark dims the node, frees its components, and unmarking restores them', () => {
+    drive({ type: 'togglePlanFusion', a: 'freeze-ray', b: 'time-bomb' });
+    drive({ type: 'toggleGraphDone', id: 'freeze-ray' });
+    expect(byId('freeze-ray')!.classList.contains('done')).toBe(true);
+    // Freeze's remaining demand hit zero → suppressed, count 0
+    expect(byId('freeze')!.classList.contains('suppressed')).toBe(true);
+    expect(byId('freeze')!.querySelector('.build-count')!.textContent).toBe('0');
+    expect(byId('laser-horizontal')!.classList.contains('suppressed')).toBe(true);
+    // untouched branch keeps its counts
+    expect(byId('burn')!.querySelector('.build-count')!.textContent).toBe('1');
+    drive({ type: 'toggleGraphDone', id: 'freeze-ray' });
+    expect(byId('freeze-ray')!.classList.contains('done')).toBe(false);
+    expect(byId('freeze')!.querySelector('.build-count')!.textContent).toBe('1');
+  });
+});
+
+describe('plan build graphs: in-place done state (jsdom, through paint())', () => {
+  const FID = 'fusion:freeze-ray+time-bomb';
+  const canvas = () => document.querySelector<HTMLElement>('.plan-graph[data-graph="balls"] .plan-graph-canvas')!;
+  const byId = (id: string) => canvas().querySelector<HTMLElement>(`.build-node[data-id="${id}"]`)!;
+
+  it('a suppressed node hides its check; the done node keeps its vivid check', () => {
+    drive({ type: 'togglePlanFusion', a: 'freeze-ray', b: 'time-bomb' });
+    drive({ type: 'toggleGraphDone', id: FID });
+    // the fusion is done; Freeze Ray is suppressed through it — no check
+    expect(byId(FID)!.classList.contains('done')).toBe(true);
+    expect(byId(FID)!.querySelector<HTMLButtonElement>('.build-check')!.hidden).toBe(false);
+    expect(byId('freeze-ray')!.classList.contains('suppressed')).toBe(true);
+    expect(byId('freeze-ray')!.querySelector<HTMLButtonElement>('.build-check')!.hidden).toBe(true);
+  });
+
+  it('done toggles repaint state in place — no build-node <img> is recreated (invariant 2)', () => {
+    drive({ type: 'togglePlanFusion', a: 'freeze-ray', b: 'time-bomb' });
+    const img = byId('freeze')!.querySelector('img')!;
+    drive({ type: 'toggleGraphDone', id: 'freeze-ray' });
+    drive({ type: 'toggleGraphDone', id: 'freeze-ray' });
+    expect(byId('freeze')!.querySelector('img')!).toBe(img);
+    expect(byId('freeze-ray')!.querySelector('.build-count')!.textContent).toBe('1');
+  });
+});

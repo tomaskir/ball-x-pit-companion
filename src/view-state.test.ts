@@ -636,3 +636,24 @@ describe('view state: plan build graphs', () => {
     expect(vm3.buildGraph.collapsed.balls).toBe(false);
   });
 });
+
+describe('view state: build-graph done marks', () => {
+  it('a done node stops contributing demand; clearPlan wipes the marks', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'togglePlanFusion', a: 'freeze-ray', b: 'time-bomb' });
+    let vm = view.dispatch({ type: 'toggleGraphDone', id: 'freeze-ray' });
+    const n = (id: string) => vm.buildGraph.balls.nodes.find((x) => x.id === id)!;
+    expect(n('freeze-ray')!.done).toBe(true);
+    expect(n('freeze')!.min).toBe(0);
+    vm = view.dispatch({ type: 'toggleGraphDone', id: 'freeze-ray' });
+    expect(n('freeze-ray')!.done).toBe(false);
+    expect(n('freeze')!.min).toBe(1);
+    view.dispatch({ type: 'toggleGraphDone', id: 'freeze-ray' });
+    vm = view.dispatch({ type: 'clearPlan' });
+    // marks are session state for the plan's graph — a wiped plan has
+    // nothing left to track
+    expect(vm.buildGraph.balls.nodes).toHaveLength(0);
+    const vm2 = view.dispatch({ type: 'togglePlanFusion', a: 'freeze-ray', b: 'time-bomb' });
+    expect(vm2.buildGraph.balls.nodes.find((x) => x.id === 'freeze-ray')!.done).toBe(false);
+  });
+});

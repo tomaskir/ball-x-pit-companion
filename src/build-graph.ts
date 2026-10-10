@@ -44,11 +44,18 @@ export interface BuildGraphNode {
   name: string;
   icon: string;
   row: 0 | 1 | 2 | 3;
-  /** Physical copies needed: min when every path needs it, max when
-   *  alternate paths could push it higher. Equal → show a plain count. */
+  /** Physical copies still needed: min when every path needs it, max when
+   *  alternate paths could push it higher. Equal → show a plain count.
+   *  Done marks stop their node from contributing, so these are the
+   *  REMAINING copies — what the player still has to build this run. */
   min: number;
   max: number;
   final: boolean;
+  /** Marked done this run (the renderer paints the green check and dims). */
+  done: boolean;
+  /** Nothing done-marked, but zero remaining demand anyway — every path to
+   *  it runs through a done node. Suppressed visually (dimmed, no check). */
+  suppressed: boolean;
   icon2?: string;
 }
 
@@ -107,7 +114,7 @@ export interface BuildGraphLayout {
 export function deriveBuildGraph<T extends GraphItem & { name: string; icon: string }>(
   targets: BuildGraphTargets,
   graph: Map<string, T>,
-  { fusionRow }: { fusionRow: boolean },
+  { fusionRow, done: doneMarks = new Set<string>() }: { fusionRow: boolean; done?: ReadonlySet<string> },
 ): BuildGraphModel {
   // --- collect the model's node ids: targets + recursive components
   const modelIds = new Set<string>(targets.singles);
@@ -167,6 +174,9 @@ export function deriveBuildGraph<T extends GraphItem & { name: string; icon: str
     let max = isTarget ? 1 : 0;
     for (const p of parents.get(id) ?? []) {
       demandOf(p);
+      // a done-marked parent is already built this run — it contributes no
+      // remaining demand to its components
+      if (doneMarks.has(p)) continue;
       if (!done.has(p)) continue; // cycle: bounded-undefined, contribute 0
       const [fMin, fMax] = slotFactor(p, id, graph, fusionByNode);
       min += (demandMin.get(p) ?? 0) * fMin;
@@ -188,6 +198,12 @@ export function deriveBuildGraph<T extends GraphItem & { name: string; icon: str
   };
   const nodes: BuildGraphNode[] = [];
   for (const id of modelIds) {
+    const isDone = doneMarks.has(id);
+    const min = demandMin.get(id) ?? 0;
+    const max = demandMax.get(id) ?? 0;
+    // suppressed: not done itself, but nothing points at it anymore — every
+    // path runs through a done node (a pure alternate keeps its max > 0)
+    const suppressed = !isDone && min === 0 && max === 0;
     const fusion = fusionByNode.get(id);
     if (fusion) {
       const a = graph.get(fusion.a)!;
@@ -198,9 +214,11 @@ export function deriveBuildGraph<T extends GraphItem & { name: string; icon: str
         icon: a.icon,
         icon2: b.icon,
         row: 3,
-        min: demandMin.get(id) ?? 0,
-        max: demandMax.get(id) ?? 0,
+        min,
+        max,
         final: true,
+        done: isDone,
+        suppressed,
       });
       continue;
     }
@@ -210,9 +228,11 @@ export function deriveBuildGraph<T extends GraphItem & { name: string; icon: str
       name: item.name,
       icon: item.icon,
       row: item.depth,
-      min: demandMin.get(id) ?? 0,
-      max: demandMax.get(id) ?? 0,
+      min,
+      max,
       final: targets.singles.includes(id),
+      done: isDone,
+      suppressed,
     });
   }
   nodes.sort((x, y) =>
