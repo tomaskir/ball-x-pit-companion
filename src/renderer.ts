@@ -291,9 +291,12 @@ function buildFusionList() {
   }
 }
 
-function buildFusionPanel() {
-  const root = document.getElementById('fusionPanel')!;
-  root.innerHTML = `
+/** The fusion panel's skeleton, painted once into #fusionPanel at build time.
+ *  Exported as data so the tests (renderer.test.ts) pin the skeleton's shape
+ *  against the very string buildFusionPanel paints — a named seam instead of
+ *  scraping this file's source for the first root.innerHTML literal. A pure
+ *  string; it carries no behavior and does not touch the paint-only rule. */
+export const FUSION_PANEL_SKELETON = `
     <p class="fusion-hint">Pick two balls to see their fusion.</p>
     <div class="fusion-head" hidden>
       <img class="icon-a" alt="" width="48" height="48"><span class="name-a fusion-name"></span>
@@ -308,6 +311,10 @@ function buildFusionPanel() {
     </div>
     <ul class="fusion-notes" hidden></ul>
     <div class="fusion-plan-row"><button class="fusion-plan-btn" hidden></button></div>`;
+
+function buildFusionPanel() {
+  const root = document.getElementById('fusionPanel')!;
+  root.innerHTML = FUSION_PANEL_SKELETON;
   const q = (s: string) => root.querySelector(s)!;
   fusionPanel = {
     root,

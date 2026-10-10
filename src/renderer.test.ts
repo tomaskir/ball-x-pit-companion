@@ -9,28 +9,18 @@
 // right action type and id.
 // @vitest-environment jsdom
 import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { buildAll, paint } from './renderer';
+import { buildAll, paint, FUSION_PANEL_SKELETON } from './renderer';
 import { createViewState, type ViewModel, type Action } from './view-state';
 import { ballMap } from './catalog';
 import { iconUrl } from './icon-url';
-
-/** The skeleton HTML from buildFusionPanel — kept in sync by extracting it
- *  from the source (a drift here is exactly the bug class being pinned). */
-function skeletonHtml(): string {
-  // Under the jsdom environment import.meta.url is an http URL (jsdom's URL
-  // global wins), so join the repo-relative path from the process CWD — the
-  // repo root, both locally and in CI (`vitest run` from the repo root).
-  const src = readFileSync('src/renderer.ts', 'utf8');
-  const m = src.match(/root\.innerHTML = `([\s\S]*?)`;/);
-  if (!m) throw new Error('buildFusionPanel skeleton not found in renderer.ts');
-  return m[1];
-}
+import { mountShell } from './test-support/containers';
 
 describe('fusion panel skeleton (renderer.ts)', () => {
   it('every selector buildFusionPanel queries resolves in its own skeleton', () => {
+    // the skeleton is a named export — the same string buildFusionPanel
+    // paints — so a drift here is exactly the bug class being pinned
     const root = document.createElement('div');
-    root.innerHTML = skeletonHtml();
+    root.innerHTML = FUSION_PANEL_SKELETON;
     const q = (s: string) => root.querySelector(s);
     // the exact selector list from buildFusionPanel
     const selectors = [
@@ -45,7 +35,7 @@ describe('fusion panel skeleton (renderer.ts)', () => {
 
   it('the two head icons are real <img> elements (never-recreate invariant)', () => {
     const root = document.createElement('div');
-    root.innerHTML = skeletonHtml();
+    root.innerHTML = FUSION_PANEL_SKELETON;
     expect(root.querySelectorAll('.fusion-head img')).toHaveLength(2);
     expect(root.querySelector<HTMLImageElement>('.icon-a')!.tagName).toBe('IMG');
     expect(root.querySelector<HTMLImageElement>('.icon-b')!.tagName).toBe('IMG');
@@ -55,10 +45,9 @@ describe('fusion panel skeleton (renderer.ts)', () => {
 // ---------- behavior: paint() through a state sequence ----------
 
 // The panel is the last module buildAll() builds; the grids/cards before it
-// need their index.astro containers — provide the minimal set. The plan
-// toolbar (with the End game upgrades toggle) is static index.astro markup —
-// the tests provide it like the other shell containers.
-const CONTAINERS = ['ballsGrid', 'passivesGrid', 'charactersGrid', 'charChips', 'slotHint', 'fusionList', 'fusionPanel', 'planView', 'selection-balls', 'selection-passives'];
+// need their index.astro containers — provided (with the static plan toolbar)
+// by the shared test-support shell.
+
 
 /** Drive the real view-state + renderer pair: dispatch and paint each step —
  *  the same path the island runs. Returns the last view model. */
@@ -76,17 +65,7 @@ const flash = () => ballMap.get('flash')!;
 const glacier = () => ballMap.get('glacier')!;
 
 beforeAll(() => {
-  for (const id of CONTAINERS) {
-    const el = document.createElement('div');
-    el.id = id;
-    document.body.appendChild(el);
-  }
-  // the plan toolbar is shell markup (index.astro): Clear + Share left,
-  // the End game upgrades toggle right
-  const toolbar = document.createElement('div');
-  toolbar.className = 'plan-toolbar';
-  toolbar.innerHTML = '<label class="plan-upgrades"><input type="checkbox" id="planUpgrades"><span>End game upgrades</span></label>';
-  document.body.appendChild(toolbar);
+  mountShell();
   buildAll({ getVerdict: () => null, emit: () => {} });
 });
 
