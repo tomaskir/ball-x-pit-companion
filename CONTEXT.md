@@ -185,7 +185,11 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   `derive()` (same view model without a state change, for initial paint) and
   `verdictFor(item)` (full verdict with note, for the toast). Fusion picks
   share the character slots' sticky semantics (re-click deselects; a third
-  pick while two are held is a no-op); the view model carries the fusion
+  pick while two are held is a no-op), and the plan's toggles share it too:
+  `togglePlanItem` / `togglePlanFusion` go through the same remove-or-add
+  shape, gated by the plan-capacity helpers `ballSlotsUsed` / `ballCapacity`
+  (a fused pair counts as one ball slot — one definition, not one per call
+  site); the view model carries the fusion
   screen's panel state as a named 3-state machine (`fusionPanel`: `empty` /
   `pending` with the first resolved Ball / `composed` with both resolved
   Balls, the composed fusion from `src/fusion.ts`, the pair's `planned`

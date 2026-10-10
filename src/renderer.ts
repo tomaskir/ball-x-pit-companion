@@ -4,8 +4,10 @@
 // state on it — never recreating <img> elements (rebuilding would blink the
 // icons; the plan's entries and the character chips are the one accepted
 // exception, rebuilding only when their content key changes — the reconcile
-// seam below). The island (src/companion.ts)
-// keeps only event listening, theme, hash routing, and plan persistence; the
+// seam below). The island (src/companion.ts) is transport only — event
+// listening, storage/history/clipboard, with the routing, clear-policy, and
+// theme decisions in src/companion-core.ts and plan persistence via
+// src/share.ts; the
 // ViewModel it paints comes from src/view-state.ts — the fusion panel rides
 // the named fusionPanel state (empty / pending / composed) and paintFusion
 // switches on it; the plan rides vm.plan and paintPlan paints per section;
