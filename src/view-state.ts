@@ -31,7 +31,7 @@ import type { PlanAction, PlanLimits, PlanState, PlanSnapshot } from './plan-sta
 // The plan's types are plan-state's — re-exported so existing import paths
 // (companion.ts, share.ts) keep working. Types only: plan-state must never
 // be imported *by* view-state's consumers at runtime through here.
-export type { PlanAction, PlanCharState, PlanEntryState, PlanFused, PlanFusedState, PlanLimits, PlanSnapshot, PlanState } from './plan-state';
+export type { PlanAction, PlanBallEntry, PlanCharState, PlanEntryState, PlanFused, PlanFusedState, PlanLimits, PlanSnapshot, PlanState } from './plan-state';
 
 export interface TileState { selected: boolean; related: boolean; dimmed: boolean; filtered: boolean; verdict: Verdict | null; }
 /** One character card. `blocked` is a Matchmaker pairing restriction (game

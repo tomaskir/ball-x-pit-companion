@@ -2,7 +2,7 @@
 // extracted from the island (src/graph.ts). Fixture graph mirrors the real
 // ball graph's shapes: multi-recipe alternates, 3-way, 4-way, chains.
 import { describe, it, expect } from 'vitest';
-import { byId, closure, childrenOf, componentsOf, highlightSet, structuralDepth, factorizesIntoSlots, recipeSlots, recipeHtml, resolveDepths, type GraphItem } from './graph';
+import { byId, closure, childrenOf, componentsOf, complexity, highlightSet, structuralDepth, factorizesIntoSlots, recipeSlots, recipeHtml, resolveDepths, type GraphItem } from './graph';
 
 // fixture: base(0) a,b,c,d; tier-2(1) ab (a+b or a+c), ad (a+d); tier-3(2) abd (ab+d)
 const G: GraphItem[] = [
@@ -121,6 +121,28 @@ describe('resolveDepths (ticket 11: the parser\'s recursion machinery has one ho
     const selfRef: Record<string, string[][]> = { x: [['x']] };
     const depths = resolveDepths(['x'], new Set(['x']), (id) => selfRef[id] ?? []);
     expect(depths.get('x')).toBe(2);
+  });
+});
+
+describe('complexity (how many base entities the final form contains)', () => {
+  it('a base entity counts 1', () => {
+    expect(complexity(graph.get('a')!, graph)).toBe(1);
+  });
+  it('an evolved entity sums its recipe components recursively', () => {
+    expect(complexity(graph.get('ab')!, graph)).toBe(2); // a+b (or a+c)
+    expect(complexity(graph.get('abd')!, graph)).toBe(3); // (a+b)+d
+  });
+  it('multi-recipe entities take the highest per-recipe count', () => {
+    // the shipped dataset's alternates never differ, but the max keeps the function total
+    const g = byId([...G, { id: 'x', depth: 1, recipes: [['c'], ['a', 'b']] }]);
+    expect(complexity(g.get('x')!, g)).toBe(2);
+  });
+  it('cycle guard: a cyclic recipe graph terminates (bounded, not infinite)', () => {
+    const cyc = byId([
+      { id: 'p', depth: 1, recipes: [['q']] },
+      { id: 'q', depth: 1, recipes: [['p']] },
+    ]);
+    expect(Number.isFinite(complexity(cyc.get('p')!, cyc))).toBe(true);
   });
 });
 

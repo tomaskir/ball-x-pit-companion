@@ -89,7 +89,11 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   plan's characters are the shared `selectedChars` (one selection feeds
   verdicts, chips, and the plan); balls/passives ride `planBalls` /
   `planPassives` in pick order (`togglePlanItem` — the catalog resolves the
-  namespace). **Fused pairs** ride `planFused` (`togglePlanFusion`): a pair
+  namespace) — pick order is the storage order; the paint order is derived:
+  entries sort by **complexity** (`graph.complexity` — how many base
+  entities the final form contains, counted recursively; a fused pair's is
+  the sum of its components', e.g. Freeze Ray × Time Bomb = 2+3 = 5), most
+  complex left, ties in pick order (stable sort). **Fused pairs** ride `planFused` (`togglePlanFusion`): a pair
   counts as ONE ball slot, its identity is order-insensitive (sorted ids —
   the reverse composition is the same planned pair), compose order is kept
   for display, and its plan entry matches the single-ball shape: two
@@ -219,7 +223,10 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   `src/view-state.ts` — plan-state never mutates them (hydrate's `chars`
   field is ignored; clearPlan clears them in view-state). `PlanSnapshot`,
   the persistence currency, lives here; view-state re-exports the plan
-  types so companion.ts and share.ts keep their import paths. The shared
+  types so companion.ts and share.ts keep their import paths. The ball
+  grid the renderer paints is one merged, complexity-ordered list
+  (`PlanBallEntry`: a single or a fused pair — a pair is ONE entry), not
+  two lists the renderer concatenates. The shared
   remove-or-add toggle shape (`stickyToggle`), hydrate's per-list restore
   (`hydrateList`), and `isFusable` are homed here too — view-state's
   character slots and fusion picks import them, and plan-state must not

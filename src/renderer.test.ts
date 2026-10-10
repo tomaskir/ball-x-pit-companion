@@ -283,7 +283,7 @@ describe('plan screen behavior (jsdom, through paint())', () => {
     expect(planView().querySelectorAll('.plan-entry')).toHaveLength(0);
   });
 
-  it('plan entries render in pick order with icons, names, and X remove buttons', () => {
+  it('plan entries render with icons, names, and X remove buttons (each section complexity-ordered)', () => {
     drive(
       { type: 'toggleChar', id: 'the-warrior' },
       { type: 'togglePlanItem', id: 'flash' },

@@ -298,9 +298,9 @@ describe('view state: plan actions forward to the plan state (integration)', () 
   it('plan actions reach vm.plan through the same dispatch (the ViewModel still carries plan fields for the renderer)', () => {
     const view = createViewState();
     const vm = view.dispatch({ type: 'togglePlanItem', id: 'flash' });
-    expect(vm.plan.balls.map((e) => e.item.id)).toEqual(['flash']);
+    expect(vm.plan.balls.filter((e) => e.kind === 'single').map((e) => e.item.id)).toEqual(['flash']);
     const vm2 = view.dispatch({ type: 'togglePlanFusion', a: 'glacier', b: 'maggot' });
-    expect(vm2.plan.fused.map((p) => p.name)).toEqual(['Glacier × Maggot']);
+    expect(vm2.plan.balls.filter((e) => e.kind === 'fused').map((p) => p.name)).toEqual(['Glacier × Maggot']);
     expect(vm2.plan.counts.balls).toBe(2); // a fused pair is ONE ball slot
     const vm3 = view.dispatch({ type: 'toggleUpgrades' });
     expect(vm3.plan.limits).toEqual({ chars: 1, balls: 4, passives: 4 });

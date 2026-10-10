@@ -7,12 +7,20 @@
 // shared selectedChars, the ViewModel's plan fields for the renderer) lives
 // in src/view-state.test.ts.
 import { describe, it, expect } from 'vitest';
-import { createPlanState } from './plan-state';
+import { createPlanState, type PlanBallEntry, type PlanState } from './plan-state';
 import { CHARACTERS } from './data/characters';
 
 /** The shared selection, handed in — plan-state never builds it itself. */
 const chars = (...ids: string[]): (typeof CHARACTERS)[number][] =>
   ids.map((id) => CHARACTERS.find((c) => c.id === id)!);
+
+/** The single-ball entries' ids in painted order (the merged ball grid
+ *  carries fused pairs too — a pair is ONE entry). */
+const singleIds = (balls: PlanBallEntry[]): string[] =>
+  balls.filter((e): e is Extract<PlanBallEntry, { kind: 'single' }> => e.kind === 'single').map((e) => e.item.id);
+/** The fused-pair entries of the merged ball grid. */
+const fusedOf = (plan: PlanState) =>
+  plan.balls.filter((e): e is Extract<PlanBallEntry, { kind: 'fused' }> => e.kind === 'fused');
 
 describe('plan state: limits (End game upgrades toggle)', () => {
   it('defaults: upgrades on, limits 2 chars / 5 balls / 5 passives, empty plan', () => {
@@ -48,12 +56,12 @@ describe('plan state: plan items (balls/passives, pick order, limits)', () => {
     const state = createPlanState();
     state.dispatch({ type: 'togglePlanItem', id: 'flash' });
     let plan = state.derive([]);
-    expect(plan.balls.map((e) => e.item.id)).toEqual(['flash']);
+    expect(singleIds(plan.balls)).toEqual(['flash']);
     expect(plan.passives).toHaveLength(0);
     state.dispatch({ type: 'togglePlanItem', id: 'wagon-wheel' });
     plan = state.derive([]);
     expect(plan.passives.map((e) => e.item.id)).toEqual(['wagon-wheel']);
-    expect(plan.balls.map((e) => e.item.id)).toEqual(['flash']);
+    expect(singleIds(plan.balls)).toEqual(['flash']);
   });
 
   it('re-clicking a plan item removes it, keeping the others in pick order', () => {
@@ -61,7 +69,7 @@ describe('plan state: plan items (balls/passives, pick order, limits)', () => {
     state.dispatch({ type: 'togglePlanItem', id: 'flash' });
     state.dispatch({ type: 'togglePlanItem', id: 'glacier' });
     state.dispatch({ type: 'togglePlanItem', id: 'flash' });
-    expect(state.derive([]).balls.map((e) => e.item.id)).toEqual(['glacier']);
+    expect(singleIds(state.derive([]).balls)).toEqual(['glacier']);
   });
 
   it('adding past the active ball limit is a no-op (5 with upgrades on)', () => {
@@ -72,7 +80,7 @@ describe('plan state: plan items (balls/passives, pick order, limits)', () => {
     state.dispatch({ type: 'togglePlanItem', id: 'vampire' });
     const after = state.derive([]);
     expect(after.balls).toHaveLength(5);
-    expect(after.balls.some((e) => e.item.id === 'vampire')).toBe(false);
+    expect(singleIds(after.balls)).not.toContain('vampire');
   });
 
   it('the passive limit is enforced separately (4 with upgrades off)', () => {
@@ -133,6 +141,54 @@ describe('plan state: plan items (balls/passives, pick order, limits)', () => {
   });
 });
 
+describe('plan state: complexity order (most complex first)', () => {
+  it('balls sort by base-ball count, most complex left', () => {
+    const state = createPlanState();
+    state.dispatch({ type: 'togglePlanItem', id: 'burn' }); // base — complexity 1
+    state.dispatch({ type: 'togglePlanItem', id: 'time-bomb' }); // time + bomb(burn+iron) — 3
+    state.dispatch({ type: 'togglePlanItem', id: 'flash' }); // flash + ? — 2
+    expect(singleIds(state.derive([]).balls)).toEqual(['time-bomb', 'flash', 'burn']);
+  });
+
+  it('a fused pair\'s complexity is the sum of its components\' — it interleaves with the singles', () => {
+    const state = createPlanState();
+    state.dispatch({ type: 'togglePlanItem', id: 'flash' }); // 2
+    // the user's example: Freeze Ray (2) × Time Bomb (3) = 5
+    state.dispatch({ type: 'togglePlanFusion', a: 'freeze-ray', b: 'time-bomb' });
+    const plan = state.derive([]);
+    expect(plan.balls[0].kind).toBe('fused');
+    expect(singleIds(plan.balls)).toEqual(['flash']);
+    expect(fusedOf(plan)[0].name).toBe('Freeze Ray × Time Bomb');
+  });
+
+  it('passives sort by base-passive count, most complex left', () => {
+    const state = createPlanState();
+    state.dispatch({ type: 'togglePlanItem', id: 'wagon-wheel' }); // base — 1
+    state.dispatch({ type: 'togglePlanItem', id: 'deadeyes-impaler' }); // 6
+    expect(state.derive([]).passives.map((e) => e.item.id)).toEqual(['deadeyes-impaler', 'wagon-wheel']);
+  });
+
+  it('ties keep pick order (stable sort)', () => {
+    const state = createPlanState();
+    state.dispatch({ type: 'togglePlanItem', id: 'flash' });
+    state.dispatch({ type: 'togglePlanItem', id: 'glacier' }); // same complexity as flash
+    expect(singleIds(state.derive([]).balls)).toEqual(['flash', 'glacier']);
+  });
+
+  it('the over-limit mark follows the sorted order — the displayed tail is marked', () => {
+    const state = createPlanState();
+    state.dispatch({
+      type: 'hydrate',
+      plan: { upgradesOn: false, chars: [], balls: ['burn', 'flash', 'glacier', 'maggot', 'flicker'], passives: [], fused: [] },
+    });
+    const plan = state.derive([]);
+    const tail = plan.balls[4];
+    expect(tail.kind).toBe('single');
+    expect(tail.kind === 'single' && tail.item.id).toBe('burn'); // least complex → last
+    expect(plan.balls.every((e, i) => e.overLimit === (i >= 4))).toBe(true);
+  });
+});
+
 describe('plan state: clearPlan (plan side)', () => {
   it('clears balls, passives and fused pairs and resets the toggle to on', () => {
     const state = createPlanState();
@@ -144,7 +200,7 @@ describe('plan state: clearPlan (plan side)', () => {
     const plan = state.derive([]);
     expect(plan.counts).toEqual({ chars: 0, balls: 0, passives: 0 });
     expect(plan.upgradesOn).toBe(true);
-    expect(plan.fused).toHaveLength(0);
+    expect(fusedOf(plan)).toHaveLength(0);
   });
 
   it('leaves the handed-in characters alone — the shared selection is view-state\'s to clear', () => {
@@ -166,7 +222,7 @@ describe('plan state: hydrate (plan side)', () => {
     });
     const plan = state.derive([]);
     expect(plan.upgradesOn).toBe(false);
-    expect(plan.balls.map((e) => e.item.id)).toEqual(['flash', 'glacier']);
+    expect(singleIds(plan.balls)).toEqual(['flash', 'glacier']);
     expect(plan.passives.map((e) => e.item.id)).toEqual(['wagon-wheel']);
   });
 
@@ -183,7 +239,7 @@ describe('plan state: hydrate (plan side)', () => {
       },
     });
     const plan = state.derive([]);
-    expect(plan.balls.map((e) => e.item.id)).toEqual(['flash']);
+    expect(singleIds(plan.balls)).toEqual(['flash']);
     expect(plan.passives.map((e) => e.item.id)).toEqual(['wagon-wheel']);
   });
 
@@ -211,7 +267,7 @@ describe('plan state: hydrate (plan side)', () => {
       plan: { upgradesOn: true, chars: ['the-warrior'], balls: ['flash'], passives: [], fused: [] },
     });
     const plan = state.derive([]);
-    expect(plan.balls.map((e) => e.item.id)).toEqual(['flash']);
+    expect(singleIds(plan.balls)).toEqual(['flash']);
     expect(plan.counts.chars).toBe(0); // derive only counts what it is handed
     expect(state.snapshot([]).chars).toEqual([]);
   });
@@ -235,9 +291,9 @@ describe('plan state: hydrate (plan side)', () => {
       },
     });
     const plan = state.derive([]);
-    expect(plan.fused).toHaveLength(1);
-    expect(plan.fused[0].a.id).toBe('flash');
-    expect(plan.fused[0].b.id).toBe('glacier');
+    expect(fusedOf(plan)).toHaveLength(1);
+    expect(fusedOf(plan)[0].a.id).toBe('flash');
+    expect(fusedOf(plan)[0].b.id).toBe('glacier');
   });
 
   it('snapshot round-trips through hydrate (empty chars — the shared selection rides through view-state)', () => {
@@ -270,10 +326,10 @@ describe('plan state: fused pairs in the plan', () => {
     const state = createPlanState();
     state.dispatch({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
     const plan = state.derive([]);
-    expect(plan.fused).toHaveLength(1);
-    expect(plan.fused[0].a.id).toBe('flash');
-    expect(plan.fused[0].b.id).toBe('glacier');
-    expect(plan.fused[0].name).toBe('Flash × Glacier');
+    expect(fusedOf(plan)).toHaveLength(1);
+    expect(fusedOf(plan)[0].a.id).toBe('flash');
+    expect(fusedOf(plan)[0].b.id).toBe('glacier');
+    expect(fusedOf(plan)[0].name).toBe('Flash × Glacier');
     expect(plan.counts.balls).toBe(1);
   });
 
@@ -281,7 +337,7 @@ describe('plan state: fused pairs in the plan', () => {
     const state = createPlanState();
     state.dispatch({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
     state.dispatch({ type: 'togglePlanFusion', a: 'glacier', b: 'flash' });
-    expect(state.derive([]).fused).toHaveLength(0);
+    expect(fusedOf(state.derive([]))).toHaveLength(0);
     expect(state.derive([]).counts.balls).toBe(0);
   });
 
@@ -289,7 +345,7 @@ describe('plan state: fused pairs in the plan', () => {
     const state = createPlanState();
     state.dispatch({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
     state.dispatch({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
-    expect(state.derive([]).fused).toHaveLength(0);
+    expect(fusedOf(state.derive([]))).toHaveLength(0);
   });
 
   it('a fused pair counts toward the ball limit: 4 singles + 1 fused fills the 5 limit', () => {
@@ -298,7 +354,7 @@ describe('plan state: fused pairs in the plan', () => {
     state.dispatch({ type: 'togglePlanFusion', a: 'burn', b: 'vampire' });
     state.dispatch({ type: 'togglePlanItem', id: 'wind' });
     const plan = state.derive([]);
-    expect(plan.balls.some((e) => e.item.id === 'wind')).toBe(false);
+    expect(singleIds(plan.balls)).not.toContain('wind');
     expect(plan.counts.balls).toBe(5);
   });
 
@@ -307,7 +363,7 @@ describe('plan state: fused pairs in the plan', () => {
     for (const id of ['flash', 'glacier', 'maggot', 'flicker', 'burn']) state.dispatch({ type: 'togglePlanItem', id });
     state.dispatch({ type: 'togglePlanFusion', a: 'vampire', b: 'wind' });
     const plan = state.derive([]);
-    expect(plan.fused).toHaveLength(0);
+    expect(fusedOf(plan)).toHaveLength(0);
     expect(plan.counts.balls).toBe(5);
   });
 
@@ -318,8 +374,8 @@ describe('plan state: fused pairs in the plan', () => {
     // 5 slots filled; shrinking the limits marks the pair (5th slot) over limit
     state.dispatch({ type: 'toggleUpgrades' });
     const plan = state.derive(chars('the-ballbearer'));
-    expect(plan.fused[0].overLimit).toBe(true);
-    expect(plan.fused[0].verdicts).toHaveLength(2);
+    expect(fusedOf(plan)[0].overLimit).toBe(true);
+    expect(fusedOf(plan)[0].verdicts).toHaveLength(2);
   });
 
   it('clearPlan clears fused pairs too', () => {
@@ -327,7 +383,7 @@ describe('plan state: fused pairs in the plan', () => {
     state.dispatch({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
     state.dispatch({ type: 'clearPlan' });
     const plan = state.derive([]);
-    expect(plan.fused).toHaveLength(0);
+    expect(fusedOf(plan)).toHaveLength(0);
     expect(plan.counts.balls).toBe(0);
   });
 

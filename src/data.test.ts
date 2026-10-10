@@ -7,6 +7,7 @@ import { CHARACTERS } from './data/characters';
 import { TAGS } from './data/tags';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { FUSED_STATS } from './fusion';
+import { byId, complexity } from './graph';
 
 const ballIds = new Set(BALLS.map((b) => b.id));
 const passiveIds = new Set(PASSIVES.map((p) => p.id));
@@ -77,6 +78,14 @@ describe('schema invariants (ticket 03)', () => {
   it('effect text is non-empty and verbatim-length (no truncation)', () => {
     for (const b of BALLS) expect(b.effects.length).toBeGreaterThan(10);
     for (const p of PASSIVES) expect(p.effects.length).toBeGreaterThan(10);
+  });
+});
+
+describe('complexity (graph.complexity against the real ball graph)', () => {
+  it('counts base balls recursively (the user\'s example: Freeze Ray 2, Time Bomb 3)', () => {
+    const graph = byId(BALLS);
+    expect(complexity(graph.get('freeze-ray')!, graph)).toBe(2); // freeze + laser (either hilt)
+    expect(complexity(graph.get('time-bomb')!, graph)).toBe(3); // time + bomb (burn + iron)
   });
 });
 

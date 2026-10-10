@@ -98,6 +98,29 @@ export function resolveDepths(ids: string[], evolvedIds: Set<string>, recipesOf:
 }
 
 /**
+ * Complexity of an item: how many base entities (no recipes) its final form
+ * contains, counted recursively along its recipes — a base entity counts 1,
+ * an evolved one the sum of one recipe's components' complexities. A fused
+ * pair's complexity is the sum of its components'. Multi-recipe entities
+ * take the highest per-recipe count (the shipped dataset's alternates never
+ * differ; the max keeps the function total). A component already on the
+ * visit stack contributes 0 — the same cycle stance as resolveDepths: the
+ * dataset is verified acyclic, a cycle yields a bounded-but-undefined value.
+ * Components missing from `graph` contribute 0 (the data tests guarantee
+ * recipes resolve within the namespace).
+ */
+export function complexity(item: GraphItem, graph: Graph, seen: Set<string> = new Set()): number {
+  if (!item.recipes.length) return 1;
+  if (seen.has(item.id)) return 0;
+  seen.add(item.id);
+  const perRecipe = item.recipes.map((r) =>
+    r.reduce((sum, c) => sum + (graph.has(c) ? complexity(graph.get(c)!, graph, seen) : 0), 0),
+  );
+  seen.delete(item.id);
+  return Math.max(...perRecipe);
+}
+
+/**
  * All multi-recipe entities must factorize into per-slot alternates — i.e.
  * every cross product of per-column choices is a valid recipe. This is what
  * makes the compact "x+(y/z)" tile notation faithful (user-verified format).

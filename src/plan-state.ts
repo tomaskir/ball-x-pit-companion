@@ -13,9 +13,13 @@
 // The shared toggle/restore shapes are homed here too (stickyToggle,
 // hydrateList, isFusable): view-state's character slots and fusion picks
 // use them, and plan-state must not import view-state (no runtime cycle).
+// Paint order is derived here as well: the plan's balls (singles + fused
+// pairs, one merged grid) and passives sort by complexity — how many base
+// entities the final form contains (graph.complexity), most complex left.
 import { type Ball } from './data/balls';
 import { type Character } from './data/characters';
 import { ballMap, passiveMap, isPassive, itemFor } from './catalog';
+import { complexity } from './graph';
 import { fusionBalls, fusionName } from './fusion';
 import { verdictFor, type Item, type Verdict } from './synergy';
 
@@ -39,12 +43,19 @@ export interface PlanSnapshot { upgradesOn: boolean; chars: string[]; balls: str
 export interface PlanCharState { character: Character; overLimit: boolean; pairInvalid: boolean; }
 /** One ball/passive in the plan: the resolved item (renderer never
  *  re-resolves), its verdict against the selected characters, and the
- *  over-limit mark. */
+ *  over-limit mark. The passives' entry shape. */
 export interface PlanEntryState { item: Item; overLimit: boolean; verdict: Verdict | null; }
-/** One fused pair in the plan: resolved components in compose order, the
- *  composed display name, one verdict per component (badges ride each
- *  icon), and the over-limit mark. A pair counts as ONE ball slot. */
-export interface PlanFusedState { a: Ball; b: Ball; name: string; overLimit: boolean; verdicts: [Verdict | null, Verdict | null]; }
+/** One single ball in the plan's merged ball grid. */
+export interface PlanSingleState { kind: 'single'; item: Ball; overLimit: boolean; verdict: Verdict | null; }
+/** One fused pair in the plan's merged ball grid: resolved components in
+ *  compose order, the composed display name, one verdict per component
+ *  (badges ride each icon), and the over-limit mark. A pair counts as ONE
+ *  ball slot and paints as ONE entry. */
+export interface PlanFusedState { kind: 'fused'; a: Ball; b: Ball; name: string; overLimit: boolean; verdicts: [Verdict | null, Verdict | null]; }
+/** The plan's ball grid is ONE ordered list — singles and fused pairs
+ *  interleaved by complexity (`graph.complexity`; a pair's is the sum of
+ *  its components'), most complex left, ties in pick order (stable sort). */
+export type PlanBallEntry = PlanSingleState | PlanFusedState;
 /** The plan screen's whole state — the final build the user is assembling.
  *  Derived in one place so the renderer only paints. */
 export interface PlanState {
@@ -52,9 +63,10 @@ export interface PlanState {
   limits: PlanLimits;
   counts: PlanLimits;
   characters: PlanCharState[];
-  balls: PlanEntryState[];
+  /** The merged ball grid in paint order (see PlanBallEntry). */
+  balls: PlanBallEntry[];
+  /** In paint order too: most complex first. */
   passives: PlanEntryState[];
-  fused: PlanFusedState[];
   /** Any section holds more than its active limit allows. */
   overLimit: boolean;
   /** Warning shown while over limit; '' otherwise. */
@@ -144,40 +156,54 @@ export function hydrateList<S, T>(list: T[], source: readonly S[], resolve: (x: 
 export function createPlanState() {
   /** The plan's End game upgrades toggle — on by default. */
   let upgradesOn = true;
-  /** Plan balls/passives in pick order. The plan's characters are the
-   *  shared selectedChars — one selection feeds verdicts, chips, plan. */
+  /** Plan balls/passives in pick order — the storage order (snapshot,
+   *  hydrate); the paint order is derived (complexity, see derive). The
+   *  plan's characters are the shared selectedChars — one selection feeds
+   *  verdicts, chips, plan. */
   const planBalls: string[] = [];
   const planPassives: string[] = [];
   /** Planned fused pairs in compose order; identity is the sorted id pair. */
   const planFused: PlanFused[] = [];
 
   /** The plan derived against the handed-in selection: resolved entries in
-   *  pick order, marked over limit beyond the active section limit (kept,
-   *  never trimmed). Verdicts ride along so the renderer paints them
-   *  without re-deriving. Fused pairs count as ONE ball slot each and are
-   *  marked after the single balls. */
+   *  paint order — balls and passives sorted by complexity (`graph.complexity`,
+   *  most complex left; a fused pair's is the sum of its components'), ties
+   *  in pick order (stable sort) — and marked over limit beyond the active
+   *  section limit (kept, never trimmed; the marks ride the sorted order, so
+   *  the displayed tail is what gets flagged). Verdicts ride along so the
+   *  renderer paints them without re-deriving. */
   const derive = (selectedChars: Character[]): PlanState => {
     const limits = activeLimits(upgradesOn);
     const ballSlots = ballSlotsUsed(planBalls, planFused);
-    const planBallsState = planBalls.map((id, i) => {
-      const item = ballMap.get(id)!;
-      return { item, overLimit: i >= limits.balls, verdict: verdictFor(item, selectedChars) };
-    });
-    const planFusedState = planFused.map(({ a, b }, i) => {
-      const ballA = ballMap.get(a)!;
-      const ballB = ballMap.get(b)!;
-      return {
-        a: ballA,
-        b: ballB,
-        name: fusionName(ballA, ballB),
-        overLimit: planBalls.length + i >= limits.balls,
-        verdicts: [verdictFor(ballA, selectedChars), verdictFor(ballB, selectedChars)] as [Verdict | null, Verdict | null],
-      };
-    });
-    const planPassivesState = planPassives.map((id, i) => {
-      const item = passiveMap.get(id)!;
-      return { item, overLimit: i >= limits.passives, verdict: verdictFor(item, selectedChars) };
-    });
+    const ballComplexity = (e: PlanBallEntry): number =>
+      e.kind === 'single' ? complexity(e.item, ballMap) : complexity(e.a, ballMap) + complexity(e.b, ballMap);
+    const balls: PlanBallEntry[] = [
+      ...planBalls.map((id) => {
+        const item = ballMap.get(id)!;
+        return { kind: 'single' as const, item, overLimit: false, verdict: verdictFor(item, selectedChars) };
+      }),
+      ...planFused.map(({ a, b }) => {
+        const ballA = ballMap.get(a)!;
+        const ballB = ballMap.get(b)!;
+        return {
+          kind: 'fused' as const,
+          a: ballA,
+          b: ballB,
+          name: fusionName(ballA, ballB),
+          overLimit: false,
+          verdicts: [verdictFor(ballA, selectedChars), verdictFor(ballB, selectedChars)] as [Verdict | null, Verdict | null],
+        };
+      }),
+    ]
+      .sort((x, y) => ballComplexity(y) - ballComplexity(x))
+      .map((e, i) => ({ ...e, overLimit: i >= limits.balls }));
+    const planPassivesState = planPassives
+      .map((id) => {
+        const item = passiveMap.get(id)!;
+        return { item, overLimit: false, verdict: verdictFor(item, selectedChars) };
+      })
+      .sort((x, y) => complexity(y.item, passiveMap) - complexity(x.item, passiveMap))
+      .map((e, i) => ({ ...e, overLimit: i >= limits.passives }));
     const overLimit =
       selectedChars.length > limits.chars ||
       ballSlots > ballCapacity(limits) ||
@@ -193,9 +219,8 @@ export function createPlanState() {
           selectedChars.length === 2 &&
           selectedChars[1 - i].cannotPair.includes(c.id),
       })),
-      balls: planBallsState,
+      balls,
       passives: planPassivesState,
-      fused: planFusedState,
       overLimit,
       hint: overLimit ? 'Over the limit — remove the highlighted picks or re-enable End game upgrades.' : '',
     };
