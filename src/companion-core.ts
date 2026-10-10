@@ -10,9 +10,9 @@ import type { Section } from './view-state';
 
 // ---------- routing ----------
 
-/** The sections initRouting accepts — the same union as view-state's
- *  `Section`; this module deliberately does not re-declare it. */
-export type { Section } from './view-state';
+/** The sections a hash may route to — typed as view-state's `Section` (its
+ *  owner) so adding one there without updating this list is a compile error. */
+const SECTIONS: Section[] = ['balls', 'passives', 'characters', 'fusions', 'plan'];
 
 /** Which section a location hash routes to, or null when the hash names no
  *  known section (an unknown hash must not switch screens). The empty hash
@@ -22,8 +22,7 @@ export type { Section } from './view-state';
 export function sectionFromHash(hash: string): Section | null {
   const path = hash.replace(/^#\/?/, '').split('?')[0];
   if (!path) return 'balls';
-  if (['balls', 'passives', 'characters', 'fusions', 'plan'].includes(path)) return path as Section;
-  return null;
+  return SECTIONS.includes(path as Section) ? (path as Section) : null;
 }
 
 // ---------- Esc / empty-space clear policy ----------

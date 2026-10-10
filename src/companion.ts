@@ -154,10 +154,9 @@ function init() {
   });
   document.addEventListener('click', (e) => {
     // empty space clears the active section's selection, same as Esc — the
-    // policy (plan exempt; interactive regions exempt) is companion-core's
-    // shouldClear, the exempt regions its CLEAR_EXEMPT_SELECTOR. Header
-    // controls are not empty space — a tab click must not clear the
-    // destination screen's remembered selection (cross-screen remembering).
+    // policy and its exempt regions live in companion-core (shouldClear +
+    // CLEAR_EXEMPT_SELECTOR; its doc carries the cross-screen-remembering
+    // rationale, incl. why header controls are exempt)
     if (!shouldClear(section, !!(e.target as HTMLElement).closest(CLEAR_EXEMPT_SELECTOR))) return;
     update({ type: 'clear', section });
   });
