@@ -365,6 +365,11 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .char-card .char-quirk { color: var(--muted); font-size: 12px; margin-top: 4px; }
 .char-card.selected { border-color: var(--gold); box-shadow: 0 0 12px var(--glow); }
 
+/* Matchmaker pairing restriction: the held character's forbidden partners.
+   Dimmed with a not-allowed cursor; the card stays clickable so the native
+   tooltip (set by paintCharCards) keeps working — the dispatch no-ops. */
+.char-card.blocked { opacity: var(--dim); filter: grayscale(1); cursor: not-allowed; }
+
 .char-card .char-base {
   display: flex;
   align-items: center;
@@ -706,6 +711,10 @@ footer a { color: var(--gold); }
 .plan-entry .plan-base img { width: 20px; height: 20px; }
 
 .plan-entry.over-limit { border-color: var(--red); box-shadow: 0 0 8px var(--red); }
+
+/* a hydrated Matchmaker-forbidden character pair — kept and marked, same
+   never-trim philosophy as over-limit */
+.plan-entry.invalid-pair { border-color: var(--red); box-shadow: 0 0 8px var(--red); }
 
 /* verdict badge — same look as the tiles' */
 .plan-entry .ind {

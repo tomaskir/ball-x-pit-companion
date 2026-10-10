@@ -475,3 +475,49 @@ describe('fusion panel plan button (jsdom, through paint())', () => {
     expect(q('.fusion-plan-btn').textContent).toBe('Remove from plan');
   });
 });
+
+// ---------- behavior: Matchmaker pairing restrictions (jsdom) ----------
+
+const charCard = (name: string) =>
+  [...document.querySelectorAll<HTMLElement>('#charactersGrid .char-card')].find((c) => c.textContent!.includes(name))!;
+
+describe('pairing restrictions in the DOM (jsdom, through paint())', () => {
+  it('a forbidden partner card gets the blocked class and a tooltip naming the held character', () => {
+    paint(view.dispatch({ type: 'toggleChar', id: 'the-repentant' }));
+    const card = charCard('The Shieldbearer');
+    expect(card.classList.contains('blocked')).toBe(true);
+    expect(card.title).toBe("can't pair with The Repentant");
+    // an allowed partner stays clean
+    const ok = charCard('The Warrior');
+    expect(ok.classList.contains('blocked')).toBe(false);
+    expect(ok.title).toBe('');
+  });
+
+  it('deselecting clears every blocked mark and tooltip', () => {
+    paint(view.dispatch({ type: 'toggleChar', id: 'the-repentant' }));
+    paint(view.dispatch({ type: 'toggleChar', id: 'the-repentant' }));
+    const card = charCard('The Shieldbearer');
+    expect(card.classList.contains('blocked')).toBe(false);
+    expect(card.title).toBe('');
+  });
+
+  it('a hydrated invalid pair marks both plan character entries invalid-pair', () => {
+    paint(view.dispatch({
+      type: 'hydrate',
+      plan: { upgradesOn: true, chars: ['the-repentant', 'the-shieldbearer'], balls: [], passives: [], fused: [] },
+    }));
+    const entries = [...planView().querySelectorAll<HTMLElement>('.plan-section[data-plan="characters"] .plan-entry')];
+    expect(entries).toHaveLength(2);
+    expect(entries.every((e) => e.classList.contains('invalid-pair'))).toBe(true);
+    expect(entries[0].title).toBe("these two can't team up in a run");
+  });
+
+  it('a valid pair leaves the plan character entries unmarked', () => {
+    paint(view.dispatch({
+      type: 'hydrate',
+      plan: { upgradesOn: true, chars: ['the-warrior', 'the-shade'], balls: [], passives: [], fused: [] },
+    }));
+    const entries = [...planView().querySelectorAll<HTMLElement>('.plan-section[data-plan="characters"] .plan-entry')];
+    expect(entries.every((e) => !e.classList.contains('invalid-pair') && e.title === '')).toBe(true);
+  });
+});

@@ -294,6 +294,12 @@ damage → `single-target`-only balls are red, `aoe`/status is green (×4). The
 Ballbearer runs no passives → all passive tags effectively dead. The Hoary Hoarder
 has no base ball → base-ball-dependent tags n/a.
 
+**Matchmaker pairing restrictions**: some characters cannot team up in a
+two-character run — the game darkens them on the select screen. That list is
+game data with its own fact base: see [character-pairings.md](character-pairings.md)
+(parsed into `cannotPair` on each character). It is separate from the
+editorial tag/verdict model below.
+
 ---
 
 ## 4. Proposed synergy tag list

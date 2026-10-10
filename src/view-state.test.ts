@@ -684,3 +684,84 @@ describe('view state: synergy verdicts ride the view model', () => {
     expect(vm.tiles.get('wagon-wheel')!.verdict).toBeNull();
   });
 });
+
+describe('view state: Matchmaker pairing restrictions (game data, character-pairings.md)', () => {
+  it('with one character held, a forbidden partner is blocked and names the held character', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleChar', id: 'the-repentant' });
+    const vm = view.derive();
+    expect(vm.charCards.get('the-shieldbearer')).toMatchObject({ blocked: true, blockedBy: 'The Repentant' });
+    // an allowed partner is not blocked
+    expect(vm.charCards.get('the-warrior')).toMatchObject({ blocked: false, blockedBy: null });
+  });
+
+  it('selecting a forbidden second character is a no-op (the game darkens them)', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleChar', id: 'the-repentant' });
+    const vm = view.dispatch({ type: 'toggleChar', id: 'the-shieldbearer' });
+    expect(vm.selectedChars.map((c) => c.id)).toEqual(['the-repentant']);
+  });
+
+  it('blocking is symmetric: whichever character is picked first', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleChar', id: 'the-shieldbearer' });
+    const vm = view.dispatch({ type: 'toggleChar', id: 'the-repentant' });
+    expect(vm.selectedChars.map((c) => c.id)).toEqual(['the-shieldbearer']);
+    expect(vm.charCards.get('the-repentant')!.blocked).toBe(true);
+  });
+
+  it('the false messiah can never be a second character, and takes none', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleChar', id: 'the-warrior' });
+    let vm = view.dispatch({ type: 'toggleChar', id: 'the-false-messiah' });
+    expect(vm.selectedChars.map((c) => c.id)).toEqual(['the-warrior']);
+    vm = view.dispatch({ type: 'toggleChar', id: 'the-warrior' }); // deselect
+    vm = view.dispatch({ type: 'toggleChar', id: 'the-false-messiah' }); // messiah first
+    expect(vm.selectedChars.map((c) => c.id)).toEqual(['the-false-messiah']);
+    expect(vm.charCards.get('the-warrior')!.blocked).toBe(true); // no partner either
+  });
+
+  it('blocking follows the current selection: deselecting frees the partner', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleChar', id: 'the-repentant' });
+    view.dispatch({ type: 'toggleChar', id: 'the-repentant' });
+    const vm = view.derive();
+    expect(vm.charCards.get('the-shieldbearer')!.blocked).toBe(false);
+  });
+
+  it('with upgrades off (limit 1) nothing is blocked — no second pick exists', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleUpgrades' });
+    view.dispatch({ type: 'toggleChar', id: 'the-repentant' });
+    const vm = view.derive();
+    expect(vm.charCards.get('the-shieldbearer')!.blocked).toBe(false);
+  });
+
+  it('a hydrated invalid pair is kept and marked pair-invalid, never trimmed', () => {
+    const view = createViewState();
+    const vm = view.dispatch({
+      type: 'hydrate',
+      plan: {
+        upgradesOn: true,
+        chars: ['the-repentant', 'the-shieldbearer'],
+        balls: [],
+        passives: [],
+        fused: [],
+      },
+    });
+    expect(vm.plan.characters.map((c) => c.character.id)).toEqual(['the-repentant', 'the-shieldbearer']);
+    expect(vm.plan.characters[0].pairInvalid).toBe(true);
+    expect(vm.plan.characters[1].pairInvalid).toBe(true);
+    expect(vm.plan.overLimit).toBe(false); // a valid count — the mark is about the pair
+  });
+
+  it('a valid hydrated pair is not marked', () => {
+    const view = createViewState();
+    const vm = view.dispatch({
+      type: 'hydrate',
+      plan: { upgradesOn: true, chars: ['the-warrior', 'the-shade'], balls: [], passives: [], fused: [] },
+    });
+    expect(vm.plan.characters[0].pairInvalid).toBe(false);
+    expect(vm.plan.characters[1].pairInvalid).toBe(false);
+  });
+});

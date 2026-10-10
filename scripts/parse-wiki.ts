@@ -6,6 +6,11 @@
  * Effect text is taken verbatim from the wiki tables. Tags are assigned
  * from the proposed synergy vocabulary (section 4 of the fact base),
  * derived from each entity's on-hit/status/effect columns.
+ *
+ * Also parses docs/research/character-pairings.md (Matchmaker pairing
+ * restrictions — game data, see that file for sources) into each
+ * character's `cannotPair` (list of character names; `*all*` expands to
+ * every other character).
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { slug } from './slug.ts';
@@ -125,6 +130,46 @@ for (const [name, baseBall, ability] of parseTable(/^\| Character \| Base ball \
     baseBall: baseBall.trim() === '*none*' ? null : clean(baseBall),
     quirk: clean(ability),
   });
+}
+
+// ---------- character pairing restrictions ----------
+// From docs/research/character-pairings.md — game data (the Matchmaker's
+// darkened-out pairs), not the editorial synergy model. `*all*` = the False
+// Messiah's rule: pairs with nobody, in either slot.
+const PAIRINGS_SRC = new URL('./character-pairings.md', SRC);
+const pairRows = (() => {
+  const pmd = readFileSync(PAIRINGS_SRC, 'utf8');
+  const lines = pmd.split('\n');
+  const out = [];
+  let idx = 0;
+  while (idx < lines.length && !/^\| Character \| Cannot pair with \|/.test(lines[idx])) idx++;
+  if (idx === lines.length) throw new Error('pairing table not found in character-pairings.md');
+  idx += 2; // skip header + separator
+  for (; idx < lines.length; idx++) {
+    const line = lines[idx];
+    if (!line.startsWith('|')) break;
+    out.push(line.split('|').slice(1, -1).map(c => c.trim()));
+  }
+  return out;
+})();
+const charByName = new Map(characters.map((c) => [c.name, c]));
+for (const [name, cannotCell] of pairRows) {
+  const ch = charByName.get(clean(name));
+  if (!ch) throw new Error(`pairing row for unknown character: ${name}`);
+  const others = characters.filter((c) => c.name !== ch.name).map((c) => c.name);
+  ch.cannotPair = cannotCell.startsWith('*all*')
+    ? others
+    : cannotCell.split(',').map((s) => clean(s)).filter((s) => s.length > 0);
+}
+for (const c of characters) if (!c.cannotPair) c.cannotPair = [];
+// the doc lists each forbidden pair once; the relation itself is symmetric
+// (the game darkens both directions) — expand here, once
+for (const c of [...characters]) {
+  for (const partner of c.cannotPair) {
+    const p = charByName.get(partner);
+    if (!p) throw new Error(`pairing row for ${c.name}: unknown partner "${partner}"`);
+    if (!p.cannotPair.includes(c.name)) p.cannotPair.push(c.name);
+  }
 }
 
 // ---------- report ----------

@@ -1589,117 +1589,241 @@
     {
       "name": "The Warrior",
       "baseBall": "Bleed",
-      "quirk": "Default character, no special gameplay quirks."
+      "quirk": "Default character, no special gameplay quirks.",
+      "cannotPair": [
+        "The False Messiah"
+      ]
     },
     {
       "name": "The Itchy Finger",
       "baseBall": "Burn",
-      "quirk": "Scattered aim, shoots twice as fast, auto-launches balls; full speed while shooting."
+      "quirk": "Scattered aim, shoots twice as fast, auto-launches balls; full speed while shooting.",
+      "cannotPair": [
+        "The Tactician",
+        "The False Messiah"
+      ]
     },
     {
       "name": "The Repentant",
       "baseBall": "Freeze",
-      "quirk": "Balls deal +5% damage per bounce; on hitting the back wall they return, damaging enemies passed through."
+      "quirk": "Balls deal +5% damage per bounce; on hitting the back wall they return, damaging enemies passed through.",
+      "cannotPair": [
+        "The Shieldbearer",
+        "The Flagellant",
+        "The Tunneller",
+        "The False Messiah"
+      ]
     },
     {
       "name": "The Cohabitants",
       "baseBall": "Brood Mother",
-      "quirk": "Each launched ball is mirrored by a copy; balls deal half damage."
+      "quirk": "Each launched ball is mirrored by a copy; balls deal half damage.",
+      "cannotPair": [
+        "The Makeshift Sisyphus",
+        "The Spendthrift",
+        "The Juggler",
+        "The Falconer",
+        "The False Messiah"
+      ]
     },
     {
       "name": "The Cogitator",
       "baseBall": "Laser (Vertical)",
-      "quirk": "Automatically chooses upgrades."
+      "quirk": "Automatically chooses upgrades.",
+      "cannotPair": [
+        "The Radical",
+        "The False Messiah"
+      ]
     },
     {
       "name": "The Embedded",
       "baseBall": "Poison",
-      "quirk": "Balls always pierce enemies until they hit a wall."
+      "quirk": "Balls always pierce enemies until they hit a wall.",
+      "cannotPair": [
+        "The False Messiah"
+      ]
     },
     {
       "name": "The Shade",
       "baseBall": "Dark",
-      "quirk": "Balls shoot from the back; base crit chance 10%."
+      "quirk": "Balls shoot from the back; base crit chance 10%.",
+      "cannotPair": [
+        "The Makeshift Sisyphus",
+        "The Falconer",
+        "The False Messiah"
+      ]
     },
     {
       "name": "The Shieldbearer",
       "baseBall": "Iron",
-      "quirk": "Large shield bounces back balls that hit it."
+      "quirk": "Large shield bounces back balls that hit it.",
+      "cannotPair": [
+        "The Repentant",
+        "The Flagellant",
+        "The Physicist",
+        "The Tactician",
+        "The False Messiah"
+      ]
     },
     {
       "name": "The Spendthrift",
       "baseBall": "Vampire",
-      "quirk": "Shoots all balls at once in a wide arc."
+      "quirk": "Shoots all balls at once in a wide arc.",
+      "cannotPair": [
+        "The Cohabitants",
+        "The Makeshift Sisyphus",
+        "The False Messiah"
+      ]
     },
     {
       "name": "The Juggler",
       "baseBall": "Lightning",
-      "quirk": "Lobs balls at a target position; no bouncing until landing."
+      "quirk": "Lobs balls at a target position; no bouncing until landing.",
+      "cannotPair": [
+        "The Cohabitants",
+        "The False Messiah"
+      ]
     },
     {
       "name": "The Empty Nester",
       "baseBall": "Ghost",
-      "quirk": "No baby balls. Each shot shoots multiple instances of one equipped special ball."
+      "quirk": "No baby balls. Each shot shoots multiple instances of one equipped special ball.",
+      "cannotPair": [
+        "The False Messiah"
+      ]
     },
     {
       "name": "The Flagellant",
       "baseBall": "Egg Sac",
-      "quirk": "Balls bounce normally off the bottom of the screen."
+      "quirk": "Balls bounce normally off the bottom of the screen.",
+      "cannotPair": [
+        "The Repentant",
+        "The Shieldbearer",
+        "The Physicist",
+        "The Tactician",
+        "The False Messiah"
+      ]
     },
     {
       "name": "The Makeshift Sisyphus",
       "baseBall": "Earthquake",
-      "quirk": "No baby balls. No direct hit damage; AOE and status damage ×4."
+      "quirk": "No baby balls. No direct hit damage; AOE and status damage ×4.",
+      "cannotPair": [
+        "The Cohabitants",
+        "The Shade",
+        "The Spendthrift",
+        "The False Messiah"
+      ]
     },
     {
       "name": "The Physicist",
       "baseBall": "Light",
-      "quirk": "Balls are affected by gravity toward the back of the screen."
+      "quirk": "Balls are affected by gravity toward the back of the screen.",
+      "cannotPair": [
+        "The Shieldbearer",
+        "The Flagellant",
+        "The False Messiah"
+      ]
     },
     {
       "name": "The Tactician",
       "baseBall": "Iron",
-      "quirk": "Battles become turn-based."
+      "quirk": "Battles become turn-based.",
+      "cannotPair": [
+        "The Itchy Finger",
+        "The Shieldbearer",
+        "The Flagellant",
+        "The False Messiah"
+      ]
     },
     {
       "name": "The Radical",
       "baseBall": "Wind",
-      "quirk": "Plays the game and chooses upgrades automatically (AI plays)."
+      "quirk": "Plays the game and chooses upgrades automatically (AI plays).",
+      "cannotPair": [
+        "The Cogitator",
+        "The False Messiah"
+      ]
     },
     {
       "name": "The Falconer",
       "baseBall": "Lightning",
-      "quirk": "Balls shot from two falcons on the sides of the screen."
+      "quirk": "Balls shot from two falcons on the sides of the screen.",
+      "cannotPair": [
+        "The Cohabitants",
+        "The Shade",
+        "The False Messiah"
+      ]
     },
     {
       "name": "The Carouser",
       "baseBall": "Charm",
-      "quirk": "Balls can briefly orbit the player on return trajectory."
+      "quirk": "Balls can briefly orbit the player on return trajectory.",
+      "cannotPair": [
+        "The False Messiah"
+      ]
     },
     {
       "name": "The Tunneller",
       "baseBall": "Earthquake",
-      "quirk": "Balls wrap around top and bottom of the screen."
+      "quirk": "Balls wrap around top and bottom of the screen.",
+      "cannotPair": [
+        "The Repentant",
+        "The False Messiah"
+      ]
     },
     {
       "name": "The Tiptoer",
       "baseBall": "Laser (Horizontal)",
-      "quirk": "Undetectable by enemies (except bosses/minibosses); drastically less health."
+      "quirk": "Undetectable by enemies (except bosses/minibosses); drastically less health.",
+      "cannotPair": [
+        "The False Messiah"
+      ]
     },
     {
       "name": "The Hoary Hoarder",
       "baseBall": null,
-      "quirk": "Only 2 ball slots; remaining equipment slots become passive slots."
+      "quirk": "Only 2 ball slots; remaining equipment slots become passive slots.",
+      "cannotPair": [
+        "The False Messiah"
+      ]
     },
     {
       "name": "The Ballbearer",
       "baseBall": "Stone",
-      "quirk": "Twice as many ball slots, but no passive slots."
+      "quirk": "Twice as many ball slots, but no passive slots.",
+      "cannotPair": [
+        "The False Messiah"
+      ]
     },
     {
       "name": "The False Messiah",
       "baseBall": "Bleed",
-      "quirk": "Twitch audience votes on choices and random events."
+      "quirk": "Twitch audience votes on choices and random events.",
+      "cannotPair": [
+        "The Warrior",
+        "The Itchy Finger",
+        "The Repentant",
+        "The Cohabitants",
+        "The Cogitator",
+        "The Embedded",
+        "The Shade",
+        "The Shieldbearer",
+        "The Spendthrift",
+        "The Juggler",
+        "The Empty Nester",
+        "The Flagellant",
+        "The Makeshift Sisyphus",
+        "The Physicist",
+        "The Tactician",
+        "The Radical",
+        "The Falconer",
+        "The Carouser",
+        "The Tunneller",
+        "The Tiptoer",
+        "The Hoary Hoarder",
+        "The Ballbearer"
+      ]
     }
   ]
 }

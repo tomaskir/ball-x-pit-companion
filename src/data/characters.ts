@@ -2,6 +2,9 @@
 // site's editorial synergy model derived from quirk text — not playtested
 // (flagged in docs/research/game-mechanics.md). Unlisted tags are neutral.
 // The wildcard tag "*passives" matches every passive (The Ballbearer).
+// cannotPair is game data: the Matchmaker's forbidden two-character pairs
+// (docs/research/character-pairings.md) — symmetric; the False Messiah
+// cannot pair with anyone.
 export interface VerdictRule {
   tag: string;
   verdict: 'red' | 'green';
@@ -16,6 +19,8 @@ export interface Character {
   icon: string;
   sprite: string;
   verdicts: VerdictRule[];
+  /** Matchmaker-forbidden partner ids (symmetric relation). */
+  cannotPair: string[];
 }
 
 export const CHARACTERS: Character[] = [
@@ -26,7 +31,10 @@ export const CHARACTERS: Character[] = [
     "quirk": "Default character, no special gameplay quirks.",
     "icon": "icons/character-portraits/the-warrior.png",
     "sprite": "icons/character-sprites/the-warrior.png",
-    "verdicts": []
+    "verdicts": [],
+    "cannotPair": [
+      "the-false-messiah"
+    ]
   },
   {
     "id": "the-itchy-finger",
@@ -46,6 +54,10 @@ export const CHARACTERS: Character[] = [
         "verdict": "red",
         "note": "Scattered aim degrades aimed single-target play"
       }
+    ],
+    "cannotPair": [
+      "the-false-messiah",
+      "the-tactician"
     ]
   },
   {
@@ -66,6 +78,12 @@ export const CHARACTERS: Character[] = [
         "verdict": "red",
         "note": "No bounces to scale"
       }
+    ],
+    "cannotPair": [
+      "the-false-messiah",
+      "the-flagellant",
+      "the-shieldbearer",
+      "the-tunneller"
     ]
   },
   {
@@ -96,6 +114,13 @@ export const CHARACTERS: Character[] = [
         "verdict": "red",
         "note": "Balls deal half damage"
       }
+    ],
+    "cannotPair": [
+      "the-falconer",
+      "the-false-messiah",
+      "the-juggler",
+      "the-makeshift-sisyphus",
+      "the-spendthrift"
     ]
   },
   {
@@ -105,7 +130,11 @@ export const CHARACTERS: Character[] = [
     "quirk": "Automatically chooses upgrades.",
     "icon": "icons/character-portraits/the-cogitator.png",
     "sprite": "icons/character-sprites/the-cogitator.png",
-    "verdicts": []
+    "verdicts": [],
+    "cannotPair": [
+      "the-false-messiah",
+      "the-radical"
+    ]
   },
   {
     "id": "the-embedded",
@@ -130,6 +159,9 @@ export const CHARACTERS: Character[] = [
         "verdict": "red",
         "note": "Balls never bounce off enemies on the way"
       }
+    ],
+    "cannotPair": [
+      "the-false-messiah"
     ]
   },
   {
@@ -150,6 +182,11 @@ export const CHARACTERS: Character[] = [
         "verdict": "green",
         "note": "Backstab synergy"
       }
+    ],
+    "cannotPair": [
+      "the-falconer",
+      "the-false-messiah",
+      "the-makeshift-sisyphus"
     ]
   },
   {
@@ -165,6 +202,13 @@ export const CHARACTERS: Character[] = [
         "verdict": "green",
         "note": "Shield bounces balls back — destroy-on-hit still gets recycled value"
       }
+    ],
+    "cannotPair": [
+      "the-false-messiah",
+      "the-flagellant",
+      "the-physicist",
+      "the-repentant",
+      "the-tactician"
     ]
   },
   {
@@ -180,6 +224,11 @@ export const CHARACTERS: Character[] = [
         "verdict": "green",
         "note": "Wide-arc volley covers the field"
       }
+    ],
+    "cannotPair": [
+      "the-cohabitants",
+      "the-false-messiah",
+      "the-makeshift-sisyphus"
     ]
   },
   {
@@ -200,6 +249,10 @@ export const CHARACTERS: Character[] = [
         "verdict": "red",
         "note": "No bouncing until landing"
       }
+    ],
+    "cannotPair": [
+      "the-cohabitants",
+      "the-false-messiah"
     ]
   },
   {
@@ -230,6 +283,9 @@ export const CHARACTERS: Character[] = [
         "verdict": "red",
         "note": "No baby balls to scale off"
       }
+    ],
+    "cannotPair": [
+      "the-false-messiah"
     ]
   },
   {
@@ -245,6 +301,13 @@ export const CHARACTERS: Character[] = [
         "verdict": "green",
         "note": "Balls stay in play longer off the bottom bounce"
       }
+    ],
+    "cannotPair": [
+      "the-false-messiah",
+      "the-physicist",
+      "the-repentant",
+      "the-shieldbearer",
+      "the-tactician"
     ]
   },
   {
@@ -280,6 +343,12 @@ export const CHARACTERS: Character[] = [
         "verdict": "red",
         "note": "No baby balls to scale off"
       }
+    ],
+    "cannotPair": [
+      "the-cohabitants",
+      "the-false-messiah",
+      "the-shade",
+      "the-spendthrift"
     ]
   },
   {
@@ -289,7 +358,12 @@ export const CHARACTERS: Character[] = [
     "quirk": "Balls are affected by gravity toward the back of the screen.",
     "icon": "icons/character-portraits/the-physicist.png",
     "sprite": "icons/character-sprites/the-physicist.png",
-    "verdicts": []
+    "verdicts": [],
+    "cannotPair": [
+      "the-false-messiah",
+      "the-flagellant",
+      "the-shieldbearer"
+    ]
   },
   {
     "id": "the-tactician",
@@ -298,7 +372,13 @@ export const CHARACTERS: Character[] = [
     "quirk": "Battles become turn-based.",
     "icon": "icons/character-portraits/the-tactician.png",
     "sprite": "icons/character-sprites/the-tactician.png",
-    "verdicts": []
+    "verdicts": [],
+    "cannotPair": [
+      "the-false-messiah",
+      "the-flagellant",
+      "the-itchy-finger",
+      "the-shieldbearer"
+    ]
   },
   {
     "id": "the-radical",
@@ -307,7 +387,11 @@ export const CHARACTERS: Character[] = [
     "quirk": "Plays the game and chooses upgrades automatically (AI plays).",
     "icon": "icons/character-portraits/the-radical.png",
     "sprite": "icons/character-sprites/the-radical.png",
-    "verdicts": []
+    "verdicts": [],
+    "cannotPair": [
+      "the-cogitator",
+      "the-false-messiah"
+    ]
   },
   {
     "id": "the-falconer",
@@ -322,6 +406,11 @@ export const CHARACTERS: Character[] = [
         "verdict": "green",
         "note": "Two side lanes cover the field"
       }
+    ],
+    "cannotPair": [
+      "the-cohabitants",
+      "the-false-messiah",
+      "the-shade"
     ]
   },
   {
@@ -331,7 +420,10 @@ export const CHARACTERS: Character[] = [
     "quirk": "Balls can briefly orbit the player on return trajectory.",
     "icon": "icons/character-portraits/the-carouser.png",
     "sprite": "icons/character-sprites/the-carouser.png",
-    "verdicts": []
+    "verdicts": [],
+    "cannotPair": [
+      "the-false-messiah"
+    ]
   },
   {
     "id": "the-tunneller",
@@ -346,6 +438,10 @@ export const CHARACTERS: Character[] = [
         "verdict": "green",
         "note": "Vertical wrap keeps balls on the field"
       }
+    ],
+    "cannotPair": [
+      "the-false-messiah",
+      "the-repentant"
     ]
   },
   {
@@ -361,6 +457,9 @@ export const CHARACTERS: Character[] = [
         "verdict": "green",
         "note": "Stealth keeps you safe while picking targets"
       }
+    ],
+    "cannotPair": [
+      "the-false-messiah"
     ]
   },
   {
@@ -386,6 +485,9 @@ export const CHARACTERS: Character[] = [
         "verdict": "red",
         "note": "Only 2 ball slots — uncertain, needs playtesting"
       }
+    ],
+    "cannotPair": [
+      "the-false-messiah"
     ]
   },
   {
@@ -411,6 +513,9 @@ export const CHARACTERS: Character[] = [
         "verdict": "red",
         "note": "No passive slots — every passive is dead weight"
       }
+    ],
+    "cannotPair": [
+      "the-false-messiah"
     ]
   },
   {
@@ -420,7 +525,31 @@ export const CHARACTERS: Character[] = [
     "quirk": "Twitch audience votes on choices and random events.",
     "icon": "icons/character-portraits/the-false-messiah.png",
     "sprite": "icons/character-sprites/the-false-messiah.png",
-    "verdicts": []
+    "verdicts": [],
+    "cannotPair": [
+      "the-ballbearer",
+      "the-carouser",
+      "the-cogitator",
+      "the-cohabitants",
+      "the-embedded",
+      "the-empty-nester",
+      "the-falconer",
+      "the-flagellant",
+      "the-hoary-hoarder",
+      "the-itchy-finger",
+      "the-juggler",
+      "the-makeshift-sisyphus",
+      "the-physicist",
+      "the-radical",
+      "the-repentant",
+      "the-shade",
+      "the-shieldbearer",
+      "the-spendthrift",
+      "the-tactician",
+      "the-tiptoer",
+      "the-tunneller",
+      "the-warrior"
+    ]
   }
 ];
 

@@ -352,6 +352,9 @@ const charactersTs = ts(`// Character data from ballxpit.wiki.gg (2026-09-13). V
 // site's editorial synergy model derived from quirk text — not playtested
 // (flagged in docs/research/game-mechanics.md). Unlisted tags are neutral.
 // The wildcard tag "*passives" matches every passive (The Ballbearer).
+// cannotPair is game data: the Matchmaker's forbidden two-character pairs
+// (docs/research/character-pairings.md) — symmetric; the False Messiah
+// cannot pair with anyone.
 export interface VerdictRule {
   tag: string;
   verdict: 'red' | 'green';
@@ -366,6 +369,8 @@ export interface Character {
   icon: string;
   sprite: string;
   verdicts: VerdictRule[];
+  /** Matchmaker-forbidden partner ids (symmetric relation). */
+  cannotPair: string[];
 }
 
 export const CHARACTERS: Character[] = ${JSON.stringify(
@@ -377,6 +382,7 @@ export const CHARACTERS: Character[] = ${JSON.stringify(
     icon: `icons/character-portraits/${slug(c.name)}.png`, // prefix with import.meta.env.BASE_URL at runtime
     sprite: `icons/character-sprites/${slug(c.name)}.png`,
     verdicts: CHAR_VERDICTS[slug(c.name)] ?? [],
+    cannotPair: (c.cannotPair ?? []).map(slug).sort(),
   })), null, 2)};
 `);
 
@@ -409,6 +415,24 @@ for (const c of parsed.characters) {
   const id = slug(c.name);
   if (!(id in CHAR_VERDICTS)) { console.error(`character missing verdicts: ${id}`); errs++; }
   if (c.baseBall !== null && !ballIds.has(slug(c.baseBall))) { console.error(`character ${id}: unresolved base ball ${c.baseBall}`); errs++; }
+}
+// pairing restrictions: every partner resolves, the relation is symmetric,
+// and the False Messiah (the *all* row) is excluded from every other list's
+// complement — nobody may pair with them
+{
+  const charIds = new Set(parsed.characters.map((c) => slug(c.name)));
+  const pairs = new Map(parsed.characters.map((c) => [slug(c.name), new Set((c.cannotPair ?? []).map(slug))]));
+  for (const [id, partners] of pairs)
+    for (const p of partners) {
+      if (!charIds.has(p)) { console.error(`character ${id}: unresolved cannotPair partner ${p}`); errs++; continue; }
+      if (p === id) { console.error(`character ${id}: cannotPair contains itself`); errs++; }
+      else if (!pairs.get(p)!.has(id)) { console.error(`pairing not symmetric: ${id} -> ${p}`); errs++; }
+    }
+  const messiah = 'the-false-messiah';
+  const messiahPartners = pairs.get(messiah);
+  if (!messiahPartners || messiahPartners.size !== charIds.size - 1) {
+    console.error('the-false-messiah: the *all* row must exclude nobody — they can never be a second character'); errs++;
+  }
 }
 // every entity must have a tag entry
 for (const b of parsed.balls) if (!(slug(b.name) in BALL_TAGS)) { console.error(`ball missing tags: ${b.name}`); errs++; }

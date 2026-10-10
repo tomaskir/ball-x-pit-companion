@@ -124,6 +124,48 @@ describe('characters (ticket 06)', () => {
   });
 });
 
+describe('Matchmaker pairing restrictions (character-pairings.md)', () => {
+  const byId = new Map(CHARACTERS.map((c) => [c.id, c]));
+
+  it('every character carries a cannotPair list; every partner resolves; no self-pairs', () => {
+    for (const ch of CHARACTERS) {
+      expect(Array.isArray(ch.cannotPair)).toBe(true);
+      for (const p of ch.cannotPair) {
+        expect(byId.has(p)).toBe(true);
+        expect(p).not.toBe(ch.id);
+      }
+    }
+  });
+
+  it('the relation is symmetric', () => {
+    for (const ch of CHARACTERS)
+      for (const p of ch.cannotPair)
+        expect(byId.get(p)!.cannotPair).toContain(ch.id);
+  });
+
+  it('17 forbidden pairs over the 22 pairable characters (the doc\'s table)', () => {
+    const pairs = new Set(
+      CHARACTERS.flatMap((c) => c.cannotPair.map((p) => [c.id, p].sort().join('+'))),
+    );
+    // 17 regular pairs + the False Messiah's 22 (they pair with nobody)
+    expect(pairs.size).toBe(39);
+    expect(pairs.size - [...pairs].filter((k) => k.includes('the-false-messiah')).length).toBe(17);
+  });
+
+  it('the False Messiah pairs with nobody (never a second character)', () => {
+    const messiah = byId.get('the-false-messiah')!;
+    expect(messiah.cannotPair).toHaveLength(CHARACTERS.length - 1);
+  });
+
+  it('spot-checks from the research: Repentant x Shieldbearer, Cohabitants x Juggler, Itchy Finger x Tactician', () => {
+    expect(byId.get('the-repentant')!.cannotPair).toContain('the-shieldbearer');
+    expect(byId.get('the-cohabitants')!.cannotPair).toContain('the-juggler');
+    expect(byId.get('the-itchy-finger')!.cannotPair).toContain('the-tactician');
+    // the contradiction the doc resolves: Flagellant x Juggler is ALLOWED
+    expect(byId.get('the-flagellant')!.cannotPair).not.toContain('the-juggler');
+  });
+});
+
 describe('fused-stat overrides vs catalog (the "fails loudly" contract)', () => {
   // applyFusedStats() replaces exact substrings of the component's effect
   // text and silently skips replacements that no longer match (a wiki

@@ -156,6 +156,12 @@ function paintCharCards(vm: ViewModel) {
     const c = vm.charCards.get(ch.id)!;
     card.classList.toggle('selected', c.selected);
     card.classList.toggle('filtered', c.filtered);
+    // Matchmaker pairing restriction: dimmed, not-allowed cursor, and a
+    // tooltip naming the held character. The card stays clickable (the
+    // dispatch is a no-op) so the native tooltip keeps working — disabled
+    // elements suppress mouse events.
+    card.classList.toggle('blocked', c.blocked);
+    card.title = c.blockedBy ? `can't pair with ${c.blockedBy}` : '';
   }
 }
 
@@ -576,11 +582,15 @@ function paintPlan(vm: ViewModel) {
     badge.title = v.note ?? v.verdict;
     return badge;
   };
-  const repaint = (grid: HTMLElement, entries: { overLimit: boolean; verdict?: Verdict | null }[]) => {
+  const repaint = (grid: HTMLElement, entries: { overLimit: boolean; pairInvalid?: boolean; verdict?: Verdict | null }[]) => {
     [...grid.querySelectorAll<HTMLElement>('.plan-entry')].forEach((entry, i) => {
       const e = entries[i];
       if (!e) return;
       entry.classList.toggle('over-limit', e.overLimit);
+      // a hydrated Matchmaker-forbidden pair: kept, marked red — same
+      // never-trim philosophy as over-limit
+      entry.classList.toggle('invalid-pair', !!e.pairInvalid);
+      entry.title = e.pairInvalid ? "these two can't team up in a run" : '';
       entry.querySelectorAll('.ind').forEach((b) => b.remove());
       if (e.verdict) entry.appendChild(makeBadge(e.verdict));
     });

@@ -71,7 +71,16 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   past the active limit is a no-op — one must be deselected first, and the
   hint says so ("selection full — deselect one first"). One selected
   character shows the "pick a second character…" hint — only when two are
-  allowed. State: `src/view-state.ts` (`toggleChar` action). The header
+  allowed. **Pairing restrictions** (game data, the Matchmaker's forbidden
+  pairs — `docs/research/character-pairings.md`): with exactly one character
+  held, a forbidden partner's card is blocked (dimmed, "can't pair with …"
+  tooltip); selecting it is a no-op. The relation is symmetric and lives on
+  the character as `cannotPair` (generated; the False Messiah pairs with
+  nobody). A forbidden pair that arrives hydrated (Share link /
+  localStorage) is kept and marked red on the plan's character entries
+  (`pairInvalid`) — same never-trim philosophy as over-limit; live
+  selection can never produce one. State: `src/view-state.ts`
+  (`toggleChar` action). The header
   chips are the selection's top-bar view; their X button is the only removal
   (the chip body is inert).
 - **Plan screen** — the final-build planner: the user's end-of-run selection
@@ -199,7 +208,8 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   transcription of ballxpit.wiki.gg tables (fetched 2026-09-13, game v1.301
   *Naturalist* update), cross-checked against the community "Ultimate Guide
   of Evolutions" charts. Effect text is verbatim from the wiki.
-- **Pipeline** — `scripts/parse-wiki.ts` (fact base → `src/data/parsed.json`,
+- **Pipeline** — `scripts/parse-wiki.ts` (fact base + the Matchmaker pairing
+  fact base `docs/research/character-pairings.md` → `src/data/parsed.json`,
   computing depth structurally) then `scripts/emit-data.ts`
   (`parsed.json` + the hand-maintained tag/verdict maps inside it →
   `src/data/{tags,balls,passives,characters}.ts`). The five `src/data`

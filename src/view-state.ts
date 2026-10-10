@@ -24,7 +24,11 @@ import { fusionBalls, fusionName, fuse, type FusionResult } from './fusion';
 import { verdictFor, type Item, type Verdict } from './synergy';
 
 export interface TileState { selected: boolean; related: boolean; dimmed: boolean; filtered: boolean; verdict: Verdict | null; }
-export interface CharCardState { selected: boolean; filtered: boolean; }
+/** One character card. `blocked` is a Matchmaker pairing restriction (game
+ *  data): with exactly one character held (and two allowed), a forbidden
+ *  partner is blocked — selecting it is a no-op. `blockedBy` names the held
+ *  character for the tooltip; null when not blocked. */
+export interface CharCardState { selected: boolean; filtered: boolean; blocked: boolean; blockedBy: string | null; }
 /** Pick state of one ball row on the fusion screen: slot = pick order (1
  *  first, 2 second), null when not picked. Baby Ball is not a fusable
  *  upgrade entity and is excluded from the list. */
@@ -54,8 +58,11 @@ export interface PlanFused { a: string; b: string; }
  *  pins both sides (and `planSnapshot(vm)` produces it from a view model). */
 export interface PlanSnapshot { upgradesOn: boolean; chars: string[]; balls: string[]; passives: string[]; fused: PlanFused[]; }
 /** One character in the plan: overLimit marks slots beyond the active
- *  limit (kept, never trimmed — the user decides what to remove). */
-export interface PlanCharState { character: Character; overLimit: boolean; }
+ *  limit (kept, never trimmed — the user decides what to remove).
+ *  pairInvalid marks a Matchmaker-forbidden pair that arrived hydrated
+ *  (Share link / localStorage) — also kept and marked, never trimmed; live
+ *  selection can never produce one. */
+export interface PlanCharState { character: Character; overLimit: boolean; pairInvalid: boolean; }
 /** One ball/passive in the plan: the resolved item (renderer never
  *  re-resolves), its verdict against the selected characters, and the
  *  over-limit mark. */
@@ -186,6 +193,13 @@ const samePair = (p: PlanFused, a: string, b: string): boolean => pairKey(p.a, p
 const FUSABLE = new Set(fusionBalls().map((b) => b.id));
 const isFusable = (id: string): boolean => FUSABLE.has(id);
 
+/** The held character whose partners are Matchmaker-blocked: exactly one
+ *  character held and two allowed. Null otherwise (0 or 2 held, or limit 1
+ *  — no second pick exists to block). One definition for the card state and
+ *  the toggle guard, so the two cannot drift. */
+const blockedPartner = (chars: Character[], limits: PlanLimits): Character | null =>
+  chars.length === 1 && limits.chars > 1 ? chars[0] : null;
+
 export function createViewState() {
   let selectedId: string | null = null;
   /** Per-screen search queries — each section has its own search box, so
@@ -229,10 +243,18 @@ export function createViewState() {
         });
       }
     }
+    // Matchmaker pairing restrictions: with exactly one character held (and
+    // two allowed), forbidden partners are blocked — the game darkens them
+    // on the select screen. With 0 or 2 held nothing is blocked.
+    const limits = activeLimits();
+    const held = blockedPartner(selectedChars, limits);
     for (const ch of CHARACTERS) {
+      const blocked = !!held && ch.cannotPair.includes(held.id);
       charCards.set(ch.id, {
         selected: selectedChars.some((c) => c.id === ch.id),
         filtered: !!charQ && !(ch.name.toLowerCase().includes(charQ) || ch.quirk.toLowerCase().includes(charQ) || (ch.baseBallId && itemFor(ch.baseBallId)?.name.toLowerCase().includes(charQ) || false)),
+        blocked,
+        blockedBy: blocked ? held!.name : null,
       });
     }
     for (const b of FUSION_BALLS) {
@@ -261,7 +283,6 @@ export function createViewState() {
     // active section limit (kept, never trimmed). Verdicts ride along so the
     // renderer paints them without re-deriving. Fused pairs count as ONE
     // ball slot each and are marked after the single balls.
-    const limits = activeLimits();
     const planBallsState = planBalls.map((id, i) => {
       const item = ballMap.get(id)!;
       return { item, overLimit: i >= limits.balls, verdict: verdictFor(item, selectedChars) };
@@ -289,7 +310,13 @@ export function createViewState() {
       upgradesOn,
       limits,
       counts: { chars: selectedChars.length, balls: ballSlots, passives: planPassives.length },
-      characters: selectedChars.map((c, i) => ({ character: c, overLimit: i >= limits.chars })),
+      characters: selectedChars.map((c, i) => ({
+        character: c,
+        overLimit: i >= limits.chars,
+        pairInvalid:
+          selectedChars.length === 2 &&
+          selectedChars[1 - i].cannotPair.includes(c.id),
+      })),
       balls: planBallsState,
       passives: planPassivesState,
       fused: planFusedState,
@@ -361,11 +388,16 @@ export function createViewState() {
         case 'toggleItem': selectedId = selectedId === action.id ? null : action.id; break;
         // Character slots and fusion picks share stickyToggle's sticky
         // semantics (re-click deselects; adding past the limit is a no-op).
-        // The character limit rides the plan's upgrade toggle.
-        case 'toggleChar':
+        // The character limit rides the plan's upgrade toggle. Matchmaker
+        // pairing restrictions (game data) block a forbidden second pick —
+        // the game darkens them; here the toggle is a no-op.
+        case 'toggleChar': {
+          const held = blockedPartner(selectedChars, activeLimits());
+          if (held && held.id !== action.id && held.cannotPair.includes(action.id)) break;
           stickyToggle(selectedChars, action.id, activeLimits().chars,
             (c) => c.id === action.id, () => CHARACTERS.find((c) => c.id === action.id));
           break;
+        }
         case 'toggleFusion':
           stickyToggle(fusionPicks, action.id, 2, (id) => id === action.id, () => action.id);
           break;
