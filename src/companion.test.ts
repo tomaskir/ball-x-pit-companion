@@ -53,7 +53,7 @@ const SHELL = `
   <div id="selection-passives" hidden></div>
 `;
 
-function mountShell() {
+function mountIslandShell() {
   document.body.innerHTML = SHELL;
 }
 
@@ -107,7 +107,7 @@ function stubPorts(init: {
 let stop: (() => void) | null = null;
 
 beforeEach(() => {
-  mountShell();
+  mountIslandShell();
 });
 
 afterEach(() => {
@@ -170,6 +170,23 @@ describe('startup precedence (share param vs stored plan)', () => {
     expect(t.replaceState).not.toHaveBeenCalled();
     expect(t.savedPlan()).toEqual(stored);
     expect(planCounts()).toEqual(['0 / 2', '0 / 5', '1 / 5']);
+  });
+});
+
+// ---------- hydrate before first paint ----------
+
+describe('hydrate-before-first-paint ordering', () => {
+  it('start() alone paints the stored plan — no event, no second paint needed', () => {
+    // The ordering's observable consequence: the very first paint already
+    // reflects the hydrated plan. If the island painted before hydrating,
+    // the plan would show empty here until some later dispatch.
+    const stored: PlanSnapshot = { ...emptyPlan, balls: ['flash'], passives: ['wagon-wheel'] };
+    const t = stubPorts({ stored: { [PLAN_KEY]: JSON.stringify(stored) }, hash: '' });
+
+    start(t.ports);
+
+    expect(planCounts()).toEqual(['0 / 2', '1 / 5', '1 / 5']);
+    expect(t.savedPlan()).toEqual(stored);
   });
 });
 

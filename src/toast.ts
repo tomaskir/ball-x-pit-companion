@@ -25,8 +25,6 @@ export interface ToastOptions {
   /** Per-item verdict against the current character selection (the build
    *  seam's getVerdict). */
   getVerdict: (item: Item) => Verdict | null;
-  /** Base URL for the icon join; defaults to the deploy base. */
-  baseUrl?: string;
 }
 
 export interface ToastAdapter {
@@ -43,8 +41,8 @@ export interface ToastAdapter {
   destroy(): void;
 }
 
-export function createToast({ getVerdict, baseUrl = import.meta.env.BASE_URL }: ToastOptions): ToastAdapter {
-  const icon = (p: string) => iconUrl(baseUrl, p);
+export function createToast({ getVerdict }: ToastOptions): ToastAdapter {
+  const icon = (p: string) => iconUrl(import.meta.env.BASE_URL, p);
 
   let toastEl: HTMLElement | null = null;
   const anchors: HTMLElement[] = [];

@@ -8,9 +8,9 @@
 // renderer creates it once at build time and only binds anchors to it.
 // The island (src/companion.ts) is transport only — event
 // listening, storage/history/clipboard, with the routing, clear-policy, and
-// theme decisions in src/companion-core.ts and plan persistence via
-// src/share.ts; the
-// ViewModel it paints comes from src/view-state.ts — the fusion panel rides
+// theme decisions in src/companion-core.ts and the share-link lifecycle in
+// src/share.ts (plan persistence to localStorage is the island's own job);
+// the ViewModel it paints comes from src/view-state.ts — the fusion panel rides
 // the named fusionPanel state (empty / pending / composed) and paintFusion
 // switches on it; the plan rides vm.plan and paintPlan paints per section;
 // the renderer holds no domain data of its own. The icon-URL join comes
