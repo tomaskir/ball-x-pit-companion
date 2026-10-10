@@ -522,9 +522,13 @@ function paintPlan(vm: ViewModel) {
     paintedPlanKey = key;
     const charEntries = plan.characters.map(({ character: ch }) => {
       const base = ch.baseBallId ? ballMap.get(ch.baseBallId) : null;
+      // the body is a column: name over base chip — the sprite and X stay
+      // put while the name wraps at word boundaries
       return planEntry(
-        `<img src="${icon(ch.sprite)}" alt="${ch.name}" width="48" height="48" loading="lazy"><span class="plan-name">${ch.name}</span>` +
-        (base ? `<span class="plan-base" title="Base ball"><img src="${icon(base.icon)}" alt="${base.name}" width="20" height="20">${base.name}</span>` : ''),
+        `<img src="${icon(ch.sprite)}" alt="${ch.name}" width="48" height="48" loading="lazy">` +
+        `<span class="plan-body"><span class="plan-name">${ch.name}</span>` +
+        (base ? `<span class="plan-base" title="Base ball"><img src="${icon(base.icon)}" alt="${base.name}" width="20" height="20">${base.name}</span>` : '') +
+        `</span>`,
         () => emit({ type: 'toggleChar', id: ch.id }),
       );
     });
@@ -533,15 +537,21 @@ function paintPlan(vm: ViewModel) {
         `<img src="${icon(item.icon)}" alt="${item.name}" width="48" height="48" loading="lazy"><span class="plan-name">${item.name}</span>`,
         () => emit({ type: 'togglePlanItem', id: item.id }),
       ));
-    // fused pairs: both icons with a × between, composed name, one X for the
-    // pair — a pair is ONE entry (one ball slot). Each icon sits in a
-    // wrapper so the per-component verdict badge can ride it.
+    // fused pairs: both icons with a × between, composed name below (full
+    // box width — long names wrap at word boundaries instead of squeezing
+    // beside the icons), one X for the pair — a pair is ONE entry (one ball
+    // slot). Each icon sits in a wrapper so the per-component verdict badge
+    // can ride it.
     const fusedEntries = plan.fused.map(({ a, b, name }) =>
       planEntry(
+        `<span class="plan-body">` +
+        `<span class="plan-icons">` +
         `<span class="plan-icon"><img src="${icon(a.icon)}" alt="${a.name}" width="48" height="48" loading="lazy"></span>` +
         `<span class="plan-times">×</span>` +
         `<span class="plan-icon"><img src="${icon(b.icon)}" alt="${b.name}" width="48" height="48" loading="lazy"></span>` +
-        `<span class="plan-name">${name}</span>`,
+        `</span>` +
+        `<span class="plan-name">${name}</span>` +
+        `</span>`,
         () => emit({ type: 'togglePlanFusion', a: a.id, b: b.id }),
       ));
     planEls.sections.characters.grid.replaceChildren(...charEntries);

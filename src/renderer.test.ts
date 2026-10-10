@@ -306,6 +306,8 @@ describe('plan screen behavior (jsdom, through paint())', () => {
     expect(entries).toHaveLength(3);
     expect(entries[0].querySelector('img')!.getAttribute('src')).toContain('the-warrior');
     expect(entries[0].textContent).toContain('The Warrior');
+    // character entries stack name over base chip in a body column
+    expect(entries[0].querySelector('.plan-body .plan-base')).toBeTruthy();
     expect(entries[1].textContent).toContain('Flash');
     expect(entries[2].textContent).toContain('Wagon Wheel');
     // every entry has a remove button wired through the seam
@@ -366,6 +368,8 @@ describe('plan screen behavior (jsdom, through paint())', () => {
     const entries = [...planView().querySelectorAll<HTMLElement>('.plan-entry')];
     expect(entries).toHaveLength(1);
     expect(entries[0].textContent).toContain('Flash × Glacier');
+    // icons row on top, full-width name below (long names wrap, not squeeze)
+    expect(entries[0].querySelector('.plan-body .plan-icons')).toBeTruthy();
     const imgs = [...entries[0].querySelectorAll('img')];
     expect(imgs.some((i) => i.getAttribute('src')!.includes('flash'))).toBe(true);
     expect(imgs.some((i) => i.getAttribute('src')!.includes('glacier'))).toBe(true);

@@ -676,10 +676,24 @@ footer a { color: var(--gold); }
 
 .plan-entry .plan-name {
   flex: 1;
-  /* long names must wrap, not push the base chip / X out of the box */
   min-width: 0;
-  overflow-wrap: anywhere;
+  /* wrap at word boundaries; break mid-word only when a single word cannot
+     fit a line at all (anywhere would shatter every name) */
+  overflow-wrap: break-word;
 }
+
+/* character entries: the body column stacks the name over the base chip so
+   the sprite and X hold the box while the name wraps */
+.plan-entry .plan-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.plan-entry .plan-body .plan-name { flex: 0 1 auto; }
 
 .plan-entry .plan-base {
   display: flex;
@@ -687,7 +701,6 @@ footer a { color: var(--gold); }
   gap: 4px;
   color: var(--muted);
   font-size: 11px;
-  flex-shrink: 0;
 }
 
 .plan-entry .plan-base img { width: 20px; height: 20px; }
@@ -724,7 +737,8 @@ footer a { color: var(--gold); }
 
 .plan-x:hover { color: var(--red); }
 
-/* fused pair entries: the × between the two icons */
+/* fused pair entries: the × between the two icons, name below */
+.plan-entry .plan-icons { display: flex; align-items: center; gap: 4px; }
 .plan-entry .plan-times { color: var(--gold); font-size: 14px; align-self: center; }
 
 /* per-component verdict badges ride the icon wrapper */
