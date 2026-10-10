@@ -1,14 +1,20 @@
-// Share-code module: encodes a PlanSnapshot into a compact URL-safe string
-// (and back). One interface: encodePlan(plan) → code, decodePlan(code) →
-// PlanSnapshot | null. The island builds share links as
-// `…#/plan?p=<code>` and decodes the parameter on startup; the code is
-// versioned (v1) so a future format can coexist with old links, and
-// anything that does not parse as a v1 code decodes to null — the island
-// then ignores the parameter and falls back to the stored plan. Field
-// validation lives in `parsePlanSnapshot` — the single PlanSnapshot
-// normalizer, shared with the island's localStorage loader; deeper
-// validation (unknown ids, degenerate pairs) is `hydrate`'s job in
-// view-state.
+// Share-code module: the whole share-link lifecycle as pure functions over
+// plain strings — a PlanSnapshot ⇄ compact URL-safe code (encodePlan /
+// decodePlan), the full `…#/plan?p=<code>` link (planLink), and the one-shot
+// read of the ?p= parameter out of a location hash (takeShareParam). The
+// island keeps only transport: it passes location parts in, copies the link,
+// and hands strippedHash to history.replaceState. The code is versioned (v1)
+// so a future format can coexist with old links, and anything that does not
+// parse as a v1 code decodes to null — the caller then ignores the parameter
+// and falls back to the stored plan. Field validation lives in
+// `parsePlanSnapshot` — the single PlanSnapshot normalizer, shared with the
+// island's localStorage loader; deeper validation (unknown ids, degenerate
+// pairs) is `hydrate`'s job in view-state.
+//
+// takeShareParam returns `{ snapshot, strippedHash }` (not just a snapshot)
+// because the one-shot rule strips the parameter only when it actually
+// decodes: the pair travels together so the caller cannot strip without
+// having decoded, and a null snapshot means "leave the URL alone".
 import type { PlanFused, PlanSnapshot } from './view-state';
 
 /** The v1 wire format — short keys keep share URLs compact. */
@@ -71,4 +77,31 @@ export function decodePlan(code: string): PlanSnapshot | null {
   } catch {
     return null;
   }
+}
+
+/** The full share URL: `<origin><pathname>#/plan?p=<code>`. The island calls
+ *  this with location.origin/location.pathname so the module stays
+ *  environment-free. */
+export function planLink(origin: string, pathname: string, plan: PlanSnapshot): string {
+  return `${origin}${pathname}#/plan?p=${encodePlan(plan)}`;
+}
+
+export interface ShareParam {
+  /** The decoded plan, or null when the parameter is present but is not a
+   *  valid v1 code — the caller then uses the stored plan instead. */
+  snapshot: PlanSnapshot | null;
+  /** The hash with the query stripped (`#/plan`), for the one-shot
+   *  history.replaceState — applied only when snapshot is non-null. */
+  strippedHash: string;
+}
+
+/** The one-shot read of a share parameter out of a location hash: everything
+ *  after the first `?` is the query, `p` carries the code. Returns null when
+ *  the hash carries no parameter at all; a present-but-undecodable parameter
+ *  comes back as `{ snapshot: null, … }` so the caller can tell the two
+ *  apart (only a decoded snapshot earns the strip). */
+export function takeShareParam(hash: string): ShareParam | null {
+  const param = new URLSearchParams(hash.split('?')[1] ?? '').get('p');
+  if (param === null) return null;
+  return { snapshot: decodePlan(param), strippedHash: hash.split('?')[0] };
 }

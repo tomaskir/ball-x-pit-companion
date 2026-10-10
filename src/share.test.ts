@@ -1,8 +1,9 @@
-// Tests for the share-code module: PlanSnapshot ⇄ URL-safe string. The
-// island builds share links from the code and decodes the ?p= parameter on
-// startup; anything that does not parse as a v1 code decodes to null.
+// Tests for the share-code module: the whole share-link lifecycle —
+// PlanSnapshot ⇄ URL-safe string, the full `#/plan?p=<code>` link, and the
+// one-shot read of the ?p= parameter out of a location hash. Anything that
+// does not parse as a v1 code decodes to null.
 import { describe, it, expect } from 'vitest';
-import { encodePlan, decodePlan, parsePlanSnapshot } from './share';
+import { encodePlan, decodePlan, parsePlanSnapshot, planLink, takeShareParam } from './share';
 import type { PlanSnapshot } from './view-state';
 
 const plan: PlanSnapshot = {
@@ -42,6 +43,46 @@ describe('share code: encodePlan / decodePlan', () => {
     const decoded = decodePlan(btoa(messy))!;
     expect(decoded.chars).toEqual(['the-warrior']);
     expect(decoded.fused).toEqual([{ a: 'flash', b: 'glacier' }]);
+  });
+});
+
+describe('planLink', () => {
+  it('builds the full #/plan?p=<code> URL from origin + pathname', () => {
+    const url = planLink('https://tomaskir.github.io', '/ball-x-pit-companion/', plan);
+    expect(url.startsWith('https://tomaskir.github.io/ball-x-pit-companion/#/plan?p=')).toBe(true);
+  });
+
+  it("the link's parameter decodes back to the plan", () => {
+    const url = planLink('https://example.com', '/ball-x-pit-companion/', plan);
+    expect(decodePlan(new URL(url).hash.split('?p=')[1]!)).toEqual(plan);
+  });
+});
+
+describe('takeShareParam', () => {
+  it('extracts and decodes the ?p= parameter, with the hash to strip back to', () => {
+    const hash = `#/plan?p=${encodePlan(plan)}`;
+    expect(takeShareParam(hash)).toEqual({ snapshot: plan, strippedHash: '#/plan' });
+  });
+
+  it('returns null when the hash carries no parameter', () => {
+    expect(takeShareParam('#/plan')).toBeNull();
+    expect(takeShareParam('')).toBeNull();
+  });
+
+  it('a parameter that fails to decode yields a null snapshot (stored plan wins, no strip)', () => {
+    expect(takeShareParam('#/plan?p=garbage')).toEqual({ snapshot: null, strippedHash: '#/plan' });
+    expect(takeShareParam('#/plan?p=')).toEqual({ snapshot: null, strippedHash: '#/plan' });
+  });
+
+  it('strips only the query — the section route survives', () => {
+    const taken = takeShareParam(`#/plan?p=${encodePlan(plan)}`)!;
+    expect(taken.strippedHash).not.toContain('?');
+    expect(taken.strippedHash.startsWith('#/plan')).toBe(true);
+  });
+
+  it('round-trips with planLink through a location hash', () => {
+    const hash = new URL(planLink('https://example.com', '/x/', plan)).hash;
+    expect(takeShareParam(hash)?.snapshot).toEqual(plan);
   });
 });
 
