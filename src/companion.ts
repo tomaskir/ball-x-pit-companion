@@ -1,7 +1,8 @@
 // Interactive island: event listening, theme, hash routing, and plan
 // persistence only — the decisions behind those are pure functions in
-// src/companion-core.ts (routing, clear policy, theme resolution) and
-// src/share.ts (the share-link lifecycle); this module is the transport
+// src/companion-core.ts (routing, clear policy, theme resolution),
+// src/share.ts (share-link URL transport), and src/plan-codec.ts (the
+// persistence codec); this module is the transport
 // that reads real events/storage and applies their results to the DOM. All
 // DOM painting lives in src/renderer.ts behind one buildAll() + paint(vm)
 // interface; all state and derivations live in src/view-state.ts behind one

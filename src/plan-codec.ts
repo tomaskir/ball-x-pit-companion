@@ -1,11 +1,11 @@
-// Plan-codec module: the ONE home for the plan persistence currency. It owns
+// Plan-codec module: the ONE home for the plan persistence codec. It wraps
 // the three shapes the plan travels in — PlanSnapshot (the plan's own fields,
 // owned by plan-state.ts), the v1 wire format (short keys, base64url in share
-// links), and the normalized SharedSnapshot ({ plan, chars }) that the share
-// link and localStorage carry. One field list (FIELDS, keyed by
-// keyof PlanSnapshot) drives encode, decode, and normalize: adding a plan
-// field is one edit here, and the compiler rejects the table until the row
-// exists. The codec normalizes shape only — deeper validation (unknown ids,
+// links), and the normalized SharedSnapshot ({ plan, chars }) the share link
+// and localStorage carry. One field list (FIELDS, keyed by keyof
+// PlanSnapshot) drives encode, decode, and normalize: adding a plan field
+// needs one row here, and the compiler rejects the table until it exists.
+// The codec normalizes shape only — deeper validation (unknown ids,
 // degenerate pairs) stays in plan-state's hydrate.
 //
 // The transport currency splits the plan from the shared character selection:

@@ -1,11 +1,11 @@
 // Tests for the plan-state module through its one interface:
 // createPlanState() → dispatch(planAction) / derive(selectedChars) /
-// snapshot(selectedChars) / has(id) / hasPair(a, b) / limits(). The seam is
+// snapshot() / has(id) / hasPair(a, b) / limits(). The seam is
 // "selectedChars in, PlanState out" — the plan's characters are the shared
-// selection owned by view-state.ts, so every derive/snapshot call hands
-// them in. Integration through the full view state (action forwarding, the
-// shared selectedChars, the ViewModel's plan fields for the renderer) lives
-// in src/view-state.test.ts.
+// selection owned by view-state.ts, so every derive call is handed them in;
+// snapshot() carries only the plan's own fields. Integration through the
+// full view state (action forwarding, the shared selectedChars, the
+// ViewModel's plan fields for the renderer) lives in src/view-state.test.ts.
 import { describe, it, expect } from 'vitest';
 import { createPlanState, type PlanBallEntry, type PlanState } from './plan-state';
 import { CHARACTERS } from './data/characters';

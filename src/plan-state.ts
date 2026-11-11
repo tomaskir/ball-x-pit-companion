@@ -147,6 +147,25 @@ export function createPlanState() {
     hasRoom: (list) => ballSlotsUsed(planBalls.list(), list) < activeLimits(upgradesOn).balls,
   });
 
+  /** Apply a normalized plan to the in-memory state, keyed by PlanSnapshot's
+   *  fields: the compiler rejects a missing row when the plan grows a field,
+   *  so hydrate cannot silently forget one. The codec's FIELDS table is the
+   *  wire/normalized half of the same guarantee. The pick lists keep their
+   *  resolution guards — unknown ids, non-fusable and degenerate pairs are
+   *  still dropped here, not in the codec. */
+  const restorePlan = {
+    upgradesOn: (value: boolean) => { upgradesOn = value; },
+    balls: (value: string[]) => planBalls.restore(value),
+    passives: (value: string[]) => planPassives.restore(value),
+    fused: (value: PlanFused[]) => planFused.restore(value),
+  } satisfies { [K in keyof PlanSnapshot]: (value: PlanSnapshot[K]) => void };
+  const applyPlan = (plan: PlanSnapshot): void => {
+    // one cast: the loop cannot correlate the key with the row's value type
+    for (const key of Object.keys(restorePlan) as (keyof PlanSnapshot)[]) {
+      (restorePlan[key] as (value: PlanSnapshot[keyof PlanSnapshot]) => void)(plan[key]);
+    }
+  };
+
   /** The plan derived against the handed-in selection: resolved entries in
    *  paint order — balls and passives sorted by complexity (`graph.complexity`,
    *  most complex left; a fused pair's is the sum of its components'), ties
@@ -238,15 +257,9 @@ export function createPlanState() {
           planFused.restore([]);
           upgradesOn = true;
           break;
-        case 'hydrate': {
-          upgradesOn = action.plan.upgradesOn;
-          planBalls.restore(action.plan.balls);
-          planPassives.restore(action.plan.passives);
-          // both sides must be real, distinct, fusable balls; identity
-          // (sorted pair) dedupes — over-limit pairs are kept, not trimmed
-          planFused.restore(action.plan.fused ?? []);
+        case 'hydrate':
+          applyPlan(action.plan);
           break;
-        }
       }
     },
     derive,

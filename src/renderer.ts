@@ -17,8 +17,9 @@
 //
 // The island (src/companion.ts) is transport only — event
 // listening, storage/history/clipboard, with the routing, clear-policy, and
-// theme decisions in src/companion-core.ts and the share-link lifecycle in
-// src/share.ts (plan persistence to localStorage is the island's own job);
+// theme decisions in src/companion-core.ts, the share-link URL transport in
+// src/share.ts, and the persistence codec in src/plan-codec.ts (plan
+// persistence to localStorage is the island's own job);
 // the ViewModel it paints comes from src/view-state.ts — the fusion panel rides
 // the named fusionPanel state (empty / pending / composed) and paintFusion
 // switches on it; the plan rides vm.plan and paintPlan paints per section;

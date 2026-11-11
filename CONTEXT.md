@@ -331,14 +331,17 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   pairs, and the resolved `PlanState` the renderer paints. Module:
   `src/plan-state.ts` — one interface: `createPlanState()` →
   `dispatch(planAction)` / `derive(selectedChars) → PlanState` /
-  `snapshot(selectedChars) → PlanSnapshot`, plus the membership queries the
+  `snapshot() → PlanSnapshot`, plus the membership queries the
   rest of the app reads instead of plan internals (`has(id)`,
   `hasPair(a, b)`) and `limits()`. The seam is "selectedChars in, PlanState
   out": the plan's characters are the shared `selectedChars`, owned by
-  `src/view-state.ts` — plan-state never mutates them (hydrate's `chars`
-  field is ignored; clearPlan clears them in view-state). `PlanSnapshot`,
-  the persistence currency, lives here; view-state re-exports the plan
-  types so companion.ts and share.ts keep their import paths. The ball
+  `src/view-state.ts` — plan-state never mutates them (clearPlan clears
+  them in view-state). `PlanSnapshot` carries only the plan's own fields;
+  the persistence currency is `src/plan-codec.ts`'s
+  `SharedSnapshot { plan, chars }`, which pairs it with the shared
+  selection. The codec declares the plan's field list once and normalizes
+  shape; `hydrate` applies it through a field-keyed restore table and keeps
+  the deeper validation (unknown ids, degenerate pairs). The ball
   grid the renderer paints is one merged, complexity-ordered list
   (`PlanBallEntry`: a single or a fused pair — a pair is ONE entry), not
   two lists the renderer concatenates. The three lists are pick lists
@@ -356,8 +359,9 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   `verdictFor(item)` (full verdict with note, for the toast). The plan is
   not state of its own here any more — see **Plan state**: view-state
   forwards the plan actions verbatim and embeds the derived `PlanState` in
-  the view model, handing the shared `selectedChars` in on every
-  derive/snapshot. Fusion picks
+  the view model, handing the shared `selectedChars` in on every derive; it
+  owns the chars half of the `SharedSnapshot` (restored on hydrate) and
+  supplies `sharedSnapshot()` for persistence. Fusion picks
   are a pick list like the character slots (re-click deselects; a third
   pick while two are held is a no-op; unknown and non-fusable ids are
   rejected) — the same `src/pick-list.ts` module the plan's toggles use; the
