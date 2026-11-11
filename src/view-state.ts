@@ -278,11 +278,6 @@ export function createViewState() {
   };
 
   return {
-    /** Verdict for one item against the current selection — the toast needs
-     *  the full verdict (note included), not just the tile's badge color. */
-    verdictFor(item: Item) {
-      return verdictFor(item, selectedChars.list());
-    },
     /** The transport currency — the plan's own fields plus the shared
      *  selection — the island saves to localStorage and encodes into share
      *  links. Each module supplies its half, so the island never re-extracts

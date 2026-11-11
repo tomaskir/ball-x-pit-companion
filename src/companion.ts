@@ -211,7 +211,6 @@ export function startIsland(ports: IslandPorts): () => void {
   addEventListener('hashchange', applyHash);
   applyHash();
   buildAll({
-    getVerdict: (item) => view.verdictFor(item),
     emit: (action) => update(action),
   });
   // restore the plan before the initial paint: a share link's ?p= parameter

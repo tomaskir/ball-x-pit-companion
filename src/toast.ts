@@ -5,8 +5,8 @@
 // only renderer subsystem with its own mutable module state and no tests;
 // the renderer now creates the adapter once at build time and only binds
 // anchors to it. The verdict lookup is injected at creation (the build
-// seam's getVerdict), so a shown toast always reads the current character
-// selection.
+// seam's read of the last painted view model), so a shown toast always
+// matches the verdict the tiles were painted with.
 //
 // The dismissal is the adapter's own document-level pointerdown listener —
 // not the island's empty-space clear policy (companion-core's shouldClear):
@@ -24,8 +24,8 @@ import { iconUrl } from './icon-url';
 import type { Verdict } from './synergy';
 
 export interface ToastOptions {
-  /** Per-item verdict against the current character selection (the build
-   *  seam's getVerdict). */
+  /** Per-item verdict as last painted (the build seam reads it from the
+   *  captured view model's tile state). */
   getVerdict: (item: Item) => Verdict | null;
 }
 

@@ -308,7 +308,7 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
     const { paint, buildAll } = await import('./renderer');
     const { createViewState } = await import('./view-state');
     mountShell();
-    buildAll({ getVerdict: () => null, emit: () => {} });
+    buildAll({ emit: () => {} });
     const view = createViewState();
     paint(view.dispatch({ type: 'toggleFusion', id: 'flash' }));
     const iconB = document.querySelector<HTMLImageElement>('#fusionPanel .icon-b')!;
@@ -519,8 +519,8 @@ describe('source hygiene (grep pins)', () => {
   // renderer reports clicks through the build seam, not a CustomEvent bus —
   // the behavioral half is renderer.test.ts ("build seam: clicks call emit");
   // here the dead interface stays dead and the seam stays in the signature
-  // (the options object carries both callbacks; buildAll assigns them to
-  // module-level slots — the pre-existing toastVerdict pattern).
+  // (the options object carries one callback — emit; the toast's verdict
+  // rides the view model paint() captures, not a second seam callback).
   it('renderer source carries no CustomEvent bus; the build seam is in buildAll\'s signature', () => {
     const src = rendererSource();
     expect(src).not.toContain('CustomEvent');
@@ -528,7 +528,9 @@ describe('source hygiene (grep pins)', () => {
     for (const event of ['tile-select', 'char-select', 'fusion-select']) {
       expect(src).not.toContain(event);
     }
-    expect(src).toMatch(/export function buildAll\(\{ getVerdict, emit/);
+    expect(src).toMatch(/export function buildAll\(\{ emit/);
+    // the island no longer hands the seam a second verdict callback
+    expect(readFileSync('src/companion.ts', 'utf8')).not.toContain('getVerdict');
   });
 
   // the upgrades toggle is island-wired shell chrome (seam hygiene,
@@ -572,7 +574,7 @@ describe('regression: toast touch dismissal (promised in a comment, never wired)
   it('a toast shown from a tile hides on a tap elsewhere on the document', async () => {
     const { buildAll } = await import('./renderer');
     mountShell();
-    buildAll({ getVerdict: () => null, emit: () => {} });
+    buildAll({ emit: () => {} });
     const tile = document.querySelector<HTMLElement>('#ballsGrid .tile[data-id="flash"]')!;
     tile.dispatchEvent(new MouseEvent('mouseenter'));
     expect(document.querySelector('body > .toast')).toBeTruthy();

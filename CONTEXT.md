@@ -230,8 +230,9 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   (`buildSelectionBox`/`paintSelectionBoxes`).
 - **Toast** — the hover/tap detail popup with icon, full effect text, recipe,
   tags, and the item's current verdict. Its verdict function is injected at
-  build time (`buildAll({ getVerdict, emit })`), so hover always reads the
-  current selection. Module: `src/toast.ts` (`createToast({ getVerdict })` →
+  creation and reads the view model `paint(vm)` last captured, so hover
+  shows exactly the verdict the tile was painted with (no second read into
+  live view state). Module: `src/toast.ts` (`createToast({ getVerdict })` →
   `{ showFor(anchor, item), hide(), bind(anchor, getItem), destroy() }`) —
   the whole lifecycle (build, show, hide, position, one-at-a-time
   replacement, anchor binding, and the document-level outside-tap
@@ -241,12 +242,13 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   outside the toast and outside the bound anchors hides it (the touch
   dismissal the old renderer comment promised but never wired); it neither
   dispatches nor interferes with the island's empty-space clear policy.
-- **Build seam** — the options object `buildAll({ getVerdict, emit })` hands
-  the island's two callbacks to the renderer at build time: `getVerdict`
-  feeds the toast, `emit(action)` is how built-in click handlers report
-  actions back — selection toggles and the fusion order swap (the whole
-  view-state `ToggleAction`, which the island dispatches verbatim and
-  paints). The renderer stays paint-only —
+- **Build seam** — the options object `buildAll({ emit })` hands the
+  island's callback to the renderer at build time: `emit(action)` is how
+  built-in click handlers report actions back — selection toggles and the
+  fusion order swap (the whole view-state `ToggleAction`, which the island
+  dispatches verbatim and paints). `paint(vm)` captures the latest view
+  model in the seam, which is where the toast's verdict comes from. The
+  renderer stays paint-only —
   it never dispatches DOM events and never depends on view state at runtime
   (its view-state imports are types only; pinned in `src/regression.test.ts`,
   the emit wiring behaviorally in `src/renderer.test.ts`).
@@ -283,7 +285,7 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   (recipe notation comes from `src/graph.ts`; the renderer only injects
   icon markup — see **Recipe notation**; the icon-URL join comes from
   `src/icon-url.ts`) — one interface:
-  `buildAll({ getVerdict, emit })` (builds grids, character cards, the
+  `buildAll({ emit })` (builds grids, character cards, the
   fusion pick list, the fusion panel skeleton — the named
   `FUSION_PANEL_SKELETON` export, which the tests pin directly instead of
   scraping source, plus its `FUSION_PANEL_SELECTORS` hook map, the one source
@@ -357,8 +359,9 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   (highlight walks, filters, verdict badges, the composed fusion, the
   selection boxes). Module: `src/view-state.ts`
   — one interface: `createViewState()` → `dispatch(action) → ViewModel`, plus
-  `derive()` (same view model without a state change, for initial paint) and
-  `verdictFor(item)` (full verdict with note, for the toast). The plan is
+  `derive()` (same view model without a state change, for initial paint).
+  The toast reads its verdict from the painted `tiles` map, not from a
+  separate view-state accessor. The plan is
   not state of its own here any more — see **Plan state**: view-state
   forwards the plan actions verbatim and embeds the derived `PlanState` in
   the view model, handing the shared `selectedChars` in on every derive; it
