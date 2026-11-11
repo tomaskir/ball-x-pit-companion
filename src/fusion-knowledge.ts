@@ -109,7 +109,7 @@ export const isKillEffect = (b: Ball): boolean => KILL_EFFECT_IDS.has(b.id);
 export const isStatusOnlySpawner = (b: Ball): boolean => SPAWN_STATUS_ONLY_IDS.has(b.id);
 export const isAoeExcluded = (b: Ball): boolean => AOE_EXCLUDED_IDS.has(b.id);
 export const isDamageRidingStatus = (b: Ball): boolean => ON_DAMAGE_STATUS_IDS.has(b.id);
-export const isDisputedKillPair = (a: Ball, b: Ball): boolean => KILL_DISPUTED_PAIRS.has(pairKey(a, b));
+export const isDisputedKillPair = (a: Ball, b: Ball): boolean => KILL_DISPUTED_PAIRS.has(pairKey(a.id, b.id));
 
 /** The ball's channel override, if the text heuristic is known to be wrong. */
 export const channelOverride = (b: Ball): StatusChannel | undefined => CHANNEL_OVERRIDES[b.id];
