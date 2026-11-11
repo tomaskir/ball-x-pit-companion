@@ -28,7 +28,7 @@ import { highlightSet, closure, union } from './graph';
 import { ballMap, isPassive, itemFor, graphFor, passiveMap } from './catalog';
 import { deriveBuildGraph, layoutBuildGraph, fusionNodePair, type BuildGraphLayout } from './build-graph';
 import { fusionBalls, evolvesInstead } from './fusion';
-import { deriveFusionPanel, SELECTION_FULL, type FusionPanelState } from './fusion-panel';
+import { deriveFusionPanel, type FusionPanelState } from './fusion-panel';
 import { verdictFor, type Item, type Verdict } from './synergy';
 import { createPlanState, stickyToggle, hydrateList, isFusable } from './plan-state';
 import type { PlanAction, PlanLimits, PlanState, PlanSnapshot } from './plan-state';
@@ -37,9 +37,6 @@ import type { PlanAction, PlanLimits, PlanState, PlanSnapshot } from './plan-sta
 // (companion.ts, share.ts) keep working. Types only: plan-state must never
 // be imported *by* view-state's consumers at runtime through here.
 export type { PlanAction, PlanBallEntry, PlanCharState, PlanEntryState, PlanFused, PlanFusedState, PlanLimits, PlanSnapshot, PlanState } from './plan-state';
-// The fusion panel's state machine lives in src/fusion-panel.ts — re-exported
-// so existing import paths (test-support/pins.ts) keep working.
-export type { FusionPanelState };
 
 export interface TileState { selected: boolean; related: boolean; dimmed: boolean; filtered: boolean; verdict: Verdict | null; }
 /** One character card. `blocked` is a Matchmaker pairing restriction (game
@@ -71,12 +68,12 @@ export interface ViewModel {
    *  held and two are allowed, "selection full — deselect one first" when at
    *  the active limit. */
   slotHint: string;
-  /** The fusion screen's panel state — see FusionPanelState. The panel's
-   *  hint text is derived here too (fusionHint below) so the renderer
-   *  paints it without re-deriving pick counts. */
+  /** The fusion screen's panel state — see FusionPanelState (derived in
+   *  src/fusion-panel.ts). */
   fusionPanel: FusionPanelState;
   /** Hint for the fusion panel's pending states, mirroring slotHint's
-   *  pick-a-second / selection-full wording for balls. */
+   *  pick-a-second / selection-full wording for balls — derived in
+   *  src/fusion-panel.ts too. */
   fusionHint: string;
   /** The plan screen's state — see PlanState (src/plan-state.ts). */
   plan: PlanState;
@@ -140,6 +137,12 @@ export type ToggleAction = Extract<
 /** Balls offered by the fusion pick list: all fusable upgrade entities.
  *  Baby Ball is not one (research: it is not an upgrade entity). */
 const FUSION_BALLS = fusionBalls();
+
+/** Both max-2 selections (characters, fusion picks) show this when full —
+ *  the sticky-toggle semantics are shared, so is the wording. The fusion
+ *  panel keeps the same literal in src/fusion-panel.ts (its hint is derived
+ *  there); the two are pinned by tests. */
+const SELECTION_FULL = 'selection full — deselect one first';
 
 /** The held character whose partners are Matchmaker-blocked: exactly one
  *  character held and two allowed. Null otherwise (0 or 2 held, or limit 1

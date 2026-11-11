@@ -5,11 +5,11 @@
 import { describe, it, expect } from 'vitest';
 import { deriveFusionPanel, type FusionPanelPlan } from './fusion-panel';
 import { ballMap } from './catalog';
+import { EMPTY_FUSION_PANEL_PLAN } from './test-support/pins';
 
-/** A plan stub: nothing planned, no ball slots used. */
+/** A plan stub: nothing planned, no ball slots used (shared with the pins). */
 const plan = (over: Partial<FusionPanelPlan> = {}): FusionPanelPlan => ({
-  hasPair: () => false,
-  ballSlots: { used: 0, capacity: 5 },
+  ...EMPTY_FUSION_PANEL_PLAN,
   ...over,
 });
 

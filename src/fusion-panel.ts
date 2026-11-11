@@ -55,9 +55,9 @@ export interface FusionPanelPlan {
 }
 
 /** Both max-2 selections (characters, fusion picks) show this when full —
- *  the sticky-toggle semantics are shared, so is the wording. Exported so
- *  view-state's slotHint and the fusion hint cannot drift. */
-export const SELECTION_FULL = 'selection full — deselect one first';
+ *  the sticky-toggle semantics are shared, so is the wording. view-state's
+ *  slotHint carries the same literal; the two are pinned by tests. */
+const SELECTION_FULL = 'selection full — deselect one first';
 
 /** "A", "A and B", "A, B, and C" — the order notice's property list. */
 const labelList = (labels: string[]): string =>
@@ -65,8 +65,8 @@ const labelList = (labels: string[]): string =>
   : labels.length === 2 ? `${labels[0]} and ${labels[1]}`
   : `${labels.slice(0, -1).join(', ')}, and ${labels[labels.length - 1]}`;
 
-/** The order presentation, derived here so the renderer only paints it
- *  (decision #8). Order model: docs/research/fusion-mechanics.md §3. A pair is
+/** The order presentation, derived here so the renderer only paints it.
+ *  Order model: docs/research/fusion-mechanics.md §3. A pair is
  *  order-sensitive when the composed fusion has a collision or an
  *  order-dependent exception; an evolve-instead pair never fuses, so order
  *  cannot matter. */
