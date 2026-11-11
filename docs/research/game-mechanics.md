@@ -55,7 +55,7 @@ All base balls are "Basic" tier. Unlock "default" = available from the start.
 | Lightning | AOE | On-Hit, AOE | — | Deals 1–20 damage to up to 3 nearby enemies. | The Juggler, The Falconer | default |
 | Poison | — | On-Hit | Poison | Applies 1 stack of poison on hit (max 5 stacks). Poison lasts for 6 seconds and each stack deals 1–4 damage per second. | The Embedded | default |
 | Stone | — | On-Hit | — | Initially deals 300% damage. Damage erodes by 40% each time hitting an enemy (minimum 50%). | — | Clear The SNOWYxSHORES |
-| Time | Destroy | On-Hit, AOE | Time Snare | Explodes into a time snare upon hitting an enemy, which stays on the field for 20 seconds and freezes enemies inside it. | — | Clear The SMOLDERINGxDEPTHS |
+| Time | Destroy | On-Hit, AOE | Time Snare | Explodes into a time snare upon hitting an enemy, which stays on the field for 2.0 seconds and freezes enemies inside it. | — | Clear The SMOLDERINGxDEPTHS |
 | Vampire | — | On-Hit | Heal | Each hit has a 4.5% chance of healing 1 health. | The Spendthrift | default |
 | Wind | Pass Through | On-Hit | Slow | Passes through enemies and slows them down by 30% for 5 seconds, but deals 25% less damage. | The Radical | default |
 
@@ -79,7 +79,7 @@ alternate component.
 | Black Hole | Tier-3 | Sun + (Dark or Time) | Destroy | Instant Kill | Instantly kills the first non-boss enemy that it hits, but destroys itself afterwards. Has a 7 second cooldown before it can be shot again. |
 | Blizzard | Evo | Freeze + (Wind or Lightning) | — | Freeze (AOE) | Freezes all enemies within a 2 tile radius for 0.8 seconds, dealing 1–50 damage. |
 | Bomb | Evo | Burn + Iron | Destroy | — | Explodes when hitting an enemy, dealing 150–300 damage to nearby enemies. Has a 3 second cooldown before it can be shot again. |
-| Brimstone | Evo | Burn + (Stone or Poison) | — | Burn, Poison | Applies 1 stack of burn and poison every second to all enemies within a 2 tile radius (max 4 stacks). |
+| Brimstone | Evo | Burn + (Stone or Poison) | — | Burn, Poison | Applies 1 stack of burn and poison every second to all enemies within a 2 tile radius (max 4 stacks). Burn deals 1–4 damage per stack per second and poison deals 2–3 damage per stack per second. |
 | Catapult | Evo | Stone + Egg Sac | — | Baby Ball Spawn | Launches 3–5 stone baby balls every 1.5 seconds, which are destroyed after hitting anything. |
 | Drill | Evo | Earthquake + Iron | Pass Through | — | Pierces enemies and deals 50% bonus damage until reaching the back of the field. |
 | Elemental | Evo (4-way) | Burn + Wind + Freeze + Earthquake | — | Burn, Slow, Freeze | Applies a random status effect (burn, slow, or freeze) to nearby enemies on hit. |
@@ -397,6 +397,11 @@ keep ~3–5 s between requests, and a descriptive User-Agent helped).
 
 ## Uncertainty summary
 
+- Two L1 effect texts were corrected from the wiki's per-level `{{BallData}}`
+  tables (rebuilt 2026-09-15/17; see issue #3 research): **Time** snare
+  20 s → 2.0 s (the overview table's typo; L2 2.5 s, L3 3.0 s), and
+  **Brimstone**'s truncated damage clause restored (burn 1–4, poison 2–3 damage
+  per stack per second at L1).
 - Damage/status numbers are wiki-as-of-2026-09-13, game v1.301; wiki pages carry a
   `{{Stub}}` template and a TODO about damage types — re-verify on game patches.
 - `Erosion` status effect is listed as "?" on the wiki; `Laser Cutter` on-hit/status

@@ -552,3 +552,25 @@ describe('regression: share-link one-shot strip left a doubled \'#\' that defeat
     expect(taken.strippedHash.startsWith('##')).toBe(false);
   });
 });
+
+describe('regression: Time level-1 snare duration was the wiki overview table\'s 20 s typo', () => {
+  // The overview table (and so the fact base) said the snare stays 20 s; the
+  // per-level wiki table says 2.0 / 2.5 / 3.0 s, corroborated by the Apr 2026
+  // Shadow Update video and an Aug 2026 guide. The L1 catalog must carry 2.0 s.
+  it('Time L1 text says 2.0 seconds, not 20 seconds', () => {
+    const time = ballMap.get('time')!;
+    expect(time.effects).toContain('stays on the field for 2.0 seconds');
+    expect(time.effects).not.toMatch(/\b20 seconds/);
+  });
+});
+
+describe('regression: Brimstone level-1 text was truncated (missing burn/poison damage clause)', () => {
+  // The overview table dropped the per-stack damage clause; the per-level
+  // table has it (L1 burn 1–4, poison 2–3 per stack per second).
+  it('Brimstone L1 text carries the burn and poison per-stack damage', () => {
+    const brimstone = ballMap.get('brimstone')!;
+    expect(brimstone.effects).toContain(
+      'Burn deals 1–4 damage per stack per second and poison deals 2–3 damage per stack per second.',
+    );
+  });
+});

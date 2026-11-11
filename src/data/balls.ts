@@ -237,7 +237,7 @@ export const BALLS: Ball[] = [
     "id": "time",
     "name": "Time",
     "depth": 0,
-    "effects": "Explodes into a time snare upon hitting an enemy, which stays on the field for 20 seconds and freezes enemies inside it.",
+    "effects": "Explodes into a time snare upon hitting an enemy, which stays on the field for 2.0 seconds and freezes enemies inside it.",
     "recipes": [],
     "onHit": "Destroy",
     "icon": "icons/balls/time.png",
@@ -442,7 +442,7 @@ export const BALLS: Ball[] = [
     "id": "brimstone",
     "name": "Brimstone",
     "depth": 1,
-    "effects": "Applies 1 stack of burn and poison every second to all enemies within a 2 tile radius (max 4 stacks).",
+    "effects": "Applies 1 stack of burn and poison every second to all enemies within a 2 tile radius (max 4 stacks). Burn deals 1–4 damage per stack per second and poison deals 2–3 damage per stack per second.",
     "recipes": [
       [
         "burn",
