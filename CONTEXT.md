@@ -17,8 +17,10 @@ The wiki (ballxpit.wiki.gg) distinguishes two mechanics that fan sites conflate:
   the game stores no fusion table (see `docs/research/fusion-mechanics.md`),
   so `src/fusion.ts` composes fused-ball text from the two components' effect
   text using community-observed rules — damage rolls abstracted to "X" (fused
-  numbers are not derivable from public sources). This is the site's model,
-  not game data.
+  numbers are not derivable from public sources). Component paragraphs use the
+  level-3 overlay (`src/data/level-3.ts`); order resolves through
+  `src/fusion-properties.ts` (property-set union, first-pick scalar
+  precedence). This is the site's model, not game data.
 
 Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special),
 **Base Passives** (54), **Evolved Passives** (17), **Fusion Reactor**.

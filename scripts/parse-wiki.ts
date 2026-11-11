@@ -172,10 +172,34 @@ for (const c of [...characters]) {
   }
 }
 
+// ---------- level-3 effect text ----------
+// The fusion composer consumes level-3 text; the catalog stays level-1
+// (decision #12). Source: docs/research/level-3-effects.md (#22), a
+// hand-maintained fact base transcribed from the wiki's per-level tables.
+const L3_SRC = new URL('../docs/research/level-3-effects.md', import.meta.url);
+const l3md = readFileSync(L3_SRC, 'utf8');
+const level3 = {};
+{
+  const lines = l3md.split('\n');
+  let idx = 0;
+  while (idx < lines.length && !/^\| Ball \| Level-3 effect text \|/.test(lines[idx])) idx++;
+  if (idx === lines.length) throw new Error('level-3 table not found in level-3-effects.md');
+  idx += 2; // skip header + separator
+  for (; idx < lines.length; idx++) {
+    const line = lines[idx];
+    if (!line.startsWith('|')) break;
+    const [name, text] = line.split('|').slice(1, -1).map((c) => c.trim());
+    // Baby Ball has no per-level table and is not fusable — the row is "—".
+    if (!text || text === '—' || text === '-') continue;
+    level3[slug(clean(name))] = clean(text);
+  }
+}
+
 // ---------- report ----------
 console.log(`balls: ${balls.length} (depth0=${balls.filter(b => b.depth === 0).length}, depth1=${balls.filter(b => b.depth === 1).length}, depth2=${balls.filter(b => b.depth === 2).length})`);
 console.log(`passives: ${passives.length} (depth0=${passives.filter(p => p.depth === 0).length}, evolved=${passives.filter(p => p.depth > 0).length})`);
 console.log(`characters: ${characters.length}`);
+console.log(`level-3 effect texts: ${Object.keys(level3).length}`);
 
-writeFileSync(new URL('./parsed.json', OUT), JSON.stringify({ balls, passives, characters }, null, 2));
+writeFileSync(new URL('./parsed.json', OUT), JSON.stringify({ balls, passives, characters, level3 }, null, 2));
 console.log('wrote src/data/parsed.json');

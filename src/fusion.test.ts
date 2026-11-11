@@ -110,7 +110,7 @@ describe('fuse', () => {
     const r = fuse(ball('glacier'), ball('flash'))!;
     expect(r.name).toBe('Glacier × Flash');
     expect(r.paragraphs[0]).toContain('glacial spikes');
-    expect(r.paragraphs[1]).toContain('blinds them');
+    expect(r.paragraphs[1]).toContain('blind them');
     expect(r.notes).toEqual(['Composition is modeled from community-observed rules; verify against the game.']);
   });
 
@@ -139,65 +139,45 @@ describe('fuse', () => {
   });
 });
 
-describe('fused-stat overrides (observed, from transcribed tooltips)', () => {
-  it('Overgrowth threshold drops 3 → 2 in fusions (Overgrowth × Flash tooltip)', () => {
+describe('level-3 component text (decision #12)', () => {
+  it('uses level-3 values, not the level-1 catalog', () => {
     const r = fuse(ball('overgrowth'), ball('flash'))!;
     expect(r.paragraphs[0]).toContain('Upon reaching 2, consume all stacks');
     expect(r.paragraphs[0]).not.toContain('reaching 3');
+    // Flash L1 "Damages ... 1–3"; L3 "Damage ... 2–4"
+    expect(r.paragraphs[1]).toContain('Damage all enemies on screen for X damage');
+    expect(r.paragraphs[1]).not.toContain('Damages all enemies');
   });
 
-  it('spawn counts gain +1 per bound (Egg Sac 2–4 → 3–5)', () => {
-    const r = fuse(ball('egg-sac'), ball('poison'))!;
-    expect(r.paragraphs.find((p) => p.includes('baby balls'))).toContain('Explodes into 3–5 baby balls');
+  it('uses L3 spawn counts (Egg Sac 3–5, Maggot 2–3, VES 3–4)', () => {
+    expect(fuse(ball('egg-sac'), ball('poison'))!.paragraphs.find((p) => p.includes('baby balls')))
+      .toContain('Explodes into 3–5 baby balls');
+    expect(fuse(ball('maggot'), ball('overgrowth'))!.paragraphs.find((p) => p.includes('Infest')))
+      .toContain('explode into 2–3 baby balls');
+    expect(fuse(ball('voluptuous-egg-sac'), ball('bomb'))!.paragraphs.find((p) => p.includes('egg sacs')))
+      .toContain('Explodes into 3–4 egg sacs');
   });
 
-  it('Maggot babies 1–2 → 2–3 (Overgrowth × Maggot tooltip)', () => {
-    const r = fuse(ball('maggot'), ball('overgrowth'))!;
-    expect(r.paragraphs.find((p) => p.includes('Infest'))).toContain('explode into 2–3 baby balls');
+  it('uses L3 proc values (Reaper 15%/7, Spider Queen 45%, Vampire Lord 9)', () => {
+    const reaper = fuse(ball('reaper'), ball('satan'))!;
+    const rp = reaper.paragraphs.find((p) => p.includes('kill enemies on impact'))!;
+    expect(rp).toContain('15% chance');
+    expect(rp).toContain('healing you for 7 health');
+    expect(fuse(ball('spider-queen'), ball('flash'))!.paragraphs.find((p) => p.includes('birthing')))
+      .toContain('45% chance');
+    expect(fuse(ball('vampire-lord'), ball('flash'))!.paragraphs.find((p) => p.includes('at least')))
+      .toContain('9 stacks');
   });
 
-  it('Reaper kill chance 10% → 15% and heal 5 → 7 (Satan × Reaper tooltip)', () => {
-    const r = fuse(ball('reaper'), ball('satan'))!;
-    const p = r.paragraphs.find((p) => p.includes('kill enemies on impact'))!;
-    expect(p).toContain('15% chance');
-    expect(p).toContain('healing you for 7 health');
-  });
-
-  it('no hard-coded fused damage values in FUSED_STATS (unchanged base constants allowed)', () => {
-    // The no-damage-tracking decision: FUSED_STATS replacement values must
-    // never introduce concrete damage rolls that the base text does not
-    // already have. An output-level scan cannot catch violations
-    // (abstractDamage runs after the table and cleans up), so this scans
-    // the module source: extract each [from, to] pair, diff their damage
-    // rolls — any roll present in `to` but not in `from` is a fused value
-    // and fails. Rolls shared by both sides are unchanged mechanic
-    // constants (e.g. bleed's 1 damage per stack) and are allowed.
-    const { readFileSync } = require('node:fs') as typeof import('node:fs');
-    const src = readFileSync(new URL('./fusion.ts', import.meta.url).pathname, 'utf8');
-    const table = src.match(/const FUSED_STATS[\s\S]*?^};/m)![0];
-    const strings = [...table.matchAll(/'((?:[^'\\]|\\.)*)'/g)].map((m) => m[1]);
-    expect(strings.length % 2, 'FUSED_STATS pairs must be complete').toBe(0);
-    const beforeDamage = /\b\d+(?:\.\d+)?(?:[–-]\d+(?:\.\d+)?)?(?:x|%)?(?= damage)/gi;
-    const afterDeal = /\b(?:deals?|dealt|dealing) \d+(?:\.\d+)?(?:[–-]\d+(?:\.\d+)?)?(?![\dx%]|\.\d)/gi;
-    const rolls = (s: string) => [...(s.match(beforeDamage) ?? []), ...(s.match(afterDeal) ?? [])];
-    for (let i = 0; i < strings.length; i += 2) {
-      const [from, to] = [strings[i], strings[i + 1]];
-      const fromRolls = new Set(rolls(from));
-      const introduced = rolls(to).filter((r) => !fromRolls.has(r));
-      expect(introduced, `FUSED_STATS introduces fused damage rolls: ${introduced.join(', ')}`).toEqual([]);
-    }
-  });
-
-  it('overrides are per-ball, not global (unrelated balls keep base numbers)', () => {
-    const r = fuse(ball('freeze'), ball('light'))!;
-    expect(r.paragraphs[0]).toContain('4% chance to freeze');
-    expect(r.paragraphs[1]).toContain('Blinds enemies on hit for 3 seconds');
-  });
-
-  it('damage rolls in overridden text still abstract to X', () => {
+  it('damage rolls still abstract to X after the L3 swap', () => {
     const r = fuse(ball('overgrowth'), ball('flash'))!;
-    // the fused tooltip's 150–200 explosion is a damage roll → X
     expect(r.paragraphs[0]).toContain('deal X damage to all enemies');
+  });
+
+  it('unrelated balls keep their L3 numbers', () => {
+    const r = fuse(ball('freeze'), ball('light'))!;
+    expect(r.paragraphs[0]).toContain('7% chance to freeze');
+    expect(r.paragraphs[1]).toContain('Blinds enemies on hit for 7 seconds');
   });
 });
 
@@ -207,8 +187,22 @@ describe('cross-wire exclusions (corpus no-cross-wire evidence)', () => {
     expect(fuse(ball('nuclear-bomb'), ball('voluptuous-egg-sac'))!.crossWire).toBeNull();
   });
 
-  it('Freeze Ray freeze is beam-path-bound — Sun AOE does not apply it', () => {
-    expect(fuse(ball('freeze-ray'), ball('sun'))!.crossWire).toBeNull();
+  it('Freeze Ray × Sun: the field aura does not apply the freeze (the beam carries Sun\'s burn)', () => {
+    const r = fuse(ball('freeze-ray'), ball('sun'))!;
+    expect(r.crossWire).toBeNull();
+    expect(r.notes.join(' ')).toMatch(/beam applies Sun's burn/i);
+  });
+
+  it('Freeze Ray × Flash: the on-hit AOE spreads the freeze (Nov 2026 test)', () => {
+    const r = fuse(ball('flash'), ball('freeze-ray'))!;
+    expect(r.crossWire).not.toBeNull();
+    expect(r.crossWire).toContain('Freeze Ray');
+  });
+
+  it('Berserk is an on-hit status, not a field aura (channel override)', () => {
+    // Berserk's "every second" phrase describes the debuff's tick; the ball
+    // itself applies berserk on hit, so an AOE carrier can spread it.
+    expect(fuse(ball('flash'), ball('berserk'))!.crossWire).not.toBeNull();
   });
 
   it('Brood Mother spawn channel does not carry the partner property', () => {
@@ -270,22 +264,73 @@ describe('cross-wire exclusions (corpus no-cross-wire evidence)', () => {
   });
 });
 
-describe('order side-effects (fusion-mechanics.md §3)', () => {
-  it('both-cooldown pairs: first-selected ball\'s cooldown wins (namu.wiki)', () => {
-    // cooldown class = {black-hole, bomb, dark, egg-sac, nuclear-bomb,
-    // timestop, voluptuous-egg-sac} — exactly the balls whose text lists a
-    // cooldown (validated against the game-file dump class).
+describe('order resolution (property-set union, first-pick precedence)', () => {
+  it('both-cooldown pairs with different values: first-selected cooldown wins (namu.wiki)', () => {
     const r = fuse(ball('black-hole'), ball('timestop'))!;
-    expect(r.notes.join(' ')).toMatch(/cooldown/i);
-    expect(fuse(ball('bomb'), ball('dark'))!.notes.join(' ')).toMatch(/cooldown/i);
-    // non-cooldown pairs get no order note
-    expect(fuse(ball('flash'), ball('glacier'))!.notes.join(' ')).not.toMatch(/first-selected ball's cooldown/i);
+    expect(r.notes.join(' ')).toMatch(/cooldown wins/i);
+    expect(r.collisions).toContainEqual(expect.objectContaining({
+      key: 'cooldown', winner: 'black-hole', value: '5 second', loser: 'timestop', loserValue: '20 second',
+    }));
+    // equal cooldowns are not a functional collision
+    expect(fuse(ball('bomb'), ball('dark'))!.collisions).toEqual([]);
+    expect(fuse(ball('bomb'), ball('dark'))!.notes.join(' ')).not.toMatch(/cooldown wins/i);
+    // non-cooldown pairs get no cooldown note
+    expect(fuse(ball('flash'), ball('glacier'))!.notes.join(' ')).not.toMatch(/cooldown wins/i);
   });
 
   it('same-property pairs: first-selected variant wins (PSA #2)', () => {
     const r = fuse(ball('mosquito-swarm'), ball('mosquito-king'))!;
     expect(r.notes.join(' ')).toMatch(/first-selected ball's variant/i);
-    expect(fuse(ball('radiation-beam'), ball('nuclear-bomb'))!.notes.join(' ')).toMatch(/first-selected ball's variant/i);
+    expect(r.collisions[0]).toMatchObject({
+      key: 'mosquito-spawn', winner: 'mosquito-swarm', value: '4–8 mosquitos', loser: 'mosquito-king', loserValue: 'a mosquito',
+    });
+    expect(fuse(ball('radiation-beam'), ball('nuclear-bomb'))!.collisions[0]).toMatchObject({
+      key: 'radiation-duration', value: '15 seconds', loserValue: 'indefinitely',
+    });
+  });
+
+  it('reported pairs from the Nov 2026 claims collide', () => {
+    // Egg Sac × Timestop: 3 s vs 20 s cooldown
+    expect(fuse(ball('egg-sac'), ball('timestop'))!.collisions[0]).toMatchObject({
+      key: 'cooldown', value: '3 second', loserValue: '20 second',
+    });
+    // Banished Flame × Sun: cap, duration and per-stack damage all collide
+    const bf = fuse(ball('banished-flame'), ball('sun'))!;
+    expect(bf.collisions.map((c) => c.key).sort()).toEqual(['burn-duration', 'burn-max-stacks', 'burn-per-stack-damage']);
+    expect(bf.collisions.every((c) => c.winner === 'banished-flame')).toBe(true);
+    // Erosion × Stone/Drill/Assassin/Steel: first pick's bonus % wins
+    for (const [id, value] of [['stone', '400%'], ['drill', '100%'], ['assassin', '50%'], ['steel', '15%']] as const) {
+      expect(fuse(ball('erosion'), ball(id))!.collisions[0]).toMatchObject({
+        key: 'bonus-damage', winner: 'erosion', value: '5%', loser: id, loserValue: value,
+      });
+      expect(fuse(ball(id), ball('erosion'))!.collisions[0]).toMatchObject({
+        key: 'bonus-damage', winner: id, value, loser: 'erosion', loserValue: '5%',
+      });
+    }
+    // Freeze Ray × Blizzard: 13 s vs 1.3 s — unresolved, marked reported
+    expect(fuse(ball('freeze-ray'), ball('blizzard'))!.collisions[0]).toMatchObject({
+      key: 'freeze-duration', value: '13.0 seconds', loserValue: '1.3 seconds', reported: true,
+    });
+    // Noxious × Brimstone: 3 vs max 4 poison stacks — unresolved, marked reported
+    expect(fuse(ball('noxious'), ball('brimstone'))!.collisions[0]).toMatchObject({
+      key: 'poison-max-stacks', reported: true,
+    });
+  });
+
+  it('collisions are order-sensitive: reversing the picks reverses the winner', () => {
+    const ab = fuse(ball('egg-sac'), ball('timestop'))!;
+    const ba = fuse(ball('timestop'), ball('egg-sac'))!;
+    expect(ab.collisions[0].winner).toBe('egg-sac');
+    expect(ba.collisions[0].winner).toBe('timestop');
+    expect(ba.collisions[0].value).toBe('20 second');
+  });
+
+  it('channel union keeps both application channels (Leech × Sacrifice)', () => {
+    const r = fuse(ball('leech'), ball('sacrifice'))!;
+    expect(r.resolved.channels).toEqual(expect.arrayContaining(['per-second', 'spawn', 'on-hit']));
+    expect(r.collisions[0]).toMatchObject({
+      key: 'bleed-max-stacks', value: 'max 48 stacks', loserValue: 'max 20 stacks',
+    });
   });
 });
 
@@ -333,5 +378,27 @@ describe('composition caveats (general_rules_notes)', () => {
     expect(fuse(ball('flicker'), ball('reaper'))!.crossWire).not.toBeNull();
     expect(fuse(ball('flicker'), ball('reaper'))!.notes.join(' ')).toMatch(/reports disagree/);
     expect(fuse(ball('reaper'), ball('sun'))!.notes.join(' ')).not.toMatch(/reports disagree/);
+  });
+
+  it('Sandstorm is in the pass-through set (hit-once note)', () => {
+    // fact-base Pass Through list: Ghost, Wind, Drill, Erosion, Noxious,
+    // Sandstorm, Sniper, Soul Sucker, Wraith, Assassin.
+    expect(fuse(ball('black-hole'), ball('sandstorm'))!.notes.join(' ')).toMatch(/pass-through/i);
+  });
+
+  it('fixed trait priorities are commutative notes (Assassin, Warp)', () => {
+    expect(fuse(ball('assassin'), ball('ghost'))!.notes.join(' ')).toMatch(/back-armor/i);
+    expect(fuse(ball('ghost'), ball('assassin'))!.notes.join(' ')).toMatch(/back-armor/i);
+    expect(fuse(ball('warp'), ball('ghost'))!.notes.join(' ')).toMatch(/Warp is cast before/i);
+    expect(fuse(ball('ghost'), ball('warp'))!.notes.join(' ')).toMatch(/Warp is cast before/i);
+  });
+
+  it('reported exceptions surface as structured data and notes', () => {
+    const nuke = fuse(ball('nuclear-bomb'), ball('wraith'))!;
+    expect(nuke.exceptions.map((e) => e.pair)).toContain('nuclear-bomb+wraith');
+    expect(nuke.notes.join(' ')).toMatch(/Reported exception — Order-sensitive one-off/);
+    expect(fuse(ball('black-hole'), ball('sun'))!.exceptions.map((e) => e.pair)).toContain('black-hole+sun');
+    expect(fuse(ball('time'), ball('flash'))!.exceptions.map((e) => e.pair)).toContain('time+*');
+    expect(fuse(ball('banshee'), ball('flash'))!.exceptions.map((e) => e.pair)).toContain('banshee+*');
   });
 });

@@ -69,9 +69,10 @@ Consequences:
   derivable from any public source.** The site abstracts damage rolls to "X"
   and presents ability composition, never fabricated numbers.
 - The game *does* recompute some component stats at merge time. Observed
-  per-ball overrides (thresholds −1, spawn counts +1, proc chances up) are
-  transcribed in `FUSED_STATS` in `src/fusion.ts`, keyed by exact catalog
-  substring so a wiki rewording fails loudly instead of corrupting text.
+  per-ball values (thresholds −1, spawn counts +1, proc chances up) are the
+  level-3 base values, transcribed in `docs/research/level-3-effects.md` and
+  generated into `src/data/level-3.ts`; the composer consumes that overlay
+  (decision #12). No fused-specific override is evidenced.
 
 ---
 
@@ -148,18 +149,27 @@ playtests) says:
 
 1. **Always, cosmetically.** Name, icon, colour, damage-number colour,
    sometimes sprite, description paragraph order follow selection order.
-2. **Same-property pairs (function).** When both balls implement the *same
-   exact property*, the first-selected ball's variant wins and the second's is
-   excluded. Known pairs: Mosquito Swarm × Mosquito King (spawn variant),
-   Radiation Beam × Nuclear Bomb (radiation duration 15 s vs infinite),
-   Noxious × Poison (max stacks). Same-status-different-numbers pairs instead
-   *blend* (rule 5 above).
-3. **Both-cooldown pairs (function).** When both balls list their own cooldown
-   (7 balls: Black Hole, Bomb, Dark, Egg Sac, Voluptuous Egg Sac, Nuclear
-   Bomb, Timestop), the first-selected ball's cooldown wins. Worked example:
-   Black Hole × Timestop fires every 5 s one way, every 20 s the other.
-   21 unordered pairs.
+2. **Shared-property pairs (function).** A ball's kit is a set of property
+   keys; fusion unions the sets. When both balls carry the *same scalar key*
+   (cooldown, stack cap, duration, per-stack damage, bonus %, range, spawn
+   variant, …), the first-selected ball's value wins and the second's is
+   excluded. Same-status-different-numbers pairs are the same rule: different
+   application channels union; a shared scalar key resolves to the first pick
+   (Leech × Sacrifice keeps both channels, one stack cap). Known pairs:
+   Mosquito Swarm × Mosquito King (spawn variant), Radiation Beam × Nuclear
+   Bomb (radiation duration 15 s vs infinite), Noxious × Poison (max stacks),
+   Banished Flame × Sun (burn cap/duration/damage), Erosion ×
+   Stone/Drill/Assassin/Steel (bonus %), Egg Sac × Timestop (cooldown), Nuke ×
+   Overgrowth (range).
+3. **Both-cooldown pairs are the `cooldown` key of the same rule.** When both
+   balls list their own cooldown (7 balls: Black Hole, Bomb, Dark, Egg Sac,
+   Voluptuous Egg Sac, Nuclear Bomb, Timestop), the first-selected ball's
+   cooldown wins. Worked example: Black Hole × Timestop fires every 5 s one
+   way, every 20 s the other. Equal values are not a functional difference.
 4. **Otherwise order does not matter** for stats, abilities, or cross-wiring.
+   Unresolved reported pairs (Freeze Ray × Blizzard, Noxious × Brimstone) are
+   marked reported/unverified; anomalies (Nuke × Wraith, Black Hole × Sun
+   direction, Time bubble, Banshee curse) are reported exceptions.
 
 **Pool recursion** (order-adjacent, but not a fusion effect): the
 **first-selected base ball** is consumed and does not reappear in the
@@ -234,8 +244,9 @@ each other on direction and are unnecessary given the controlled result.
 - One playtest of Satan × Hemorrhage on a boss would settle the cleanest
   tooltip-vs-behaviour mismatch (§1.1).
 - Fused-ball level on creation and sub-level-3 fusion remain disputed (§1).
-- The stat-merge formula for fused balls is unknown publicly; only the
-  per-ball overrides in `FUSED_STATS` are observed.
+- The stat-merge formula for fused balls is unknown publicly; the observed
+  per-ball values are level-3 base values (`docs/research/level-3-effects.md`),
+  not fused-specific overrides.
 - Whether the save format records directed fusion pairs (NumCombos symmetry)
   is unverified (§4).
 - Corpus coverage is ~3% of the pair space but concentrated on the meta; pair

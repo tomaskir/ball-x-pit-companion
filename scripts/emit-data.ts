@@ -386,10 +386,18 @@ export const CHARACTERS: Character[] = ${JSON.stringify(
   })), null, 2)};
 `);
 
+const level3Ts = ts(`// Level-3 effect text from docs/research/level-3-effects.md (wiki per-level
+// tables, v1.301 pre-DLC). The catalog keeps level-1 text for the browser;
+// the fusion composer uses this overlay (decision #12). Generated — do not
+// edit by hand.
+export const LEVEL_3_EFFECTS: Record<string, string> = ${JSON.stringify(parsed.level3, null, 2)};
+`);
+
 writeFileSync(new URL('../src/data/tags.ts', import.meta.url), tagsTs);
 writeFileSync(new URL('../src/data/balls.ts', import.meta.url), ballsTs);
 writeFileSync(new URL('../src/data/passives.ts', import.meta.url), passivesTs);
 writeFileSync(new URL('../src/data/characters.ts', import.meta.url), charactersTs);
+writeFileSync(new URL('../src/data/level-3.ts', import.meta.url), level3Ts);
 
 // ---- validation ----
 const ballIds = new Set(parsed.balls.map((b) => slug(b.name)));
@@ -437,6 +445,17 @@ for (const c of parsed.characters) {
 // every entity must have a tag entry
 for (const b of parsed.balls) if (!(slug(b.name) in BALL_TAGS)) { console.error(`ball missing tags: ${b.name}`); errs++; }
 for (const p of parsed.passives) if (!(slug(p.name) in PASSIVE_TAGS)) { console.error(`passive missing tags: ${p.name}`); errs++; }
+// level-3 overlay: every key resolves to a ball, every fusable ball has text,
+// and Baby Ball (not fusable) is absent
+for (const id of Object.keys(parsed.level3)) {
+  if (!ballIds.has(id)) { console.error(`level-3 text for unknown ball: ${id}`); errs++; }
+}
+if ('baby-ball' in parsed.level3) { console.error('level-3 text must not include baby-ball (not fusable)'); errs++; }
+const fusableCount = parsed.balls.filter((b) => slug(b.name) !== 'baby-ball').length;
+if (Object.keys(parsed.level3).length !== fusableCount) {
+  console.error(`level-3 texts: ${Object.keys(parsed.level3).length}, expected ${fusableCount}`);
+  errs++;
+}
 
 if (errs) { console.error(`${errs} error(s)`); process.exit(1); }
-console.log('emitted tags.ts, balls.ts, passives.ts, characters.ts — all checks pass');
+console.log('emitted tags.ts, balls.ts, passives.ts, characters.ts, level-3.ts — all checks pass');

@@ -6,7 +6,8 @@ import { PASSIVES } from './data/passives';
 import { CHARACTERS } from './data/characters';
 import { TAGS } from './data/tags';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
-import { FUSED_STATS } from './fusion';
+import { LEVEL_3_EFFECTS } from './data/level-3';
+import { BALL_PROPERTIES } from './fusion-properties';
 import { byId, complexity } from './graph';
 
 const ballIds = new Set(BALLS.map((b) => b.id));
@@ -175,19 +176,45 @@ describe('Matchmaker pairing restrictions (character-pairings.md)', () => {
   });
 });
 
-describe('fused-stat overrides vs catalog (the "fails loudly" contract)', () => {
-  // applyFusedStats() replaces exact substrings of the component's effect
-  // text and silently skips replacements that no longer match (a wiki
-  // rewording must never corrupt text). Silent skipping is safe ONLY while
-  // every `from` still matches the current catalog text — this test turns a
-  // rewording into a loud failure here instead of a silent no-op on the site.
-  it('every FUSED_STATS `from` is a substring of the ball\'s current effects', () => {
-    for (const [ballId, replacements] of Object.entries(FUSED_STATS)) {
-      const b = BALLS.find((x) => x.id === ballId);
-      expect(b, `FUSED_STATS key "${ballId}" is not a catalog ball`).toBeDefined();
-      for (const [from] of replacements) {
-        expect(b!.effects.includes(from), `${ballId}: override source no longer in effect text: "${from}"`).toBe(true);
+describe('level-3 effect-text overlay (decision #12, transcription #22)', () => {
+  it('has level-3 text for all 90 fusable balls; Baby Ball is excluded', () => {
+    expect(Object.keys(LEVEL_3_EFFECTS)).toHaveLength(90);
+    expect(LEVEL_3_EFFECTS['baby-ball']).toBeUndefined();
+    for (const b of BALLS) {
+      if (b.id === 'baby-ball') continue;
+      expect(LEVEL_3_EFFECTS[b.id], `missing level-3 text for ${b.id}`).toBeTruthy();
+    }
+  });
+
+  it('every level-3 key resolves to a catalog ball', () => {
+    for (const id of Object.keys(LEVEL_3_EFFECTS)) expect(ballIds.has(id), id).toBe(true);
+  });
+
+  it('only Elemental and Ghost have no L3 diff (the transcription\'s two documented cases)', () => {
+    const same = BALLS
+      .filter((b) => b.id !== 'baby-ball' && LEVEL_3_EFFECTS[b.id] === b.effects)
+      .map((b) => b.id)
+      .sort();
+    expect(same).toEqual(['elemental', 'ghost']);
+  });
+});
+
+describe('fusion property table agrees with the level-3 overlay', () => {
+  // The property table carries L3 values directly (decision #7). Any value
+  // not marked `source: 'reported'` must appear verbatim in the generated L3
+  // text, so the table and the composer cannot drift apart.
+  it('every non-reported scalar value appears in the ball\'s L3 text', () => {
+    for (const [ballId, props] of Object.entries(BALL_PROPERTIES)) {
+      const text = LEVEL_3_EFFECTS[ballId];
+      expect(text, `property table key "${ballId}" has no level-3 text`).toBeTruthy();
+      for (const s of props.scalars) {
+        if (s.source === 'reported') continue;
+        expect(text.includes(s.value), `${ballId} ${s.key}: "${s.value}" not in L3 text`).toBe(true);
       }
     }
+  });
+
+  it('every property-table key is a catalog ball', () => {
+    for (const id of Object.keys(BALL_PROPERTIES)) expect(ballIds.has(id), id).toBe(true);
   });
 });

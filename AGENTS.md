@@ -20,13 +20,14 @@ Not an npm package (`"private": true`). Code is MIT-licensed; game art in
 - `src/view-state.ts` — all state + derivations; `dispatch(action) → ViewModel`. The test surface.
 - `src/renderer.ts` — all DOM painting; `buildAll({ getVerdict, emit })` once, then `paint(vm)` in place.
 - `src/fusion.ts` — pure fusion composer (`fuse(a, b)`); the site's editorial model of fusion, not game data.
+- `src/fusion-properties.ts` — pure order model: hand-maintained level-3 property table, `resolveProperties(a, b)` (property-set union, first-pick scalar precedence), and the reported-exception table.
 - `src/graph.ts` — pure evolution-graph helpers (depth, highlight walks, recipe notation).
 - `src/build-graph.ts` — pure Plan-screen build-graph derivation + layout (`deriveBuildGraph`/`layoutBuildGraph`); the renderer only paints it.
 - `src/catalog.ts` — ball/passive collections indexed; **namespace resolution lives here and nowhere else**.
 - `src/synergy.ts` — red/green verdict from tag overlap.
 - `src/icon-url.ts` — the base-URL × icon-path join.
 - `src/styles/global.css` — the island's stylesheet; `src/styles.test.ts` pins markup/CSS coupling.
-- `src/data/{balls,passives,characters,tags}.ts` — **generated** data files.
+- `src/data/{balls,passives,characters,tags,level-3}.ts` — **generated** data files.
 - `scripts/parse-wiki.ts`, `scripts/emit-data.ts`, `scripts/slug.ts` — the data pipeline.
 - `scripts/harvest/validate-observations.ts` — corpus schema gate (used by `src/corpus-schema.test.ts`).
 - `docs/research/game-mechanics.md` — the hand-maintained fact base the parser consumes.
@@ -65,17 +66,20 @@ Hand-edited:
 - `docs/research/character-pairings.md` — the Matchmaker pairing-restriction
   fact base (game data, also parsed; sources and contradictions documented
   in the file).
+- `docs/research/level-3-effects.md` — the level-3 effect-text fact base
+  (wiki per-level tables, v1.301 pre-DLC; parsed into `src/data/level-3.ts`).
+  The fusion composer consumes it; the catalog stays level-1.
 - Tag/verdict assignments live **inside `scripts/emit-data.ts`** (`TAGS`,
   `BALL_TAGS`, `PASSIVE_TAGS`, `CHAR_VERDICTS`) — this is the only place the
   editorial synergy model is set.
 
 Generated — never edit by hand:
 - `src/data/parsed.json`, `src/data/balls.ts`, `src/data/passives.ts`,
-  `src/data/characters.ts`, `src/data/tags.ts`.
+  `src/data/characters.ts`, `src/data/tags.ts`, `src/data/level-3.ts`.
 
 `emit-data.ts` validates on every run (recipes resolve within namespace, tags in
-vocabulary, every character has a verdict entry, base balls resolve) and exits
-non-zero on violation.
+vocabulary, every character has a verdict entry, base balls resolve, level-3
+texts cover all 90 fusable balls) and exits non-zero on violation.
 
 ## Architectural invariants — do not break
 
@@ -112,11 +116,12 @@ non-zero on violation.
 - The fusion corpus is an executable spec: `src/corpus.test.ts` checks the
   composer against `docs/research/fusion-observations/fusion-pairs.json`,
   `src/corpus-schema.test.ts` gates the corpus's own schema (via
-  `scripts/harvest/validate-observations.ts`), and a `data.test.ts` test
-  pins every `FUSED_STATS` override to the current catalog effect text.
-  Changing the composer, the corpus, or the wiki effect text must keep all
-  three green — a disagreement is a content decision, not a test to relax.
-  The distilled model behind the composer is `docs/research/fusion-mechanics.md`
+  `scripts/harvest/validate-observations.ts`), and `data.test.ts` pins the
+  level-3 overlay to the catalog (90 fusable balls) and the property table's
+  scalar values to the level-3 text. Changing the composer, the corpus, the
+  property table, or the wiki effect text must keep all of them green — a
+  disagreement is a content decision, not a test to relax. The distilled
+  model behind the composer is `docs/research/fusion-mechanics.md`
   (hand-maintained, like `game-mechanics.md` but not parsed).
 - New pure logic goes in `graph.ts`/`view-state.ts` with unit tests first where
   practical (TDD has been the pattern for graph work).

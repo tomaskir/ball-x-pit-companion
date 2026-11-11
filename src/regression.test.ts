@@ -321,16 +321,63 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
     }
   });
 
-  // Bug: fused balls improve component numbers (Overgrowth threshold 3 → 2,
-  // spawn counts +1/bound, chances up) — the composer showed base numbers.
-  // Fix: FUSED_STATS override table from the transcribed tooltips; exact-
-  // substring replacements so a wiki rewording fails loudly. Pinned in
-  // fusion.test.ts (fused-stat overrides describe).
-  it('fused-stat overrides apply (Overgrowth threshold 3 → 2 et al.)', async () => {
+  // Bug: the composer showed level-1 component numbers even though fusion
+  // consumes level-3 balls (Overgrowth threshold 3 → 2, spawn counts up,
+  // proc chances up). Fix: the generated level-3 overlay (decision #12)
+  // replaces the old FUSED_STATS substring table. Pinned in fusion.test.ts
+  // (level-3 component text describe).
+  it('level-3 values apply (Overgrowth threshold 3 → 2 et al.)', async () => {
     const { fuse } = await import('./fusion');
     const { ballMap } = await import('./catalog');
     const r = fuse(ballMap.get('overgrowth')!, ballMap.get('flash')!)!;
     expect(r.paragraphs[0]).toContain('Upon reaching 2, consume all stacks');
+  });
+
+  // Bug: Freeze Ray was hard-coded spawn-bound, so Flash × Freeze Ray did not
+  // wire even though the Nov 2026 community test showed Flash's AOE spreads
+  // the freeze. Fix: remove freeze-ray from SPAWN_BOUND_IDS; keep Sun's
+  // field aura from applying the on-hit freeze (the beam carries Sun's burn).
+  it('Freeze Ray × Flash wires; Sun × Freeze Ray does not', async () => {
+    const { fuse } = await import('./fusion');
+    const { ballMap } = await import('./catalog');
+    const ball = (id: string) => ballMap.get(id)!;
+    expect(fuse(ball('flash'), ball('freeze-ray'))!.crossWire).not.toBeNull();
+    expect(fuse(ball('freeze-ray'), ball('sun'))!.crossWire).toBeNull();
+  });
+
+  // Bug: the pass-through set omitted Sandstorm (the fact-base Pass Through
+  // list includes it), so the hit-once + cooldown note never fired for it.
+  // Fix: add sandstorm to PIERCE_IDS.
+  it('Sandstorm is in the pass-through set', async () => {
+    const { fuse } = await import('./fusion');
+    const { ballMap } = await import('./catalog');
+    expect(fuse(ballMap.get('black-hole')!, ballMap.get('sandstorm')!)!.notes.join(' ')).toMatch(/pass-through/i);
+  });
+
+  // Bug: the text-derived channel classified Berserk as a field aura because
+  // its text says "every second" (the debuff's tick), so an AOE carrier
+  // could not spread it. Fix: CHANNEL_OVERRIDES maps berserk to 'hit'.
+  it('Berserk is an on-hit status, not a field aura', async () => {
+    const { fuse } = await import('./fusion');
+    const { ballMap } = await import('./catalog');
+    expect(fuse(ballMap.get('flash')!, ballMap.get('berserk')!)!.crossWire).not.toBeNull();
+  });
+
+  // Bug: order was encoded as two hard-coded pair classes (cooldowns,
+  // same-property), so the general rule and the Nov 2026 pairs were missing.
+  // Fix: the property resolver (fusion-properties.ts) unions kits and
+  // resolves shared scalar keys to the first pick. Pinned in
+  // fusion-properties.test.ts and fusion.test.ts (order resolution describe).
+  it('order is property-set union with first-pick precedence', async () => {
+    const { fuse } = await import('./fusion');
+    const { ballMap } = await import('./catalog');
+    const ball = (id: string) => ballMap.get(id)!;
+    expect(fuse(ball('banished-flame'), ball('sun'))!.collisions.map((c) => c.key).sort())
+      .toEqual(['burn-duration', 'burn-max-stacks', 'burn-per-stack-damage']);
+    expect(fuse(ball('erosion'), ball('stone'))!.collisions[0]).toMatchObject({
+      key: 'bonus-damage', winner: 'erosion', value: '5%', loserValue: '400%',
+    });
+    expect(fuse(ball('bomb'), ball('dark'))!.collisions).toEqual([]);
   });
 
   // Bug: slot-2 pick highlight was visually subtle (dim border, no glow) —

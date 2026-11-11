@@ -12,13 +12,28 @@
 //     in docs/research/fusion-observations/. crossWire() returns
 //     { line, disputed }: disputed marks a corpus-contradicted kill wire
 //     (flicker × reaper), which fuse() turns into a caveat note.
-//   - order side-effects and fixed composition caveats (both-cooldown pairs,
-//     same-property pairs, Destroy × Destroy, hit-once dominance over
-//     pass-through, spawn compensating Destroy, Dark's multiplier) are notes
-//     (docs/research/fusion-mechanics.md §3; fusion-pairs.json general_rules_notes)
+//   - order is property-set union with first-pick scalar precedence: the
+//     resolver in fusion-properties.ts returns the union and the shared-key
+//     collisions (first pick wins). Fixed composition caveats (Destroy ×
+//     Destroy, hit-once dominance over pass-through, spawn compensating
+//     Destroy, Dark's multiplier, Assassin/Warp trait priority) stay notes
+//     (docs/research/fusion-mechanics.md §2e/§3; fusion-pairs.json
+//     general_rules_notes).
+//   - effect paragraphs use level-3 text (the fusion screen consumes L3
+//     balls; decision #12) from the generated src/data/level-3.ts overlay,
+//     falling back to the level-1 catalog text.
 //   - damage rolls are abstracted to "X" (fused numbers are not derivable)
 // It is the site's editorial model of fusion, not game data.
 import { BALLS, type Ball } from './data/balls';
+import { LEVEL_3_EFFECTS } from './data/level-3';
+import {
+  exceptionsFor,
+  pairKey,
+  resolveProperties,
+  type FusionException,
+  type PropertyCollision,
+  type ResolvedProperties,
+} from './fusion-properties';
 
 /** Balls offered by the fusion pick list: every ball except Baby Ball, which
  *  is not a fusable upgrade entity (research: docs/research/fusion-*.md).
@@ -58,14 +73,27 @@ const SPAWN_BOUND = /\b(spikes?|blobs?|tar blobs?|leech|fireworks?|time bomb|lig
 /** Status is a continuous field aura, not a hit effect. */
 const FIELD_AURA = /\b(while on the field|when launched|while active|every second|per second to all|all enemies in view|within its sightline)/i;
 /** Community-evidenced exceptions to the text-derived channel: Blizzard's
- *  freeze comes from spawned icicles (icemage_999); Freeze Ray's freeze is
- *  bound to the beam path (Sun's AOE does not apply it — corpus). */
-const SPAWN_BOUND_IDS = new Set(['blizzard', 'freeze-ray']);
+ *  freeze comes from spawned icicles (icemage_999). Freeze Ray is NOT
+ *  spawn-bound: its freeze is on-hit/AOE and spreads with Flash (Nov 2026
+ *  community test + wiki taxonomy). Sun's field aura still does not apply it
+ *  (corpus freeze-ray+sun — the beam carries Sun's burn, not the reverse). */
+const SPAWN_BOUND_IDS = new Set(['blizzard']);
+/** Text-derived channel exceptions. Berserk is applied on hit (40% at L3),
+ *  not a field aura — the "every second" phrase describes the berserk
+ *  debuff's tick. */
+const CHANNEL_OVERRIDES: Record<string, StatusChannel> = { berserk: 'hit' };
+/** Statuses applied on the hit event only. An on-timer/field-aura carrier
+ *  cannot trigger them (trigger matrix: AOE = On-Hit NO / On-Damage YES /
+ *  On-Timer NO). Freeze Ray's freeze is the evidenced case: Flash's on-hit
+ *  AOE applies it; Sun's field aura does not (corpus freeze-ray+sun). */
+const ON_HIT_ONLY_STATUS_IDS = new Set(['freeze-ray']);
 /** Spawn carriers whose spawned balls do NOT inherit the partner's property
  *  (corpus): Voluptuous Egg Sac spawns Egg Sacs that spawn balls — the
- *  property drops at the second hop (Steam, playtest-confirmed by posters);
- *  Brood Mother's spawn channel does not carry the partner at all; Mosquito
- *  King's spawn-on-hit does not fire from the partner's screen hits. */
+ *  property drops at the second hop (Steam, playtest-confirmed by posters).
+ *  Brood Mother and Mosquito King stay excluded here pending the #20
+ *  decision; #17/#18 research says the blanket exclusion is too strong
+ *  (Brood Mother degraded/probabilistic; Mosquito King's spawn trigger and
+ *  inheritance are separate channels). */
 const SPAWN_EXCLUDED_IDS = new Set(['voluptuous-egg-sac', 'brood-mother', 'mosquito-king']);
 /** AOE carriers with no damage hits to carry a status: Satan's screen
  *  judgment is debuff-only (Bilibili) — it cannot trigger on-hit statuses
@@ -81,118 +109,39 @@ const AOE_EXCLUDED_IDS = new Set(['satan']);
  *  damage, and the corpus shows its pairs don't wire. */
 const KILL_EFFECT_IDS = new Set(['black-hole', 'reaper']);
 
-/** Order side-effects (docs/research/fusion-mechanics.md §3): the only two
- *  functionally order-sensitive pair classes. Both are reported (Discord
- *  PSA #2 / namu.wiki), never playtested here — notes carry that caveat.
- *  The cooldown class is also the hit-once class (both from the game-file
- *  I2 effect-text dump: these are exactly the balls whose text lists a
- *  cooldown). */
+/** The hit-once class (game-file I2 effect-text dump: exactly the balls whose
+ *  text lists a cooldown). Order resolution itself now lives in the property
+ *  resolver (fusion-properties.ts); this set remains for the fixed
+ *  hit-once-dominates-pass-through caveat. */
 const COOLDOWN_CLASS_IDS = new Set(['black-hole', 'bomb', 'dark', 'egg-sac', 'nuclear-bomb', 'timestop', 'voluptuous-egg-sac']);
-/** Same-property pairs (PSA #2): both components implement the SAME exact
- *  property — the first-selected ball's variant wins. Known worked examples
- *  from the corpus: Mosquito Swarm × Mosquito King (spawn variant),
- *  Nuclear Bomb × Radiation Beam (radiation duration 15 s vs infinite),
- *  Noxious × Poison (max poison stacks differ by order). */
-const SAME_PROPERTY_PAIRS = new Set(['mosquito-king+mosquito-swarm', 'nuclear-bomb+radiation-beam', 'noxious+poison']);
 
 /** Fixed composition caveats from the corpus (general_rules_notes): reported
  *  interactions beyond naive text concatenation. */
 const DESTROY_CLASS_IDS = new Set(['dark', 'egg-sac', 'time', 'armageddon', 'black-hole', 'bomb', 'fireworks', 'landslide', 'mosquito-swarm', 'nuclear-bomb', 'timestop', 'voluptuous-egg-sac']);
 const HIT_ONCE_COOLDOWN_IDS = COOLDOWN_CLASS_IDS;
-const PIERCE_IDS = new Set(['ghost', 'wind', 'assassin', 'drill', 'erosion', 'noxious', 'sniper', 'soul-sucker', 'wraith']);
+const PIERCE_IDS = new Set(['ghost', 'wind', 'assassin', 'drill', 'erosion', 'noxious', 'sandstorm', 'sniper', 'soul-sucker', 'wraith']);
+
+/** Level-3 component text for fusion (decision #12). The catalog keeps
+ *  level-1 text for the browser; the fusion screen consumes L3 balls. */
+const componentText = (b: Ball): string => LEVEL_3_EFFECTS[b.id] ?? b.effects;
 
 function statusChannel(b: Ball): StatusChannel {
   if (!b.tags.includes('status-effect')) return null;
+  const override = CHANNEL_OVERRIDES[b.id];
+  if (override) return override;
+  const text = componentText(b);
   if (SPAWN_BOUND_IDS.has(b.id)) return 'spawn';
-  if (SPAWN_BOUND.test(b.effects)) return 'spawn';
-  if (FIELD_AURA.test(b.effects)) return 'field';
+  if (SPAWN_BOUND.test(text)) return 'spawn';
+  if (FIELD_AURA.test(text)) return 'field';
   return 'hit';
 }
 
 /** AOE carriers with no damage rolls cannot carry a kill-on-hit effect.
  *  Timestop freezes but deals no damage; its pairs don't wire (corpus). */
-const dealsDamage = (b: Ball) => /\b\d+(?:\.\d+)?(?:[–-]\d+(?:\.\d+)?)?(?:x|%)?(?= damage)|\bdeals?\b/i.test(b.effects);
-
-/** Fused balls improve some of their components' numbers — the game recomputes
- *  stats at merge time. No formula fits all cases (thresholds shrink by 1,
- *  spawn counts gain +1 per bound, chances jump irregularly), so these are
- *  the *observed* per-ball overrides, transcribed from in-game fused tooltips
- *  (docs/research/fusion-observations/images.jsonl; Steam/reddit corroborate
- *  the Overgrowth threshold). Each entry is a [from, to] replacement applied
- *  to the component's effect text — exact-substring, so a wiki rewording
- *  fails loudly (the override stops applying) rather than corrupting text.
- *  Exported for the data.test.ts substring gate that keeps "fails loudly"
- *  true: every `from` must remain a substring of the catalog's effect text. */
-export const FUSED_STATS: Record<string, [string, string][]> = {
-  // Overgrowth × Maggot / Overgrowth × Flash tooltips: threshold 3 → 2
-  overgrowth: [
-    ['Upon reaching 3, consume all stacks', 'Upon reaching 2, consume all stacks'],
-  ],
-  // Egg Sac X Poison / VES × Nuclear Bomb tooltips
-  'egg-sac': [
-    ['Explodes into 2–4 baby balls', 'Explodes into 3–5 baby balls'],
-  ],
-  // Overgrowth × Maggot tooltip
-  maggot: [
-    ['they explode into 1–2 baby balls', 'they explode into 2–3 baby balls'],
-  ],
-  // Voluptuous Egg Sac × Nuclear Bomb tooltip
-  'voluptuous-egg-sac': [
-    ['Explodes into 2–3 egg sacs', 'Explodes into 3–4 egg sacs'],
-  ],
-  // Spider Queen X Vampire Lord tooltip (both orders)
-  'spider-queen': [
-    ['Has a 25% chance of birthing', 'Has a 45% chance of birthing'],
-  ],
-  // Spider Queen X Vampire Lord tooltip: threshold 10 → 9
-  'vampire-lord': [
-    ['hitting an enemy with at least 10 stacks', 'hitting an enemy with at least 9 stacks'],
-  ],
-  // Satan × Reaper tooltip
-  reaper: [
-    ['Has a 10% chance to kill enemies on impact, healing you for 5 health.',
-     'Has a 15% chance to kill enemies on impact, healing you for 7 health.'],
-  ],
-  // Egg Sac X Poison tooltip
-  poison: [
-    ['(max 5 stacks). Poison lasts for 6 seconds and each stack deals 1–4 damage per second',
-     '(max 8 stacks). Poison lasts for 9 seconds and each stack deals X damage per second'],
-  ],
-  // Satan × Reaper tooltip. The first `from` was originally transcribed from
-  // the fused tooltip's phrasing ("(max 5 stacks), dealing 10–20 damage per
-  // stack per second") — which is not a substring of the base text and so
-  // never applied; abstractDamage() masked the no-op (both shapes render
-  // "X damage per stack per second"). Realigned to the catalog text so the
-  // override is live and the substring gate (data.test.ts) holds.
-  satan: [
-    ['(max 5 stacks, 10–20 damage per stack per second)',
-     '(max 5 stacks, X damage per stack per second)'],
-    ['makes them go berserk (15–24 damage to adjacent enemies every second)',
-     'makes them go berserk (X damage to adjacent enemies every second)'],
-  ],
-  // Bleed X Freeze tooltip (partial — the freeze half was below the frame)
-  bleed: [
-    // narrow replacement: only the stacks change (the 1-damage-per-stack tick
-    // is an unchanged mechanic constant, not a fused roll)
-    ['Inflicts 2 stacks of bleed. Bleeding enemies receive 1 damage per stack when hit by a ball (max 8 stacks).',
-     'Inflicts 4 stacks of bleed. Bleeding enemies receive 1 damage per stack when hit by a ball (max 14 stacks).'],
-  ],
-};
-
-/** Apply the observed fused-stat overrides for one component. Replacements
- *  that do not match (wiki rewording) are skipped — the base text shows and
- *  the mismatch is visible in review, never silently corrupting. */
-function applyFusedStats(ballId: string, text: string): string {
-  for (const [from, to] of FUSED_STATS[ballId] ?? []) {
-    if (text.includes(from)) text = text.replace(from, to);
-  }
-  return text;
-}
+const dealsDamage = (b: Ball) => /\b\d+(?:\.\d+)?(?:[–-]\d+(?:\.\d+)?)?(?:x|%)?(?= damage)|\bdeals?\b/i.test(componentText(b));
 
 const hasSpawn = (b: Ball) => b.tags.some((t) => t === 'spawns-baby-balls' || t === 'spawns-allies' || t === 'clone');
 const spawnable = (b: Ball) => hasSpawn(b) && !SPAWN_EXCLUDED_IDS.has(b.id);
-/** Unordered pair key ("a+b", sorted) — same-property lookup. */
-const pairId = (a: Ball, b: Ball) => [a.id, b.id].sort().join('+');
 
 /** Cross-wire line when one component's channel can carry the other's effect.
  *  Role-named like the game's tooltip ("Spawned balls from X … as Y"), not
@@ -222,8 +171,14 @@ export function crossWire(a: Ball, b: Ball): CrossWireResult {
   // AOE carrier + partner's on-hit status (tooltip: Overgrowth × Flash)
   const rank = (b: Ball) => (b.tags.includes('screen-clear') ? 2 : b.tags.includes('aoe') ? 1 : 0);
   const aoeCarrier = (b: Ball) => rank(b) > 0 && !AOE_EXCLUDED_IDS.has(b.id);
-  const [carrier, st2] = aoeCarrier(a) && rank(a) > rank(b) && isStatus(b) ? [a, b]
-    : aoeCarrier(b) && rank(b) > rank(a) && isStatus(a) ? [b, a] : [null, null];
+  /** An on-timer/field-aura carrier cannot trigger a status applied on the
+   *  hit event (trigger matrix: AOE = On-Hit NO / On-Damage YES / On-Timer
+   *  NO). Freeze Ray × Sun is the evidenced case; the beam carries Sun's
+   *  burn instead (corpus freeze-ray+sun). */
+  const canCarryStatus = (carrier: Ball, st: Ball) =>
+    !(statusChannel(carrier) === 'field' && ON_HIT_ONLY_STATUS_IDS.has(st.id));
+  const [carrier, st2] = aoeCarrier(a) && rank(a) > rank(b) && isStatus(b) && canCarryStatus(a, b) ? [a, b]
+    : aoeCarrier(b) && rank(b) > rank(a) && isStatus(a) && canCarryStatus(b, a) ? [b, a] : [null, null];
   if (carrier && st2) return { line: `Area-of-effect damage from ${carrier.name} inflicts the status effect of ${st2.name}.`, disputed: false };
 
   // AOE carrier + partner's kill-on-hit (Black Hole × Sun — the corpus meta
@@ -250,7 +205,7 @@ export function crossWire(a: Ball, b: Ball): CrossWireResult {
   if (kCarrier && killer) {
     return {
       line: `Area-of-effect damage from ${kCarrier.name} triggers the instant kill of ${killer.name}.`,
-      disputed: KILL_DISPUTED_PAIRS.has(pairId(a, b)),
+      disputed: KILL_DISPUTED_PAIRS.has(pairKey(a, b)),
     };
   }
 
@@ -282,7 +237,8 @@ export function evolvesInstead(a: Ball, b: Ball): Ball | null {
 export interface FusionResult {
   /** "A × B" — first-selected ball first. */
   name: string;
-  /** Component effect paragraphs, in name order, damage rolls abstracted. */
+  /** Component effect paragraphs (level-3 text), in name order, damage rolls
+   *  abstracted. */
   paragraphs: [string, string];
   /** Cross-wire line, or null when no channel carries the partner's effect. */
   crossWire: string | null;
@@ -290,6 +246,12 @@ export interface FusionResult {
   evolvesInstead: { id: string; name: string } | null;
   /** Display caveats — this composition is the site's model, not game data. */
   notes: string[];
+  /** Property-set union with first-pick scalar precedence (decision #7). */
+  resolved: ResolvedProperties;
+  /** Shared scalar keys whose values differ; the first pick wins. */
+  collisions: PropertyCollision[];
+  /** Reported anomalies outside the general rule (decision #7 / #8). */
+  exceptions: FusionException[];
 }
 
 /** Compose the fused ball for two distinct catalog balls. Returns null for
@@ -299,14 +261,17 @@ export function fuse(a: Ball, b: Ball): FusionResult | null {
   const evo = evolvesInstead(a, b);
   const notes = ['Composition is modeled from community-observed rules; verify against the game.'];
 
-  // Order side-effects (fusion-mechanics.md §3): both-cooldown pairs and
-  // same-property pairs take the first-selected ball's variant/cooldown.
-  const pairKey = pairId(a, b);
-  if (COOLDOWN_CLASS_IDS.has(a.id) && COOLDOWN_CLASS_IDS.has(b.id)) {
-    notes.push(`Both balls list a cooldown — the first-selected ball's cooldown wins (reported, untested here).`);
-  }
-  if (SAME_PROPERTY_PAIRS.has(pairKey)) {
-    notes.push(`Same-property pair — the first-selected ball's variant of the shared property wins (reported, untested here).`);
+  // Order resolution (fusion-mechanics.md §3, decision #7): property-set
+  // union with first-pick scalar precedence. Each differing shared scalar key
+  // is a collision won by the first-selected ball.
+  const resolved = resolveProperties(a, b);
+  for (const c of resolved.collisions) {
+    const confidence = c.reported ? 'reported/unverified' : 'reported';
+    if (c.key === 'cooldown') {
+      notes.push(`Cooldown — the first-selected ball's cooldown wins (${c.value} over ${c.loserValue}; ${confidence}).`);
+    } else {
+      notes.push(`Shared property (${c.label}) — the first-selected ball's variant wins (${c.value} over ${c.loserValue}; ${confidence}).`);
+    }
   }
 
   // Pool recursion (CONTRADICTIONS.md §2): not a fusion effect, but the
@@ -329,17 +294,41 @@ export function fuse(a: Ball, b: Ball): FusionResult | null {
   if ((DESTROY_CLASS_IDS.has(a.id) && spawnable(b)) || (DESTROY_CLASS_IDS.has(b.id) && spawnable(a))) {
     notes.push('Spawn can compensate Destroy — spawned clones/babies keep the fused ball alive (reported; Cell × Bomb is the known example).');
   }
+  // Fixed trait priorities (commutative — not order effects).
+  if ((a.id === 'assassin' && PIERCE_IDS.has(b.id)) || (b.id === 'assassin' && PIERCE_IDS.has(a.id))) {
+    notes.push(`Assassin's back-armor rule wins over the partner's pass-through — the fused ball cannot pierce the back (reported; commutative, not an order effect).`);
+  }
+  if ((a.id === 'warp' && PIERCE_IDS.has(b.id)) || (b.id === 'warp' && PIERCE_IDS.has(a.id))) {
+    notes.push(`Warp is cast before the partner's pass-through (reported; commutative, not an order effect).`);
+  }
+
+  // Freeze Ray × Sun: the corpus resolves the direction — the beam applies
+  // Sun's burn, not the reverse (the AOE branch correctly emits no wire).
+  if (pairKey(a, b) === 'freeze-ray+sun') {
+    notes.push(`Reported direction — Freeze Ray's beam applies Sun's burn; Sun's field aura does not apply Freeze Ray's freeze.`);
+  }
 
   const wire = crossWire(a, b);
   if (wire.disputed) {
     notes.push('Corpus contradiction — reports disagree on whether the instant kill fires from the partner\'s hits here (see docs/research/fusion-observations/CONTRADICTIONS.md).');
   }
 
+  // Reported anomalies outside the general rule (decision #7). Structured for
+  // the presentation's "Reported exceptions" section (#8); also surfaced as
+  // notes so the current panel does not hide them.
+  const exceptions = exceptionsFor(a, b);
+  for (const e of exceptions) {
+    notes.push(`Reported exception — ${e.title}: ${e.detail} (${e.confidence}).`);
+  }
+
   return {
     name: fusionName(a, b),
-    paragraphs: [applyFusedStats(a.id, a.effects), applyFusedStats(b.id, b.effects)].map(abstractDamage) as [string, string],
+    paragraphs: [componentText(a), componentText(b)].map(abstractDamage) as [string, string],
     crossWire: wire.line,
     evolvesInstead: evo ? { id: evo.id, name: evo.name } : null,
     notes,
+    resolved,
+    collisions: resolved.collisions,
+    exceptions,
   };
 }
