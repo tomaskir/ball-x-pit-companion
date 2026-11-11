@@ -32,7 +32,7 @@ import { BALLS, type Ball } from './data/balls';
 import { resolveProperties, type ResolvedProperties } from './fusion-properties';
 import {
   aoeRank,
-  applyFacts,
+  factsFor,
   componentText,
   dealsDamage,
   isAoeExcluded,
@@ -203,7 +203,7 @@ export function fuse(a: Ball, b: Ball): FusionResult | null {
   // fusion-knowledge.ts. The table's predicates read the pair and the
   // computed wire state; fuse() names no pair and no class.
   const wire = crossWire(a, b);
-  const facts = applyFacts(a, b, { spawnerId: wire.spawnerId, disputed: wire.disputed });
+  const facts = factsFor(a, b, { spawnerId: wire.spawnerId, disputed: wire.disputed });
   notes.push(...facts.notes);
 
   return {

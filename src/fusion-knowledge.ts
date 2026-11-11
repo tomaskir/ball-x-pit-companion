@@ -10,7 +10,7 @@
 //
 // Every id is a ball id in src/data/balls.ts. Nothing here composes: the
 // predicates answer "what class is this ball in?", and `FUSION_FACTS` /
-// `applyFacts()` are the reported copy and anomalies `fuse()` emits beside
+// `factsFor()` are the reported copy and anomalies `fuse()` emits beside
 // the composed result. `fuse()` applies the table; it never names a pair.
 import { BALLS, type Ball } from './data/balls';
 import { LEVEL_3_EFFECTS } from './data/level-3';
@@ -388,7 +388,7 @@ export interface AppliedFacts {
   exceptions: FusionException[];
 }
 
-export function applyFacts(a: Ball, b: Ball, ctx: CaveatContext): AppliedFacts {
+export function factsFor(a: Ball, b: Ball, ctx: CaveatContext): AppliedFacts {
   const key = pairKey(a.id, b.id);
   const notes: string[] = [];
   const exceptions: FusionException[] = [];
@@ -408,18 +408,22 @@ export function applyFacts(a: Ball, b: Ball, ctx: CaveatContext): AppliedFacts {
   return { notes, exceptions };
 }
 
-/** True when the pair contains `id` and the other ball is pass-through. */
-function idWithPiercePartner(a: Ball, b: Ball, id: string): boolean {
-  return (a.id === id && isPierce(b)) || (b.id === id && isPierce(a));
-}
-
-/** True when the pair contains `id` and its partner is an AOE carrier. */
-function aoePartner(a: Ball, b: Ball, id: string): boolean {
-  const partner = a.id === id ? b : b.id === id ? a : null;
-  return partner !== null && aoeRank(partner) > 0;
+/** The other ball when the pair contains `id`, else null. */
+function partnerOf(a: Ball, b: Ball, id: string): Ball | null {
+  return a.id === id ? b : b.id === id ? a : null;
 }
 
 /** True when either ball is `id`. */
-function hasId(a: Ball, b: Ball, id: string): boolean {
-  return a.id === id || b.id === id;
-}
+const hasId = (a: Ball, b: Ball, id: string): boolean => partnerOf(a, b, id) !== null;
+
+/** True when the pair contains `id` and the other ball is pass-through. */
+const idWithPiercePartner = (a: Ball, b: Ball, id: string): boolean => {
+  const partner = partnerOf(a, b, id);
+  return partner !== null && isPierce(partner);
+};
+
+/** True when the pair contains `id` and its partner is an AOE carrier. */
+const aoePartner = (a: Ball, b: Ball, id: string): boolean => {
+  const partner = partnerOf(a, b, id);
+  return partner !== null && aoeRank(partner) > 0;
+};

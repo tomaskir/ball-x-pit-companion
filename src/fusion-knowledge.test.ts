@@ -35,7 +35,7 @@ import {
   SPAWN_STATUS_ONLY_IDS,
   WARP_PASS_THROUGH_CAVEAT,
   aoeRank,
-  applyFacts,
+  factsFor,
   channelOverride,
   isAoeExcluded,
   isCooldownClass,
@@ -167,61 +167,61 @@ describe('reported-fact table (one home for caveats and exceptions)', () => {
 
   it('class caveats fire from predicates, not pair names', () => {
     // A base ball adds the pool note first (table order).
-    expect(applyFacts(ball('dark'), ball('flash'), ctx()).notes)
+    expect(factsFor(ball('dark'), ball('flash'), ctx()).notes)
       .toEqual([BASE_BALL_POOL_CAVEAT, DARK_MULTIPLIER_CAVEAT]);
-    expect(applyFacts(ball('assassin'), ball('ghost'), ctx()).notes)
+    expect(factsFor(ball('assassin'), ball('ghost'), ctx()).notes)
       .toEqual([BASE_BALL_POOL_CAVEAT, ASSASSIN_BACK_ARMOR_CAVEAT]);
-    expect(applyFacts(ball('warp'), ball('ghost'), ctx()).notes)
+    expect(factsFor(ball('warp'), ball('ghost'), ctx()).notes)
       .toEqual([BASE_BALL_POOL_CAVEAT, WARP_PASS_THROUGH_CAVEAT]);
-    expect(applyFacts(ball('bomb'), ball('dark'), ctx()).notes)
+    expect(factsFor(ball('bomb'), ball('dark'), ctx()).notes)
       .toEqual([BASE_BALL_POOL_CAVEAT, DARK_MULTIPLIER_CAVEAT, DESTROY_PAIR_CAVEAT]);
-    expect(applyFacts(ball('black-hole'), ball('ghost'), ctx()).notes)
+    expect(factsFor(ball('black-hole'), ball('ghost'), ctx()).notes)
       .toEqual([BASE_BALL_POOL_CAVEAT, HIT_ONCE_CAVEAT]);
-    expect(applyFacts(ball('bomb'), ball('cell'), ctx()).notes)
+    expect(factsFor(ball('bomb'), ball('cell'), ctx()).notes)
       .toEqual([BASE_BALL_POOL_CAVEAT, SPAWN_COMPENSATES_DESTROY_CAVEAT]);
   });
 
   it('the base-ball pool note is class-driven and order-independent', () => {
-    expect(applyFacts(ball('wraith'), ball('burn'), ctx()).notes).toEqual([BASE_BALL_POOL_CAVEAT]);
-    expect(applyFacts(ball('burn'), ball('wraith'), ctx()).notes).toEqual([BASE_BALL_POOL_CAVEAT]);
+    expect(factsFor(ball('wraith'), ball('burn'), ctx()).notes).toEqual([BASE_BALL_POOL_CAVEAT]);
+    expect(factsFor(ball('burn'), ball('wraith'), ctx()).notes).toEqual([BASE_BALL_POOL_CAVEAT]);
     // Egg Sac is also a cooldown ball and Wraith is pass-through: table order
     // puts the pool note first, the hit-once caveat second.
-    expect(applyFacts(ball('wraith'), ball('egg-sac'), ctx()).notes)
+    expect(factsFor(ball('wraith'), ball('egg-sac'), ctx()).notes)
       .toEqual([BASE_BALL_POOL_CAVEAT, HIT_ONCE_CAVEAT]);
-    expect(applyFacts(ball('flash'), ball('glacier'), ctx()).notes).toEqual([]);
+    expect(factsFor(ball('flash'), ball('glacier'), ctx()).notes).toEqual([]);
   });
 
   it('the Freeze Ray × Sun direction is a table row', () => {
-    expect(applyFacts(ball('freeze-ray'), ball('sun'), ctx()).notes).toEqual([FREEZE_RAY_SUN_CAVEAT]);
-    expect(applyFacts(ball('sun'), ball('freeze-ray'), ctx()).notes).toEqual([FREEZE_RAY_SUN_CAVEAT]);
+    expect(factsFor(ball('freeze-ray'), ball('sun'), ctx()).notes).toEqual([FREEZE_RAY_SUN_CAVEAT]);
+    expect(factsFor(ball('sun'), ball('freeze-ray'), ctx()).notes).toEqual([FREEZE_RAY_SUN_CAVEAT]);
   });
 
   it('spawn-inheritance caveats read the wire context', () => {
-    expect(applyFacts(ball('brood-mother'), ball('flash'), ctx({ spawnerId: 'brood-mother' })).notes)
+    expect(factsFor(ball('brood-mother'), ball('flash'), ctx({ spawnerId: 'brood-mother' })).notes)
       .toEqual([BASE_BALL_POOL_CAVEAT, BROOD_MOTHER_INHERITANCE_CAVEAT, `${BROOD_MOTHER_TRIGGER_CAVEAT}.`]);
     // No inheritance wire: the trigger caveat carries the Flash sentence.
-    expect(applyFacts(ball('brood-mother'), ball('sun'), ctx()).notes)
+    expect(factsFor(ball('brood-mother'), ball('sun'), ctx()).notes)
       .toEqual([BASE_BALL_POOL_CAVEAT, `${BROOD_MOTHER_TRIGGER_CAVEAT}; ${BROOD_MOTHER_FLASH_REPORT_FRAGMENT}`]);
-    expect(applyFacts(ball('egg-sac'), ball('glacier'), ctx({ spawnerId: 'egg-sac' })).notes)
+    expect(factsFor(ball('egg-sac'), ball('glacier'), ctx({ spawnerId: 'egg-sac' })).notes)
       .toEqual([BASE_BALL_POOL_CAVEAT, EGG_SAC_INHERITANCE_CAVEAT]);
-    expect(applyFacts(ball('mosquito-king'), ball('glacier'), ctx()).notes)
+    expect(factsFor(ball('mosquito-king'), ball('glacier'), ctx()).notes)
       .toEqual([MOSQUITO_KING_TRIGGER_CAVEAT]);
   });
 
   it('the disputed kill note reads the wire context', () => {
-    expect(applyFacts(ball('flicker'), ball('reaper'), ctx({ disputed: true })).notes)
+    expect(factsFor(ball('flicker'), ball('reaper'), ctx({ disputed: true })).notes)
       .toEqual([DISPUTED_KILL_CAVEAT]);
-    expect(applyFacts(ball('flicker'), ball('reaper'), ctx()).notes).toEqual([]);
+    expect(factsFor(ball('flicker'), ball('reaper'), ctx()).notes).toEqual([]);
   });
 
   it('exceptions come from the same table and keep their matching rules', () => {
-    expect(applyFacts(ball('nuclear-bomb'), ball('wraith'), ctx()).exceptions.map((e) => e.pair))
+    expect(factsFor(ball('nuclear-bomb'), ball('wraith'), ctx()).exceptions.map((e) => e.pair))
       .toEqual(['nuclear-bomb+wraith']);
-    expect(applyFacts(ball('wraith'), ball('nuclear-bomb'), ctx()).exceptions.map((e) => e.pair))
+    expect(factsFor(ball('wraith'), ball('nuclear-bomb'), ctx()).exceptions.map((e) => e.pair))
       .toEqual(['nuclear-bomb+wraith']);
-    expect(applyFacts(ball('time'), ball('flash'), ctx()).exceptions.map((e) => e.pair)).toEqual(['time+*']);
-    expect(applyFacts(ball('banshee'), ball('flash'), ctx()).exceptions.map((e) => e.pair)).toEqual(['banshee+*']);
-    expect(applyFacts(ball('flash'), ball('glacier'), ctx()).exceptions).toEqual([]);
+    expect(factsFor(ball('time'), ball('flash'), ctx()).exceptions.map((e) => e.pair)).toEqual(['time+*']);
+    expect(factsFor(ball('banshee'), ball('flash'), ctx()).exceptions.map((e) => e.pair)).toEqual(['banshee+*']);
+    expect(factsFor(ball('flash'), ball('glacier'), ctx()).exceptions).toEqual([]);
   });
 
   it('marks only the reports that say the two orders differ as order-dependent', () => {
@@ -240,12 +240,15 @@ describe('corpus general_rules_notes coverage', () => {
     readFileSync(new URL('../docs/research/fusion-observations/fusion-pairs.json', import.meta.url), 'utf8'),
   ) as { general_rules_notes: Record<string, unknown> };
 
-  /** Notes whose class a knowledge table or predicate encodes. Each check
-   *  names the ids the note calls out, so a table that drifted would fail. */
+  /** Notes whose class a knowledge table, fact row, or predicate encodes.
+   *  Each check names the ids the note calls out, so a table that drifted
+   *  would fail. */
+  const FACT_IDS = new Set(FUSION_FACTS.map((f) => f.id));
   const ENCODED_CLASSES: Record<string, () => boolean> = {
     // "If one component is a BASE ball (Wind, Egg Sac, Brood Mother, Burn,
     // Cell, etc.)…"
     'base-ball-pool-recursion': () =>
+      FACT_IDS.has('base-ball-pool-recursion') &&
       ['wind', 'egg-sac', 'brood-mother', 'burn', 'cell'].every((id) => BASE_BALL_IDS.has(id)),
     // "the composer's PIERCE_IDS follows the fact base plus Sandstorm."
     'pass-through-catalog': () =>
@@ -253,9 +256,11 @@ describe('corpus general_rules_notes coverage', () => {
         .every((id) => PIERCE_IDS.has(id)),
     // "When two self-destruct balls are fused, one of their explosion/
     // self-destruct effects may be lost."
-    'destroy-pair-may-lose-one-effect': () => isDestroyClass(ball('bomb')) && isDestroyClass(ball('dark')),
+    'destroy-pair-may-lose-one-effect': () =>
+      FACT_IDS.has('destroy-pair-may-lose-one-effect') && isDestroyClass(ball('bomb')) && isDestroyClass(ball('dark')),
     // "Cell(Clone) x Bomb(Destroy) is an indestructible bomb…"
-    'spawn-compensates-destroy': () => isDestroyClass(ball('bomb')) && spawnable(ball('cell')),
+    'spawn-compensates-destroy': () =>
+      FACT_IDS.has('spawn-compensates-destroy') && isDestroyClass(ball('bomb')) && spawnable(ball('cell')),
   };
 
   /** Notes about the corpus's limits or the order model, not a ball class. */

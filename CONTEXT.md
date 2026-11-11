@@ -345,8 +345,8 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   classifications lives in `src/fusion-knowledge.ts` (Destroy/cooldown/pierce/
   kill classes, spawn-inheritance classes, status-channel predicates) along
   with the one reported-fact table (`FUSION_FACTS`: caveat prose plus the
-  reported exceptions, each with source and confidence, applied by
-  `applyFacts()`); `fusion.ts` composes, the knowledge module classifies and
+  reported exceptions, each with source and confidence, resolved by
+  `factsFor()`); `fusion.ts` composes, the knowledge module classifies and
   carries the reported facts, and `fuse()` names no pair. This is the
   site's editorial model of fusion,
   not game data; the evidence and the observation
