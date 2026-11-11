@@ -289,6 +289,78 @@ describe('view state: fusion picks (max 2, sticky selection)', () => {
   });
 });
 
+describe('view state: fusion panel order presentation (decision #8)', () => {
+  const composed = (view: ReturnType<typeof createViewState>, a: string, b: string) => {
+    view.dispatch({ type: 'toggleFusion', id: a });
+    const vm = view.dispatch({ type: 'toggleFusion', id: b });
+    expect(vm.fusionPanel.state).toBe('composed');
+    return vm.fusionPanel as Extract<typeof vm.fusionPanel, { state: 'composed' }>;
+  };
+
+  it('a shared-property collision makes the pair order-sensitive and names the property', () => {
+    const fp = composed(createViewState(), 'egg-sac', 'timestop');
+    expect(fp.collisions).toHaveLength(1);
+    expect(fp.collisions[0]).toMatchObject({ label: 'Cooldown', value: '3 second', winnerName: 'Egg Sac' });
+    expect(fp.exceptions).toEqual([]);
+    expect(fp.orderSensitive).toBe(true);
+    expect(fp.orderNotice).toContain('Order matters');
+    expect(fp.orderNotice).toContain('Cooldown');
+  });
+
+  it('a pair with no shared properties is not order-sensitive and carries no notice', () => {
+    const fp = composed(createViewState(), 'flash', 'glacier');
+    expect(fp.collisions).toEqual([]);
+    expect(fp.exceptions).toEqual([]);
+    expect(fp.orderSensitive).toBe(false);
+    expect(fp.orderNotice).toBe('');
+  });
+
+  it('an order-dependent reported exception makes the pair order-sensitive without collisions', () => {
+    const fp = composed(createViewState(), 'nuclear-bomb', 'wraith');
+    expect(fp.collisions).toEqual([]);
+    expect(fp.exceptions.map((e) => e.pair)).toContain('nuclear-bomb+wraith');
+    expect(fp.orderSensitive).toBe(true);
+    expect(fp.orderNotice).toContain('Order matters');
+    expect(fp.orderNotice).toMatch(/exception/i);
+  });
+
+  it('a reported exception that is not order-dependent leaves the pair non-order-sensitive', () => {
+    const fp = composed(createViewState(), 'banshee', 'flash');
+    expect(fp.exceptions.map((e) => e.pair)).toContain('banshee+*');
+    expect(fp.orderSensitive).toBe(false);
+    expect(fp.orderNotice).toBe('');
+  });
+
+  it('an evolve-instead pair is never order-sensitive (it does not fuse)', () => {
+    const fp = composed(createViewState(), 'bleed', 'poison');
+    expect(fp.fusion.evolvesInstead!.name).toBe('Virus');
+    expect(fp.orderSensitive).toBe(false);
+    expect(fp.orderNotice).toBe('');
+  });
+
+  it('swapFusion reverses the picks and recomputes the resolved result', () => {
+    const view = createViewState();
+    const before = composed(view, 'egg-sac', 'timestop');
+    expect(before.fusion.name).toBe('Egg Sac × Timestop');
+    expect(before.collisions[0].winner).toBe('egg-sac');
+    const after = view.dispatch({ type: 'swapFusion' });
+    expect(after.fusionPanel.state).toBe('composed');
+    const fp = after.fusionPanel as Extract<typeof after.fusionPanel, { state: 'composed' }>;
+    expect(fp.fusion.name).toBe('Timestop × Egg Sac');
+    expect(fp.collisions[0]).toMatchObject({ winner: 'timestop', value: '20 second' });
+    // the pair's plan identity is order-insensitive, so the plan mark survives
+    expect(fp.planned).toBe(before.planned);
+  });
+
+  it('swapFusion is a no-op with fewer than two picks', () => {
+    const view = createViewState();
+    expect(view.dispatch({ type: 'swapFusion' }).fusionPanel).toEqual({ state: 'empty' });
+    view.dispatch({ type: 'toggleFusion', id: 'flash' });
+    const vm = view.dispatch({ type: 'swapFusion' });
+    expect(vm.fusionPanel).toEqual({ state: 'pending', first: ballMap.get('flash')! });
+  });
+});
+
 // The plan's own semantics (limits, toggles, capacity, hydrate filtering,
 // fused-pair identity) are unit-tested in src/plan-state.test.ts through
 // createPlanState(); what stays here is the integration: the plan actions

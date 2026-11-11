@@ -25,6 +25,7 @@ import { highlightSet, closure, union } from './graph';
 import { ballMap, isPassive, itemFor, graphFor, passiveMap } from './catalog';
 import { deriveBuildGraph, layoutBuildGraph, FUSION_ID_PREFIX, type BuildGraphLayout } from './build-graph';
 import { fusionBalls, fuse, evolvesInstead, type FusionResult } from './fusion';
+import type { FusionException, PropertyCollision } from './fusion-properties';
 import { verdictFor, type Item, type Verdict } from './synergy';
 import { createPlanState, stickyToggle, hydrateList, isFusable } from './plan-state';
 import type { PlanAction, PlanLimits, PlanState, PlanSnapshot } from './plan-state';
@@ -56,7 +57,24 @@ export interface FusionRowState { slot: 1 | 2 | null; filtered: boolean; }
 export type FusionPanelState =
   | { state: 'empty' }
   | { state: 'pending'; first: Ball }
-  | { state: 'composed'; fusion: FusionResult; a: Ball; b: Ball; planned: boolean; planFull: boolean };
+  | {
+      state: 'composed';
+      fusion: FusionResult;
+      a: Ball;
+      b: Ball;
+      planned: boolean;
+      planFull: boolean;
+      /** True when the selection order changes the fused result: a shared
+       *  scalar collision (first pick wins) or an order-dependent reported
+       *  exception. Drives the swap affordance and its warning line. */
+      orderSensitive: boolean;
+      /** The warning line above the action row; '' when not order-sensitive. */
+      orderNotice: string;
+      /** Shared-property collisions, already resolved by the composer. */
+      collisions: PropertyCollision[];
+      /** Reported anomalies outside the general rule. */
+      exceptions: FusionException[];
+    };
 
 /** The balls/passives screens' selection box: the currently selected item
  *  (null = no box on that screen) and the label states for its buttons —
@@ -110,6 +128,8 @@ export type Action =
   | { type: 'toggleItem'; id: string }
   | { type: 'toggleChar'; id: string }
   | { type: 'toggleFusion'; id: string }
+  /** Reverse the two fusion picks (a,b → b,a) and recompute the panel. */
+  | { type: 'swapFusion' }
   /** Per-screen search: each section has its own query (own search box),
    *  independent of every other screen's. */
   | { type: 'search'; section: Section; query: string }
@@ -138,7 +158,7 @@ export type Action =
  *  static shell markup the island wires directly, like Clear and Share.) */
 export type ToggleAction = Extract<
   Action,
-  { type: 'toggleItem' | 'toggleChar' | 'toggleFusion' | 'togglePlanItem' | 'togglePlanFusion' | 'toggleGraphFocus' | 'toggleGraphCollapse' | 'toggleGraphDone' }
+  { type: 'toggleItem' | 'toggleChar' | 'toggleFusion' | 'swapFusion' | 'togglePlanItem' | 'togglePlanFusion' | 'toggleGraphFocus' | 'toggleGraphCollapse' | 'toggleGraphDone' }
 >;
 
 /** Balls offered by the fusion pick list: all fusable upgrade entities.
@@ -155,6 +175,27 @@ const SELECTION_FULL = 'selection full — deselect one first';
  *  the toggle guard, so the two cannot drift. */
 const blockedPartner = (chars: Character[], limits: PlanLimits): Character | null =>
   chars.length === 1 && limits.chars > 1 ? chars[0] : null;
+
+/** "A", "A and B", "A, B, and C" — the order notice's property list. */
+const labelList = (labels: string[]): string =>
+  labels.length <= 1 ? (labels[0] ?? '')
+  : labels.length === 2 ? `${labels[0]} and ${labels[1]}`
+  : `${labels.slice(0, -1).join(', ')}, and ${labels[labels.length - 1]}`;
+
+/** The order presentation, derived here so the renderer only paints it
+ *  (decision #8). A pair is order-sensitive when a shared scalar collision
+ *  exists — first-pick precedence changes the value — or a reported exception
+ *  is order-dependent. An evolve-instead pair never fuses, so order cannot
+ *  matter. */
+const orderPresentation = (fusion: FusionResult): { orderSensitive: boolean; orderNotice: string } => {
+  if (fusion.evolvesInstead) return { orderSensitive: false, orderNotice: '' };
+  const orderSensitive = fusion.collisions.length > 0 || fusion.exceptions.some((e) => e.orderDependent);
+  if (!orderSensitive) return { orderSensitive: false, orderNotice: '' };
+  const orderNotice = fusion.collisions.length
+    ? `⚠ Order matters for this pair — swapping changes ${labelList(fusion.collisions.map((c) => c.label))}.`
+    : '⚠ Order matters for this pair — a reported exception is order-dependent.';
+  return { orderSensitive: true, orderNotice };
+};
 
 export function createViewState() {
   let selectedId: string | null = null;
@@ -228,14 +269,20 @@ export function createViewState() {
       ? { state: 'empty' }
       : !b
         ? { state: 'pending', first: a }
-        : {
-            state: 'composed',
-            fusion: fuse(a, b),
-            a,
-            b,
-            planned: plan.hasPair(a.id, b.id),
-            planFull: planState.counts.balls >= planState.limits.balls,
-          };
+        : (() => {
+            const fusion = fuse(a, b);
+            return {
+              state: 'composed',
+              fusion,
+              a,
+              b,
+              planned: plan.hasPair(a.id, b.id),
+              planFull: planState.counts.balls >= planState.limits.balls,
+              ...orderPresentation(fusion),
+              collisions: fusion.collisions,
+              exceptions: fusion.exceptions,
+            };
+          })();
     // The selection boxes: one per item screen, filled only when the
     // selected item lives in that screen's namespace. Plan membership and
     // capacity are queried from the plan state (has / counts / limits) —
@@ -358,6 +405,12 @@ export function createViewState() {
         }
         case 'toggleFusion':
           stickyToggle(fusionPicks, (list) => list.length < 2, (id) => id === action.id, () => action.id);
+          break;
+        // Swap the two picks: the compose order is the first-pick precedence
+        // order, so reversing it recomputes the resolved panel. A no-op with
+        // fewer than two picks (nothing to swap).
+        case 'swapFusion':
+          fusionPicks.reverse();
           break;
         // Plan actions forward verbatim to the plan state. clearPlan also
         // clears the shared selectedChars — they are the plan's characters,

@@ -236,6 +236,9 @@ export interface FusionException {
   detail: string;
   source: string;
   confidence: 'reported' | 'unverified' | 'contradicted';
+  /** True when the report says the two selection orders behave differently.
+   *  The presentation shows the swap affordance only for these (#8). */
+  orderDependent: boolean;
 }
 
 /** Anomalies the property model deliberately does not encode (decision #7).
@@ -248,6 +251,7 @@ export const FUSION_EXCEPTIONS: FusionException[] = [
     detail: 'The two orders behave differently, and the fused tooltip misdescribes the result (reported).',
     source: 'Reddit (Abject_Nerve_1052), 2026-04-21; corpus nuclear-bomb+wraith',
     confidence: 'reported',
+    orderDependent: true,
   },
   {
     pair: 'black-hole+sun',
@@ -255,6 +259,7 @@ export const FUSION_EXCEPTIONS: FusionException[] = [
     detail: 'Order-matters sources disagree on which order delays the instant kill; the cross-wire itself is order-independent.',
     source: 'CONTRADICTIONS.md §10j (mmemo vs ClipClap35)',
     confidence: 'unverified',
+    orderDependent: true,
   },
   {
     pair: 'time+*',
@@ -262,6 +267,7 @@ export const FUSION_EXCEPTIONS: FusionException[] = [
     detail: 'Time fused with any partner reportedly expands the time-snare radius; one comment claims the size follows the second pick. Not verified.',
     source: 'Bilibili 2026-08-07; Reddit comment (icemage_999)',
     confidence: 'unverified',
+    orderDependent: true,
   },
   {
     pair: 'banshee+*',
@@ -269,6 +275,7 @@ export const FUSION_EXCEPTIONS: FusionException[] = [
     detail: "Banshee's whole-field curse reportedly overrides some partner curse effects; a single untested comment.",
     source: 'Reddit comment (icemage_999), Nov 2026',
     confidence: 'unverified',
+    orderDependent: false,
   },
 ];
 

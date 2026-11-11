@@ -121,6 +121,16 @@ describe('exception table (decision #7 anomalies)', () => {
     }
   });
 
+  it('marks only the reports that say the two orders differ as order-dependent', () => {
+    const flags = Object.fromEntries(FUSION_EXCEPTIONS.map((e) => [e.pair, e.orderDependent]));
+    expect(flags).toEqual({
+      'nuclear-bomb+wraith': true, // "the two orders behave differently"
+      'black-hole+sun': true, // "order-matters sources disagree on which order…"
+      'time+*': true, // "the size follows the second pick"
+      'banshee+*': false, // no order claim
+    });
+  });
+
   it('matches exact pairs in either order and ball-wide wildcards', () => {
     expect(exceptionsFor(ball('nuclear-bomb'), ball('wraith')).map((e) => e.pair)).toEqual(['nuclear-bomb+wraith']);
     expect(exceptionsFor(ball('wraith'), ball('nuclear-bomb')).map((e) => e.pair)).toEqual(['nuclear-bomb+wraith']);
