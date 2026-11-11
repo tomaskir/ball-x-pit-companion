@@ -2,9 +2,12 @@
 // resolution. "Which namespace does this id live in?" is the codebase's
 // central invariant (ticket 03: graphs strictly separate, ids never collide)
 // — it is decided here and nowhere else. Callers pass the id or item only.
-import { BALLS, type Ball } from './data/balls';
-import { PASSIVES, type Passive } from './data/passives';
-import { byId, type Graph } from './graph';
+// Explicit .ts extensions: src/corpus.ts imports this module from the
+// harvest CLI, which runs under Node's type stripping (extensionless
+// specifiers do not resolve there). Vite and tsc accept them.
+import { BALLS, type Ball } from './data/balls.ts';
+import { PASSIVES, type Passive } from './data/passives.ts';
+import { byId, type Graph } from './graph.ts';
 
 export const ballMap = byId(BALLS);
 export const passiveMap = byId(PASSIVES);
