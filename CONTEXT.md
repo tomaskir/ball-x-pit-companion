@@ -141,10 +141,10 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   badge on each icon. The **End game upgrades**
   toggle (on by default) sets the limits: 2/5/5 with it, 1/4/4 without; it
   lives in the plan toolbar's right edge (Clear and Share left, toggle
-  right, one row) as static shell markup in `index.astro` — the island
-  wires its change event through the same `update()` path as the other
+  right, one row) as static shell markup in `index.astro` — the shell
+  adapter wires its change event through the same dispatch path as the other
   toolbar buttons, and `paintPlan` only reflects the checked state on it
-  (the renderer builds no shell chrome). **Share** (shell chrome, island-wired) encodes the current
+  (the renderer builds no shell chrome). **Share** (shell chrome, shell-wired) encodes the current
   plan via `src/plan-codec.ts` (`encodeShared`) into a versioned base64url
   code in the hash (`#/plan?p=<code>`) and copies the link; opening it
   hydrates the plan — the link IS the plan, it replaces the recipient's
@@ -152,9 +152,10 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   then stripped from the URL (the link is one-shot — a Clear plus reload
   does not resurrect the sender's plan; the strip happens only when the
   parameter actually decoded); `decodeShared` returns null for anything that
-  is not a v1 code and the stored plan is used instead. The island keeps
-  only transport (clipboard, `history.replaceState`, location reads) — the
-  link's URL half is `src/share.ts`, the codec is `src/plan-codec.ts`.
+  is not a v1 code and the stored plan is used instead. The shell keeps the
+  clipboard transport; the island keeps `history.replaceState` and the
+  location reads — the link's URL half is `src/share.ts`, the codec is
+  `src/plan-codec.ts`.
   Over-limit selections are kept and marked (red), never trimmed. The plan
   persists to localStorage through **`src/plan-session.ts`** (`restore` at
   startup → `hydrate` action; `save` after every dispatch, skipping the write
@@ -254,44 +255,54 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   (its view-state imports are types only; pinned in `src/regression.test.ts`,
   the emit wiring behaviorally in `src/renderer.test.ts`).
 - **Island** — the single interactive script `src/companion.ts` mounted by
-  the Astro page. Owns event listening, theme, hash routing, and plan
-  persistence transport only; painting, verdict logic, graph math, and data
-  live in their own modules. The save/load/share lifecycle is
-  **`src/plan-session.ts`**: `restore({ storage, hash }) → { shared,
-  stripUrl }` owns the startup precedence (a decodable share parameter beats
-  the stored plan), the one-shot strip (only a decoded parameter earns it),
-  and corrupt-storage tolerance (garbage reads as "no stored plan", never an
-  exception); `save(storage, shared)` owns serialization and skips the write
-  when storage already holds that exact serialization — and when nothing is
+  the Astro page. Composition root for the shell adapter, the renderer, and
+  view state: owns hash routing and the plan persistence transport only;
+  painting, verdict logic, graph math, and data live in their own modules.
+  The save/load/share lifecycle is **`src/plan-session.ts`**:
+  `restore({ storage, hash }) → { shared, stripUrl }` owns the startup
+  precedence (a decodable share parameter beats the stored plan), the
+  one-shot strip (only a decoded parameter earns it), and corrupt-storage
+  tolerance (garbage reads as "no stored plan", never an exception);
+  `save(storage, shared)` owns serialization and skips the write when
+  storage already holds that exact serialization — and when nothing is
   stored and the snapshot is the codec's default, so a fresh browser's no-op
   dispatch creates no entry and search keystrokes and Esc clears do not
-  rewrite the plan. The island hands in the real
-  storage and hash, applies `stripUrl` through `history.replaceState`, and
-  dispatches `hydrate` when `restore` returns a plan.
+  rewrite the plan. The island hands in the real storage and hash, applies
+  `stripUrl` through `history.replaceState`, and dispatches `hydrate` when
+  `restore` returns a plan.
   (The renderer attaches hover/tap listeners for toasts; tile/card/row
   clicks come back through the build seam's `emit`, which the island wires
   to dispatch + paint. Esc and empty-space clicks clear the active
   section's selection; nothing is cleared on a tab switch, so selections
-  survive switching away and back — cross-screen remembering.) The decisions
+  survive switching away and back — cross-screen remembering.) The static
+  shell's controls — theme, tabs, per-screen search, the plan toolbar
+  (Clear, End game upgrades, Share), and the document-level Esc /
+  empty-space handlers — live in **`src/shell.ts`**:
+  `createShell({ ports, dispatch, snapshot })` returns
+  `{ showSection, destroy }`, keeps every listener and the share flash
+  timer in one registry, and `destroy()` removes them all. The decisions
   behind the routing, the clear policy, and theme resolution are pure
   functions in **`src/companion-core.ts`** (`sectionFromHash`,
-  `shouldClear`, `themeFromStorage`) — the island is their transport,
-  reading real events/storage and applying the results to the DOM. The
-  click-exemption question is DOM-shaped and lives in
+  `shouldClear`, `themeFromStorage`) — the island and shell are their
+  transport, reading real events/storage and applying the results to the
+  DOM. The click-exemption question is DOM-shaped and lives in
   **`src/clear-exempt.ts`**: the painters and the shell stamp
   `markClearExempt(el)` on each interactive region at creation time, and
-  `shouldClear` composes the island's `isClearExempt(target)` answer with
+  `shouldClear` composes the shell's `isClearExempt(target)` answer with
   the section rule — no region list lives in the policy. The startup
   sequence itself is callable: **`startIsland(ports)`**
-  composes those pure decisions with injected **ports** for every
+  composes shell + renderer + view state with injected **ports** for every
   environment touchpoint (storage, location/history, clipboard, the OS
-  color-scheme query) and returns a disposer for its document/window
-  listeners; the module top level keeps only a guard that calls
+  color-scheme query) and returns a disposer for everything it wired; a
+  second `startIsland` on the same document disposes the first instead of
+  double-wiring. The module top level keeps only a guard that calls
   `startIsland(realPorts())` when the mount point (`#ballsGrid`) exists, so
   the browser path is unchanged and jsdom imports and drives the island
   with stub ports (`src/companion.test.ts` — startup precedence, the
   one-shot strip, corrupt-storage survival, save-on-every-dispatch, the
-  clipboard fallback chain are all pinned behaviorally there).
+  clipboard fallback chain, and total disposal are all pinned behaviorally
+  there; `src/shell.test.ts` pins the shell wiring without an island
+  mount).
 - **Renderer** — all DOM painting for the island. Module: `src/renderer.ts`
   (recipe notation comes from `src/graph.ts`; the renderer only injects
   icon markup — see **Recipe notation**; the icon-URL join comes from
@@ -321,7 +332,8 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   the test surface stays `view-state.ts`. The renderer holds no domain data
   of its own and builds no shell chrome (the plan toolbar — Clear, Share,
   and the End game upgrades toggle — is static `index.astro` markup wired by
-  the island): its fusion-row map is purely a DOM-row registry, and the
+  the shell adapter, `src/shell.ts`): its fusion-row map is purely a DOM-row
+  registry, and the
   fusion panel paints by switching on the view model's named `fusionPanel`
   state — per state, which hooks show and what they show (behavior pinned
   in `src/renderer.test.ts` through jsdom). The order presentation is

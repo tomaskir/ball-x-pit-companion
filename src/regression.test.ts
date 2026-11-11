@@ -535,12 +535,12 @@ describe('source hygiene (grep pins)', () => {
 
   // the upgrades toggle is island-wired shell chrome (seam hygiene,
   // 2026-10-10) — the paint half is behavioral in renderer.test.ts; here the
-  // island keeps the change wiring through update() and the renderer keeps
-  // out of the shell seam entirely.
+  // shell adapter keeps the change wiring through the dispatch pipeline and
+  // the renderer keeps out of the shell seam entirely.
   it('the upgrades toggle is island-wired shell chrome, not renderer-built (renderer no longer crosses the shell seam)', () => {
-    const island = readFileSync('src/companion.ts', 'utf8');
-    expect(island).toMatch(/getElementById\('planUpgrades'\)\s*!\s*\.addEventListener\('change'/);
-    expect(island).toMatch(/update\(\{\s*type:\s*'toggleUpgrades'\s*\}\)/);
+    const shell = readFileSync('src/shell.ts', 'utf8');
+    expect(shell).toMatch(/getElementById\('planUpgrades'\)\s*!\s*,?\s*'change'/);
+    expect(shell).toMatch(/dispatch\(\{\s*type:\s*'toggleUpgrades'\s*\}\)/);
     const renderer = rendererSource();
     expect(renderer).not.toContain('planUpgradesSlot');
     expect(renderer).not.toMatch(/addEventListener\('change'/);

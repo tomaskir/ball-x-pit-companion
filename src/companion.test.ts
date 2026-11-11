@@ -40,8 +40,8 @@ function stubPorts(init: {
   let hash = init.hash ?? '';
   const replaceState = vi.fn();
   const setHash = vi.fn((h: string) => { hash = h; });
-  const promptCopy = vi.fn();
   const setItem = vi.fn((k: string, v: string) => { store.set(k, String(v)); });
+  const promptCopy = vi.fn();
   const ports: IslandPorts = {
     storage: {
       getItem: (k) => store.get(k) ?? null,
@@ -63,6 +63,7 @@ function stubPorts(init: {
     store,
     replaceState,
     setHash,
+    setItem,
     promptCopy,
     setHashValue: (h: string) => { hash = h; },
     savedPlan: (): SharedSnapshot | null => {
@@ -84,6 +85,7 @@ afterEach(() => {
   // the island's document/window listeners must not leak between tests
   stop?.();
   stop = null;
+  vi.useRealTimers();
 });
 
 function start(ports: IslandPorts) {
@@ -483,5 +485,95 @@ describe('share button clipboard fallback chain', () => {
     await new Promise((r) => setTimeout(r, 0));
     // the rejection is handled by the chain — no unhandled rejection escapes
     expect(t.promptCopy).toHaveBeenCalledWith(shareUrl());
+  });
+});
+
+// ---------- lifecycle: total disposal and re-start ----------
+
+describe('island lifecycle (disposal and re-start)', () => {
+  it('a second startIsland on the same document replaces the first — no double wiring', () => {
+    const copy = vi.fn(() => undefined);
+    const t = stubPorts({ copy });
+    const first = startIsland(t.ports);
+    const second = startIsland(t.ports);
+    stop = second;
+
+    // document-level clear listener: one dispatch. Select a character first
+    // so the clear changes the persisted snapshot — plan-session skips a
+    // no-op save, so a bare clear would write zero either way.
+    document.querySelector<HTMLElement>('.tab-btn[data-section="characters"]')!.click();
+    document.querySelector<HTMLElement>('#charactersGrid .char-card')!.click();
+    t.setItem.mockClear();
+    document.body.click();
+    expect(t.setItem.mock.calls.filter(([k]) => k === PLAN_KEY)).toHaveLength(1);
+
+    // element controls: one listener each
+    document.querySelector<HTMLElement>('.tab-btn[data-section="plan"]')!.click();
+    expect(t.setHash).toHaveBeenCalledTimes(2);
+    document.getElementById('themeToggle')!.click();
+    expect(document.documentElement.dataset.theme).toBe('light');
+    expect(t.setItem.mock.calls.filter(([k]) => k === 'theme')).toHaveLength(1);
+    document.getElementById('planShare')!.click();
+    expect(copy).toHaveBeenCalledTimes(1);
+
+    // the replaced island's disposer must not tear down the live one
+    first();
+    document.querySelector<HTMLElement>('.tab-btn[data-section="balls"]')!.click();
+    expect(t.setHash).toHaveBeenCalledTimes(3);
+  });
+
+  it('can be restarted after disposal', () => {
+    const t = stubPorts();
+    start(t.ports);
+    stop!();
+    stop = null;
+
+    start(t.ports);
+    document.querySelector<HTMLElement>('.tab-btn[data-section="plan"]')!.click();
+    expect(t.setHash).toHaveBeenCalledTimes(1);
+  });
+
+  it('stop() removes every listener and timer the island added', async () => {
+    vi.useFakeTimers();
+    const copy = vi.fn(() => Promise.resolve());
+    const t = stubPorts({ copy });
+    start(t.ports);
+
+    // wire the share flash so a timer is pending at teardown
+    document.getElementById('planShare')!.click();
+    await Promise.resolve();
+    expect(document.getElementById('planShare')!.textContent).toBe('Copied!');
+
+    stop!();
+    stop = null;
+
+    // the flash timer was cleared and the idle label restored
+    expect(document.getElementById('planShare')!.textContent).toBe('Share');
+    vi.advanceTimersByTime(2000);
+    expect(document.getElementById('planShare')!.textContent).toBe('Share');
+
+    // element listeners are inert
+    document.querySelector<HTMLElement>('.tab-btn[data-section="plan"]')!.click();
+    document.getElementById('themeToggle')!.click();
+    document.getElementById('planClear')!.click();
+    document.getElementById('planShare')!.click();
+    const input = document.getElementById('search-balls') as HTMLInputElement;
+    input.value = 'flash';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+
+    // document listeners are inert
+    document.body.click();
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+
+    // the routing listener is inert
+    t.setHashValue('#/plan');
+    window.dispatchEvent(new Event('hashchange'));
+
+    expect(t.setHash).not.toHaveBeenCalled();
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(t.store.has('theme')).toBe(false);
+    expect(copy).toHaveBeenCalledTimes(1); // only the pre-teardown click
+    expect(t.promptCopy).not.toHaveBeenCalled();
+    expect(document.querySelector<HTMLElement>('.section-view[data-section="balls"]')!.hidden).toBe(false);
   });
 });

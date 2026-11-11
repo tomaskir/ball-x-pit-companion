@@ -1,105 +1,59 @@
-// Interactive island: event listening, theme, hash routing, and plan
-// persistence transport only — the decisions behind those are pure functions
-// in src/companion-core.ts (routing, clear policy, theme resolution),
-// src/share.ts (share-link URL transport), src/plan-codec.ts (the persistence
-// codec), and src/plan-session.ts (the save/load/share lifecycle: precedence,
-// the one-shot strip, corrupt tolerance, and the skip-unchanged save); this
-// module is the transport that reads real events/storage and applies their
-// results to the DOM. All
+// Interactive island: the composition root for the shell adapter
+// (src/shell.ts), the renderer (src/renderer.ts), and view state
+// (src/view-state.ts) — plan persistence, hash routing, and the startup
+// sequence only. All static-shell wiring (theme, tabs, search, plan
+// toolbar, share, Esc/empty-space) lives in createShell; the decisions
+// behind it are pure functions in src/companion-core.ts (routing, clear
+// policy, theme resolution), src/share.ts (share-link URL transport),
+// src/plan-codec.ts (the persistence codec), and src/plan-session.ts (the
+// save/load/share lifecycle: precedence, the one-shot strip, corrupt
+// tolerance, and the skip-unchanged save); this module is the transport
+// that reads real events/storage and applies their results to the DOM. All
 // DOM painting lives in src/renderer.ts behind one buildAll() + paint(vm)
 // interface; all state and derivations live in src/view-state.ts behind one
 // dispatch(action) → ViewModel interface. See CONTEXT.md for the domain
 // glossary these contracts use.
 //
-// The startup sequence is callable: startIsland(ports) composes those pure
-// decisions with injected ports for every environment touchpoint — storage,
+// The startup sequence is callable: startIsland(ports) composes those parts
+// with injected ports for every environment touchpoint — storage,
 // location/history, clipboard, and the OS color-scheme query (matchMedia is
-// absent in jsdom, which is exactly why it is a port). The module top level
-// keeps only a guard that calls startIsland with the real ports when the
-// mount point exists: the browser path is unchanged, and jsdom can import
-// the module and drive the island through startIsland with stub ports (see
-// src/companion.test.ts).
-import { createViewState, type Action, type Section } from './view-state';
+// absent in jsdom, which is exactly why it is a port). A second start on the
+// same document disposes the first, so listeners never double-wire. The
+// module top level keeps only a guard that calls startIsland with the real
+// ports when the mount point exists: the browser path is unchanged, and
+// jsdom can import the module and drive the island through startIsland with
+// stub ports (see src/companion.test.ts).
+import { createViewState, type Action } from './view-state';
 import { buildAll, paint } from './renderer';
 import { restore, save } from './plan-session';
-import { planLink } from './share';
-import { isClearExempt } from './clear-exempt';
-import {
-  ESC_EXEMPT_SELECTOR,
-  sectionFromHash,
-  shouldClear,
-  themeFromStorage,
-} from './companion-core';
+import { createShell, type ShellPorts } from './shell';
+import { sectionFromHash } from './companion-core';
 
 /** The environment touchpoints the island needs, injected so the startup
  *  sequence is callable outside a browser. The real implementations live in
- *  realPorts() below; tests stub them (src/companion.test.ts). */
-export interface IslandPorts {
-  /** Persisted-plan and theme storage (localStorage in the browser). Reads
-   *  may return garbage — corrupt storage must never break startup. */
-  storage: Pick<Storage, 'getItem' | 'setItem'>;
-  /** location + history transport. */
-  location: {
+ *  realPorts() below; tests stub them (src/companion.test.ts). The shell's
+ *  subset is ShellPorts (src/shell.ts); routing adds the hash reads and the
+ *  one-shot share strip. */
+export interface IslandPorts extends ShellPorts {
+  location: ShellPorts['location'] & {
     /** The current hash, leading `#` included (e.g. `#/plan?p=<code>`). */
     hash(): string;
-    origin(): string;
-    pathname(): string;
-    /** Tab-switch navigation (`location.hash = …` in the browser). */
-    setHash(hash: string): void;
     /** `history.replaceState(null, '', url)` — the one-shot share strip. */
     replaceState(url: string): void;
   };
-  /** `navigator.clipboard?.writeText` — returns undefined when the API is
-   *  absent (non-secure contexts); the fallback chain must cover that. */
-  copy(text: string): Promise<void> | undefined;
-  /** The clipboard fallback (`window.prompt` in the browser). */
-  promptCopy(text: string): void;
-  /** `matchMedia('(prefers-color-scheme: light)').matches`. */
-  prefersLight(): boolean;
 }
 
+/** The running island's disposer, module-wide: a second startIsland on the
+ *  same document disposes the first instead of double-wiring every control. */
+let activeStop: (() => void) | null = null;
+
 export function startIsland(ports: IslandPorts): () => void {
+  // A second island on the same document replaces the first — two live
+  // islands would double every listener (tabs, search, share, Esc…).
+  activeStop?.();
+
   const view = createViewState();
   const { storage, location: loc } = ports;
-
-  // ---------- theming ----------
-
-  const themeToggle = document.getElementById('themeToggle') as HTMLButtonElement;
-
-  function applyTheme(t: 'dark' | 'light') {
-    document.documentElement.dataset.theme = t;
-    themeToggle.textContent = t === 'dark' ? '☀️' : '🌙';
-  }
-
-  applyTheme(themeFromStorage(storage.getItem('theme'), ports.prefersLight()));
-  themeToggle.addEventListener('click', () => {
-    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-    storage.setItem('theme', next);
-    applyTheme(next);
-  });
-
-  // ---------- routing ----------
-
-  // `section` is pure UI routing (hash sync) — mirrored into view state only
-  // so Esc/empty-space can clear the active section's selection.
-
-  let section: Section = 'balls';
-
-  function showSection(s: Section, updateHash = true) {
-    section = s;
-    if (updateHash) loc.setHash(`#/${s}`);
-    for (const el of document.querySelectorAll<HTMLElement>('.section-view')) el.hidden = el.dataset.section !== s;
-    for (const btn of document.querySelectorAll<HTMLElement>('.tab-btn')) btn.classList.toggle('active', btn.dataset.section === s);
-    // cross-screen remembering: nothing in view state is cleared on a switch,
-    // so every screen's selection survives switching away and back
-  }
-
-  function applyHash() {
-    // sectionFromHash absorbs the whitelist, the share-parameter split, and
-    // the empty-hash default; null (unknown hash) means "don't switch"
-    const s = sectionFromHash(loc.hash());
-    if (s) showSection(s, false);
-  }
 
   // ---------- dispatch pipeline ----------
 
@@ -113,71 +67,23 @@ export function startIsland(ports: IslandPorts): () => void {
     paint(vm);
   };
 
-  // ---------- shell wiring ----------
+  // ---------- shell ----------
 
-  for (const btn of document.querySelectorAll<HTMLElement>('.tab-btn'))
-    btn.addEventListener('click', () => showSection(btn.dataset.section as Section));
+  // Every static-shell control in one adapter; its destroy() is half of this
+  // island's disposer (the hashchange listener below is the other half).
+  const shell = createShell({ ports, dispatch: update, snapshot: () => view.sharedSnapshot() });
 
-  // Each screen has its own search box; its input dispatches a section-scoped
-  // search action. Switching sections repaints from the view state, so each
-  // box's saved query re-applies on return (queries survive tab switches).
-  // The section comes from a data-section attribute — the same pattern as the
-  // tab buttons — not from munging the id string.
-  for (const input of document.querySelectorAll<HTMLInputElement>('.screen-search[data-section]')) {
-    const inputSection = input.dataset.section as Section;
-    input.addEventListener('input', () => update({ type: 'search', section: inputSection, query: input.value }));
+  // ---------- routing ----------
+
+  // `section` is pure UI routing (hash sync) — mirrored into view state only
+  // so Esc/empty-space can clear the active section's selection. The shell
+  // owns the section state and the DOM switch; the island owns the hash.
+  function applyHash() {
+    // sectionFromHash absorbs the whitelist, the share-parameter split, and
+    // the empty-hash default; null (unknown hash) means "don't switch"
+    const s = sectionFromHash(loc.hash());
+    if (s) shell.showSection(s, false);
   }
-
-  // The plan toolbar's Clear button: resets the plan (selections + the
-  // upgrade toggle) — the shell owns this one, like the tab buttons.
-  document.getElementById('planClear')!.addEventListener('click', () => update({ type: 'clearPlan' }));
-
-  // The plan toolbar's End game upgrades toggle: static shell markup like
-  // Clear and Share — its change event dispatches toggleUpgrades through the
-  // same update() path (the renderer only paints the checked state).
-  document.getElementById('planUpgrades')!.addEventListener('change', () => update({ type: 'toggleUpgrades' }));
-
-  // The plan toolbar's Share button: encodes the current plan into a link
-  // (share.ts's planLink) and copies it. Opening the link hydrates the plan
-  // (and replaces the opener's stored plan on the recipient's machine — the
-  // link IS the plan).
-  const shareBtn = document.getElementById('planShare')!;
-  shareBtn.addEventListener('click', () => {
-    const url = planLink(loc.origin(), loc.pathname(), view.sharedSnapshot());
-    const idleLabel = shareBtn.textContent;
-    const flash = () => {
-      shareBtn.textContent = 'Copied!';
-      setTimeout(() => { shareBtn.textContent = idleLabel; }, 1500);
-    };
-    // optional chaining would skip the whole chain when the API is absent
-    // (non-secure contexts) — the fallback must cover that case too
-    const copied = ports.copy(url);
-    if (copied) copied.then(flash).catch(() => ports.promptCopy(url));
-    else ports.promptCopy(url);
-  });
-
-  const onKeyDown = (e: KeyboardEvent) => {
-    // Esc clears the active section's selection (chars/fusions included);
-    // switching sections keeps every screen's selection (cross-screen
-    // remembering). The plan screen is exempt — its selection is deliberate
-    // work, only the Clear button wipes it. In a search input Esc clears the
-    // query instead — the browser's native type=search behavior — and must
-    // not also wipe the screen's selection.
-    if (e.key === 'Escape' && shouldClear(section, !!(e.target as HTMLElement).closest(ESC_EXEMPT_SELECTOR))) {
-      update({ type: 'clear', section });
-    }
-  };
-  const onEmptySpaceClick = (e: MouseEvent) => {
-    // empty space clears the active section's selection, same as Esc. The
-    // section rule is companion-core's shouldClear; the region question is
-    // clear-exempt's isClearExempt — the marker rides the markup that creates
-    // each interactive region (painters at build time, index.astro's static
-    // header/search inputs), so the island keeps no region list.
-    if (!shouldClear(section, isClearExempt(e.target))) return;
-    update({ type: 'clear', section });
-  };
-  document.addEventListener('keydown', onKeyDown);
-  document.addEventListener('click', onEmptySpaceClick);
 
   // grid/card/row clicks come back through the build seam's emit callback —
   // the renderer stays paint-only, the island owns dispatching to view state
@@ -199,14 +105,19 @@ export function startIsland(ports: IslandPorts): () => void {
   // initial paint: derive the view model once everything is built
   paint(view.derive());
 
-  // Disposal for callers that start and stop islands on one document (the
-  // jsdom tests): removes the island's document/window listeners. Element
-  // listeners die with the shell markup; the view state is closure-private.
-  return () => {
+  // Total disposal: the shell removes every listener and timer it added;
+  // routing removes its hashchange listener. Idempotent, and a stop that was
+  // already replaced by a later start must not clear the newer island's guard.
+  let stopped = false;
+  const stop = () => {
+    if (stopped) return;
+    stopped = true;
+    shell.destroy();
     removeEventListener('hashchange', applyHash);
-    document.removeEventListener('keydown', onKeyDown);
-    document.removeEventListener('click', onEmptySpaceClick);
+    if (activeStop === stop) activeStop = null;
   };
+  activeStop = stop;
+  return stop;
 }
 
 // ---------- the real ports ----------

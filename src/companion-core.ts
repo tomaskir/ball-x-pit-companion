@@ -2,9 +2,9 @@
 // functions over plain values — which section a location hash routes to
 // (sectionFromHash), whether an Esc keypress or empty-space click clears the
 // active section's selection (shouldClear), and which theme a stored value
-// plus OS preference resolve to (themeFromStorage). The island keeps the
-// transport: it reads real events/storage, calls these, and applies the
-// results to the DOM. Keeping the decisions here makes them unit-testable
+// plus OS preference resolve to (themeFromStorage). The island and its shell
+// adapter keep the transport: they read real events/storage, call these, and
+// apply the results to the DOM. Keeping the decisions here makes them unit-testable
 // independently of the DOM — and companion.ts itself is now callable too
 // (startIsland(ports), with the environment injected as ports), so the
 // island's wiring is pinned behaviorally in src/companion.test.ts.

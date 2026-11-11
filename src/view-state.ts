@@ -6,8 +6,9 @@
 // only clearPlan wipes it); selections from different screens coexist, so
 // tab switching dispatches nothing. Search is per screen: each section has
 // its own query (own search box), independent of every other screen's.
-// The island (src/companion.ts) keeps only event listening, theme, hash
-// routing, and plan persistence; painting lives in src/renderer.ts. Fusion
+// The island (src/companion.ts) keeps only composition, hash routing, and
+// plan persistence; the static-shell wiring lives in src/shell.ts and
+// painting lives in src/renderer.ts. Fusion
 // composition lives in src/fusion.ts. The view model carries resolved
 // items, not bare ids: fusionPanel names the fusion screen's state machine
 // (empty / pending / composed) and carries the resolved Ball objects and
