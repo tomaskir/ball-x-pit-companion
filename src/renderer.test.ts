@@ -549,7 +549,6 @@ describe('fusion panel order presentation (jsdom, through paint())', () => {
     expect(rows[0].textContent).toContain('Egg Sac');
     // confirmed row: no unverified marker
     expect(rows[0].textContent).not.toContain('· reported');
-    expect(q('.fusion-result-empty').hidden).toBe(true);
     expect(q('.fusion-order-notice').hidden).toBe(false);
     expect(q('.fusion-order-notice').textContent).toContain('Order matters');
     expect(q('.fusion-order-notice').textContent).toContain('Cooldown');
@@ -565,27 +564,37 @@ describe('fusion panel order presentation (jsdom, through paint())', () => {
     expect(row.textContent).toContain('· reported');
   });
 
-  it('non-order pair: "No shared properties — order does not matter.", no warning, no swap', () => {
+  it('non-order pair with no shared properties hides the result section, warning, and swap', () => {
     drive({ type: 'toggleFusion', id: 'flash' }, { type: 'toggleFusion', id: 'glacier' });
-    expect(q('.fusion-result').hidden).toBe(false);
+    expect(q('.fusion-result').hidden).toBe(true);
     expect(panel().querySelectorAll('.fusion-result-row')).toHaveLength(0);
-    expect(q('.fusion-result-empty').hidden).toBe(false);
-    expect(q('.fusion-result-empty').textContent).toBe('No shared properties — order does not matter.');
     expect(q('.fusion-order-notice').hidden).toBe(true);
     expect(q('.fusion-swap-btn').hidden).toBe(true);
     expect(q('.fusion-plan-btn').hidden).toBe(false);
   });
 
-  it('an order-dependent exception shows the exceptions section and the swap', () => {
+  it('a shared scalar with equal values is not a conflict, so the result section stays hidden', () => {
+    // Bomb × Dark share Cooldown at the same value: a shared property, but
+    // no winner to show — the section is for conflicts only.
+    drive({ type: 'toggleFusion', id: 'bomb' }, { type: 'toggleFusion', id: 'dark' });
+    expect(q('.fusion-result').hidden).toBe(true);
+    expect(panel().querySelectorAll('.fusion-result-row')).toHaveLength(0);
+    expect(q('.fusion-order-notice').hidden).toBe(true);
+    expect(q('.fusion-swap-btn').hidden).toBe(true);
+  });
+
+  it('an order-dependent exception hides the empty result section but shows the exceptions and swap', () => {
     drive({ type: 'toggleFusion', id: 'nuclear-bomb' }, { type: 'toggleFusion', id: 'wraith' });
+    expect(q('.fusion-result').hidden).toBe(true);
     expect(q('.fusion-exceptions').hidden).toBe(false);
     expect(q('.fusion-exceptions-list').textContent).toContain('Order-sensitive one-off');
     expect(q('.fusion-order-notice').hidden).toBe(false);
     expect(q('.fusion-swap-btn').hidden).toBe(false);
   });
 
-  it('a non-order exception shows the section but no swap', () => {
+  it('a non-order exception hides the empty result section, shows the section but no swap', () => {
     drive({ type: 'toggleFusion', id: 'banshee' }, { type: 'toggleFusion', id: 'flash' });
+    expect(q('.fusion-result').hidden).toBe(true);
     expect(q('.fusion-exceptions').hidden).toBe(false);
     expect(q('.fusion-exceptions-list').textContent).toContain('Whole-field curse override');
     expect(q('.fusion-order-notice').hidden).toBe(true);

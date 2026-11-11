@@ -55,24 +55,24 @@ describe('fusion panel: hint text', () => {
 describe('fusion panel: order presentation', () => {
   it('a shared-property collision is order-sensitive and names the property', () => {
     const fp = composed(['egg-sac', 'timestop']);
+    expect(fp.fusion.resolved.collisions.length).toBeGreaterThan(0);
     expect(fp.orderSensitive).toBe(true);
     expect(fp.orderNotice).toContain('Order matters');
     expect(fp.orderNotice).toContain('Cooldown');
-    expect(fp.resultEmptyText).toBe('');
   });
 
-  it('a pair with no shared properties is not order-sensitive and says order does not matter', () => {
+  it('a pair with no shared properties is not order-sensitive and carries no notice', () => {
     const fp = composed(['flash', 'glacier']);
+    expect(fp.fusion.resolved.collisions).toHaveLength(0);
     expect(fp.orderSensitive).toBe(false);
     expect(fp.orderNotice).toBe('');
-    expect(fp.resultEmptyText).toBe('No shared properties — order does not matter.');
   });
 
   it('an order-dependent reported exception is order-sensitive', () => {
     const fp = composed(['nuclear-bomb', 'wraith']);
+    expect(fp.fusion.resolved.collisions).toHaveLength(0);
     expect(fp.orderSensitive).toBe(true);
     expect(fp.orderNotice).toMatch(/exception/i);
-    expect(fp.resultEmptyText).toBe('No shared properties.');
   });
 
   it('a reported exception that is not order-dependent leaves the pair non-order-sensitive', () => {
@@ -90,12 +90,11 @@ describe('fusion panel: order presentation', () => {
     expect(reversed.orderNotice).toContain('Cooldown');
   });
 
-  it('an evolve-instead pair is never order-sensitive and carries no empty-result copy', () => {
+  it('an evolve-instead pair is never order-sensitive', () => {
     const fp = composed(['bleed', 'poison']);
     expect(fp.fusion.evolvesInstead!.name).toBe('Virus');
     expect(fp.orderSensitive).toBe(false);
     expect(fp.orderNotice).toBe('');
-    expect(fp.resultEmptyText).toBe('');
   });
 });
 

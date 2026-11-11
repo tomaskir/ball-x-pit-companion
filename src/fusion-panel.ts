@@ -1,7 +1,7 @@
 // Fusion-panel module: the fusion screen's panel derivation — the named
 // 3-state machine (empty / pending / composed), the composed pair's order
-// presentation (the order-sensitive warning and the empty-result copy), and
-// the panel's hint text. One interface:
+// presentation (the order-sensitive warning), and the panel's hint text.
+// One interface:
 // deriveFusionPanel(picks, plan) → { panel, hint }. The seam is "picks + the
 // plan facts in, panel state out": the module resolves the picks through the
 // catalog, composes through src/fusion.ts, and reads only the plan facts it
@@ -37,11 +37,6 @@ export type FusionPanelState =
       orderSensitive: boolean;
       /** The warning line above the action row; '' when not order-sensitive. */
       orderNotice: string;
-      /** Empty "Fused result" copy, set only when the pair has no collisions:
-       *  order-sensitive pairs say only that no shared properties exist;
-       *  order-independent pairs add that order does not matter; '' when
-       *  result rows exist. Derived here so the renderer only paints it. */
-      resultEmptyText: string;
     };
 
 /** The plan facts the panel reads — a narrow input rather than PlanState so
@@ -69,26 +64,19 @@ const labelList = (labels: string[]): string =>
  *  Order model: docs/research/fusion-mechanics.md §3. A pair is
  *  order-sensitive when the composed fusion has a collision or an
  *  order-dependent exception; an evolve-instead pair never fuses, so order
- *  cannot matter. */
+ *  cannot matter. No empty-result copy exists: the renderer hides the whole
+ *  "Fused result" section when there are no collisions. */
 const orderPresentation = (
   fusion: FusionResult,
-): { orderSensitive: boolean; orderNotice: string; resultEmptyText: string } => {
-  if (fusion.evolvesInstead) return { orderSensitive: false, orderNotice: '', resultEmptyText: '' };
+): { orderSensitive: boolean; orderNotice: string } => {
+  if (fusion.evolvesInstead) return { orderSensitive: false, orderNotice: '' };
   const collisions = fusion.resolved.collisions;
   const orderSensitive = collisions.length > 0 || fusion.exceptions.some((e) => e.orderDependent);
-  // Only pairs with no collisions reach the empty-result copy. An
-  // exception-only order-sensitive pair has no shared properties, but order
-  // still matters — the warning line above the action row says so.
-  const resultEmptyText = collisions.length > 0
-    ? ''
-    : orderSensitive
-      ? 'No shared properties.'
-      : 'No shared properties — order does not matter.';
-  if (!orderSensitive) return { orderSensitive: false, orderNotice: '', resultEmptyText };
+  if (!orderSensitive) return { orderSensitive: false, orderNotice: '' };
   const orderNotice = collisions.length
     ? `⚠ Order matters for this pair — swapping changes ${labelList(collisions.map((c) => c.label))}.`
     : '⚠ Order matters for this pair — a reported exception is order-dependent.';
-  return { orderSensitive: true, orderNotice, resultEmptyText };
+  return { orderSensitive: true, orderNotice };
 };
 
 /** Derive the fusion screen's panel and hint from the pick order and the

@@ -5,7 +5,6 @@
 import { describe, it, expect } from 'vitest';
 import { createViewState } from './view-state';
 import { ballMap } from './catalog';
-import { expectResultEmptyTextBlankForCollisionPair } from './test-support/pins';
 
 describe('view state: item selection (ticket 05 semantics through one interface)', () => {
   it('selecting an evolved ball marks it selected, components+descendants related, the rest dimmed', () => {
@@ -300,7 +299,7 @@ describe('view state: fusion panel order presentation (decision #8)', () => {
 
   it('a shared-property collision makes the pair order-sensitive and names the property', () => {
     const fp = composed(createViewState(), 'egg-sac', 'timestop');
-    expectResultEmptyTextBlankForCollisionPair(fp);
+    expect(fp.fusion.resolved.collisions.length).toBeGreaterThan(0);
     expect(fp.orderSensitive).toBe(true);
     expect(fp.orderNotice).toContain('Order matters');
     expect(fp.orderNotice).toContain('Cooldown');
@@ -308,17 +307,17 @@ describe('view state: fusion panel order presentation (decision #8)', () => {
 
   it('a pair with no shared properties is not order-sensitive and carries no notice', () => {
     const fp = composed(createViewState(), 'flash', 'glacier');
+    expect(fp.fusion.resolved.collisions).toHaveLength(0);
     expect(fp.orderSensitive).toBe(false);
     expect(fp.orderNotice).toBe('');
-    expect(fp.resultEmptyText).toBe('No shared properties — order does not matter.');
   });
 
   it('an order-dependent reported exception makes the pair order-sensitive', () => {
     const fp = composed(createViewState(), 'nuclear-bomb', 'wraith');
+    expect(fp.fusion.resolved.collisions).toHaveLength(0);
     expect(fp.orderSensitive).toBe(true);
     expect(fp.orderNotice).toContain('Order matters');
     expect(fp.orderNotice).toMatch(/exception/i);
-    expect(fp.resultEmptyText).toBe('No shared properties.');
   });
 
   it('a reported exception that is not order-dependent leaves the pair non-order-sensitive', () => {

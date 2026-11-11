@@ -270,8 +270,10 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   "Fused result" rows (property label, final value, winning ball, `· reported`
   on unverified rows), the separate "Reported exceptions" section, and — for
   order-sensitive pairs — a warning line directly above the action row's
-  `[Swap order] [Add to plan]`; non-order pairs show "No shared properties —
-  order does not matter." and no swap. The swap button is built once and
+  `[Swap order] [Add to plan]`. The "Fused result" section appears only when
+  the pair has shared-property collisions; a pair with no shared properties
+  shows no result section at all (and no swap unless an exception makes it
+  order-sensitive). The swap button is built once and
   hidden unless `orderSensitive`; it emits `swapFusion` through the build
   seam. The facade composes internal painters under `src/renderer/`
   (grids, characters, chips, fusion-screen, plan, build-graphs,
@@ -321,7 +323,7 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   Balls, the composed fusion from `src/fusion.ts`, the pair's `planned`
   mark, `planFull` — the plan's ball slots at their active limit, which
   disables the panel's plan toggle — and the order presentation:
-  `orderSensitive`, `orderNotice`, `resultEmptyText`; the composer's
+  `orderSensitive`, `orderNotice`; the composer's
   structured `collisions` and `exceptions` are read off the composed
   `fusion` (`fusion.resolved.collisions` / `fusion.exceptions`), not
   copied onto the panel state). That panel derivation and the fusion hint
@@ -334,8 +336,8 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   surface.
 - **Fusion panel** — the fusion screen's panel derivation as its own module:
   the named 3-state machine (`empty` / `pending` / `composed`), the composed
-  pair's order presentation (`orderSensitive`, `orderNotice`,
-  `resultEmptyText`), and the panel's hint text. Module:
+  pair's order presentation (`orderSensitive`, `orderNotice`), and the
+  panel's hint text. Module:
   `src/fusion-panel.ts` — one interface:
   `deriveFusionPanel(picks, plan) → { panel, hint }`. The seam is "pick order
   + plan facts in, panel state out": the module resolves the picks through

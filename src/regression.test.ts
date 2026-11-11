@@ -7,6 +7,8 @@ import { BALLS } from './data/balls';
 import { PASSIVES } from './data/passives';
 import { CHARACTERS } from './data/characters';
 import { ballMap, passiveMap } from './catalog';
+import { deriveFusionPanel } from './fusion-panel';
+import { EMPTY_FUSION_PANEL_PLAN } from './test-support/pins';
 import { highlightSet, factorizesIntoSlots } from './graph';
 import { deriveBuildGraph, FUSION_ID_PREFIX } from './build-graph';
 import { verdictFor } from './synergy';
@@ -24,7 +26,6 @@ import {
   expectKillEffectsRideAoeCarriers,
   expectLevel3OvergrowthThresholdApplies,
   expectOrderResolutionPropertyUnion,
-  expectResultEmptyTextBlankForCollisionPair,
   expectSandstormIsPassThrough,
   expectSatanDebuffOnlyCannotCarryOnHitStatuses,
   expectSlotHighlightsIdentical,
@@ -624,12 +625,12 @@ describe('regression: Black Hole × Sun order dispute was resolved to order-inde
   });
 });
 
-describe('regression: resultEmptyText claimed "No shared properties" for pairs that have collisions', () => {
-  // The empty-result copy was derived from orderSensitive alone, so a
-  // collision pair (Egg Sac × Timestop) carried "No shared properties." The
-  // renderer hides it when rows exist, but the view model must not expose a
-  // false copy — and the test pinned it.
-  it('is blank when the pair has collision rows', () => {
-    expectResultEmptyTextBlankForCollisionPair();
+describe('regression: empty-result copy no longer exists (no shared properties → no result section)', () => {
+  // The panel used to carry resultEmptyText for pairs with no shared
+  // properties. It is gone: the renderer hides the whole "Fused result"
+  // section instead, so a false "No shared properties" copy cannot recur.
+  it('the composed state carries no resultEmptyText', () => {
+    const { panel } = deriveFusionPanel(['flash', 'glacier'], EMPTY_FUSION_PANEL_PLAN);
+    expect('resultEmptyText' in panel).toBe(false);
   });
 });

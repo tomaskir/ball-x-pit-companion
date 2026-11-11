@@ -99,7 +99,7 @@ describe('global stylesheet', () => {
     // built by the renderer — each class the skeleton/paint uses has a rule
     const css = globalCss();
     for (const selector of [
-      '.fusion-result', '.fusion-result-row', '.fusion-result-empty',
+      '.fusion-result', '.fusion-result-row',
       '.fusion-exceptions', '.fusion-exception', '.fusion-exception-detail',
       '.fusion-order-notice', '.fusion-swap-btn',
     ]) {

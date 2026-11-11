@@ -33,7 +33,6 @@ let fusionPanel: {
   notes: HTMLElement;
   result: HTMLElement;
   resultRows: HTMLElement;
-  resultEmpty: HTMLElement;
   exceptions: HTMLElement;
   exceptionsList: HTMLElement;
   orderNotice: HTMLElement;
@@ -90,7 +89,6 @@ export const FUSION_PANEL_SKELETON = `
     <section class="fusion-result" hidden>
       <h3 class="fusion-result-title">Fused result</h3>
       <ul class="fusion-result-rows"></ul>
-      <p class="fusion-result-empty" hidden></p>
     </section>
     <section class="fusion-exceptions" hidden>
       <h3 class="fusion-exceptions-title">Reported exceptions</h3>
@@ -122,7 +120,6 @@ export const FUSION_PANEL_SELECTORS = {
   notes: '.fusion-notes',
   result: '.fusion-result',
   resultRows: '.fusion-result-rows',
-  resultEmpty: '.fusion-result-empty',
   exceptions: '.fusion-exceptions',
   exceptionsList: '.fusion-exceptions-list',
   orderNotice: '.fusion-order-notice',
@@ -153,7 +150,6 @@ export function buildFusionPanel() {
     notes: q(sel.notes) as HTMLElement,
     result: q(sel.result) as HTMLElement,
     resultRows: q(sel.resultRows) as HTMLElement,
-    resultEmpty: q(sel.resultEmpty) as HTMLElement,
     exceptions: q(sel.exceptions) as HTMLElement,
     exceptionsList: q(sel.exceptionsList) as HTMLElement,
     orderNotice: q(sel.orderNotice) as HTMLElement,
@@ -296,10 +292,12 @@ export function paintFusion(vm: ViewModel) {
   }));
 
   // "Fused result" — the shared-property collisions, resolved to the first
-  // pick. Rows are text-only, so repainting never blinks an icon; the
-  // reconcile key is the row content (a swap changes the winner/value).
-  p.result.hidden = false;
+  // pick. The section only exists for pairs that have collisions: with no
+  // shared properties there is nothing to show, so it stays hidden. Rows are
+  // text-only, so repainting never blinks an icon; the reconcile key is the
+  // row content (a swap changes the winner/value).
   const collisions = f.resolved.collisions;
+  p.result.hidden = collisions.length === 0;
   const rowsKey = collisions.map((c) => `${c.key}|${c.winner}|${c.value}|${c.reported}`).join(',');
   reconcile(p.resultRows, rowsKey, () => {
     p.resultRows.replaceChildren(...collisions.map((c) => {
@@ -326,9 +324,6 @@ export function paintFusion(vm: ViewModel) {
       return li;
     }));
   });
-  const noCollisions = collisions.length === 0;
-  p.resultEmpty.hidden = !noCollisions;
-  if (noCollisions) p.resultEmpty.textContent = fp.resultEmptyText;
 
   // "Reported exceptions" — anomalies outside the general rule, separate
   // from the result rows.

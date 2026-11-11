@@ -7,7 +7,7 @@ import { expect } from 'vitest';
 import { globalCss, rulesFor } from './styles';
 import { ballMap } from '../catalog';
 import { fuse } from '../fusion';
-import { deriveFusionPanel, type FusionPanelPlan, type FusionPanelState } from '../fusion-panel';
+import { type FusionPanelPlan } from '../fusion-panel';
 
 const ball = (id: string) => ballMap.get(id)!;
 
@@ -176,19 +176,3 @@ export const EMPTY_FUSION_PANEL_PLAN: FusionPanelPlan = {
   ballSlots: { used: 0, capacity: 5 },
 };
 
-/** resultEmptyText must be blank when the pair has collision rows — the
- *  empty copy is only for pairs with no shared properties. Callers that
- *  already hold the composed panel pass it in; otherwise the canonical
- *  collision pair (Egg Sac × Timestop) is built. */
-export function expectResultEmptyTextBlankForCollisionPair(
-  fp?: Extract<FusionPanelState, { state: 'composed' }>,
-): void {
-  if (!fp) {
-    // The canonical collision pair, derived through the panel module itself —
-    // the pin does not need the whole view state.
-    const { panel } = deriveFusionPanel(['egg-sac', 'timestop'], EMPTY_FUSION_PANEL_PLAN);
-    fp = panel as Extract<FusionPanelState, { state: 'composed' }>;
-  }
-  expect(fp.fusion.resolved.collisions.length).toBeGreaterThan(0);
-  expect(fp.resultEmptyText).toBe('');
-}

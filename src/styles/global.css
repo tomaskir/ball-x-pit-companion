@@ -632,7 +632,6 @@ footer a { color: var(--gold); }
 .fusion-result-value { font-weight: 600; }
 .fusion-result-winner { color: var(--gold); }
 .fusion-result-reported { color: var(--muted); font-size: 11px; }
-.fusion-result-empty { color: var(--muted); font-style: italic; margin: 0; }
 
 .fusion-exception { color: var(--muted); font-size: 12px; }
 .fusion-exception-title { color: var(--text); font-weight: 600; }
