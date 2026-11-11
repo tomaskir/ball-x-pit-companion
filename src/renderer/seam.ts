@@ -1,54 +1,54 @@
-// The build seam, captured once by buildAll: the click→island callback
-// (emit — the island dispatches the named view-state action and paints) and
-// the toast adapter (src/toast.ts), whose verdict lookup reads the latest
-// ViewModel paint() captured — the same verdict the tiles were painted
-// with, so hover and paint cannot disagree and the seam needs no second
-// callback into live view state. Every internal painter reports clicks
+// The build seam, created once per renderer instance: the click→island
+// callback (emit — the island dispatches the named view-state action and
+// paints) and the toast adapter (src/toast.ts), whose verdict lookup reads
+// the latest ViewModel paint() captured — the same verdict the tiles were
+// painted with, so hover and paint cannot disagree and the seam needs no
+// second callback into live view state. Every internal painter reports clicks
 // through emitAction and binds hover anchors through attachToast, so the
 // seam has one home and the facade (src/renderer.ts) stays the only public
-// interface.
-import { createToast, type ToastAdapter } from '../toast';
+// interface. The seam is an instance, not module state: two renderers on one
+// document never rebind each other, and destroy() tears the toast adapter
+// down.
+import { createToast } from '../toast';
 import type { Item } from '../catalog';
 import type { ToggleAction, ViewModel } from '../view-state';
 
 /** The click→island callback's shape — one home for the emit signature. */
 export type Emit = (action: ToggleAction) => void;
 
-let emit: Emit = () => {};
-let toast: ToastAdapter | null = null;
-/** The view model paint() last handed in — the toast's only verdict source. */
-let latest: ViewModel | null = null;
-
 export interface SeamOptions {
   emit: Emit;
 }
 
-/** Capture the island's callback and (re)create the toast adapter. The
- *  previous adapter is destroyed so its document-level dismissal listener
- *  never leaks; the previous view model is dropped so a re-run never shows
- *  a stale verdict. */
-export function initSeam({ emit: onEmit }: SeamOptions): void {
-  toast?.destroy();
-  latest = null;
-  toast = createToast({
+/** What the internal painters need from the seam: report a click, bind a
+ *  toast anchor. They never see (or own) the adapter's lifecycle. */
+export interface PainterSeam {
+  emitAction(action: ToggleAction): void;
+  attachToast(anchor: HTMLElement, getItem: () => Item | null): void;
+}
+
+/** The renderer instance's seam. capture() records the view model paint() is
+ *  about to paint (the toast's only verdict source; null drops a stale one);
+ *  destroy() hides any shown toast and removes the adapter's document-level
+ *  dismissal listener. */
+export interface Seam extends PainterSeam {
+  capture(vm: ViewModel | null): void;
+  destroy(): void;
+}
+
+/** Create the seam for one renderer instance: capture the island's callback,
+ *  the latest painted view model, and the toast adapter this instance owns. */
+export function createSeam({ emit }: SeamOptions): Seam {
+  let latest: ViewModel | null = null;
+  const toast = createToast({
     getVerdict: (item: Item) => latest?.tiles.get(item.id)?.verdict ?? null,
   });
-  emit = onEmit;
-}
-
-/** Capture the view model paint() is about to paint. The toast reads its
- *  verdict from here at hover time — the painted tile's own verdict. */
-export function captureViewModel(vm: ViewModel): void {
-  latest = vm;
-}
-
-/** Report a built-in click action back to the island. */
-export function emitAction(action: ToggleAction): void {
-  emit(action);
-}
-
-/** Bind an anchor to the toast adapter: hover/tap shows the toast for the
- *  item getItem() returns at show time, mouseleave hides. */
-export function attachToast(anchor: HTMLElement, getItem: () => Item | null): void {
-  toast?.bind(anchor, getItem);
+  return {
+    emitAction: (action) => emit(action),
+    attachToast: (anchor, getItem) => toast.bind(anchor, getItem),
+    capture: (vm) => {
+      latest = vm;
+    },
+    destroy: () => toast.destroy(),
+  };
 }

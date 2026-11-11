@@ -22,8 +22,8 @@ Not an npm package (`"private": true`). Code is MIT-licensed; game art in
 - `src/view-state.ts` — all state + derivations; `dispatch(action) → ViewModel`. The test surface.
 - `src/plan-codec.ts` — the plan persistence codec: `PlanSnapshot ⇄ v1 wire ⇄ SharedSnapshot { plan, chars }`, with the plan's field list declared once (compiler-checked against `keyof PlanSnapshot`). `encodeShared`/`decodeShared`/`normalizeShared`; shape only, deeper id validation stays in `plan-state`'s `hydrate`. `src/share.ts` keeps the URL transport (`planLink`, `takeShareParam`).
 - `src/plan-session.ts` — the persistence lifecycle over injected ports: `restore({ storage, hash }) → { shared, stripUrl }` owns share-beats-stored precedence, the one-shot strip, and corrupt-storage tolerance; `save(storage, shared)` owns serialization and skips unchanged plans. The island keeps the transport.
-- `src/renderer.ts` — all DOM painting; `buildAll({ emit })` once, then `paint(vm)` in place (paint captures the latest view model in the seam — the toast's verdict source).
-- `src/renderer/` — internal painters behind that facade (grids, characters, chips, fusion screen, plan, build graphs, selection box) sharing `reconcile.ts` (the content-diff cache), `action-slot.ts` (the once-built click channel: a typed `ToggleAction` refreshed by every repaint), `seam.ts` (the emit callback and toast adapter), and `dom.ts`/`labels.ts` (icon, verdict badge, and display-text helpers).
+- `src/renderer.ts` — all DOM painting behind one instance lifecycle: `createRenderer({ emit })` → `{ build(), paint(vm), destroy() }`. The instance owns the seam, the toast adapter, the reconcile cache, and every painter registry; `paint(vm)` captures the latest view model for the toast's verdict.
+- `src/renderer/` — internal painter factories behind that facade (grids, characters, chips, fusion screen, plan, build graphs, selection box), each created over the instance's seam and reconcile cache: `reconcile.ts` (the content-diff cache), `action-slot.ts` (the once-built click channel: a typed `ToggleAction` refreshed by every repaint), `seam.ts` (the emit callback, the captured view model, and the toast adapter), and `dom.ts`/`labels.ts` (icon, verdict badge, and display-text helpers). No module-level mutable renderer state.
 - `src/fusion.ts` — pure fusion composer (`fuse(a, b)`); the site's editorial model of fusion, not game data.
 - `src/ball-kit.ts` — the one per-ball kit table (`BALL_KIT`): level-3 scalars and application channels together, read by both `channelsOf` (wire model) and `resolveProperties` (order model).
 - `src/fusion-properties.ts` — pure order model: `resolveProperties(a, b)` over the per-ball kits (property-set union, first-pick scalar precedence).
@@ -111,8 +111,8 @@ checked-in data, so the invariants are written once.
    never collide. All "which namespace does this id live in?" questions go
    through `src/catalog.ts`. Highlight walks and closures must never cross
    namespaces (this was a real bug — see `regression.test.ts`).
-2. **Never recreate `<img>` elements.** `buildAll()` builds grids once;
-   `paint(viewModel)` only toggles classes/badges. Rebuilding blinks icons.
+2. **Never recreate `<img>` elements.** `renderer.build()` builds grids once;
+   `renderer.paint(viewModel)` only toggles classes/badges. Rebuilding blinks icons.
 3. **The renderer is paint-only.** Clicks come back through the build seam's
    `emit(action)` callback, which the island wires to `dispatch` + `paint`;
    the renderer never dispatches DOM events and its view-state imports are

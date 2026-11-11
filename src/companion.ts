@@ -9,8 +9,9 @@
 // save/load/share lifecycle: precedence, the one-shot strip, corrupt
 // tolerance, and the skip-unchanged save); this module is the transport
 // that reads real events/storage and applies their results to the DOM. All
-// DOM painting lives in src/renderer.ts behind one buildAll() + paint(vm)
-// interface; all state and derivations live in src/view-state.ts behind one
+// DOM painting lives in src/renderer.ts behind one renderer instance
+// (createRenderer(...).build() + paint(vm), torn down with destroy()); all
+// state and derivations live in src/view-state.ts behind one
 // dispatch(action) → ViewModel interface. See CONTEXT.md for the domain
 // glossary these contracts use.
 //
@@ -24,7 +25,7 @@
 // jsdom can import the module and drive the island through startIsland with
 // stub ports (see src/companion.test.ts).
 import { createViewState, type Action } from './view-state';
-import { buildAll, paint } from './renderer';
+import { createRenderer } from './renderer';
 import { restore, save } from './plan-session';
 import { createShell, type ShellPorts } from './shell';
 import { sectionFromHash } from './companion-core';
@@ -60,12 +61,14 @@ export function startIsland(ports: IslandPorts): () => void {
   // Every dispatch goes through update(): dispatch + persist + paint.
   // plan-session skips the write when the plan is unchanged, so dispatches
   // that only touch transient state (search keystrokes, Esc clears) do not
-  // rewrite storage.
-  const update = (action: Action) => {
+  // rewrite storage. The renderer's emit callback routes built-in clicks
+  // back through the same pipeline.
+  const renderer = createRenderer({ emit: (action) => update(action) });
+  function update(action: Action) {
     const vm = view.dispatch(action);
     save(storage, view.sharedSnapshot());
-    paint(vm);
-  };
+    renderer.paint(vm);
+  }
 
   // ---------- shell ----------
 
@@ -89,9 +92,7 @@ export function startIsland(ports: IslandPorts): () => void {
   // the renderer stays paint-only, the island owns dispatching to view state
   addEventListener('hashchange', applyHash);
   applyHash();
-  buildAll({
-    emit: (action) => update(action),
-  });
+  renderer.build();
   // Restore the plan before the initial paint. plan-session owns the policy:
   // a decodable share parameter wins over the stored plan (the link IS the
   // plan), the parameter is stripped from the URL only when it decoded (the
@@ -103,17 +104,19 @@ export function startIsland(ports: IslandPorts): () => void {
   if (stripUrl !== null) loc.replaceState(`${loc.pathname()}${stripUrl}`);
   if (restored) update({ type: 'hydrate', shared: restored });
   // initial paint: derive the view model once everything is built
-  paint(view.derive());
+  renderer.paint(view.derive());
 
   // Total disposal: the shell removes every listener and timer it added;
-  // routing removes its hashchange listener. Idempotent, and a stop that was
-  // already replaced by a later start must not clear the newer island's guard.
+  // routing removes its hashchange listener; the renderer tears down its
+  // toast adapter and registries. Idempotent, and a stop that was already
+  // replaced by a later start must not clear the newer island's guard.
   let stopped = false;
   const stop = () => {
     if (stopped) return;
     stopped = true;
     shell.destroy();
     removeEventListener('hashchange', applyHash);
+    renderer.destroy();
     if (activeStop === stop) activeStop = null;
   };
   activeStop = stop;

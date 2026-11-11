@@ -3,10 +3,10 @@
 // (mouseenter/touchstart show, mouseleave hide), and the document-level
 // outside-tap dismissal. Extracted from src/renderer.ts, which kept the
 // only renderer subsystem with its own mutable module state and no tests;
-// the renderer now creates the adapter once at build time and only binds
-// anchors to it. The verdict lookup is injected at creation (the build
-// seam's read of the last painted view model), so a shown toast always
-// matches the verdict the tiles were painted with.
+// the renderer now creates one adapter per renderer instance (createRenderer)
+// and only binds anchors to it. The verdict lookup is injected at creation
+// (the build seam's read of the last painted view model), so a shown toast
+// always matches the verdict the tiles were painted with.
 //
 // The dismissal is the adapter's own document-level pointerdown listener —
 // not the island's empty-space clear policy (companion-core's shouldClear):
@@ -39,7 +39,7 @@ export interface ToastAdapter {
    *  returns at show time, mouseleave hides. */
   bind(anchor: HTMLElement, getItem: () => Item | null): void;
   /** Hide any shown toast and remove the document-level dismissal listener
-   *  (buildAll re-creates the adapter; tests tear it down). */
+   *  (renderer.destroy() tears the instance's adapter down; tests do too). */
   destroy(): void;
 }
 

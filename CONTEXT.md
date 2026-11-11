@@ -146,7 +146,7 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   lives in the plan toolbar's right edge (Clear and Share left, toggle
   right, one row) as static shell markup in `index.astro` — the shell
   adapter wires its change event through the same dispatch path as the other
-  toolbar buttons, and `paintPlan` only reflects the checked state on it
+  toolbar buttons, and the plan painter only reflects the checked state on it
   (the renderer builds no shell chrome). **Share** (shell chrome, shell-wired) encodes the current
   plan via `src/plan-codec.ts` (`encodeShared`) into a versioned base64url
   code in the hash (`#/plan?p=<code>`) and copies the link; opening it
@@ -232,28 +232,31 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   state (`has`, `counts`, `limits` — see **Plan state**), never read from
   plan internals. Module: state in `src/view-state.ts`
   (`SelectionBoxState`, derived per screen), painting in `src/renderer.ts`
-  (`buildSelectionBox`/`paintSelectionBoxes`).
+  (`createSelectionBoxes` — build/paint).
 - **Toast** — the hover/tap detail popup with icon, full effect text, recipe,
   tags, and the item's current verdict. Its verdict function is injected at
-  creation and reads the view model `paint(vm)` last captured, so hover
-  shows exactly the verdict the tile was painted with (no second read into
-  live view state). Module: `src/toast.ts` (`createToast({ getVerdict })` →
+  renderer creation and reads the view model `paint(vm)` last captured, so
+  hover shows exactly the verdict the tile was painted with (no second read
+  into live view state). Module: `src/toast.ts`
+  (`createToast({ getVerdict })` →
   `{ showFor(anchor, item), hide(), bind(anchor, getItem), destroy() }`) —
   the whole lifecycle (build, show, hide, position, one-at-a-time
   replacement, anchor binding, and the document-level outside-tap
-  dismissal) lives there; the renderer creates the adapter once per
-  `buildAll` and only binds anchors (tiles and base-ball chips) to it. The
+  dismissal) lives there; the renderer instance creates one adapter and only
+  binds anchors (tiles and base-ball chips) to it, and `renderer.destroy()`
+  tears it down. The
   dismissal is the adapter's own document `pointerdown` listener — a tap
   outside the toast and outside the bound anchors hides it (the touch
   dismissal the old renderer comment promised but never wired); it neither
   dispatches nor interferes with the island's empty-space clear policy.
-- **Build seam** — the options object `buildAll({ emit })` hands the
-  island's callback to the renderer at build time: `emit(action)` is how
+- **Build seam** — the options object `createRenderer({ emit })` hands the
+  island's callback to the renderer instance: `emit(action)` is how
   built-in click handlers report actions back — selection toggles and the
   fusion order swap (the whole view-state `ToggleAction`, which the island
   dispatches verbatim and paints). `paint(vm)` captures the latest view
   model in the seam, which is where the toast's verdict comes from. The
-  renderer stays paint-only —
+  seam is instance state, not a module slot: two renderers on one document
+  never rebind each other. The renderer stays paint-only —
   it never dispatches DOM events and never depends on view state at runtime
   (its view-state imports are types only; pinned in `src/regression.test.ts`,
   the emit wiring behaviorally in `src/renderer.test.ts`).
@@ -296,9 +299,11 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   sequence itself is callable: **`startIsland(ports)`**
   composes shell + renderer + view state with injected **ports** for every
   environment touchpoint (storage, location/history, clipboard, the OS
-  color-scheme query) and returns a disposer for everything it wired; a
-  second `startIsland` on the same document disposes the first instead of
-  double-wiring. The module top level keeps only a guard that calls
+  color-scheme query) and returns a disposer for everything it wired — the
+  shell's listeners, the hashchange listener, and the renderer instance
+  (which tears down the toast adapter); a second `startIsland` on the same
+  document disposes the first instead of double-wiring. The module top level
+  keeps only a guard that calls
   `startIsland(realPorts())` when the mount point (`#ballsGrid`) exists, so
   the browser path is unchanged and jsdom imports and drives the island
   with stub ports (`src/companion.test.ts` — startup precedence, the
@@ -309,22 +314,29 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
 - **Renderer** — all DOM painting for the island. Module: `src/renderer.ts`
   (recipe notation comes from `src/graph.ts`; the renderer only injects
   icon markup — see **Recipe notation**; the icon-URL join comes from
-  `src/icon-url.ts`) — one interface:
-  `buildAll({ emit })` (builds grids, character cards, the
+  `src/icon-url.ts`) — one instance interface:
+  `createRenderer({ emit })` → `{ build(), paint(vm), destroy() }`.
+  `build()` builds grids, character cards, the
   fusion pick list, the fusion panel skeleton — the named
   `FUSION_PANEL_SKELETON` export, which the tests pin directly instead of
   scraping source, plus its `FUSION_PANEL_SELECTORS` hook map, the one source
   for both the panel's queries and the skeleton test — and the plan screen
   skeleton
-  once, at startup) +
-  `paint(viewModel)` (repaints state on the existing DOM; never recreates
+  once, at startup; a second `build()` is safe (the containers and
+  registries reset).
+  `paint(viewModel)` repaints state on the existing DOM; it is a safe no-op
+  before `build()`. It never recreates
   `<img>` elements — that would blink icons; the fusion panel's head icons
   are built once and repainted in place; the plan's entries and the
   character chips rebuild only when their content key changes — the
   renderer's internal **reconcile seam** (`reconcile.ts`, one painted-key
-  map shared by the chips, the plan sections, the panel icons, the fusion
+  map per renderer instance shared by the chips, the plan sections, the
+  panel icons, the fusion
   result rows and exceptions, and the build graphs), which is the diff
-  cache only). Once-built click handlers get the action they act on from a
+  cache only. `destroy()` hides any shown toast, removes its document-level
+  listener, clears the reconcile cache and every painter registry, and is
+  idempotent.
+  Once-built click handlers get the action they act on from a
   separate **action-slot adapter** (`action-slot.ts`, `bindAction(el, emit)
   → { set(action), clear() }`): the slot holds the whole typed
   `ToggleAction` and its click listener, refreshed by every repaint, so no
@@ -349,13 +361,15 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   shows no result section at all (and no swap unless an exception makes it
   order-sensitive). The swap button is built once and
   hidden unless `orderSensitive`; it emits `swapFusion` through the build
-  seam. The facade composes internal painters under `src/renderer/`
+  seam. The facade composes internal painter factories under `src/renderer/`
   (grids, characters, chips, fusion-screen, plan, build-graphs,
-  selection-box) that share the reconcile seam (`reconcile.ts` — the
+  selection-box), each created over the instance's seam and reconcile cache:
+  the reconcile seam (`reconcile.ts` — the
   content-diff cache), the action-slot adapter (`action-slot.ts` — the
   once-built click channel), the build seam (`seam.ts` — the emit callback
-  and toast adapter), and the DOM/label helpers (`dom.ts`, `labels.ts`); the
-  public interface stays `buildAll`/`paint`.
+  and toast adapter), and the DOM/label helpers (`dom.ts`, `labels.ts`). No
+  module-level mutable renderer state remains; two renderer instances never
+  rebind each other's seam or registries.
 - **Plan state** — the plan screen's state and derivation as their own
   module: the End game upgrades toggle, the planned balls/passives/fused
   pairs, and the resolved `PlanState` the renderer paints. Module:

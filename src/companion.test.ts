@@ -19,7 +19,7 @@ import { shellDoc } from './test-support/styles';
 // missing container or a missing clear-exemption marker in index.astro must
 // fail here, not pass against a test-only replica. (The renderer builds the
 // rest of the DOM — grids, cards, rows, panel, selection boxes — through
-// buildAll, so every behavioral pin below runs against the real built DOM.)
+// renderer.build(), so every behavioral pin below runs against the real built DOM.)
 function mountIslandShell() {
   document.body.innerHTML = shellDoc().body.innerHTML;
 }

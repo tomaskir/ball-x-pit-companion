@@ -1,4 +1,4 @@
-// Test support: the jsdom container set the renderer's buildAll() needs —
+// Test support: the jsdom container set the renderer's build() needs —
 // the island's index.astro mount points plus the static plan toolbar. Shared
 // by renderer.test.ts and the jsdom regression tests so the list lives in
 // one place.

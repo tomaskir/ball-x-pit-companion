@@ -260,13 +260,14 @@ describe('synergy verdict semantics (map Notes: red wins with 2 characters)', ()
 });
 
 describe('regression: fusion screen (2026-10-05 session bugs)', () => {
-  // Bug: buildFusionPanel queried its skeleton with compound nth-of-type
-  // selectors (.fusion-name:nth-of-type(2) etc.). nth-of-type counts among
-  // same-tag siblings and ignores classes, so nameA's selector matched
-  // nothing; querySelector returned null, the null hid inside an HTMLElement
-  // cast, and paintFusion died at p.nameA.textContent — killing paint()
-  // mid-flight. Symptom: pick-list rows painted (top of paintFusion), the
-  // panel never did. The selector-resolution half is pinned behaviorally in
+  // Bug: the fusion panel builder queried its skeleton with compound
+  // nth-of-type selectors (.fusion-name:nth-of-type(2) etc.). nth-of-type
+  // counts among same-tag siblings and ignores classes, so nameA's selector
+  // matched nothing; querySelector returned null, the null hid inside an
+  // HTMLElement cast, and the fusion painter died at p.nameA.textContent —
+  // killing paint() mid-flight. Symptom: pick-list rows painted (top of the
+  // fusion painter), the panel never did. The selector-resolution half is
+  // pinned behaviorally in
   // renderer.test.ts against the named FUSION_PANEL_SKELETON export; the
   // source-shape half (dedicated hook classes, no positional selectors, no
   // parentElement reach-through) has no behavioral alternative and lives in
@@ -274,7 +275,7 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
 
   // Bug: the renderer reported tile/card/row clicks as untyped string
   // CustomEvents on the global document ('tile-select' / 'char-select' /
-  // 'fusion-select') — an invisible interface: nothing in buildAll's
+  // 'fusion-select') — an invisible interface: nothing in the build
   // signature showed it, and the click→action wiring had no test surface.
   // Fix: the build seam carries an `emit(action)` callback (the island
   // dispatches the named view-state action and paints); the renderer no
@@ -302,20 +303,25 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
   // head shows the first ball…") — jsdom asserts iconB.style.display ===
   // 'none' through paint() on the real skeleton, which is the bug's
   // user-visible shape; the source-grep this test once was (p.iconB.style
-  // .display = 'none') died with the table-driven paintFusion rewrite.
+  // .display = 'none') died with the table-driven fusion-painter rewrite.
   // @vitest-environment jsdom
   it('pending second head icon is display:none, not a broken-image box', async () => {
-    const { paint, buildAll } = await import('./renderer');
+    const { createRenderer } = await import('./renderer');
     const { createViewState } = await import('./view-state');
     mountShell();
-    buildAll({ emit: () => {} });
-    const view = createViewState();
-    paint(view.dispatch({ type: 'toggleFusion', id: 'flash' }));
-    const iconB = document.querySelector<HTMLImageElement>('#fusionPanel .icon-b')!;
-    expect(iconB.style.display).toBe('none');
-    // and it comes back when the pair composes
-    paint(view.dispatch({ type: 'toggleFusion', id: 'glacier' }));
-    expect(iconB.style.display).toBe('');
+    const renderer = createRenderer({ emit: () => {} });
+    try {
+      renderer.build();
+      const view = createViewState();
+      renderer.paint(view.dispatch({ type: 'toggleFusion', id: 'flash' }));
+      const iconB = document.querySelector<HTMLImageElement>('#fusionPanel .icon-b')!;
+      expect(iconB.style.display).toBe('none');
+      // and it comes back when the pair composes
+      renderer.paint(view.dispatch({ type: 'toggleFusion', id: 'glacier' }));
+      expect(iconB.style.display).toBe('');
+    } finally {
+      renderer.destroy();
+    }
   });
 
   // Bug: the fusion pick list's scrollbar was hover-only and blended into the
@@ -450,9 +456,10 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
   // Bug (seam hygiene, 2026-10-10): the End game upgrades toggle was built
   // by the renderer into the shell's #planUpgradesSlot — the one place the
   // renderer crossed the shell/island seam, and a whole build step needed
-  // only because paintPlan sets .checked. Fix: static markup in index.astro
-  // next to Clear and Share; the island wires its change event through the
-  // same update() path as the other toolbar buttons, and paintPlan only
+  // only because the plan painter sets .checked. Fix: static markup in
+  // index.astro next to Clear and Share; the island wires its change event
+  // through the same update() path as the other toolbar buttons, and the
+  // plan painter only
   // reflects the checked state on the static element. The paint side is
   // pinned behaviorally in renderer.test.ts ("the upgrades toggle is shell
   // chrome"); the wiring/source-shape half lives in the hygiene section
@@ -518,19 +525,17 @@ describe('source hygiene (grep pins)', () => {
 
   // renderer reports clicks through the build seam, not a CustomEvent bus —
   // the behavioral half is renderer.test.ts ("build seam: clicks call emit");
-  // here the dead interface stays dead and the seam stays in the signature
-  // (the options object carries one callback — emit; the toast's verdict
-  // rides the view model paint() captures, not a second seam callback).
-  it('renderer source carries no CustomEvent bus; the build seam is in buildAll\'s signature', () => {
+  // here the dead interface stays dead and the seam stays in the instance
+  // factory's signature (the options object carries both callbacks; the
+  // renderer instance owns them — no module-level slots).
+  it('renderer source carries no CustomEvent bus; the build seam is in createRenderer\'s signature', () => {
     const src = rendererSource();
     expect(src).not.toContain('CustomEvent');
     expect(src).not.toContain('document.dispatchEvent');
     for (const event of ['tile-select', 'char-select', 'fusion-select']) {
       expect(src).not.toContain(event);
     }
-    expect(src).toMatch(/export function buildAll\(\{ emit/);
-    // the island no longer hands the seam a second verdict callback
-    expect(readFileSync('src/companion.ts', 'utf8')).not.toContain('getVerdict');
+    expect(src).toMatch(/export function createRenderer\(options: BuildOptions\): Renderer/);
   });
 
   // the upgrades toggle is island-wired shell chrome (seam hygiene,
@@ -572,14 +577,19 @@ describe('regression: toast touch dismissal (promised in a comment, never wired)
   // policy are untouched). Full behavior pinned in src/toast.test.ts;
   // here through the real renderer wiring.
   it('a toast shown from a tile hides on a tap elsewhere on the document', async () => {
-    const { buildAll } = await import('./renderer');
+    const { createRenderer } = await import('./renderer');
     mountShell();
-    buildAll({ emit: () => {} });
-    const tile = document.querySelector<HTMLElement>('#ballsGrid .tile[data-id="flash"]')!;
-    tile.dispatchEvent(new MouseEvent('mouseenter'));
-    expect(document.querySelector('body > .toast')).toBeTruthy();
-    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
-    expect(document.querySelector('body > .toast')).toBeNull();
+    const renderer = createRenderer({ emit: () => {} });
+    try {
+      renderer.build();
+      const tile = document.querySelector<HTMLElement>('#ballsGrid .tile[data-id="flash"]')!;
+      tile.dispatchEvent(new MouseEvent('mouseenter'));
+      expect(document.querySelector('body > .toast')).toBeTruthy();
+      document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+      expect(document.querySelector('body > .toast')).toBeNull();
+    } finally {
+      renderer.destroy();
+    }
   });
 });
 

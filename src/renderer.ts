@@ -1,35 +1,40 @@
-// Renderer facade: all DOM painting for the island behind one interface.
-// buildAll(options) builds the static DOM once (grids, character cards, the
-// fusion panel, the plan screen skeleton), then paint(viewModel) repaints
-// state on it — never recreating <img> elements (rebuilding would blink the
-// icons; the plan's entries and the character chips are the one accepted
-// exception, rebuilding only when their content key changes — the reconcile
-// seam). The painters themselves live in internal modules under
-// src/renderer/: grids.ts, characters.ts, chips.ts, fusion-screen.ts,
-// plan.ts, build-graphs.ts, and selection-box.ts, sharing the reconcile
-// seam (reconcile.ts — the content-diff cache), the action-slot adapter
-// (action-slot.ts — the typed action a built-once handler reports), the
-// build seam (seam.ts — the emit callback, the captured view model, and the
-// toast adapter from src/toast.ts), and the DOM/label helpers (dom.ts,
-// labels.ts). This facade
-// composes them; only buildAll, paint,
-// BuildOptions, FUSION_PANEL_SKELETON, and FUSION_PANEL_SELECTORS are
-// public.
+// Renderer facade: all DOM painting for the island behind one instance
+// interface. createRenderer(options) returns { build(), paint(vm), destroy() }:
+// build() builds the static DOM once (grids, character cards, the fusion
+// panel, the plan screen skeleton), paint(viewModel) repaints state on it —
+// never recreating <img> elements (rebuilding would blink the icons; the
+// plan's entries and the character chips are the one accepted exception,
+// rebuilding only when their content key changes — the reconcile seam).
+// destroy() tears the instance down: the toast adapter's document listener is
+// removed and every painter registry is cleared. The instance owns the seam
+// and every registry, so two renderers on one document never rebind each
+// other; paint() before build() is a safe no-op.
+//
+// The painters themselves live in internal modules under src/renderer/:
+// grids.ts, characters.ts, chips.ts, fusion-screen.ts, plan.ts,
+// build-graphs.ts, and selection-box.ts, each a factory over the instance's
+// seam (seam.ts — the emit callback, the captured view model, and the toast
+// adapter from src/toast.ts) and reconcile cache (reconcile.ts — the
+// content-diff cache), sharing the action-slot adapter (action-slot.ts — the
+// typed action a built-once handler reports) and the DOM/label helpers
+// (dom.ts, labels.ts). This facade composes them; only createRenderer,
+// Renderer, BuildOptions, FUSION_PANEL_SKELETON, and FUSION_PANEL_SELECTORS
+// are public.
 //
 // The island (src/companion.ts) is transport only — hash routing and
 // storage/history/clipboard, with the static-shell controls (theme, tabs,
 // search, plan toolbar, share, Esc/empty-space) in src/shell.ts, the
 // routing, clear-policy, and theme decisions in src/companion-core.ts, the
-// share-link URL transport in src/share.ts, and the persistence codec in
-// src/plan-codec.ts (plan persistence to localStorage is the island's own
-// job);
+// share-link URL transport in src/share.ts, the persistence lifecycle in
+// src/plan-session.ts, and the persistence codec in src/plan-codec.ts;
 // the ViewModel it paints comes from src/view-state.ts — the fusion panel rides
-// the named fusionPanel state (empty / pending / composed) and paintFusion
-// switches on it; the plan rides vm.plan and paintPlan paints per section;
-// the renderer holds no domain data of its own. The icon-URL join comes
-// from src/icon-url.ts. The fusion panel's skeleton and hook-selector map are
-// exported as pure data (FUSION_PANEL_SKELETON / FUSION_PANEL_SELECTORS) so
-// the tests pin the same values buildFusionPanel paints and queries.
+// the named fusionPanel state (empty / pending / composed) and the fusion
+// painter switches on it; the plan rides vm.plan and the plan painter paints
+// per section; the renderer holds no domain data of its own. The icon-URL join
+// comes from src/icon-url.ts. The fusion panel's skeleton and hook-selector
+// map are exported as pure data (FUSION_PANEL_SKELETON /
+// FUSION_PANEL_SELECTORS) so the tests pin the same values the fusion
+// painter builds and queries.
 //
 // The build seam is the options object: { emit }. emit is how built-in
 // click handlers report selection toggles back to the island — emit(action)
@@ -41,20 +46,21 @@
 // view model paint() last captured — the painted tile verdict itself, not a
 // second read into live view state.
 import type { ViewModel } from './view-state';
-import { captureViewModel, initSeam, type SeamOptions } from './renderer/seam';
-import { buildGrids, paintTiles } from './renderer/grids';
-import { buildCharacters, paintCharCards } from './renderer/characters';
-import { paintCharChips } from './renderer/chips';
-import { buildFusionList, buildFusionPanel, paintFusion } from './renderer/fusion-screen';
-import { buildPlan, paintPlan } from './renderer/plan';
-import { buildBuildGraphs, paintBuildGraphs } from './renderer/build-graphs';
-import { buildSelectionBoxes, paintSelectionBoxes } from './renderer/selection-box';
+import { createSeam, type SeamOptions } from './renderer/seam';
+import { createReconcile } from './renderer/reconcile';
+import { createGrids } from './renderer/grids';
+import { createCharacters } from './renderer/characters';
+import { createChips } from './renderer/chips';
+import { createFusionScreen } from './renderer/fusion-screen';
+import { createPlan } from './renderer/plan';
+import { createBuildGraphs } from './renderer/build-graphs';
+import { createSelectionBoxes } from './renderer/selection-box';
 
 export { FUSION_PANEL_SKELETON, FUSION_PANEL_SELECTORS } from './renderer/fusion-screen';
 
 // ---------- interface ----------
 
-/** The build seam: everything the island injects at build time.
+/** The build seam: everything the island injects at renderer creation.
  *  `emit` is how the built-in click handlers report actions back (selection
  *  toggles and the fusion order swap) — the island dispatches the whole
  *  ToggleAction and paints. The renderer stays paint-only: it never
@@ -62,36 +68,75 @@ export { FUSION_PANEL_SKELETON, FUSION_PANEL_SELECTORS } from './renderer/fusion
  *  once, in the seam module the facade hands it to. */
 export type BuildOptions = SeamOptions;
 
-/** Build all static DOM once: balls grid, passives grid, character cards,
- *  fusion pick list, plan screen skeleton — and the toast adapter (from
- *  src/toast.ts), which the grid tiles and base-ball chips bind to. Call
- *  once at startup, before the first paint(). */
-export function buildAll({ emit: onEmit }: BuildOptions): void {
-  initSeam({ emit: onEmit });
-  buildGrids();
-  buildCharacters();
-  buildFusionList();
-  buildFusionPanel();
-  buildPlan();
-  buildBuildGraphs();
-  buildSelectionBoxes();
+/** One renderer instance. */
+export interface Renderer {
+  /** Build all static DOM once: balls grid, passives grid, character cards,
+   *  fusion pick list, plan screen skeleton, build-graph panels, selection
+   *  boxes. Safe to call again (the containers and registries reset). */
+  build(): void;
+  /** Repaint state (selection/related/dimmed/filtered, verdict badges,
+   *  character cards and chips, fusion picks and panel, the plan screen) on
+   *  the existing DOM, capturing the view model in the seam for the toast's
+   *  verdict lookup. A no-op before build(); idempotent; never recreates
+   *  <img> elements — the fusion panel's skeleton (with its two head icons)
+   *  is built once and repainted in place, and the plan's entries rebuild
+   *  only when their section's entry set changes (the reconcile seam). */
+  paint(vm: ViewModel): void;
+  /** Tear the instance down: hide any shown toast and remove its
+   *  document-level dismissal listener, and clear every painter registry.
+   *  Idempotent. */
+  destroy(): void;
 }
 
-/** Repaint state (selection/related/dimmed/filtered, verdict badges,
- *  character cards and chips, fusion picks and panel, the plan screen) on
- *  the existing DOM, capturing the view model in the seam for the toast's
- *  verdict lookup. Safe to call before buildAll() (nothing is built yet, and
- *  a later buildAll resets the capture). Idempotent; never recreates <img>
- *  elements — the fusion panel's skeleton (with its two head icons) is built
- *  once and repainted in place, and the plan's entries rebuild only when
- *  their section's entry set changes (the reconcile seam). */
-export function paint(vm: ViewModel): void {
-  captureViewModel(vm);
-  paintTiles(vm);
-  paintCharCards(vm);
-  paintCharChips(vm);
-  paintFusion(vm);
-  paintPlan(vm);
-  paintBuildGraphs(vm);
-  paintSelectionBoxes(vm);
+/** Create one renderer instance over the island's build seam. The instance
+ *  owns the toast adapter, the reconcile cache, and every DOM registry — no
+ *  module-level renderer state remains. */
+export function createRenderer(options: BuildOptions): Renderer {
+  const seam = createSeam(options);
+  const reconciler = createReconcile();
+  const reconcile = reconciler.reconcile;
+  const grids = createGrids(seam);
+  const characters = createCharacters(seam);
+  const chips = createChips({ emitAction: seam.emitAction, reconcile });
+  const fusion = createFusionScreen({ emitAction: seam.emitAction, reconcile });
+  const plan = createPlan({ emitAction: seam.emitAction, reconcile });
+  const graphs = createBuildGraphs({ emitAction: seam.emitAction, reconcile });
+  const selection = createSelectionBoxes({ emitAction: seam.emitAction });
+  let built = false;
+
+  return {
+    build() {
+      seam.capture(null); // a rebuild starts unpainted; no stale toast verdict
+      grids.build();
+      characters.build();
+      fusion.buildList();
+      fusion.buildPanel();
+      plan.build();
+      graphs.build();
+      selection.build();
+      built = true;
+    },
+    paint(vm) {
+      if (!built) return;
+      seam.capture(vm);
+      grids.paint(vm);
+      characters.paint(vm);
+      chips.paint(vm);
+      fusion.paint(vm);
+      plan.paint(vm);
+      graphs.paint(vm);
+      selection.paint(vm);
+    },
+    destroy() {
+      seam.destroy();
+      reconciler.reset();
+      grids.destroy();
+      characters.destroy();
+      fusion.destroy();
+      plan.destroy();
+      graphs.destroy();
+      selection.destroy();
+      built = false;
+    },
+  };
 }

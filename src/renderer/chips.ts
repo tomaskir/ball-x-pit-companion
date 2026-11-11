@@ -1,28 +1,37 @@
 // The header character chips: rebuild only when the character selection
 // changes — reconcile diffs the painted id set on the chip strip, so
-// search/selection repaints skip the rebuild. Internal to the renderer
-// facade.
-import { emitAction } from './seam';
+// search/selection repaints skip the rebuild. Internal to the renderer facade;
+// the reconcile cache belongs to the renderer instance.
+import type { Emit } from './seam';
 import { markClearExempt } from '../clear-exempt';
-import { reconcile } from './reconcile';
+import type { Reconcile } from './reconcile';
 import { icon } from './dom';
 import type { ViewModel } from '../view-state';
 
-export function paintCharChips(vm: ViewModel) {
-  document.getElementById('slotHint')!.textContent = vm.slotHint;
-  const wrap = document.getElementById('charChips')!;
-  reconcile(wrap, vm.selectedChars.map((c) => c.id).join(','), () => {
-    wrap.innerHTML = '';
-    for (const ch of vm.selectedChars) {
-      // the chip body is inert — removal is the X button's job only
-      const chip = document.createElement('span');
-      chip.className = 'chip';
-      markClearExempt(chip);
-      chip.innerHTML = `<img src="${icon(ch.sprite)}" alt="" width="22" height="22"><span>${ch.name}</span><button class="chip-x" aria-label="Remove ${ch.name}" title="Click × to remove">×</button>`;
-      chip.querySelector('.chip-x')!.addEventListener('click', () => {
-        emitAction({ type: 'toggleChar', id: ch.id });
+/** One renderer instance's chip painter. */
+export interface Chips {
+  paint(vm: ViewModel): void;
+}
+
+export function createChips({ emitAction, reconcile }: { emitAction: Emit; reconcile: Reconcile }): Chips {
+  return {
+    paint(vm: ViewModel) {
+      document.getElementById('slotHint')!.textContent = vm.slotHint;
+      const wrap = document.getElementById('charChips')!;
+      reconcile(wrap, vm.selectedChars.map((c) => c.id).join(','), () => {
+        wrap.innerHTML = '';
+        for (const ch of vm.selectedChars) {
+          // the chip body is inert — removal is the X button's job only
+          const chip = document.createElement('span');
+          chip.className = 'chip';
+          markClearExempt(chip);
+          chip.innerHTML = `<img src="${icon(ch.sprite)}" alt="" width="22" height="22"><span>${ch.name}</span><button class="chip-x" aria-label="Remove ${ch.name}" title="Click × to remove">×</button>`;
+          chip.querySelector('.chip-x')!.addEventListener('click', () => {
+            emitAction({ type: 'toggleChar', id: ch.id });
+          });
+          wrap.appendChild(chip);
+        }
       });
-      wrap.appendChild(chip);
-    }
-  });
+    },
+  };
 }
