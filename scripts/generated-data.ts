@@ -4,6 +4,7 @@
 // runs the same validateGenerated list against the checked-in data — the
 // invariants are written once, not copied.
 import { slug } from './slug.ts';
+import { WILDCARD } from './editorial.ts';
 import type { ParsedFactBases } from './fact-bases.ts';
 import type { EditorialMaps, VerdictRule } from './editorial.ts';
 
@@ -51,7 +52,7 @@ export interface GeneratedData {
 /** Pure mapping: parsed fact bases + editorial maps → the generated data. */
 export function emitData(parsed: ParsedFactBases, editorial: EditorialMaps): GeneratedData {
   return {
-    tags: editorial.TAGS,
+    tags: { ...editorial.TAGS },
     balls: parsed.balls.map((b) => ({
       id: slug(b.name),
       name: b.name,
@@ -60,7 +61,7 @@ export function emitData(parsed: ParsedFactBases, editorial: EditorialMaps): Gen
       recipes: b.recipes,
       onHit: b.onhit,
       icon: `icons/balls/${slug(b.name)}.png`, // prefix with import.meta.env.BASE_URL at runtime
-      tags: editorial.BALL_TAGS[slug(b.name)] ?? [],
+      tags: [...(editorial.BALL_TAGS[slug(b.name)] ?? [])],
     })),
     passives: parsed.passives.map((p) => ({
       id: slug(p.name),
@@ -69,7 +70,7 @@ export function emitData(parsed: ParsedFactBases, editorial: EditorialMaps): Gen
       effects: p.effect,
       recipes: p.recipes,
       icon: `icons/passives/${slug(p.name)}.png`, // prefix with import.meta.env.BASE_URL at runtime
-      tags: editorial.PASSIVE_TAGS[slug(p.name)] ?? [],
+      tags: [...(editorial.PASSIVE_TAGS[slug(p.name)] ?? [])],
     })),
     characters: parsed.characters.map((c) => ({
       id: slug(c.name),
@@ -78,15 +79,15 @@ export function emitData(parsed: ParsedFactBases, editorial: EditorialMaps): Gen
       quirk: c.quirk,
       icon: `icons/character-portraits/${slug(c.name)}.png`, // prefix with import.meta.env.BASE_URL at runtime
       sprite: `icons/character-sprites/${slug(c.name)}.png`,
-      verdicts: editorial.CHAR_VERDICTS[slug(c.name)] ?? [],
+      verdicts: [...(editorial.CHAR_VERDICTS[slug(c.name)] ?? [])],
       cannotPair: (c.cannotPair ?? []).map(slug).sort(),
     })),
-    level3: parsed.level3,
+    level3: { ...parsed.level3 },
   };
 }
 
-/** Render the generated data as the five src/data/*.ts file contents. */
-export function renderGenerated(data: GeneratedData): Record<string, string> {
+/** Render the generated data as the five src/data/*.ts files, in write order. */
+export function renderGenerated(data: GeneratedData): { name: string; content: string }[] {
   const ts = (body: string): string => body + '\n';
 
   const tagsTs = ts(`// Synergy tag vocabulary — the site's own editorial model (see
@@ -164,16 +165,14 @@ export const CHARACTERS: Character[] = ${JSON.stringify(data.characters, null, 2
 export const LEVEL_3_EFFECTS: Record<string, string> = ${JSON.stringify(data.level3, null, 2)};
 `);
 
-  return {
-    'tags.ts': tagsTs,
-    'balls.ts': ballsTs,
-    'passives.ts': passivesTs,
-    'characters.ts': charactersTs,
-    'level-3.ts': level3Ts,
-  };
+  return [
+    { name: 'tags.ts', content: tagsTs },
+    { name: 'balls.ts', content: ballsTs },
+    { name: 'passives.ts', content: passivesTs },
+    { name: 'characters.ts', content: charactersTs },
+    { name: 'level-3.ts', content: level3Ts },
+  ];
 }
-
-const WILDCARD = '*passives';
 
 /**
  * The one invariant list for generated data. Returns human-readable findings;
@@ -202,8 +201,10 @@ export function validateGenerated(data: GeneratedData, editorial: EditorialMaps)
   for (const p of data.passives)
     for (const t of p.tags) if (!vocab.has(t)) findings.push(`passive ${p.id}: unknown tag ${t}`);
   for (const ch of data.characters)
-    for (const r of ch.verdicts)
+    for (const r of ch.verdicts) {
       if (!vocab.has(r.tag) && r.tag !== WILDCARD) findings.push(`character ${ch.id}: unknown tag ${r.tag}`);
+      if (r.verdict !== 'red' && r.verdict !== 'green') findings.push(`character ${ch.id}: invalid verdict ${r.verdict}`);
+    }
 
   // every character has a verdict entry and a base ball that resolves
   for (const ch of data.characters) {
@@ -269,7 +270,7 @@ export function runEmitData(
     error(`${findings.length} error(s)`);
     return 1;
   }
-  for (const [name, content] of Object.entries(renderGenerated(data))) write(name, content);
+  for (const { name, content } of renderGenerated(data)) write(name, content);
   log('emitted tags.ts, balls.ts, passives.ts, characters.ts, level-3.ts — all checks pass');
   return 0;
 }

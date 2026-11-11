@@ -1,7 +1,7 @@
 // The one markdown-table scanner used by every fact-base parser. It was
 // copied three times in parse-wiki.ts (game mechanics, pairings, level-3);
-// the copies drifted in error messages and separator handling, so the
-// scanner lives here now and the parsers only say which header they want.
+// the copies differed only in their error text, so the scanner lives here
+// now and the parsers only say which header they want.
 
 /**
  * Find the first table whose header line matches `headerRe`, skip the header

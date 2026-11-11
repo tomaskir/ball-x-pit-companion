@@ -77,7 +77,7 @@ describe('parsePairings: one symmetric expansion', () => {
     }
   });
 
-  it('gives unrestricted characters an empty list', () => {
+  it('applies the *all* expansion to a character with no row of its own', () => {
     const out = parsePairings(md, characters);
     expect(out.find((c) => c.name === 'Gamma')!.cannotPair).toEqual(['The False Messiah']);
   });

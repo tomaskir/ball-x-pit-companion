@@ -62,9 +62,9 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   truth: `scripts/slug.ts`; both pipeline scripts import it.
 - **Fact-base parser** — an exported pure function in `scripts/fact-bases.ts`
   that turns one hand-maintained markdown fact base into data
-  (`parseGameMechanics`, `parsePairings`, `parseLevel3`; `parseFactBases`
-  composes them). Markdown tables are read through the one scanner in
-  `scripts/markdown-table.ts`.
+  (`parseRecipes`, `parseGameMechanics`, `parsePairings`, `parseLevel3`;
+  `parseFactBases` composes them). Markdown tables are read through the one
+  scanner in `scripts/markdown-table.ts`.
 - **Generated-data contract** — `scripts/generated-data.ts`: `emitData`
   (parsed + editorial → in-memory data), `renderGenerated` (data → the five
   file contents), and `validateGenerated` (the one invariant list). The

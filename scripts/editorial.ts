@@ -16,6 +16,9 @@ export interface EditorialMaps {
   CHAR_VERDICTS: Record<string, VerdictRule[]>;
 }
 
+/** The wildcard verdict tag that matches every passive (The Ballbearer). */
+export const WILDCARD = '*passives';
+
 // ---- tag vocabulary (fact base §4) ----
 export const TAGS: Record<string, string> = {
   'aoe': 'Damages multiple enemies / area damage',

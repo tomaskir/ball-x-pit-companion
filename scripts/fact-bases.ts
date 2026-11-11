@@ -1,7 +1,8 @@
 // Fact-base parsers — the pure, exported half of the data pipeline. Each
-// parser takes the markdown text and returns data; none touches the
-// filesystem, so the tests can pin the recipe grammar, the pairing
-// expansion, and the level-3 table without running the CLI.
+// parser takes the markdown text (parsePairings also takes the parsed
+// characters) and returns data; none touches the filesystem, so the tests
+// can pin the recipe grammar, the pairing expansion, and the level-3 table
+// without running the CLI.
 //
 // Inputs (hand-maintained):
 // - docs/research/game-mechanics.md — balls, passives, characters. Effect
@@ -53,6 +54,21 @@ export interface FactBaseSources {
 /** Strip the wiki's bold markers and surrounding whitespace. */
 const clean = (s: string): string => s.replace(/\*\*/g, '').trim();
 
+/**
+ * Resolve structural depth for a namespace's evolved entities. Depth
+ * resolution (cache + cycle guard + structuralDepth tier rule) lives in
+ * graph.ts — one resolver per namespace, called here for balls and passives.
+ */
+function withStructuralDepth<T extends { name: string; recipes: string[][] }>(entries: T[]): (T & { depth: 0 | 1 | 2 })[] {
+  const ids = new Set(entries.map((e) => slug(e.name)));
+  const depths = resolveDepths(
+    entries.map((e) => slug(e.name)),
+    ids,
+    (id) => entries.find((e) => slug(e.name) === id)?.recipes ?? [],
+  );
+  return entries.map((e) => ({ ...e, depth: depths.get(slug(e.name))! }));
+}
+
 /** Split a recipe cell into recipes: string[][] (OR-of-ANDs). */
 export function parseRecipes(cell: string): string[][] {
   // e.g. "Iron + (Ghost or Dark)" ; "Burn + Wind + Freeze + Earthquake"
@@ -101,16 +117,8 @@ export function parseGameMechanics(md: string): {
     onhit: clean(onhit),
     effect: clean(effect),
   }));
-  const evoIds = new Set(evo.map((e) => slug(e.name)));
-  // Depth resolution (cache + cycle guard + structuralDepth tier rule) lives in
-  // graph.ts — one resolver per namespace, here and for passives below.
-  const ballDepths = resolveDepths(
-    evo.map((e) => slug(e.name)),
-    evoIds,
-    (id) => evo.find((e) => slug(e.name) === id)?.recipes ?? [],
-  );
-  for (const ent of evo) {
-    balls.push({ name: ent.name, depth: ballDepths.get(slug(ent.name))!, recipes: ent.recipes, onhit: ent.onhit, effect: ent.effect });
+  for (const ent of withStructuralDepth(evo)) {
+    balls.push({ name: ent.name, depth: ent.depth, recipes: ent.recipes, onhit: ent.onhit, effect: ent.effect });
   }
 
   // ---------- passives ----------
@@ -126,14 +134,8 @@ export function parseGameMechanics(md: string): {
     recipes: parseRecipes(recipeCell),
     effect: clean(effect),
   }));
-  const evoPasIds = new Set(evoPas.map((e) => slug(e.name)));
-  const passiveDepths = resolveDepths(
-    evoPas.map((e) => slug(e.name)),
-    evoPasIds,
-    (id) => evoPas.find((e) => slug(e.name) === id)?.recipes ?? [],
-  );
-  for (const ent of evoPas) {
-    passives.push({ name: ent.name, depth: passiveDepths.get(slug(ent.name))!, recipes: ent.recipes, effect: ent.effect });
+  for (const ent of withStructuralDepth(evoPas)) {
+    passives.push({ name: ent.name, depth: ent.depth, recipes: ent.recipes, effect: ent.effect });
   }
 
   // ---------- characters ----------

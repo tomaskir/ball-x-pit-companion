@@ -17,4 +17,4 @@ const parsed: ParsedFactBases = JSON.parse(readFileSync(new URL('./parsed.json',
 const code = runEmitData(parsed, EDITORIAL, (name, content) => {
   writeFileSync(new URL(name, OUT), content);
 });
-process.exit(code);
+process.exitCode = code;

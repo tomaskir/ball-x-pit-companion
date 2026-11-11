@@ -64,6 +64,12 @@ describe('validateGenerated: one invariant list', () => {
     expect(validateGenerated(data, editorial)).toContain('ball iron: unknown tag nope');
   });
 
+  it('reports an invalid verdict value', () => {
+    const data = valid();
+    data.characters[0].verdicts.push({ tag: 'aoe', verdict: 'yellow' as 'red' });
+    expect(validateGenerated(data, editorial)).toContain('character alpha: invalid verdict yellow');
+  });
+
   it('reports a missing verdict entry', () => {
     const data = valid();
     const editorialMissing = { ...editorial, CHAR_VERDICTS: { alpha: [], beta: [] } };
@@ -143,7 +149,7 @@ describe('the checked-in generated files are exactly what the fact bases emit', 
   };
   const files = renderGenerated(emitData(parseFactBases(sources), EDITORIAL));
 
-  for (const [name, content] of Object.entries(files)) {
+  for (const { name, content } of files) {
     it(`src/data/${name} matches the emitter`, () => {
       const onDisk = readFileSync(new URL(`../src/data/${name}`, import.meta.url), 'utf8');
       expect(onDisk).toBe(content);

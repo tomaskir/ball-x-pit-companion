@@ -13,10 +13,9 @@ import { BALL_KIT } from './ball-kit';
 import { pairKey } from './pair';
 import { byId, complexity } from './graph';
 import { validateGenerated } from '../scripts/generated-data.ts';
-import { EDITORIAL } from '../scripts/editorial.ts';
+import { EDITORIAL, WILDCARD } from '../scripts/editorial.ts';
 
 const ballIds = new Set(BALLS.map((b) => b.id));
-const WILDCARD = '*passives';
 
 describe('fact-base counts (ticket 02, game v1.301)', () => {
   it('has 91 balls (21 base + Baby Ball + 69 evolved)', () => {
