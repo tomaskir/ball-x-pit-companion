@@ -345,8 +345,8 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   chain drops the partner property.
 - **Status-only spawn carrier** — a spawn carrier whose babies inherit only
   the partner's on-hit status, not spawn-bound traits (Brood Mother, Mosquito
-  King). Their inheritance is reported and degraded; spawn-bound statuses
-  (Glacier/Blizzard) stay unwired for both.
+  King). Their inheritance is reported; Brood Mother's is degraded;
+  spawn-bound statuses (Glacier/Blizzard) stay unwired for both.
 - **Trigger-matrix source reading** — the governing reading of the trigger
   matrix: AOE damage cannot trigger On-Hit effects (an AOE tick is not a hit),
   while spawned units can trigger the original's abilities. Supersedes the

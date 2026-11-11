@@ -140,9 +140,9 @@ supersedes the earlier target reading recorded in #6.
   inherit the partner's **on-hit status** (reported), but not spawn-bound
   traits (spikes, icicles, blobs) — so Glacier/Blizzard stay unwired for both
   carriers. Brood Mother's inheritance is degraded: the inherited effect is
-  weaker and the spawn is probabilistic (25/35/45% per hit); the one
-  launch-week report claiming Flash × Brood Mother produced none is superseded
-  by the 2026-11-11 spawn resolution (`CONTRADICTIONS.md` §14). Egg Sac's
+  weaker and the spawn is probabilistic (25/35/45% per hit); one launch-week
+  report claims Flash × Brood Mother produced none (unverified — the no-wire
+  claim it supported is superseded, `CONTRADICTIONS.md` §14). Egg Sac's
   babies inherit the partner's properties, but the inherited effect is weaker
   than a full clone (reported, namu.wiki).
 - **Trigger limit**: Brood Mother's and Mosquito King's spawns fire **on
