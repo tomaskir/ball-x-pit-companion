@@ -67,7 +67,9 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   that turns one hand-maintained markdown fact base into data
   (`parseRecipes`, `parseGameMechanics`, `parsePairings`, `parseLevel3`;
   `parseFactBases` composes them). Markdown tables are read through the one
-  scanner in `scripts/markdown-table.ts`.
+  scanner in `scripts/markdown-table.ts`, which returns body rows keyed by the
+  table's header cells (`column(row, 'Effect text (wiki)')`) — parsers name
+  the columns they read instead of hardcoding indices.
 - **Generated-data contract** — `scripts/generated-data.ts`: `emitData`
   (parsed + editorial → in-memory data), `renderGenerated` (data → the five
   file contents), and `validateGenerated` (the one invariant list). The

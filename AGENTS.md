@@ -40,7 +40,7 @@ Not an npm package (`"private": true`). Code is MIT-licensed; game art in
 - `src/data/{balls,passives,characters,tags,level-3}.ts` — **generated** data files.
 - `scripts/parse-wiki.ts`, `scripts/emit-data.ts` — thin CLIs over the data pipeline.
 - `scripts/fact-bases.ts` — exported pure parsers (`parseRecipes`, `parseGameMechanics`, `parsePairings`, `parseLevel3`, `parseFactBases`); the test surface for the fact bases.
-- `scripts/markdown-table.ts` — the one markdown-table scanner all three parsers share.
+- `scripts/markdown-table.ts` — the one markdown-table scanner all three parsers share; returns rows keyed by header cell (`column(row, 'Name')`), so parsers never index by position.
 - `scripts/editorial.ts` — the site's editorial synergy model (`TAGS`, `BALL_TAGS`, `PASSIVE_TAGS`, `CHAR_VERDICTS`); the only place it is set.
 - `scripts/generated-data.ts` — the generated-data contract (`emitData`, `renderGenerated`, `validateGenerated`, `runEmitData`); validation runs before any write and the same list is asserted in `src/data.test.ts`.
 - `scripts/slug.ts` — shared name→id slugification.

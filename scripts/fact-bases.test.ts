@@ -120,6 +120,57 @@ describe('parseGameMechanics: structural depth from recipes', () => {
   });
 });
 
+describe('parseGameMechanics: reads columns by header name', () => {
+  it('does not shift values when a column is inserted after the matched header prefix', () => {
+    const md = mechanicsDoc(
+      '| Ball | On-hit effect | Notes | Status trigger(s) | Status effect | Effect text (wiki) | Character(s) | Unlock |',
+      '| Iron | — | inserted | On-Hit | — | Deals double damage. | The Shieldbearer | default |',
+      '| Character | Base ball | Notes | Ability (wiki text, abridged) | Unlock | Synergy-relevant facts |',
+      '| The Warrior | Iron | inserted | Quirk. | default | |',
+    );
+    assertColumnsByName(md);
+  });
+
+  it('does not shift values when a column is reordered after the matched header prefix', () => {
+    const md = mechanicsDoc(
+      '| Ball | On-hit effect | Effect text (wiki) | Status trigger(s) | Status effect | Character(s) | Unlock |',
+      '| Iron | — | Deals double damage. | On-Hit | — | The Shieldbearer | default |',
+      '| Character | Base ball | Ability (wiki text, abridged) | Unlock | Synergy-relevant facts |',
+      '| The Warrior | Iron | Quirk. | default | |',
+    );
+    assertColumnsByName(md);
+  });
+
+  function assertColumnsByName(md: string) {
+    const { balls, characters } = parseGameMechanics(md);
+    expect(balls.find((b) => b.name === 'Iron')).toMatchObject({ onhit: '—', effect: 'Deals double damage.' });
+    expect(characters[0]).toMatchObject({ name: 'The Warrior', baseBall: 'Iron', quirk: 'Quirk.' });
+  }
+
+  /** A minimal mechanics doc; the base-ball and character tables are the variables. */
+  function mechanicsDoc(baseHeader: string, baseRow: string, charHeader: string, charRow: string): string {
+    const separator = (header: string) => `|${header.split('|').slice(1, -1).map(() => '---').join('|')}|`;
+    return [
+      baseHeader,
+      separator(baseHeader),
+      baseRow,
+      '',
+      '| Ball | Depth | Recipe(s) | On-hit | Status effects | Effect text (wiki) |',
+      '|---|---|---|---|---|---|',
+      '',
+      '| Passive | Effect text (wiki) | Appearance requirement | Unlock |',
+      '|---|---|---|---|',
+      '',
+      '| Passive | Recipe | Effect text (wiki) |',
+      '|---|---|---|',
+      '',
+      charHeader,
+      separator(charHeader),
+      charRow,
+    ].join('\n');
+  }
+});
+
 describe('parseFactBases: the real fact bases parse without the CLI', () => {
   const parsed = parseFactBases(realSources());
 

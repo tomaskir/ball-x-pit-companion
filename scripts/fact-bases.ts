@@ -13,7 +13,7 @@
 //   composer (`level3`; Baby Ball has no per-level table and is omitted).
 import { slug } from './slug.ts';
 import { resolveDepths } from '../src/graph.ts';
-import { parseMarkdownTable } from './markdown-table.ts';
+import { parseMarkdownTable, column } from './markdown-table.ts';
 
 export interface ParsedBall {
   name: string;
@@ -101,8 +101,14 @@ export function parseGameMechanics(md: string): {
   const balls: ParsedBall[] = [];
 
   // Base balls (depth 0): table 1.1 — columns: Ball | On-hit | Status trigger | Status effect | Effect text | Character(s) | Unlock
-  for (const [name, onhit, , , effect] of parseMarkdownTable(md, /^\| Ball \| On-hit effect \|/, 'ball table')) {
-    balls.push({ name: clean(name), depth: 0, recipes: [], onhit: clean(onhit), effect: clean(effect) });
+  for (const row of parseMarkdownTable(md, /^\| Ball \| On-hit effect \|/, 'ball table')) {
+    balls.push({
+      name: clean(column(row, 'Ball')),
+      depth: 0,
+      recipes: [],
+      onhit: clean(column(row, 'On-hit effect')),
+      effect: clean(column(row, 'Effect text (wiki)')),
+    });
   }
   balls.push({ name: 'Baby Ball', depth: 0, recipes: [], onhit: '', effect: 'Base attack ball, no special abilities. All characters start with a few except The Empty Nester and The Makeshift Sisyphus.' });
 
@@ -111,11 +117,11 @@ export function parseGameMechanics(md: string): {
   // labels (which put e.g. Tumor — built from evolved Radiation Beam — in "Evo"):
   //   depth 1 (Tier-2) = recipe includes an evolved ball as a component
   //   depth 2 (Tier-3) = recipe includes a tier-2 ball as a component
-  const evo = parseMarkdownTable(md, /^\| Ball \| Depth \|/, 'evolved ball table').map(([name, , recipeCell, onhit, , effect]) => ({
-    name: clean(name),
-    recipes: parseRecipes(recipeCell),
-    onhit: clean(onhit),
-    effect: clean(effect),
+  const evo = parseMarkdownTable(md, /^\| Ball \| Depth \|/, 'evolved ball table').map((row) => ({
+    name: clean(column(row, 'Ball')),
+    recipes: parseRecipes(column(row, 'Recipe(s)')),
+    onhit: clean(column(row, 'On-hit')),
+    effect: clean(column(row, 'Effect text (wiki)')),
   }));
   for (const ent of withStructuralDepth(evo)) {
     balls.push({ name: ent.name, depth: ent.depth, recipes: ent.recipes, onhit: ent.onhit, effect: ent.effect });
@@ -124,15 +130,15 @@ export function parseGameMechanics(md: string): {
   // ---------- passives ----------
   const passives: ParsedPassive[] = [];
   // Base passives (depth 0): Passive | Effect text | Appearance requirement | Unlock
-  for (const [name, effect] of parseMarkdownTable(md, /^\| Passive \| Effect text \(wiki\) \|/, 'passive table')) {
-    passives.push({ name: clean(name), depth: 0, recipes: [], effect: clean(effect) });
+  for (const row of parseMarkdownTable(md, /^\| Passive \| Effect text \(wiki\) \|/, 'passive table')) {
+    passives.push({ name: clean(column(row, 'Passive')), depth: 0, recipes: [], effect: clean(column(row, 'Effect text (wiki)')) });
   }
   // Evolved passives (depth 1|2): Passive | Recipe | Effect text — same
   // structural depth computation as balls.
-  const evoPas = parseMarkdownTable(md, /^\| Passive \| Recipe \|/, 'evolved passive table').map(([name, recipeCell, effect]) => ({
-    name: clean(name),
-    recipes: parseRecipes(recipeCell),
-    effect: clean(effect),
+  const evoPas = parseMarkdownTable(md, /^\| Passive \| Recipe \|/, 'evolved passive table').map((row) => ({
+    name: clean(column(row, 'Passive')),
+    recipes: parseRecipes(column(row, 'Recipe')),
+    effect: clean(column(row, 'Effect text (wiki)')),
   }));
   for (const ent of withStructuralDepth(evoPas)) {
     passives.push({ name: ent.name, depth: ent.depth, recipes: ent.recipes, effect: ent.effect });
@@ -141,11 +147,12 @@ export function parseGameMechanics(md: string): {
   // ---------- characters ----------
   const characters: ParsedCharacter[] = [];
   // Character | Base ball | Ability | Unlock | Synergy facts
-  for (const [name, baseBall, ability] of parseMarkdownTable(md, /^\| Character \| Base ball \|/, 'character table')) {
+  for (const row of parseMarkdownTable(md, /^\| Character \| Base ball \|/, 'character table')) {
+    const baseBall = column(row, 'Base ball');
     characters.push({
-      name: clean(name),
+      name: clean(column(row, 'Character')),
       baseBall: baseBall.trim() === '*none*' ? null : clean(baseBall),
-      quirk: clean(ability),
+      quirk: clean(column(row, 'Ability (wiki text, abridged)')),
     });
   }
 
@@ -163,8 +170,10 @@ export function parsePairings(md: string, characters: ParsedCharacter[]): Parsed
   const byName = new Map(characters.map((c) => [c.name, c]));
   const cannotPair = new Map<string, string[]>(characters.map((c) => [c.name, []]));
 
-  for (const [name, cannotCell] of rows) {
-    const ch = byName.get(clean(name));
+  for (const row of rows) {
+    const name = clean(column(row, 'Character'));
+    const cannotCell = column(row, 'Cannot pair with');
+    const ch = byName.get(name);
     if (!ch) throw new Error(`pairing row for unknown character: ${name}`);
     const others = characters.filter((c) => c.name !== ch.name).map((c) => c.name);
     cannotPair.set(
@@ -191,10 +200,11 @@ export function parsePairings(md: string, characters: ParsedCharacter[]): Parsed
 /** Parse the level-3 effect-text table into id → text (Baby Ball is omitted). */
 export function parseLevel3(md: string): Record<string, string> {
   const level3: Record<string, string> = {};
-  for (const [name, text] of parseMarkdownTable(md, /^\| Ball \| Level-3 effect text \|/, 'level-3 table')) {
+  for (const row of parseMarkdownTable(md, /^\| Ball \| Level-3 effect text \|/, 'level-3 table')) {
+    const text = column(row, 'Level-3 effect text');
     // Baby Ball has no per-level table and is not fusable — the row is "—".
     if (!text || text === '—' || text === '-') continue;
-    level3[slug(clean(name))] = clean(text);
+    level3[slug(clean(column(row, 'Ball')))] = clean(text);
   }
   return level3;
 }
