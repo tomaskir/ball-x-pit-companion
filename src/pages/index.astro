@@ -21,7 +21,11 @@ const faviconUrl = `${import.meta.env.BASE_URL}/favicon.ico`;
     <title>Ball x Pit Companion</title>
   </head>
   <body>
-    <header>
+    <!-- data-clear-exempt: the header owns its clicks (tabs, theme, repo
+         link) — an empty-space clear must not fire for them. The attribute
+         is defined in src/clear-exempt.ts (CLEAR_EXEMPT_ATTR); static
+         markup repeats the literal because it cannot call the marker. -->
+    <header data-clear-exempt>
       <h1>Ball x Pit <span>Companion</span></h1>
       <span class="tab-sep" aria-hidden="true"></span>
       <nav class="tabs" aria-label="Sections">
@@ -49,27 +53,27 @@ const faviconUrl = `${import.meta.env.BASE_URL}/favicon.ico`;
       <div class="section-view" data-section="balls">
         <div class="screen-toolbar">
           <div id="selection-balls" class="selection-box" hidden></div>
-          <input class="screen-search" data-section="balls" id="search-balls" type="search" placeholder="Search name or effect…" autocomplete="off" />
+          <input class="screen-search" data-section="balls" data-clear-exempt id="search-balls" type="search" placeholder="Search name or effect…" autocomplete="off" />
         </div>
         <div id="ballsGrid"></div>
       </div>
       <div class="section-view" data-section="passives" hidden>
         <div class="screen-toolbar">
           <div id="selection-passives" class="selection-box" hidden></div>
-          <input class="screen-search" data-section="passives" id="search-passives" type="search" placeholder="Search name or effect…" autocomplete="off" />
+          <input class="screen-search" data-section="passives" data-clear-exempt id="search-passives" type="search" placeholder="Search name or effect…" autocomplete="off" />
         </div>
         <div id="passivesGrid"></div>
       </div>
       <div class="section-view" data-section="characters" hidden>
         <div class="screen-toolbar">
-          <input class="screen-search" data-section="characters" id="search-characters" type="search" placeholder="Search name, quirk, or base ball…" autocomplete="off" />
+          <input class="screen-search" data-section="characters" data-clear-exempt id="search-characters" type="search" placeholder="Search name, quirk, or base ball…" autocomplete="off" />
         </div>
         <div id="charactersGrid" class="char-grid"></div>
       </div>
       <div class="section-view" data-section="fusions" hidden>
         <div class="fusion-layout">
           <div class="fusion-list-col">
-            <input class="screen-search" data-section="fusions" id="search-fusions" type="search" placeholder="Search balls…" autocomplete="off" />
+            <input class="screen-search" data-section="fusions" data-clear-exempt id="search-fusions" type="search" placeholder="Search balls…" autocomplete="off" />
             <div id="fusionList" class="fusion-list" aria-label="Pick two balls to fuse"></div>
           </div>
           <div id="fusionPanel" class="fusion-panel"></div>

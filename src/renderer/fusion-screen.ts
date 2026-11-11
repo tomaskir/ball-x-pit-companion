@@ -8,6 +8,7 @@
 // values this module paints and queries.
 import { fusionBalls } from '../fusion';
 import { emitAction } from './seam';
+import { markClearExempt } from '../clear-exempt';
 import { bindAction, type ActionSlot } from './action-slot';
 import { reconcile } from './reconcile';
 import { DEPTH_LABELS } from '../depth-labels';
@@ -60,6 +61,7 @@ export function buildFusionList() {
       const row = document.createElement('button');
       row.className = 'fusion-row';
       row.dataset.id = ball.id;
+      markClearExempt(row);
       row.innerHTML = `<img src="${icon(ball.icon)}" alt="${ball.name}" width="36" height="36" loading="lazy"><span class="nm">${ball.name}</span>`;
       row.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -133,6 +135,9 @@ export const FUSION_PANEL_SELECTORS = {
 
 export function buildFusionPanel() {
   const root = document.getElementById('fusionPanel')!;
+  // the whole panel is interactive (swap, Add to plan) — one marker on the
+  // region covers every built-once control inside it
+  markClearExempt(root);
   root.innerHTML = FUSION_PANEL_SKELETON;
   const q = (s: string) => root.querySelector(s)!;
   const sel = FUSION_PANEL_SELECTORS;

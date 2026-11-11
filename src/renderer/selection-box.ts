@@ -4,6 +4,7 @@
 // through the seam like every other built-in click handler. Internal to the
 // renderer facade.
 import { emitAction } from './seam';
+import { markClearExempt } from '../clear-exempt';
 import { bindAction, type ActionSlot } from './action-slot';
 import { PLAN_LIMIT_TITLE, PLAN_TOGGLE_LABELS } from './labels';
 import type { SelectionBoxState, ViewModel } from '../view-state';
@@ -40,6 +41,10 @@ const FUSION_BTN_TITLES: Record<Exclude<SelectionBoxState['fusion'], null>, stri
 
 function buildSelectionBox(screen: 'balls' | 'passives') {
   const root = document.getElementById(`selection-${screen}`)!;
+  // "Add to plan" / "Add to fusion" own their click: the item is added and
+  // the selection survives adding (CONTEXT.md). This marker is the fix for
+  // the missing .selection-box exemption.
+  markClearExempt(root);
   const withFusion = screen === 'balls';
   root.innerHTML = `
     <span class="selection-label">Selection: <b class="selection-name"></b></span>

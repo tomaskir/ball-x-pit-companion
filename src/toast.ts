@@ -9,14 +9,16 @@
 // selection.
 //
 // The dismissal is the adapter's own document-level pointerdown listener —
-// not the island's empty-space clear policy (companion-core's shouldClear),
-// which it neither dispatches nor interferes with: hiding the toast on an
-// outside tap is all it does. A pointerdown inside the toast itself, or
-// inside a bound anchor (the anchor's own show must win), is ignored.
+// not the island's empty-space clear policy (companion-core's shouldClear):
+// hiding the toast on an outside tap is all it does. The toast itself is
+// marked clear-exempt (src/clear-exempt.ts) when built, so a click inside it
+// is not empty space; a pointerdown inside the toast, or inside a bound
+// anchor (the anchor's own show must win), is ignored by the dismissal.
 // Toast content is built fresh per show (current behavior — the
 // never-recreate-<img> invariant is a grids rule); icons go through
 // icon-url.ts's base-relative join.
 import { recipeHtml } from './graph';
+import { markClearExempt } from './clear-exempt';
 import { itemFor, type Item } from './catalog';
 import { iconUrl } from './icon-url';
 import type { Verdict } from './synergy';
@@ -50,6 +52,9 @@ export function createToast({ getVerdict }: ToastOptions): ToastAdapter {
   function buildToast(item: Item) {
     const el = document.createElement('div');
     el.className = 'toast';
+    // the toast is interactive (its content is selectable, its outside-tap
+    // dismissal is its own) — a click inside it is not empty space
+    markClearExempt(el);
     // recipes are OR-of-ANDs — same compact per-slot notation as the tiles
     const comps = item.recipes.length ? recipeHtml(item.recipes, (id) => {
       const comp = itemFor(id);

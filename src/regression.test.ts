@@ -437,12 +437,13 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
   // then the document handler dispatched clear with that destination —
   // wiping the screen you had just arrived on. Harmless before (showSection
   // dispatched clearAll anyway), fatal after tab switching stopped
-  // clearing. Fix: header controls are not empty space — the exemption
-  // selector includes `header`. This used to be a grep over companion.ts's
-  // source (the island was jsdom-hostile to import for its top-level
-  // init()); the island is now callable — startIsland(ports) — and the bug
-  // is pinned behaviorally in src/companion.test.ts ("clear policy wiring"):
-  // a tab click keeps the destination screen's remembered selection, an
+  // clearing. Fix: header controls are not empty space — the header carries
+  // the clear-exempt marker (src/clear-exempt.ts; the painters mark the
+  // regions they build). This used to be a grep over companion.ts's source
+  // (the island was jsdom-hostile to import for its top-level init()); the
+  // island is now callable — startIsland(ports) — and the bug is pinned
+  // behaviorally in src/companion.test.ts ("clear policy wiring"): a tab
+  // click keeps the destination screen's remembered selection, an
   // empty-space click clears, Esc in a search input clears only the query.
 
   // Bug (seam hygiene, 2026-10-10): the End game upgrades toggle was built

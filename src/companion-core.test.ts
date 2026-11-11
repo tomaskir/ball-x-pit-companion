@@ -4,13 +4,7 @@
 // jsdom-hostile). The wiring in companion.ts applies these decisions to real
 // events; here only the decisions themselves are pinned.
 import { describe, it, expect } from 'vitest';
-import {
-  sectionFromHash,
-  shouldClear,
-  themeFromStorage,
-  CLEAR_EXEMPT_SELECTOR,
-  ESC_EXEMPT_SELECTOR,
-} from './companion-core';
+import { sectionFromHash, shouldClear, themeFromStorage, ESC_EXEMPT_SELECTOR } from './companion-core';
 
 describe('sectionFromHash (hash routing)', () => {
   it('reads the section from a plain hash, with or without the slash', () => {
@@ -52,16 +46,11 @@ describe('shouldClear (Esc / empty-space clear policy)', () => {
     expect(shouldClear('plan', true)).toBe(false);
   });
 
-  // Bug (cross-screen remembering, 2026-10-05): a tab click used to count as
-  // empty space and wiped the destination screen's remembered selection. The
-  // decision is now behavioral above; the wiring feeds it via closest() with
-  // these selectors, so the load-bearing tokens are pinned here instead of
-  // grepping companion.ts source.
-  it('the click-exemption selector covers header controls and search boxes', () => {
-    expect(CLEAR_EXEMPT_SELECTOR).toContain('header');
-    expect(CLEAR_EXEMPT_SELECTOR).toContain('.screen-search');
-  });
-
+  // The click exemption is no longer a selector here: the regions carry
+  // src/clear-exempt.ts's marker, and the island asks isClearExempt. The
+  // predicate is pinned against the real built DOM (every interactive
+  // region) in src/companion.test.ts, and the load-bearing regions are also
+  // pinned behaviorally there.
   it('the Esc exemption covers only inputs (Esc in a search box clears the query, not the selection)', () => {
     expect(ESC_EXEMPT_SELECTOR).toBe('input');
   });

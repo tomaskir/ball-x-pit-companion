@@ -255,9 +255,14 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   survive switching away and back — cross-screen remembering.) The decisions
   behind the routing, the clear policy, and theme resolution are pure
   functions in **`src/companion-core.ts`** (`sectionFromHash`,
-  `shouldClear` + the exempt selectors, `themeFromStorage`) — the island is
-  their transport, reading real events/storage and applying the results to
-  the DOM. The startup sequence itself is callable: **`startIsland(ports)`**
+  `shouldClear`, `themeFromStorage`) — the island is their transport,
+  reading real events/storage and applying the results to the DOM. The
+  click-exemption question is DOM-shaped and lives in
+  **`src/clear-exempt.ts`**: the painters and the shell stamp
+  `markClearExempt(el)` on each interactive region at creation time, and
+  `shouldClear` composes the island's `isClearExempt(target)` answer with
+  the section rule — no region list lives in the policy. The startup
+  sequence itself is callable: **`startIsland(ports)`**
   composes those pure decisions with injected **ports** for every
   environment touchpoint (storage, location/history, clipboard, the OS
   color-scheme query) and returns a disposer for its document/window

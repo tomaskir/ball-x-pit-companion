@@ -3,6 +3,7 @@
 import { CHARACTERS, type Character } from '../data/characters';
 import { ballMap } from '../catalog';
 import { attachToast, emitAction } from './seam';
+import { markClearExempt } from '../clear-exempt';
 import { icon } from './dom';
 import type { ViewModel } from '../view-state';
 
@@ -15,6 +16,7 @@ export function buildCharacters() {
   for (const ch of CHARACTERS) {
     const card = document.createElement('div');
     card.className = 'char-card';
+    markClearExempt(card);
     const base = ch.baseBallId ? ballMap.get(ch.baseBallId) : null;
     card.innerHTML = `
       <img src="${icon(ch.icon)}" alt="${ch.name}" width="96" height="96" loading="lazy">

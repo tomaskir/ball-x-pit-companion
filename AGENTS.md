@@ -17,6 +17,7 @@ Not an npm package (`"private": true`). Code is MIT-licensed; game art in
 
 - `src/pages/index.astro` — static page shell (header, tabs, per-screen search, footer disclaimer).
 - `src/companion.ts` — the **island**: event listening, theme, hash routing only.
+- `src/clear-exempt.ts` — the clear-exemption marker/predicate (`markClearExempt(el)` at each interactive region's creation site, `isClearExempt(target)` for the island); the empty-space clear rule sits with the markup that creates it, not in a selector list.
 - `src/view-state.ts` — all state + derivations; `dispatch(action) → ViewModel`. The test surface.
 - `src/renderer.ts` — all DOM painting; `buildAll({ getVerdict, emit })` once, then `paint(vm)` in place.
 - `src/renderer/` — internal painters behind that facade (grids, characters, chips, fusion screen, plan, build graphs, selection box) sharing `reconcile.ts` (the content-diff cache), `action-slot.ts` (the once-built click channel: a typed `ToggleAction` refreshed by every repaint), `seam.ts` (the emit callback and toast adapter), and `dom.ts`/`labels.ts` (icon, verdict badge, and display-text helpers).

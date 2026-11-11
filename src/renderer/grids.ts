@@ -7,6 +7,7 @@ import { PASSIVES } from '../data/passives';
 import { itemFor, type Item } from '../catalog';
 import { recipeHtml } from '../graph';
 import { attachToast, emitAction } from './seam';
+import { markClearExempt } from '../clear-exempt';
 import { DEPTH_LABELS } from '../depth-labels';
 import { icon, verdictBadge } from './dom';
 import type { ViewModel } from '../view-state';
@@ -30,6 +31,8 @@ function buildGrid(gridId: string, items: Item[]) {
       const tile = document.createElement('button');
       tile.className = 'tile';
       tile.dataset.id = item.id;
+      // the tile owns its click — an empty-space clear must not fire for it
+      markClearExempt(tile);
       // evolved/tier-3 tiles show recipe components inline. All multi-recipe
       // evolutions factorize into per-slot alternates (verified over the whole
       // dataset), so slots render as x+(y/z); single-slot alternates as (x/z).

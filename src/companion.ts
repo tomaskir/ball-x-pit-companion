@@ -19,8 +19,8 @@
 import { createViewState, type Action, type PlanSnapshot, type Section } from './view-state';
 import { buildAll, paint } from './renderer';
 import { parsePlanSnapshot, planLink, takeShareParam } from './share';
+import { isClearExempt } from './clear-exempt';
 import {
-  CLEAR_EXEMPT_SELECTOR,
   ESC_EXEMPT_SELECTOR,
   sectionFromHash,
   shouldClear,
@@ -193,11 +193,12 @@ export function startIsland(ports: IslandPorts): () => void {
     }
   };
   const onEmptySpaceClick = (e: MouseEvent) => {
-    // empty space clears the active section's selection, same as Esc — the
-    // policy and its exempt regions live in companion-core (shouldClear +
-    // CLEAR_EXEMPT_SELECTOR; its doc carries the cross-screen-remembering
-    // rationale, incl. why header controls are exempt)
-    if (!shouldClear(section, !!(e.target as HTMLElement).closest(CLEAR_EXEMPT_SELECTOR))) return;
+    // empty space clears the active section's selection, same as Esc. The
+    // section rule is companion-core's shouldClear; the region question is
+    // clear-exempt's isClearExempt — the marker rides the markup that creates
+    // each interactive region (painters at build time, index.astro's static
+    // header/search inputs), so the island keeps no region list.
+    if (!shouldClear(section, isClearExempt(e.target))) return;
     update({ type: 'clear', section });
   };
   document.addEventListener('keydown', onKeyDown);

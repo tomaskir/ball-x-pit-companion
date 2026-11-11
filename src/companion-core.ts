@@ -8,6 +8,13 @@
 // independently of the DOM — and companion.ts itself is now callable too
 // (startIsland(ports), with the environment injected as ports), so the
 // island's wiring is pinned behaviorally in src/companion.test.ts.
+//
+// The "did this click land in an interactive region?" question is DOM-shaped
+// and lives in src/clear-exempt.ts: the painters call markClearExempt(el) on
+// the regions they create, the shell carries the same data attribute on its
+// static regions, and the island asks isClearExempt(target). shouldClear
+// composes that answer with the section rule below — it never keeps a region
+// list of its own.
 import type { Section } from './view-state';
 
 // ---------- routing ----------
@@ -29,25 +36,19 @@ export function sectionFromHash(hash: string): Section | null {
 
 // ---------- Esc / empty-space clear policy ----------
 
-/** Regions whose clicks own the interaction, so an empty-space click there
- *  must not clear the active section's selection: tiles/cards/chips are the
- *  selections themselves, the fusion panel and toasts are interactive, and —
- *  the cross-screen-remembering bug (2026-10-05) — `header` covers the tab
- *  buttons: a tab click must not wipe the destination screen's remembered
- *  selection. `.screen-search` covers clicking a search box to type. */
-export const CLEAR_EXEMPT_SELECTOR =
-  '.tile, .char-card, .chip, .toast, .fusion-row, .fusion-panel, header, .screen-search';
-
 /** The Esc exemption is narrower than the click one: inside a search input
  *  Esc clears the query (the browser's native type=search behavior) and must
- *  not also wipe the screen's selection — but Esc over a tile still clears. */
+ *  not also wipe the screen's selection — but Esc over a tile still clears.
+ *  (The click exemption is not a selector at all: the regions carry
+ *  src/clear-exempt.ts's marker, and the island asks isClearExempt.) */
 export const ESC_EXEMPT_SELECTOR = 'input';
 
 /** Whether an Esc keypress or empty-space click clears the active section's
  *  selection: it does unless the section is plan (its selection is deliberate
- *  work — only the Clear button wipes it) or the event landed inside one of
- *  the exempt regions above (the island supplies that boolean via
- *  `closest(...)` — the selectors stay data here so the policy is testable). */
+ *  work — only the Clear button wipes it) or the event landed inside an
+ *  interactive region (the island supplies that boolean from
+ *  src/clear-exempt.ts's isClearExempt — the marker lives with the markup
+ *  that creates it, so no region list can drift here). */
 export function shouldClear(section: Section, inExemptRegion: boolean): boolean {
   return section !== 'plan' && !inExemptRegion;
 }

@@ -9,52 +9,19 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { startIsland, PLAN_KEY, type IslandPorts } from './companion';
 import { encodePlan } from './share';
+import { isClearExempt } from './clear-exempt';
+import { shellDoc } from './test-support/styles';
 import type { PlanSnapshot } from './view-state';
 
-// ---------- jsdom shell: the parts of index.astro the island touches ----------
+// ---------- jsdom shell: the real index.astro markup ----------
 
-const SHELL = `
-  <header>
-    <nav>
-      <button class="tab-btn active" data-section="balls">Balls</button>
-      <button class="tab-btn" data-section="passives">Passives</button>
-      <button class="tab-btn" data-section="plan">Plan</button>
-    </nav>
-    <button id="themeToggle" aria-label="Toggle theme">☀️</button>
-  </header>
-  <main>
-    <div class="section-view" data-section="balls">
-      <input class="screen-search" data-section="balls" id="search-balls" type="search" />
-      <div id="ballsGrid"></div>
-    </div>
-    <div class="section-view" data-section="passives" hidden>
-      <input class="screen-search" data-section="passives" id="search-passives" type="search" />
-      <div id="passivesGrid"></div>
-    </div>
-    <div class="section-view" data-section="characters" hidden>
-      <input class="screen-search" data-section="characters" id="search-characters" type="search" />
-      <div id="charactersGrid"></div>
-    </div>
-    <div class="section-view" data-section="fusions" hidden>
-      <input class="screen-search" data-section="fusions" id="search-fusions" type="search" />
-      <div id="fusionList"></div>
-      <div id="fusionPanel"></div>
-    </div>
-    <div class="section-view" data-section="plan" hidden>
-      <button id="planClear">Clear plan</button>
-      <button id="planShare">Share</button>
-      <input type="checkbox" id="planUpgrades" checked />
-      <div id="planView"></div>
-    </div>
-  </main>
-  <div id="charChips"></div>
-  <span id="slotHint"></span>
-  <div id="selection-balls" hidden></div>
-  <div id="selection-passives" hidden></div>
-`;
-
+// The island's shell is the shipped page, not a hand-copied subset: a
+// missing container or a missing clear-exemption marker in index.astro must
+// fail here, not pass against a test-only replica. (The renderer builds the
+// rest of the DOM — grids, cards, rows, panel, selection boxes — through
+// buildAll, so every behavioral pin below runs against the real built DOM.)
 function mountIslandShell() {
-  document.body.innerHTML = SHELL;
+  document.body.innerHTML = shellDoc().body.innerHTML;
 }
 
 // ---------- stub ports ----------
@@ -222,7 +189,9 @@ describe('save-on-every-dispatch', () => {
     addFlashToPlan();
     expect(t.savedPlan()!.balls).toEqual(['flash']);
 
-    addFlashToPlan(); // toggle off — the save happens on every dispatch
+    // the selection survives adding, so the same box still acts on Flash —
+    // the button is now "Remove from plan". Toggling it off saves too.
+    document.querySelector<HTMLElement>('#selection-balls .selection-btn[data-kind="plan"]')!.click();
     expect(t.savedPlan()!.balls).toEqual([]);
   });
 
@@ -299,14 +268,113 @@ describe('clear policy wiring (tab click wiped the destination screen, 2026-10-0
     flashTile().click();
     expect(flashTile().classList.contains('selected')).toBe(true);
   }
+  const selectionBtn = (kind: 'plan' | 'fusion') =>
+    document.querySelector<HTMLElement>(`#selection-balls .selection-btn[data-kind="${kind}"]`)!;
+  const fusionRow = (id: string) =>
+    document.querySelector<HTMLElement>(`#fusionList .fusion-row[data-id="${id}"]`)!;
 
   it('a tab click (header) does not clear the destination screen\'s remembered selection', () => {
     const t = stubPorts();
     selectFlash(t);
+    // leave balls, then come back by clicking the balls tab: that click must
+    // not wipe balls' remembered selection (the cross-screen bug — the
+    // document handler ran after showSection, so `section` was the
+    // destination). A hashchange would not exercise the click handler.
     document.querySelector<HTMLElement>('.tab-btn[data-section="passives"]')!.click();
-    t.setHashValue('#/balls');
-    window.dispatchEvent(new Event('hashchange'));
+    document.querySelector<HTMLElement>('.tab-btn[data-section="balls"]')!.click();
     expect(flashTile().classList.contains('selected')).toBe(true);
+  });
+
+  it('clicking a search input does not clear the selection', () => {
+    const t = stubPorts();
+    selectFlash(t);
+    document.getElementById('search-balls')!.click();
+    expect(flashTile().classList.contains('selected')).toBe(true);
+  });
+
+  it('clicking "Add to plan" leaves the selection intact (bug: .selection-box was not clear-exempt)', () => {
+    // Bug: .selection-box was missing from the exempt selector, so the
+    // button's click bubbled to the document handler and cleared the
+    // selection in the same click that added the item — contradicting
+    // CONTEXT.md's "Selection survives adding".
+    const t = stubPorts();
+    selectFlash(t);
+    selectionBtn('plan').click();
+    expect(flashTile().classList.contains('selected')).toBe(true);
+    expect(t.savedPlan()!.balls).toEqual(['flash']);
+  });
+
+  it('clicking "Add to fusion" leaves the selection intact', () => {
+    const t = stubPorts();
+    selectFlash(t);
+    selectionBtn('fusion').click();
+    expect(flashTile().classList.contains('selected')).toBe(true);
+    expect(fusionRow('flash').classList.contains('slot-1')).toBe(true);
+  });
+
+  it('clicking a character card keeps the character selected', () => {
+    const t = stubPorts({ hash: '#/characters' });
+    start(t.ports);
+    const card = [...document.querySelectorAll<HTMLElement>('#charactersGrid .char-card')]
+      .find((c) => c.textContent!.includes('The Warrior'))!;
+    card.click();
+    expect(card.classList.contains('selected')).toBe(true);
+    expect(t.savedPlan()!.chars).toEqual(['the-warrior']);
+  });
+
+  it('clicking a fusion row keeps the pick', () => {
+    const t = stubPorts({ hash: '#/fusions' });
+    start(t.ports);
+    fusionRow('flash').click();
+    expect(fusionRow('flash').classList.contains('slot-1')).toBe(true);
+  });
+
+  it('clicking the fusion panel\'s Add to plan keeps the composed picks', () => {
+    const t = stubPorts({ hash: '#/fusions' });
+    start(t.ports);
+    fusionRow('flash').click();
+    fusionRow('glacier').click();
+    document.querySelector<HTMLElement>('#fusionPanel .fusion-plan-btn')!.click();
+    expect(fusionRow('flash').classList.contains('slot-1')).toBe(true);
+    expect(fusionRow('glacier').classList.contains('slot-2')).toBe(true);
+  });
+
+  it('clicking inside the toast does not clear the selection', () => {
+    const t = stubPorts();
+    selectFlash(t);
+    flashTile().dispatchEvent(new MouseEvent('mouseenter'));
+    const toast = document.querySelector<HTMLElement>('body > .toast')!;
+    expect(toast).toBeTruthy();
+    toast.click();
+    expect(flashTile().classList.contains('selected')).toBe(true);
+  });
+
+  it('every interactive region in the real built DOM is clear-exempt', () => {
+    // The predicate pin: query the elements the painters and the shell
+    // actually produced and ask the predicate — not a copy of a selector
+    // string. A marker dropped from any creation site fails here.
+    const t = stubPorts({ hash: '#/characters' });
+    start(t.ports);
+    // create a chip (a selected character) and a toast (hover) through the
+    // real renderer, so their markers ride the elements it builds
+    [...document.querySelectorAll<HTMLElement>('#charactersGrid .char-card')]
+      .find((c) => c.textContent!.includes('The Warrior'))!.click();
+    flashTile().dispatchEvent(new MouseEvent('mouseenter'));
+    const regions: [string, Element | null][] = [
+      ['header', document.querySelector('header')],
+      ['search input', document.getElementById('search-balls')],
+      ['tile', flashTile()],
+      ['character card', document.querySelector('#charactersGrid .char-card')],
+      ['chip', document.querySelector('#charChips .chip')],
+      ['fusion row', document.querySelector('#fusionList .fusion-row')],
+      ['fusion panel', document.getElementById('fusionPanel')],
+      ['selection box', document.getElementById('selection-balls')],
+      ['toast', document.querySelector('body > .toast')],
+    ];
+    for (const [name, el] of regions) {
+      expect(el, `${name} exists`).toBeTruthy();
+      expect(isClearExempt(el), name).toBe(true);
+    }
   });
 
   it('an empty-space click clears the active section\'s selection', () => {
