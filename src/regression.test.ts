@@ -633,3 +633,23 @@ describe('regression: empty-result copy no longer exists (no shared properties â
     expect('resultEmptyText' in panel).toBe(false);
   });
 });
+
+describe('regression: fusion toggles accepted ids derive() could not resolve (crash on next paint)', () => {
+  // toggleFusion accepted any id (including Baby Ball, which fusionBalls()
+  // excludes) and togglePlanFusion stored any pair; plan-state.derive then
+  // did ballMap.get(a)! and fusionName(...), so a malformed action threw
+  // during the next paint. Fix: both toggles resolve through the pick-list
+  // seam (src/pick-list.ts) and reject ids that are unknown or not fusable.
+  it('unknown and Baby Ball ids are rejected by both toggles', async () => {
+    const { createViewState } = await import('./view-state');
+    const view = createViewState();
+    const vm = view.dispatch({ type: 'toggleFusion', id: 'baby-ball' });
+    expect(vm.fusionPanel).toEqual({ state: 'empty' });
+    const vm2 = view.dispatch({ type: 'toggleFusion', id: 'not-a-ball' });
+    expect(vm2.fusionPanel).toEqual({ state: 'empty' });
+    expect(() => view.dispatch({ type: 'togglePlanFusion', a: 'baby-ball', b: 'flash' })).not.toThrow();
+    const plan = view.derive().plan;
+    expect(plan.counts.balls).toBe(0);
+    expect(plan.balls).toHaveLength(0);
+  });
+});

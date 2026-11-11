@@ -88,6 +88,17 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   and notes join with ` · `. Module: `src/synergy.ts`
   (`verdictFor(item, selectedChars)`) — namespace resolution is internal,
   callers pass the item only.
+- **Pick list** — the sticky selection invariant, one module: a list where
+  re-toggling a member deselects it, adding past capacity is a no-op, inputs
+  the list's `resolve` rejects (unknown ids, non-fusable balls) are ignored,
+  and restore filters unknown entries and duplicates (first occurrence wins)
+  without trimming for capacity. Identity is the list's `key` (the plan's
+  fused pairs use the unordered pair key); capacity is the list's `hasRoom`
+  callback, which may read another list (the fused pairs share the ball
+  slots). Module: `src/pick-list.ts` (`createPickList({ hasRoom, resolve,
+  key })` → `{ toggle, restore, list, has }`); consumers: the character
+  slots and fusion picks in `src/view-state.ts`, the plan's balls, passives,
+  and fused pairs in `src/plan-state.ts`.
 - **Character slot** — the selected-character list holds at most the plan's
   active character limit (2 with end-game upgrades, 1 without). Selection is
   sticky (shared with fusion picks): re-clicking a pick deselects it; adding
@@ -112,14 +123,17 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   plan's characters are the shared `selectedChars` (one selection feeds
   verdicts, chips, and the plan); balls/passives ride `planBalls` /
   `planPassives` in pick order (`togglePlanItem` — the catalog resolves the
-  namespace) — pick order is the storage order; the paint order is derived:
+  namespace, and the pick list rejects unknown ids) — pick order is the
+  storage order; the paint order is derived:
   entries sort by **complexity** (`graph.complexity` — how many base
   entities the final form contains, counted recursively; a fused pair's is
   the sum of its components', e.g. Freeze Ray × Time Bomb = 2+3 = 5), most
   complex left, ties in pick order (stable sort). **Fused pairs** ride `planFused` (`togglePlanFusion`): a pair
   counts as ONE ball slot, its identity is order-insensitive (sorted ids —
-  the reverse composition is the same planned pair), compose order is kept
-  for display, and its plan entry matches the single-ball shape: two
+  the reverse composition is the same planned pair), the pick list's
+  resolution guard rejects unknown and non-fusable components (Baby Ball),
+  compose order is kept for display, and its plan entry matches the
+  single-ball shape: two
   compact icons side by side (36px) with the composed name — which carries
   the "×" between components — beside them, plus one per-component verdict
   badge on each icon. The **End game upgrades**
@@ -317,14 +331,12 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   types so companion.ts and share.ts keep their import paths. The ball
   grid the renderer paints is one merged, complexity-ordered list
   (`PlanBallEntry`: a single or a fused pair — a pair is ONE entry), not
-  two lists the renderer concatenates. The shared
-  remove-or-add toggle shape (`stickyToggle`) and hydrate's per-list restore
-  (`hydrateList`) are homed here too — view-state's character slots and
-  fusion picks import them, and plan-state must not import view-state (no
-  runtime cycle). `isFusable` (the one fusable-set definition, derived from
-  `fusionBalls()`) is exported here for hydrate's pair validation and
-  view-state's fusion label. The ball-slot rule (a fused pair counts as ONE
-  slot) is one internal definition, not one per call site.
+  two lists the renderer concatenates. The three lists are pick lists
+  (`src/pick-list.ts`): the sticky toggle, capacity guard, resolution guard,
+  and duplicate-free restore live there, not here. The ball-slot rule (a
+  fused pair counts as ONE slot) is one internal definition, not one per
+  call site; it is the fused list's `hasRoom` callback. `isFusable` (the one
+  fusable-set definition) lives beside `fusionBalls()` in `src/fusion.ts`.
 - **View state** — the island's state (item selection, character slots,
   fusion picks, per-screen search queries) and every derivation from it
   (highlight walks, filters, verdict badges, the composed fusion, the
@@ -336,9 +348,10 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   forwards the plan actions verbatim and embeds the derived `PlanState` in
   the view model, handing the shared `selectedChars` in on every
   derive/snapshot. Fusion picks
-  share the character slots' sticky semantics (re-click deselects; a third
-  pick while two are held is a no-op) — the same `stickyToggle` shape the
-  plan's toggles use; the view model carries the fusion
+  are a pick list like the character slots (re-click deselects; a third
+  pick while two are held is a no-op; unknown and non-fusable ids are
+  rejected) — the same `src/pick-list.ts` module the plan's toggles use; the
+  view model carries the fusion
   screen's panel state as a named 3-state machine (`fusionPanel`: `empty` /
   `pending` with the first resolved Ball / `composed` with both resolved
   Balls, the composed fusion from `src/fusion.ts`, the pair's `planned`

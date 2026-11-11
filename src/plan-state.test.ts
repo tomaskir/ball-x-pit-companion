@@ -373,6 +373,16 @@ describe('plan state: fused pairs in the plan', () => {
     expect(plan.counts.balls).toBe(5);
   });
 
+  it('rejects unknown, non-fusable (Baby Ball) and degenerate pairs at the seam — derive never throws', () => {
+    const state = createPlanState();
+    state.dispatch({ type: 'togglePlanFusion', a: 'baby-ball', b: 'flash' });
+    state.dispatch({ type: 'togglePlanFusion', a: 'flash', b: 'not-a-ball' });
+    state.dispatch({ type: 'togglePlanFusion', a: 'flash', b: 'flash' });
+    const plan = state.derive([]);
+    expect(fusedOf(plan)).toHaveLength(0);
+    expect(plan.counts.balls).toBe(0);
+  });
+
   it('togglePlanFusion past the ball limit is a no-op', () => {
     const state = createPlanState();
     for (const id of ['flash', 'glacier', 'maggot', 'flicker', 'burn']) state.dispatch({ type: 'togglePlanItem', id });

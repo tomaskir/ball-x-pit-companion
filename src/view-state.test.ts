@@ -254,6 +254,15 @@ describe('view state: fusion picks (max 2, sticky selection)', () => {
     expect(vm.fusionPanel).toEqual({ state: 'empty' });
   });
 
+  it('rejects unknown and non-fusable ids — Baby Ball is never a fusion pick', () => {
+    const view = createViewState();
+    const vm = view.dispatch({ type: 'toggleFusion', id: 'baby-ball' });
+    expect(vm.fusionPanel).toEqual({ state: 'empty' });
+    expect(vm.fusionHint).toBe('Pick two balls to see their fusion.');
+    const vm2 = view.dispatch({ type: 'toggleFusion', id: 'not-a-ball' });
+    expect(vm2.fusionPanel).toEqual({ state: 'empty' });
+  });
+
   it('fusion rows reflect pick order and search filtering', () => {
     const view = createViewState();
     view.dispatch({ type: 'toggleFusion', id: 'overgrowth' });

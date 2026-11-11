@@ -10,17 +10,19 @@
 // field is likewise ignored — view-state resolves and restores them).
 // PlanSnapshot, the persistence currency, lives here; view-state re-exports
 // the plan types so companion.ts and share.ts keep their import paths.
-// The shared toggle/restore shapes are homed here too (stickyToggle,
-// hydrateList, isFusable): view-state's character slots and fusion picks
-// use them, and plan-state must not import view-state (no runtime cycle).
+// The three plan lists are pick lists (src/pick-list.ts): the sticky toggle,
+// the capacity guard, the resolution guard, and duplicate-free restore live
+// there, not here. The fused-pair list shares the ball capacity with the
+// single-ball list (a pair is ONE slot) through its `hasRoom` callback.
 // Paint order is derived here as well: the plan's balls (singles + fused
 // pairs, one merged grid) and passives sort by complexity — how many base
 // entities the final form contains (graph.complexity), most complex left.
 import { type Ball } from './data/balls';
 import { type Character } from './data/characters';
-import { ballMap, passiveMap, isPassive, itemFor } from './catalog';
+import { ballMap, passiveMap, isPassive } from './catalog';
 import { complexity } from './graph';
-import { fusionBalls, fusionName } from './fusion';
+import { fusionName, isFusable } from './fusion';
+import { createPickList } from './pick-list';
 import { verdictFor, type Item, type Verdict } from './synergy';
 import { pairKey } from './pair';
 
@@ -114,55 +116,38 @@ const activeLimits = (upgradesOn: boolean): PlanLimits => (upgradesOn ? LIMITS.o
 const ballSlotsUsed = (balls: readonly string[], fused: readonly PlanFused[]): number =>
   balls.length + fused.length;
 
-/** Fused-pair identity is the unordered pair key (src/pair.ts), so the
- *  reverse composition is the same planned pair. */
-const samePair = (p: PlanFused, a: string, b: string): boolean => pairKey(p.a, p.b) === pairKey(a, b);
-
-/** Fusable upgrade entities, indexed once — Baby Ball is not one. The one
- *  fusable-set definition, derived from `fusionBalls()` (the rule's home in
- *  src/fusion.ts); plan-state's hydrate validation and view-state's fusion
- *  label both consume it, so it stays exported. */
-const FUSABLE = new Set(fusionBalls().map((b) => b.id));
-export const isFusable = (id: string): boolean => FUSABLE.has(id);
-
-/** Shared sticky-toggle semantics for characters, fusion picks and plan
- *  items: re-clicking a member deselects it; adding while `hasRoom` says
- *  the list is full is a no-op — one must be deselected first. Mutates
- *  `list` in place. Homed here (not in view-state) because plan-state needs
- *  it too and must not import view-state. */
-export function stickyToggle<T>(list: T[], hasRoom: (list: T[]) => boolean, match: (x: T) => boolean, make: () => T | undefined) {
-  const idx = list.findIndex(match);
-  if (idx >= 0) list.splice(idx, 1);
-  else if (hasRoom(list)) {
-    const x = make();
-    if (x) list.push(x);
-  }
-}
-
-/** Hydrate's shared per-list restore: wipe `list`, then keep each source
- *  entry `resolve` accepts (unknown ids are dropped), skipping duplicates —
- *  first occurrence wins, `key` is the identity. Over-limit selections are
- *  kept, not trimmed: the guard is validity only. Same home rationale as
- *  stickyToggle above. */
-export function hydrateList<S, T>(list: T[], source: readonly S[], resolve: (x: S) => T | undefined, key: (x: T) => string): void {
-  list.length = 0;
-  for (const x of source) {
-    const t = resolve(x);
-    if (t !== undefined && !list.some((y) => key(y) === key(t))) list.push(t);
-  }
-}
-
 export function createPlanState() {
   /** The plan's End game upgrades toggle — on by default. */
   let upgradesOn = true;
   /** Plan balls/passives in pick order — the storage order (snapshot,
    *  hydrate); the paint order is derived (complexity, see derive). The
    *  plan's characters are the shared selectedChars — one selection feeds
-   *  verdicts, chips, plan. */
-  const planBalls: string[] = [];
-  const planPassives: string[] = [];
-  /** Planned fused pairs in compose order; identity is the sorted id pair. */
-  const planFused: PlanFused[] = [];
+   *  verdicts, chips, plan. Resolution guards reject unknown ids (the
+   *  catalog decides the namespace at the dispatch seam). */
+  const planBalls = createPickList<string, string>({
+    resolve: (id) => (ballMap.has(id) ? id : undefined),
+    key: (id) => id,
+    // the ball list shares the ball capacity with the fused pairs (a pair
+    // is ONE slot), so room is "slots used < capacity", not this list's length
+    hasRoom: (list) => ballSlotsUsed(list, planFused.list()) < activeLimits(upgradesOn).balls,
+  });
+  const planPassives = createPickList<string, string>({
+    resolve: (id) => (passiveMap.has(id) ? id : undefined),
+    key: (id) => id,
+    hasRoom: (list) => list.length < activeLimits(upgradesOn).passives,
+  });
+  /** Planned fused pairs in compose order; identity is the sorted id pair,
+   *  so the reverse composition is the same planned pair. Resolution
+   *  rejects unknown ids, non-fusable balls (Baby Ball), and degenerate
+   *  pairs — derive() can therefore never meet a bad component. */
+  const planFused = createPickList<PlanFused, PlanFused>({
+    resolve: (p) =>
+      ballMap.has(p.a) && ballMap.has(p.b) && p.a !== p.b && isFusable(p.a) && isFusable(p.b)
+        ? { a: p.a, b: p.b }
+        : undefined,
+    key: (p) => pairKey(p.a, p.b),
+    hasRoom: (list) => ballSlotsUsed(planBalls.list(), list) < activeLimits(upgradesOn).balls,
+  });
 
   /** The plan derived against the handed-in selection: resolved entries in
    *  paint order — balls and passives sorted by complexity (`graph.complexity`,
@@ -171,17 +156,17 @@ export function createPlanState() {
    *  section limit (kept, never trimmed; the marks ride the sorted order, so
    *  the displayed tail is what gets flagged). Verdicts ride along so the
    *  renderer paints them without re-deriving. */
-  const derive = (selectedChars: Character[]): PlanState => {
+  const derive = (selectedChars: readonly Character[]): PlanState => {
     const limits = activeLimits(upgradesOn);
-    const ballSlots = ballSlotsUsed(planBalls, planFused);
+    const ballSlots = ballSlotsUsed(planBalls.list(), planFused.list());
     const ballComplexity = (e: PlanBallEntry): number =>
       e.kind === 'single' ? complexity(e.item, ballMap) : complexity(e.a, ballMap) + complexity(e.b, ballMap);
     const balls: PlanBallEntry[] = [
-      ...planBalls.map((id) => {
+      ...planBalls.list().map((id) => {
         const item = ballMap.get(id)!;
         return { kind: 'single' as const, item, overLimit: false, verdict: verdictFor(item, selectedChars) };
       }),
-      ...planFused.map(({ a, b }) => {
+      ...planFused.list().map(({ a, b }) => {
         const ballA = ballMap.get(a)!;
         const ballB = ballMap.get(b)!;
         return {
@@ -196,7 +181,7 @@ export function createPlanState() {
     ]
       .sort((x, y) => ballComplexity(y) - ballComplexity(x))
       .map((e, i) => ({ ...e, overLimit: i >= limits.balls }));
-    const planPassivesState = planPassives
+    const planPassivesState = planPassives.list()
       .map((id) => {
         const item = passiveMap.get(id)!;
         return { item, overLimit: false, verdict: verdictFor(item, selectedChars) };
@@ -206,11 +191,11 @@ export function createPlanState() {
     const overLimit =
       selectedChars.length > limits.chars ||
       ballSlots > limits.balls ||
-      planPassives.length > limits.passives;
+      planPassives.list().length > limits.passives;
     return {
       upgradesOn,
       limits,
-      counts: { chars: selectedChars.length, balls: ballSlots, passives: planPassives.length },
+      counts: { chars: selectedChars.length, balls: ballSlots, passives: planPassives.list().length },
       characters: selectedChars.map((c, i) => ({
         character: c,
         overLimit: i >= limits.chars,
@@ -230,46 +215,35 @@ export function createPlanState() {
      *  view-state's; derive(selectedChars) reads them back afterwards. */
     dispatch(action: PlanAction): void {
       switch (action.type) {
-        // Plan membership: the catalog decides the namespace (and rejects
-        // unknown ids); re-click removes, adding past the active limit is a
-        // no-op. Removal is always allowed — even over-limit entries.
-        case 'togglePlanItem': {
-          if (!itemFor(action.id)) break;
-          const passive = isPassive(action.id);
-          const limits = activeLimits(upgradesOn);
-          stickyToggle(passive ? planPassives : planBalls,
-            // the passive list owns its limit outright; the ball list shares
-            // the ball capacity with the fused pairs (a pair is ONE slot), so
-            // room is "slots used < capacity", not this list's length
-            (list) => passive ? list.length < limits.passives : ballSlotsUsed(list, planFused) < limits.balls,
-            (id) => id === action.id, () => action.id);
+        // Plan membership: the catalog decides the namespace; the pick list
+        // rejects unknown ids, re-click removes, adding past the active
+        // limit is a no-op. Removal is always allowed — even over-limit
+        // entries.
+        case 'togglePlanItem':
+          (isPassive(action.id) ? planPassives : planBalls).toggle(action.id);
           break;
-        }
-        // Fused-pair plan membership: identity is order-insensitive (the
-        // reverse composition toggles the same pair); adding past the ball
-        // limit is a no-op. Compose order is kept for display.
+        // Fused-pair plan membership: the pick list's identity is
+        // order-insensitive (the reverse composition toggles the same pair)
+        // and its resolution guard rejects unknown/non-fusable components;
+        // adding past the ball limit is a no-op. Compose order is kept for
+        // display.
         case 'togglePlanFusion':
-          stickyToggle(planFused, (list) => ballSlotsUsed(planBalls, list) < activeLimits(upgradesOn).balls,
-            (p) => samePair(p, action.a, action.b), () => ({ a: action.a, b: action.b }));
+          planFused.toggle({ a: action.a, b: action.b });
           break;
         case 'toggleUpgrades': upgradesOn = !upgradesOn; break;
         case 'clearPlan':
-          planBalls.length = 0;
-          planPassives.length = 0;
-          planFused.length = 0;
+          planBalls.restore([]);
+          planPassives.restore([]);
+          planFused.restore([]);
           upgradesOn = true;
           break;
         case 'hydrate': {
           upgradesOn = action.plan.upgradesOn;
-          hydrateList(planBalls, action.plan.balls, (id) => (ballMap.has(id) ? id : undefined), (id) => id);
-          hydrateList(planPassives, action.plan.passives, (id) => (passiveMap.has(id) ? id : undefined), (id) => id);
+          planBalls.restore(action.plan.balls);
+          planPassives.restore(action.plan.passives);
           // both sides must be real, distinct, fusable balls; identity
           // (sorted pair) dedupes — over-limit pairs are kept, not trimmed
-          hydrateList(planFused, action.plan.fused ?? [],
-            (p) => (ballMap.has(p.a) && ballMap.has(p.b) && p.a !== p.b && isFusable(p.a) && isFusable(p.b)
-              ? { a: p.a, b: p.b }
-              : undefined),
-            (p) => pairKey(p.a, p.b));
+          planFused.restore(action.plan.fused ?? []);
           break;
         }
       }
@@ -279,25 +253,25 @@ export function createPlanState() {
      *  localStorage, fed back through `hydrate`). The characters are the
      *  handed-in shared selection, serialized here so the snapshot stays
      *  one whole type. */
-    snapshot(selectedChars: Character[]): PlanSnapshot {
+    snapshot(selectedChars: readonly Character[]): PlanSnapshot {
       return {
         upgradesOn,
         chars: selectedChars.map((c) => c.id),
-        balls: [...planBalls],
-        passives: [...planPassives],
-        fused: planFused.map((p) => ({ ...p })),
+        balls: [...planBalls.list()],
+        passives: [...planPassives.list()],
+        fused: planFused.list().map((p) => ({ ...p })),
       };
     },
     /** Plan membership of one id, namespace resolved through the catalog —
      *  the selection boxes' "add/remove" label queries this instead of
      *  reaching into the plan's lists. */
     has(id: string): boolean {
-      return isPassive(id) ? planPassives.includes(id) : planBalls.includes(id);
+      return isPassive(id) ? planPassives.has(id) : planBalls.has(id);
     },
     /** Plan membership of a fused pair, by sorted-id identity — the fusion
      *  panel's `planned` mark queries this. */
     hasPair(a: string, b: string): boolean {
-      return planFused.some((p) => samePair(p, a, b));
+      return planFused.has({ a, b });
     },
     /** The limits in force right now — view-state's character slots gate
      *  on them (the character limit rides the plan's upgrade toggle). */

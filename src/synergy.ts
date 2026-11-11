@@ -15,7 +15,7 @@ export type { Item };
 export interface Verdict { verdict: 'red' | 'green'; note?: string }
 
 /** Verdict of one item against the selected characters. Null = neutral. */
-export function verdictFor(item: Item, selected: Character[]): Verdict | null {
+export function verdictFor(item: Item, selected: readonly Character[]): Verdict | null {
   const passive = isPassive(item.id);
   const verdicts: Verdict[] = [];
   for (const ch of selected) {

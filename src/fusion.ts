@@ -53,6 +53,14 @@ export function fusionBalls(): Ball[] {
   return BALLS.filter((b) => b.id !== 'baby-ball');
 }
 
+/** Fusable upgrade entities, indexed once — Baby Ball is not one. The one
+ *  fusable-set definition, derived from `fusionBalls()` above so the rule
+ *  and its membership test stay together. Consumers: the fusion pick list's
+ *  resolution guard, the plan's fused-pair guard, and the selection box's
+ *  "unfusable" label. */
+const FUSABLE = new Set(fusionBalls().map((b) => b.id));
+export const isFusable = (id: string): boolean => FUSABLE.has(id);
+
 /** "A × B" — the site's display choice (the English game name is "A X B";
  *  the separator is localized), first-selected ball first. */
 export const fusionName = (a: Ball, b: Ball): string => `${a.name} × ${b.name}`;

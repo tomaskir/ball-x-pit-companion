@@ -27,10 +27,11 @@ import { CHARACTERS, type Character } from './data/characters';
 import { highlightSet } from './graph';
 import { isPassive, itemFor, graphFor } from './catalog';
 import { deriveBuildGraphView, type BuildGraphViewState } from './build-graph';
-import { fusionBalls } from './fusion';
+import { fusionBalls, isFusable } from './fusion';
 import { deriveFusionPanel, type FusionPanelState } from './fusion-panel';
+import { createPickList } from './pick-list';
 import { verdictFor, type Item, type Verdict } from './synergy';
-import { createPlanState, stickyToggle, hydrateList, isFusable } from './plan-state';
+import { createPlanState } from './plan-state';
 import type { PlanAction, PlanLimits, PlanState, PlanSnapshot } from './plan-state';
 
 // The plan's types are plan-state's — re-exported so existing import paths
@@ -63,7 +64,7 @@ export interface ViewModel {
   tiles: Map<string, TileState>;
   charCards: Map<string, CharCardState>;
   fusionRows: Map<string, FusionRowState>;
-  selectedChars: Character[];
+  selectedChars: readonly Character[];
   /** Hint for the character screen: "pick a second character…" while one is
    *  held and two are allowed, "selection full — deselect one first" when at
    *  the active limit. */
@@ -137,7 +138,7 @@ const SELECTION_FULL = 'selection full — deselect one first';
  *  character held and two allowed. Null otherwise (0 or 2 held, or limit 1
  *  — no second pick exists to block). One definition for the card state and
  *  the toggle guard, so the two cannot drift. */
-const blockedPartner = (chars: Character[], limits: PlanLimits): Character | null =>
+const blockedPartner = (chars: readonly Character[], limits: PlanLimits): Character | null =>
   chars.length === 1 && limits.chars > 1 ? chars[0] : null;
 
 export function createViewState() {
@@ -146,20 +147,32 @@ export function createViewState() {
    *  each keeps its own query, independent of every other screen's. The
    *  plan screen has no search box; its key only completes the record. */
   const queries: Record<Section, string> = { balls: '', passives: '', characters: '', fusions: '', plan: '' };
-  const selectedChars: Character[] = [];
+  /** The plan's state — upgrade toggle, planned balls/passives/fused pairs,
+   *  and the PlanState derivation. The plan's characters are the shared
+   *  selectedChars below: handed in on every derive/snapshot, cleared by
+   *  clearPlan here (plan-state never mutates them). */
+  const plan = createPlanState();
+  /** The character slots and fusion picks are pick lists (src/pick-list.ts):
+   *  the sticky toggle, capacity guard, and resolution guard live there.
+   *  Unknown character ids are rejected; so are unknown and non-fusable ball
+   *  ids (Baby Ball is not a fusion pick). */
+  const selectedChars = createPickList<Character, string>({
+    resolve: (id) => CHARACTERS.find((c) => c.id === id),
+    key: (c) => c.id,
+    hasRoom: (list) => list.length < plan.limits().chars,
+  });
   /** Fusion picks in selection order, at most 2. */
-  const fusionPicks: string[] = [];
+  const fusionPicks = createPickList<string, string>({
+    resolve: (id) => (isFusable(id) ? id : undefined),
+    key: (id) => id,
+    hasRoom: (list) => list.length < 2,
+  });
   /** The build graph's focused node (null = none), the two panels' collapsed
    *  flags, and the done marks (nodes the player has already built this run)
    *  — session-only UI state, not part of the plan snapshot. */
   let graphFocus: string | null = null;
   const graphCollapsed = { balls: false, passives: false };
   const graphDone = new Set<string>();
-  /** The plan's state — upgrade toggle, planned balls/passives/fused pairs,
-   *  and the PlanState derivation. The plan's characters are the shared
-   *  selectedChars above: handed in on every derive/snapshot, cleared by
-   *  clearPlan here (plan-state never mutates them). */
-  const plan = createPlanState();
 
   const derive = (): ViewModel => {
     const tiles = new Map<string, TileState>();
@@ -174,7 +187,7 @@ export function createViewState() {
     // two (collection, query) pairs; the graphs themselves stay separate
     for (const [items, q] of [[BALLS, ballQ], [PASSIVES, passiveQ]] as const) {
       for (const item of items) {
-        const v = verdictFor(item, selectedChars);
+        const v = verdictFor(item, selectedChars.list());
         tiles.set(item.id, {
           selected: selectedId === item.id,
           related: !!selectedId && selectedId !== item.id && related.has(item.id),
@@ -187,20 +200,20 @@ export function createViewState() {
     // Matchmaker pairing restrictions: with exactly one character held (and
     // two allowed), forbidden partners are blocked — the game darkens them
     // on the select screen. With 0 or 2 held nothing is blocked.
-    const planState = plan.derive(selectedChars);
+    const planState = plan.derive(selectedChars.list());
     const limits = planState.limits;
-    const held = blockedPartner(selectedChars, limits);
+    const held = blockedPartner(selectedChars.list(), limits);
     for (const ch of CHARACTERS) {
       const blocked = !!held && ch.cannotPair.includes(held.id);
       charCards.set(ch.id, {
-        selected: selectedChars.some((c) => c.id === ch.id),
+        selected: selectedChars.has(ch.id),
         filtered: !!charQ && !(ch.name.toLowerCase().includes(charQ) || ch.quirk.toLowerCase().includes(charQ) || (ch.baseBallId && itemFor(ch.baseBallId)?.name.toLowerCase().includes(charQ) || false)),
         blocked,
         blockedBy: blocked ? held!.name : null,
       });
     }
     for (const b of FUSION_BALLS) {
-      const pick = fusionPicks.indexOf(b.id);
+      const pick = fusionPicks.list().indexOf(b.id);
       fusionRows.set(b.id, {
         slot: pick === 0 ? 1 : pick === 1 ? 2 : null,
         filtered: !!fusionQ && !b.name.toLowerCase().includes(fusionQ),
@@ -209,7 +222,7 @@ export function createViewState() {
     // The fusion panel and its hint are derived in src/fusion-panel.ts from
     // the pick order plus the plan facts this screen hands in — the panel's
     // 3-state machine, order presentation, and hint live there, not here.
-    const { panel: fusionPanel, hint: fusionHint } = deriveFusionPanel(fusionPicks, {
+    const { panel: fusionPanel, hint: fusionHint } = deriveFusionPanel(fusionPicks.list(), {
       hasPair: (x, y) => plan.hasPair(x, y),
       ballSlots: { used: planState.counts.balls, capacity: planState.limits.balls },
     });
@@ -227,8 +240,8 @@ export function createViewState() {
     const fusionLabel: SelectionBoxState['fusion'] = !selected || selectedIsPassive
       ? null
       : !isFusable(selected.id) ? 'unfusable'
-      : fusionPicks.includes(selected.id) ? 'remove'
-      : fusionPicks.length >= 2 ? 'disabled'
+      : fusionPicks.has(selected.id) ? 'remove'
+      : fusionPicks.list().length >= 2 ? 'disabled'
       : 'add';
     const selectionBoxes: ViewModel['selectionBoxes'] = {
       balls: selected && !isPassive(selected.id) ? { item: selected, plan: planLabel, fusion: fusionLabel } : null,
@@ -248,10 +261,10 @@ export function createViewState() {
       tiles,
       charCards,
       fusionRows,
-      selectedChars,
+      selectedChars: selectedChars.list(),
       slotHint:
-        selectedChars.length === 0 ? ''
-        : selectedChars.length < limits.chars ? 'pick a second character…'
+        selectedChars.list().length === 0 ? ''
+        : selectedChars.list().length < limits.chars ? 'pick a second character…'
         : SELECTION_FULL,
       fusionPanel,
       fusionHint,
@@ -265,14 +278,14 @@ export function createViewState() {
     /** Verdict for one item against the current selection — the toast needs
      *  the full verdict (note included), not just the tile's badge color. */
     verdictFor(item: Item) {
-      return verdictFor(item, selectedChars);
+      return verdictFor(item, selectedChars.list());
     },
     /** The plan as bare ids — the island's persistence currency (saved to
      *  localStorage, fed back through `hydrate`). The plan state serializes
      *  it from its own lists plus the shared selection, so the island never
      *  re-extracts ids from the resolved view model. */
     planSnapshot(): PlanSnapshot {
-      return plan.snapshot(selectedChars);
+      return plan.snapshot(selectedChars.list());
     },
     /** Current view model without a state change — initial paint. */
     derive(): ViewModel {
@@ -281,26 +294,26 @@ export function createViewState() {
     dispatch(action: Action): ViewModel {
       switch (action.type) {
         case 'toggleItem': selectedId = selectedId === action.id ? null : action.id; break;
-        // Character slots and fusion picks share stickyToggle's sticky
-        // semantics (re-click deselects; adding past the limit is a no-op).
-        // The character limit rides the plan's upgrade toggle. Matchmaker
-        // pairing restrictions (game data) block a forbidden second pick —
-        // the game darkens them; here the toggle is a no-op.
+        // Character slots and fusion picks are pick lists (src/pick-list.ts):
+        // sticky semantics (re-click deselects; adding past the limit is a
+        // no-op) and resolution (unknown ids rejected) live there. The
+        // character limit rides the plan's upgrade toggle. Matchmaker pairing
+        // restrictions (game data) block a forbidden second pick — the game
+        // darkens them; here the toggle is a no-op.
         case 'toggleChar': {
-          const held = blockedPartner(selectedChars, plan.limits());
+          const held = blockedPartner(selectedChars.list(), plan.limits());
           if (held && held.id !== action.id && held.cannotPair.includes(action.id)) break;
-          stickyToggle(selectedChars, (list) => list.length < plan.limits().chars,
-            (c) => c.id === action.id, () => CHARACTERS.find((c) => c.id === action.id));
+          selectedChars.toggle(action.id);
           break;
         }
         case 'toggleFusion':
-          stickyToggle(fusionPicks, (list) => list.length < 2, (id) => id === action.id, () => action.id);
+          fusionPicks.toggle(action.id);
           break;
         // Swap the two picks: the compose order is the first-pick precedence
         // order, so reversing it recomputes the resolved panel. A no-op with
         // fewer than two picks (nothing to swap).
         case 'swapFusion':
-          fusionPicks.reverse();
+          fusionPicks.restore([...fusionPicks.list()].reverse());
           break;
         // Plan actions forward verbatim to the plan state. clearPlan also
         // clears the shared selectedChars — they are the plan's characters,
@@ -326,19 +339,18 @@ export function createViewState() {
           break;
         case 'clearPlan':
           plan.dispatch(action);
-          selectedChars.length = 0;
+          selectedChars.restore([]);
           graphDone.clear(); // a wiped plan has nothing left to track
           break;
         case 'hydrate':
           plan.dispatch(action);
-          hydrateList(selectedChars, action.plan.chars,
-            (id) => CHARACTERS.find((c) => c.id === id), (c) => c.id);
+          selectedChars.restore(action.plan.chars);
           break;
         case 'search': queries[action.section] = action.query; break;
         case 'clear':
           if (action.section === 'balls' || action.section === 'passives') selectedId = null;
-          else if (action.section === 'characters') selectedChars.length = 0;
-          else if (action.section === 'fusions') fusionPicks.length = 0;
+          else if (action.section === 'characters') selectedChars.restore([]);
+          else if (action.section === 'fusions') fusionPicks.restore([]);
           // 'plan' is not clearable via the section-scoped clear — the plan
           // is deliberate work; only clearPlan wipes it.
           break;
