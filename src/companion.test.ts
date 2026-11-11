@@ -307,7 +307,7 @@ describe('clear policy wiring (tab click wiped the destination screen, 2026-10-0
     selectFlash(t);
     selectionBtn('plan').click();
     expect(flashTile().classList.contains('selected')).toBe(true);
-    expect(t.savedPlan()!.balls).toEqual(['flash']);
+    expect(t.savedPlan()!.plan.balls).toEqual(['flash']);
   });
 
   it('clicking "Add to fusion" leaves the selection intact', () => {
