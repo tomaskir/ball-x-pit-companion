@@ -410,7 +410,6 @@ describe('composition caveats (general_rules_notes)', () => {
     const nuke = fuse(ball('nuclear-bomb'), ball('wraith'))!;
     expect(nuke.exceptions.map((e) => e.pair)).toContain('nuclear-bomb+wraith');
     expect(nuke.notes.join(' ')).not.toMatch(/Reported exception/);
-    expect(fuse(ball('black-hole'), ball('sun'))!.exceptions.map((e) => e.pair)).toContain('black-hole+sun');
     expect(fuse(ball('time'), ball('flash'))!.exceptions.map((e) => e.pair)).toContain('time+*');
     expect(fuse(ball('banshee'), ball('flash'))!.exceptions.map((e) => e.pair)).toContain('banshee+*');
   });

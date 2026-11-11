@@ -100,7 +100,8 @@ describe('global stylesheet', () => {
     const css = globalCss();
     for (const selector of [
       '.fusion-result', '.fusion-result-row', '.fusion-result-empty',
-      '.fusion-exceptions', '.fusion-exception', '.fusion-order-notice', '.fusion-swap-btn',
+      '.fusion-exceptions', '.fusion-exception', '.fusion-exception-detail',
+      '.fusion-order-notice', '.fusion-swap-btn',
     ]) {
       expect(rulesFor(css, selector).length, `${selector} has a rule`).toBeGreaterThan(0);
     }

@@ -767,10 +767,11 @@ exception, no mechanism/test), `vampire+vampire-lord` (single observation).
 
 ### 13e. Follow-up implementation tickets
 
-- **Curated-layer update** — apply the `fusion-pairs.json` `status`/`order`
-  changes and the four `general_rules_notes` updates in
-  `CONTRADICTION-RESOLUTION-2026-11-11.md` §"Recommended curated-layer
-  update". Keep the raw JSONL untouched.
+- **Curated-layer update** — ✅ applied in this wave (2026-11-11): the
+  `fusion-pairs.json` `status`/`order` changes and the four
+  `general_rules_notes` updates from `CONTRADICTION-RESOLUTION-2026-11-11.md`
+  §"Recommended curated-layer update" are in the curated layer. Raw JSONL
+  untouched.
 - **9999-cap ticket** — one controlled test (or a game-file check of the
   damage-application path) to settle display vs real cap. Until then, do not
   use on-screen 9999 pop-ups as an upper bound, and do not assert a display

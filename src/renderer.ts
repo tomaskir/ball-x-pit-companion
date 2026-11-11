@@ -397,6 +397,14 @@ function paintFusion(vm: ViewModel) {
   const p = fusionPanel;
   if (!p) return;
   const fp = vm.fusionPanel;
+  // States with no composed fusion hide the order-presentation blocks as one
+  // unit: result rows, exceptions, warning line, swap button.
+  const hideOrderPresentation = () => {
+    p.result.hidden = true;
+    p.exceptions.hidden = true;
+    p.orderNotice.hidden = true;
+    p.swapBtn.hidden = true;
+  };
   // the plan toggle exists only in the composed state — and not at all for
   // evolve-instead pairs (they do not fuse, so there is nothing to plan)
   p.planBtn.hidden = fp.state !== 'composed' || !!fp.fusion.evolvesInstead;
@@ -415,10 +423,7 @@ function paintFusion(vm: ViewModel) {
     p.evo.hidden = true;
     p.body.hidden = true;
     p.notes.hidden = true;
-    p.result.hidden = true;
-    p.exceptions.hidden = true;
-    p.orderNotice.hidden = true;
-    p.swapBtn.hidden = true;
+    hideOrderPresentation();
     return;
   }
 
@@ -440,10 +445,7 @@ function paintFusion(vm: ViewModel) {
     p.evo.hidden = true;
     p.body.hidden = true;
     p.notes.hidden = true;
-    p.result.hidden = true;
-    p.exceptions.hidden = true;
-    p.orderNotice.hidden = true;
-    p.swapBtn.hidden = true;
+    hideOrderPresentation();
     return;
   }
   // Both slots filled: the composed fusion replaces the hint entirely —
@@ -479,10 +481,7 @@ function paintFusion(vm: ViewModel) {
     p.body.hidden = true;
     p.cross.hidden = true; // reset the attribute, not just the ancestor
     p.notes.hidden = true;
-    p.result.hidden = true;
-    p.exceptions.hidden = true;
-    p.orderNotice.hidden = true;
-    p.swapBtn.hidden = true;
+    hideOrderPresentation();
     return;
   }
   p.body.hidden = false;
@@ -529,13 +528,7 @@ function paintFusion(vm: ViewModel) {
   });
   const noCollisions = fp.collisions.length === 0;
   p.resultEmpty.hidden = !noCollisions;
-  if (noCollisions) {
-    // an exception-only order-sensitive pair has no shared properties, but
-    // order still matters — the warning line above the action row says so
-    p.resultEmpty.textContent = fp.orderSensitive
-      ? 'No shared properties.'
-      : 'No shared properties — order does not matter.';
-  }
+  if (noCollisions) p.resultEmpty.textContent = fp.resultEmptyText;
 
   // "Reported exceptions" — anomalies outside the general rule, separate
   // from the result rows.

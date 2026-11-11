@@ -312,7 +312,8 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   surface.
 - **Fusion composer** — pure composition of a fused ball from two components:
   name "A × B" (site display; the English game name is "A X B" and the
-  separator is localized; first-selected first), component effect paragraphs
+  separator is localized; first-selected first; canonical statement:
+  `docs/research/fusion-mechanics.md` §1), component effect paragraphs
   in selection order with damage rolls abstracted to "X", a role-named
   cross-wire line when a channel can carry the partner's effect (spawn/AOE
   carrier × on-hit status; AOE carrier × kill-on-hit, e.g. Black Hole × Sun;

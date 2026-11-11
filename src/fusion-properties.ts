@@ -256,14 +256,6 @@ export const FUSION_EXCEPTIONS: FusionException[] = [
     orderDependent: true,
   },
   {
-    pair: 'black-hole+sun',
-    title: 'Order direction disputed',
-    detail: 'Order-matters sources disagree on which order delays the instant kill; the cross-wire itself is order-independent.',
-    source: 'CONTRADICTIONS.md §10j (mmemo vs ClipClap35)',
-    confidence: 'unverified',
-    orderDependent: true,
-  },
-  {
     pair: 'time+*',
     title: 'Time bubble radius',
     detail: 'Time fused with any partner reportedly expands the time-snare radius; one comment claims the size follows the second pick. Not verified.',

@@ -636,6 +636,7 @@ footer a { color: var(--gold); }
 
 .fusion-exception { color: var(--muted); font-size: 12px; }
 .fusion-exception-title { color: var(--text); font-weight: 600; }
+.fusion-exception-detail { font-weight: 400; }
 .fusion-exception-confidence { font-style: italic; }
 
 /* the warning line sits directly above the action row */

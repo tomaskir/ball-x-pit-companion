@@ -1,7 +1,7 @@
 {
   "generated": "2026-11-11",
   "pair_count": 370,
-  "order_notes": "Order matters for NAME and SPRITE ALWAYS, for every pair. The fused name is \"A X B\" with A = first-selected (the site displays \"A × B\"; the separator is localized); the icon usually comes from the first pick and the colour from the second (Steam Shajirr 2026-01-26); the damage-number colour changes (Reddit PSA #1); the sprite sometimes differs (wiki.gg: 'Spider Queen X Vampire Lord has a completely different sprite from Vampire Lord X Spider Queen', while 'Egg Sac X Poison looks the same as Poison X Egg Sac'); the description paragraphs list the components in selection order (al-gest commenter 2025-12-01). For STATS, COOLDOWNS, PROCS and CROSS-WIRING, order matters exactly where the two kits collide on a shared scalar property key: the first-selected ball's value wins and the second's is excluded (property-collision model; it subsumes the old same-property and both-cooldown classes). Equal values are not a functional difference; different application channels union; pairs with no colliding scalar key are functionally order-independent. A separate order effect that is NOT a fusion effect: base-ball pool recursion (which slot consumes a base ball so it stops appearing) — see the general_rules/pool-recursion entry. Canonical synthesis: ../fusion-mechanics.md §3 (pre-DLC v1.301).",
+  "order_notes": "Order matters for NAME and SPRITE ALWAYS, for every pair. The fused name is \"A X B\" with A = first-selected (the site displays \"A × B\"; the separator is localized); the icon usually comes from the first pick and the colour from the second (Steam Shajirr 2026-01-26); the damage-number colour changes (Reddit PSA #1); the sprite sometimes differs (wiki.gg: 'Spider Queen X Vampire Lord has a completely different sprite from Vampire Lord X Spider Queen', while 'Egg Sac X Poison looks the same as Poison X Egg Sac'); the description paragraphs list the components in selection order (al-gest commenter 2025-12-01). For STATS, COOLDOWNS and PROCS, order matters exactly where the two kits collide on a shared scalar property key: the first-selected ball's value wins and the second's is excluded (property-collision model; it subsumes the old same-property and both-cooldown classes). Equal values are not a functional difference; different application channels union; cross-wiring is a channel union, so it is order-independent; pairs with no colliding scalar key are functionally order-independent. A separate order effect that is NOT a fusion effect: base-ball pool recursion (which slot consumes a base ball so it stops appearing) — see the general_rules/pool-recursion entry. Canonical synthesis: ../fusion-mechanics.md §3 (pre-DLC v1.301).",
   "rules": {
     "namu-seven-composition-rules": {
       "title": "namu.wiki — the seven fusion-composition rules",
@@ -12995,7 +12995,7 @@
       ],
       "order": {
         "matters_functionally": "yes",
-        "detail": "Same-property pair (Reddit PSA #2 / official-Discord rule): both components implement the SAME exact property, so the first-selected ball's variant wins and the second's identical variant is excluded. Known worked example pair. namu rule 5 applies instead when the shared status differs only in parameters (blended, not first-wins)."
+        "detail": "Same-property pair (Reddit PSA #2 / official-Discord rule): both components implement the SAME exact property, so the first-selected ball's variant wins and the second's identical variant is excluded. Known worked example pair. When the shared status differs only in parameters, the channels union; shared scalar keys take the first pick (property-collision model, ../fusion-mechanics.md §3)."
       },
       "status": "inferred",
       "obs_count": 1,
@@ -13883,7 +13883,7 @@
       "claims": [],
       "order": {
         "matters_functionally": "yes",
-        "detail": "Same-property pair (Reddit PSA #2 / official-Discord rule): both components implement the SAME exact property, so the first-selected ball's variant wins and the second's identical variant is excluded. Known worked example pair. namu rule 5 applies instead when the shared status differs only in parameters (blended, not first-wins)."
+        "detail": "Same-property pair (Reddit PSA #2 / official-Discord rule): both components implement the SAME exact property, so the first-selected ball's variant wins and the second's identical variant is excluded. Known worked example pair. When the shared status differs only in parameters, the channels union; shared scalar keys take the first pick (property-collision model, ../fusion-mechanics.md §3)."
       },
       "status": "unverified",
       "obs_count": 1,

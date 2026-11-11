@@ -34,6 +34,8 @@ Not an npm package (`"private": true`). Code is MIT-licensed; game art in
 - `docs/research/character-pairings.md` — the Matchmaker pairing-restriction fact base (also parsed).
 - `docs/research/fusion-mechanics.md` — the distilled fusion fact base (not parsed; `src/fusion.ts` implements it).
 - `docs/research/fusion-observations/` — the fusion evidence corpus (append-only raw layer: dated per-source waves, `pending/` staging).
+- `docs/research/fusion-observations/CONTRADICTION-RESOLUTION-2026-11-11.md` — the dated source-only resolution pass applied to the curated layer.
+- `docs/research/fusion-claim-register.md` — the claim audit trail (historical snapshot; counts predate the 2026-11-11 pass).
 - `CONTEXT.md` — domain glossary; read it first. Module headers carry the same vocabulary.
 
 ## Commands

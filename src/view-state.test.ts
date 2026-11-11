@@ -305,6 +305,7 @@ describe('view state: fusion panel order presentation (decision #8)', () => {
     expect(fp.orderSensitive).toBe(true);
     expect(fp.orderNotice).toContain('Order matters');
     expect(fp.orderNotice).toContain('Cooldown');
+    expect(fp.resultEmptyText).toBe('No shared properties.');
   });
 
   it('a pair with no shared properties is not order-sensitive and carries no notice', () => {
@@ -313,6 +314,7 @@ describe('view state: fusion panel order presentation (decision #8)', () => {
     expect(fp.exceptions).toEqual([]);
     expect(fp.orderSensitive).toBe(false);
     expect(fp.orderNotice).toBe('');
+    expect(fp.resultEmptyText).toBe('No shared properties — order does not matter.');
   });
 
   it('an order-dependent reported exception makes the pair order-sensitive without collisions', () => {
@@ -322,6 +324,7 @@ describe('view state: fusion panel order presentation (decision #8)', () => {
     expect(fp.orderSensitive).toBe(true);
     expect(fp.orderNotice).toContain('Order matters');
     expect(fp.orderNotice).toMatch(/exception/i);
+    expect(fp.resultEmptyText).toBe('No shared properties.');
   });
 
   it('a reported exception that is not order-dependent leaves the pair non-order-sensitive', () => {

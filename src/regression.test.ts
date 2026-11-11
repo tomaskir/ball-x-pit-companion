@@ -10,6 +10,7 @@ import { ballMap, passiveMap } from './catalog';
 import { highlightSet, factorizesIntoSlots } from './graph';
 import { deriveBuildGraph, FUSION_ID_PREFIX } from './build-graph';
 import { verdictFor } from './synergy';
+import { fuse } from './fusion';
 import { encodePlan, takeShareParam } from './share';
 import { readFileSync } from 'node:fs';
 import { expectHiddenBeatsAuthorDisplay, expectFusionListScrollbarPermanentAndSeparated, expectSlotHighlightsIdentical } from './test-support/pins';
@@ -575,5 +576,15 @@ describe('regression: Brimstone level-1 text was truncated (missing burn/poison 
     expect(brimstone.effects).toContain(
       'Burn deals 1–4 damage per stack per second and poison deals 2–3 damage per stack per second.',
     );
+  });
+});
+
+describe('regression: Black Hole × Sun order dispute was resolved to order-independent', () => {
+  // #21 resolved the pair to order.matters_functionally "no" (targeted test:
+  // order does not change function). The old "order direction disputed"
+  // exception must not keep the panel warning and swap affordance alive.
+  it('no longer surfaces as a reported exception', () => {
+    const result = fuse(ballMap.get('black-hole')!, ballMap.get('sun')!);
+    expect(result!.exceptions).toEqual([]);
   });
 });

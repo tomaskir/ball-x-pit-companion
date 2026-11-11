@@ -70,6 +70,10 @@ export type FusionPanelState =
       orderSensitive: boolean;
       /** The warning line above the action row; '' when not order-sensitive. */
       orderNotice: string;
+      /** Empty "Fused result" copy: order-sensitive pairs say only that no
+       *  shared properties exist; order-independent pairs add that order
+       *  does not matter. Derived here so the renderer only paints it. */
+      resultEmptyText: string;
       /** Shared-property collisions, already resolved by the composer. */
       collisions: PropertyCollision[];
       /** Reported anomalies outside the general rule. */
@@ -150,12 +154,13 @@ export type Action =
   // extraction; see PlanAction there for the per-action contracts.
   | PlanAction;
 
-/** The selection-toggle actions — exactly the ones the renderer's click
- *  handlers produce and hand back through the build seam's `emit` callback
- *  (the island dispatches them verbatim). ToggleAction is the seam's
- *  currency: emit carries the whole action, so callers never reassemble
- *  it from a type/id pair. (`toggleUpgrades` is not one: its toggle is
- *  static shell markup the island wires directly, like Clear and Share.) */
+/** The actions the renderer's click handlers produce and hand back through
+ *  the build seam's `emit` callback (the island dispatches them verbatim).
+ *  Most are selection toggles; `swapFusion` is the fusion order swap.
+ *  ToggleAction is the seam's currency: emit carries the whole action, so
+ *  callers never reassemble it from a type/id pair. (`toggleUpgrades` is not
+ *  one: its toggle is static shell markup the island wires directly, like
+ *  Clear and Share.) */
 export type ToggleAction = Extract<
   Action,
   { type: 'toggleItem' | 'toggleChar' | 'toggleFusion' | 'swapFusion' | 'togglePlanItem' | 'togglePlanFusion' | 'toggleGraphFocus' | 'toggleGraphCollapse' | 'toggleGraphDone' }
@@ -187,14 +192,21 @@ const labelList = (labels: string[]): string =>
  *  exists — first-pick precedence changes the value — or a reported exception
  *  is order-dependent. An evolve-instead pair never fuses, so order cannot
  *  matter. */
-const orderPresentation = (fusion: FusionResult): { orderSensitive: boolean; orderNotice: string } => {
-  if (fusion.evolvesInstead) return { orderSensitive: false, orderNotice: '' };
+const orderPresentation = (
+  fusion: FusionResult,
+): { orderSensitive: boolean; orderNotice: string; resultEmptyText: string } => {
+  if (fusion.evolvesInstead) return { orderSensitive: false, orderNotice: '', resultEmptyText: '' };
   const orderSensitive = fusion.collisions.length > 0 || fusion.exceptions.some((e) => e.orderDependent);
-  if (!orderSensitive) return { orderSensitive: false, orderNotice: '' };
+  // An exception-only order-sensitive pair has no shared properties, but
+  // order still matters — the warning line above the action row says so.
+  const resultEmptyText = orderSensitive
+    ? 'No shared properties.'
+    : 'No shared properties — order does not matter.';
+  if (!orderSensitive) return { orderSensitive: false, orderNotice: '', resultEmptyText };
   const orderNotice = fusion.collisions.length
     ? `⚠ Order matters for this pair — swapping changes ${labelList(fusion.collisions.map((c) => c.label))}.`
     : '⚠ Order matters for this pair — a reported exception is order-dependent.';
-  return { orderSensitive: true, orderNotice };
+  return { orderSensitive: true, orderNotice, resultEmptyText };
 };
 
 export function createViewState() {

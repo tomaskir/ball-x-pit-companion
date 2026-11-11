@@ -111,9 +111,9 @@ describe('resolveProperties', () => {
 });
 
 describe('exception table (decision #7 anomalies)', () => {
-  it('holds the four named anomalies, each with a source and confidence', () => {
+  it('holds the three named anomalies, each with a source and confidence', () => {
     expect(FUSION_EXCEPTIONS.map((e) => e.pair).sort()).toEqual([
-      'banshee+*', 'black-hole+sun', 'nuclear-bomb+wraith', 'time+*',
+      'banshee+*', 'nuclear-bomb+wraith', 'time+*',
     ]);
     for (const e of FUSION_EXCEPTIONS) {
       expect(e.source.length).toBeGreaterThan(0);
@@ -125,7 +125,6 @@ describe('exception table (decision #7 anomalies)', () => {
     const flags = Object.fromEntries(FUSION_EXCEPTIONS.map((e) => [e.pair, e.orderDependent]));
     expect(flags).toEqual({
       'nuclear-bomb+wraith': true, // "the two orders behave differently"
-      'black-hole+sun': true, // "order-matters sources disagree on which order…"
       'time+*': true, // "the size follows the second pick"
       'banshee+*': false, // no order claim
     });

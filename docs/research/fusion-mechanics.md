@@ -177,9 +177,8 @@ the **property-collision** rule (supersedes the older two-class
 3. **Equal values are not a functional difference.** A shared key with the
    same value on both sides cannot make order matter.
 4. **Otherwise order is irrelevant** for stats, abilities, and cross-wiring.
-   Reported anomalies outside the rule (Nuke × Wraith, Black Hole × Sun
-   direction, Time bubble, Banshee curse) stay reported exceptions, not a
-   general order effect. The Nov 2026 report's Freeze Ray × Blizzard and
+   Reported anomalies outside the rule (Nuke × Wraith, Time bubble, Banshee
+   curse) stay reported exceptions, not a general order effect. The Nov 2026 report's Freeze Ray × Blizzard and
    Noxious × Brimstone collisions are predictions marked reported/unverified.
 
 **Pool recursion** (order-adjacent, but not a fusion effect): the
