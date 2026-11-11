@@ -276,7 +276,12 @@ export function paintFusion(vm: ViewModel) {
     p.body.hidden = true;
     p.cross.hidden = true; // reset the attribute, not just the ancestor
     p.notes.hidden = true;
-    hideOrderPresentation();
+    // the panel state is the presentation contract for every composed pair,
+    // evolve-instead included: its empty rows and false flags hide the blocks
+    p.result.hidden = !fp.showResult;
+    p.exceptions.hidden = !fp.showExceptions;
+    p.orderNotice.hidden = !fp.orderSensitive;
+    p.swapBtn.hidden = !fp.orderSensitive;
     return;
   }
   p.body.hidden = false;

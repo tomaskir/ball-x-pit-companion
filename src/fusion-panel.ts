@@ -12,6 +12,7 @@
 // ViewModel, so the renderer's named-state contract is unchanged.
 import { ballMap } from './catalog';
 import { fuse, type FusionResult } from './fusion';
+import { type FusionException } from './fusion-knowledge';
 import { type Ball } from './data/balls';
 
 /** One "Fused result" display row — a shared scalar collision resolved to
@@ -39,7 +40,7 @@ export interface FusionExceptionRow {
   title: string;
   detail: string;
   source: string;
-  confidence: string;
+  confidence: FusionException['confidence'];
   /** True when the report says the two selection orders behave differently. */
   orderDependent: boolean;
 }
@@ -53,7 +54,8 @@ export interface FusionExceptionRow {
  *               cross-wire, notes, result rows, exception rows) paints from
  *               this state. The result/exception presentation — display
  *               rows and section visibility — is derived here, so the
- *               renderer paints data rather than FusionResult internals.
+ *               renderer paints that data rather than reaching into
+ *               FusionResult for it.
  *  The renderer switches on `state`; everything it paints per state rides
  *  here, derived in one place (testable without DOM). */
 export type FusionPanelState =
@@ -103,35 +105,32 @@ const labelList = (labels: string[]): string =>
   : labels.length === 2 ? `${labels[0]} and ${labels[1]}`
   : `${labels.slice(0, -1).join(', ')}, and ${labels[labels.length - 1]}`;
 
-/** The order presentation, derived here so the renderer only paints it.
+/** The composed state's whole presentation: the "Fused result" and
+ *  "Reported exceptions" display rows, their section visibility, and the
+ *  order-sensitive warning. The renderer paints these fields and never reads
+ *  `fusion.resolved.collisions` or `fusion.exceptions` itself. An
+ *  evolve-instead pair does not fuse, so it carries no rows, hides both
+ *  sections, and cannot be order-sensitive.
+ *
  *  Order model: docs/research/fusion-mechanics.md §3. A pair is
  *  order-sensitive when the composed fusion has a collision or an
- *  order-dependent exception; an evolve-instead pair never fuses, so order
- *  cannot matter. No empty-result copy exists: the renderer hides the whole
- *  "Fused result" section when there are no collisions. */
-const orderPresentation = (
+ *  order-dependent exception. No empty-result copy exists: the result
+ *  section is hidden when there are no collisions. */
+const composedPresentation = (
   fusion: FusionResult,
-): { orderSensitive: boolean; orderNotice: string } => {
-  if (fusion.evolvesInstead) return { orderSensitive: false, orderNotice: '' };
-  const collisions = fusion.resolved.collisions;
-  const orderSensitive = collisions.length > 0 || fusion.exceptions.some((e) => e.orderDependent);
-  if (!orderSensitive) return { orderSensitive: false, orderNotice: '' };
-  const orderNotice = collisions.length
-    ? `⚠ Order matters for this pair — swapping changes ${labelList(collisions.map((c) => c.label))}.`
-    : '⚠ Order matters for this pair — a reported exception is order-dependent.';
-  return { orderSensitive: true, orderNotice };
-};
-
-/** The composed state's result/exception presentation: display rows plus
- *  section visibility. The renderer paints these fields and never reads
- *  `fusion.resolved.collisions` or `fusion.exceptions` itself. An
- *  evolve-instead pair does not fuse, so it carries no rows and hides both
- *  sections. */
-const resultPresentation = (
-  fusion: FusionResult,
-): Pick<Extract<FusionPanelState, { state: 'composed' }>, 'resultRows' | 'exceptions' | 'showResult' | 'showExceptions'> => {
+): Pick<
+  Extract<FusionPanelState, { state: 'composed' }>,
+  'resultRows' | 'exceptions' | 'showResult' | 'showExceptions' | 'orderSensitive' | 'orderNotice'
+> => {
   if (fusion.evolvesInstead) {
-    return { resultRows: [], exceptions: [], showResult: false, showExceptions: false };
+    return {
+      resultRows: [],
+      exceptions: [],
+      showResult: false,
+      showExceptions: false,
+      orderSensitive: false,
+      orderNotice: '',
+    };
   }
   const resultRows: FusionResultRow[] = fusion.resolved.collisions.map((c) => ({
     key: `${c.key}|${c.winner}|${c.value}|${c.reported}`,
@@ -142,18 +141,25 @@ const resultPresentation = (
     reported: c.reported,
   }));
   const exceptions: FusionExceptionRow[] = fusion.exceptions.map((e) => ({
-    key: `${e.pair}|${e.title}|${e.confidence}|${e.orderDependent}`,
+    key: e.pair,
     title: e.title,
     detail: e.detail,
     source: e.source,
     confidence: e.confidence,
     orderDependent: e.orderDependent,
   }));
+  const orderSensitive = resultRows.length > 0 || exceptions.some((r) => r.orderDependent);
+  const orderNotice = !orderSensitive ? ''
+    : resultRows.length
+      ? `⚠ Order matters for this pair — swapping changes ${labelList(resultRows.map((r) => r.label))}.`
+      : '⚠ Order matters for this pair — a reported exception is order-dependent.';
   return {
     resultRows,
     exceptions,
     showResult: resultRows.length > 0,
     showExceptions: exceptions.length > 0,
+    orderSensitive,
+    orderNotice,
   };
 };
 
@@ -181,8 +187,7 @@ export function deriveFusionPanel(
             b,
             planned: plan.hasPair(a.id, b.id),
             planFull: plan.ballSlots.used >= plan.ballSlots.capacity,
-            ...resultPresentation(fusion),
-            ...orderPresentation(fusion),
+            ...composedPresentation(fusion),
           };
         })();
   const hint =

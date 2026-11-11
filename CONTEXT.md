@@ -322,11 +322,12 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   `pending` with the first resolved Ball / `composed` with both resolved
   Balls, the composed fusion from `src/fusion.ts`, the pair's `planned`
   mark, `planFull` — the plan's ball slots at their active limit, which
-  disables the panel's plan toggle — and the order presentation:
-  `orderSensitive`, `orderNotice`; the composer's
-  structured `collisions` and `exceptions` are read off the composed
-  `fusion` (`fusion.resolved.collisions` / `fusion.exceptions`), not
-  copied onto the panel state). That panel derivation and the fusion hint
+  disables the panel's plan toggle — the result presentation: `resultRows`
+  (the composer's `collisions` mapped to display rows), `exceptions` (its
+  reported exceptions mapped to display rows carrying `source`,
+  `confidence`, and `orderDependent`), and the `showResult` /
+  `showExceptions` visibility flags — and the order presentation:
+  `orderSensitive`, `orderNotice`). That panel derivation and the fusion hint
   live in **Fusion panel** (`src/fusion-panel.ts`); view-state hands the
   picks and plan facts in and embeds the result, so the renderer switches
   on the state instead of re-deriving picks from hidden toggles.
@@ -336,8 +337,9 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   surface.
 - **Fusion panel** — the fusion screen's panel derivation as its own module:
   the named 3-state machine (`empty` / `pending` / `composed`), the composed
-  pair's order presentation (`orderSensitive`, `orderNotice`), and the
-  panel's hint text. Module:
+  state's presentation (the "Fused result" and "Reported exceptions" display
+  rows plus their section visibility, and the order-sensitive warning), and
+  the panel's hint text. Module:
   `src/fusion-panel.ts` — one interface:
   `deriveFusionPanel(picks, plan) → { panel, hint }`. The seam is "pick order
   + plan facts in, panel state out": the module resolves the picks through
