@@ -338,7 +338,11 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   `fusionBalls()`, `fusionName`, `abstractDamage`, `crossWire(a, b) →
   { line, disputed, spawnerId }`, `evolvesInstead`); the order model's canonical
   statement is `docs/research/fusion-mechanics.md` §3, implemented by
-  `src/fusion-properties.ts`. This is the site's editorial model of fusion,
+  `src/fusion-properties.ts`. The evidence behind the composer's
+  classifications lives in `src/fusion-knowledge.ts` (Destroy/cooldown/pierce/
+  kill classes, spawn-inheritance classes, status-channel predicates, caveat
+  prose); `fusion.ts` composes, the knowledge module classifies. This is the
+  site's editorial model of fusion,
   not game data; the composition rules, their evidence, and the observation
   corpus live in `docs/research/fusion-observations/` (counts derive from
   `fusion-pairs.json`; corpus shape and validation: `src/corpus.ts`
@@ -349,7 +353,7 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
 - **Spawn carrier** — a ball whose tags include a spawn tag
   (`spawns-baby-balls`, `spawns-allies`, `clone`). Its spawn channel can carry
   a partner's on-hit status across a fusion (`spawnable()` in
-  `src/fusion.ts`). Voluptuous Egg Sac is the only hard exclusion: its two-hop
+  `src/fusion-knowledge.ts`). Voluptuous Egg Sac is the only hard exclusion: its two-hop
   chain drops the partner property.
 - **Status-only spawn carrier** — a spawn carrier whose babies inherit only
   the partner's on-hit status, not spawn-bound traits (Brood Mother, Mosquito

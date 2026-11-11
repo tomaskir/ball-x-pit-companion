@@ -21,6 +21,7 @@ Not an npm package (`"private": true`). Code is MIT-licensed; game art in
 - `src/renderer.ts` — all DOM painting; `buildAll({ getVerdict, emit })` once, then `paint(vm)` in place.
 - `src/fusion.ts` — pure fusion composer (`fuse(a, b)`); the site's editorial model of fusion, not game data.
 - `src/fusion-properties.ts` — pure order model: hand-maintained level-3 property table, `resolveProperties(a, b)` (property-set union, first-pick scalar precedence), and the reported-exception table.
+- `src/fusion-knowledge.ts` — the hand-maintained fusion evidence: classification tables (Destroy/cooldown/pierce/kill classes, spawn inheritance, status channels) and predicates; `fusion.ts` composes, this module answers "what class is this ball in?".
 - `src/pair.ts` — unordered-pair identity (`pairKey`, `parsePair`); the one home for the "reverse composition is the same pair" invariant.
 - `src/graph.ts` — pure evolution-graph helpers (depth, highlight walks, recipe notation).
 - `src/build-graph.ts` — pure Plan-screen build-graph derivation + layout (`deriveBuildGraph`/`layoutBuildGraph`); the renderer only paints it.
