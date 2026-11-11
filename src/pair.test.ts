@@ -1,7 +1,7 @@
 // Tests for unordered-pair identity (src/pair.ts) — the one home for the
 // "reverse composition is the same pair" invariant and its key format.
 import { describe, it, expect } from 'vitest';
-import { pairKey, pairKeyOf, parsePair } from './pair';
+import { composeKey, pairKey, pairKeyOf, parseComposeKey, parsePair } from './pair';
 
 describe('pairKey', () => {
   it('sorts the two ids and joins them with +', () => {
@@ -41,5 +41,26 @@ describe('parsePair', () => {
     expect(parsePair('+timestop')).toBeNull();
     expect(parsePair('egg-sac+')).toBeNull();
     expect(parsePair('')).toBeNull();
+  });
+});
+
+describe('composeKey', () => {
+  it('keeps the compose order — the first pick stays first', () => {
+    expect(composeKey('flash', 'glacier')).toBe('flash>glacier');
+    expect(composeKey('glacier', 'flash')).toBe('glacier>flash');
+  });
+
+  it('round-trips through parseComposeKey in composition order', () => {
+    expect(parseComposeKey(composeKey('glacier', 'flash'))).toEqual(['glacier', 'flash']);
+  });
+});
+
+describe('parseComposeKey', () => {
+  it('returns null for keys that are not compose keys', () => {
+    expect(parseComposeKey('flash')).toBeNull();
+    expect(parseComposeKey('a>b>c')).toBeNull();
+    expect(parseComposeKey('>glacier')).toBeNull();
+    expect(parseComposeKey('flash>')).toBeNull();
+    expect(parseComposeKey('')).toBeNull();
   });
 });

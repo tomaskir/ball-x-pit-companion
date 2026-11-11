@@ -508,7 +508,7 @@ describe('fusion panel plan button (jsdom, through paint())', () => {
   it('the plan button reads the CURRENT compose order after a repaint with a different pair', () => {
     // The button is built once; the picks change under it. Its handler must
     // read the compose order through the same channel every repaint updates
-    // (the reconcile seam's painted key) — the bug class the old stashed
+    // (the action-slot adapter) — the bug class the old stashed
     // fusionPanelState module variable enabled was a second channel that a
     // repaint path could forget to refresh.
     const emit = vi.fn();

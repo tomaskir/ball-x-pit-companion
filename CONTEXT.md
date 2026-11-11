@@ -40,7 +40,10 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   the fusion composer and property model, the plan's fused pairs, the
   renderer's plan-entry identity, corpus validation, and the build graph's
   `fusion:` node ids all consume it (`fusionNodeId` / `fusionNodePair` in
-  `src/build-graph.ts` build on it).
+  `src/build-graph.ts` build on it). The order-preserving counterpart is
+  `composeKey(a, b)` / `parseComposeKey(key)` ("a>b", first pick first),
+  used where display order must survive while identity stays unordered (the
+  plan's fused-entry content key).
 - **Recipe notation** — the compact per-slot rendering of multi-recipe
   entities: "a+(b/c)", "(a/b)+(c/d)", "a+b+c". Faithful only because every
   multi-recipe entity factorizes into per-slot alternates
@@ -265,12 +268,15 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   `<img>` elements — that would blink icons; the fusion panel's head icons
   are built once and repainted in place; the plan's entries and the
   character chips rebuild only when their content key changes — the
-  renderer's internal **reconcile seam**, one painted-key map shared by the
-  chips, the plan sections, the panel icons, the fusion result rows and
-  exceptions, the selection boxes, and the panel's plan button — whose
-  once-built click handler reads the compose
-  order from its painted key, the same channel every repaint refreshes; no
-  second stashed state lives beside it).
+  renderer's internal **reconcile seam** (`reconcile.ts`, one painted-key
+  map shared by the chips, the plan sections, the panel icons, the fusion
+  result rows and exceptions, and the build graphs), which is the diff
+  cache only). Once-built click handlers get the action they act on from a
+  separate **action-slot adapter** (`action-slot.ts`, `bindAction(el, emit)
+  → { set(action), clear() }`): the slot holds the whole typed
+  `ToggleAction` and its click listener, refreshed by every repaint, so no
+  handler splits a string to reassemble an action and no second stashed
+  state lives beside it.
   Tiles, character cards, chips, toasts, the fusion screen,
   and the plan screen live here; the ViewModel is its input and
   the test surface stays `view-state.ts`. The renderer holds no domain data
@@ -292,8 +298,9 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   seam. The facade composes internal painters under `src/renderer/`
   (grids, characters, chips, fusion-screen, plan, build-graphs,
   selection-box) that share the reconcile seam (`reconcile.ts` — the
-  painted-key map), the build seam (`seam.ts` — the emit callback and
-  toast adapter), and the DOM/label helpers (`dom.ts`, `labels.ts`); the
+  content-diff cache), the action-slot adapter (`action-slot.ts` — the
+  once-built click channel), the build seam (`seam.ts` — the emit callback
+  and toast adapter), and the DOM/label helpers (`dom.ts`, `labels.ts`); the
   public interface stays `buildAll`/`paint`.
 - **Plan state** — the plan screen's state and derivation as their own
   module: the End game upgrades toggle, the planned balls/passives/fused

@@ -11,7 +11,7 @@
 // renderer facade; the build graphs below the sections are their own module
 // (./build-graphs.ts).
 import { ballMap, type Item } from '../catalog';
-import { pairKeyOf } from '../pair';
+import { composeKey, pairKeyOf } from '../pair';
 import { emitAction } from './seam';
 import { reconcile } from './reconcile';
 import { icon, verdictBadge } from './dom';
@@ -68,26 +68,41 @@ function planEntry(inner: string, onRemove: () => void): HTMLElement {
   return entry;
 }
 
-/** A plan entry's identity: the reconcile key material and the data-entry
- *  stamp the badge repaint looks entries up by — one spelling, both uses. */
-const entryKey = (prefix: string, id: string) => `${prefix}:${id}`;
+/** A plan entry's identity — typed, serialized once for both the reconcile
+ *  content key and the data-entry stamp the badge repaint looks entries up
+ *  by. It is never parsed back into an action: entry click handlers close
+ *  over the typed action they emit. */
+type EntryIdentity =
+  | { kind: 'char'; id: string }
+  | { kind: 'ball'; id: string }
+  | { kind: 'passive'; id: string }
+  | { kind: 'fused'; pair: string };
+
+const entryKey = (identity: EntryIdentity): string =>
+  identity.kind === 'fused' ? `fused:${identity.pair}` : `${identity.kind}:${identity.id}`;
+
 /** A merged ball-grid entry's unordered identity — the entry stamp and the
  *  badge lookup use it, so the reverse composition is the same pair. */
-const ballEntryKey = (e: PlanBallEntry): string =>
-  e.kind === 'single' ? entryKey('ball', e.item.id) : entryKey('fused', pairKeyOf([e.a.id, e.b.id]));
+const ballEntryIdentity = (e: PlanBallEntry): EntryIdentity =>
+  e.kind === 'single'
+    ? { kind: 'ball', id: e.item.id }
+    : { kind: 'fused', pair: pairKeyOf([e.a.id, e.b.id]) };
+
 /** The reconcile content key: the unordered identity plus the displayed
- *  compose order. The name and icon order are built once, so a swap must
- *  repaint them; identity stays order-insensitive. */
+ *  compose order (pair.ts's compose key). The name and icon order are built
+ *  once, so a swap must repaint them; identity stays order-insensitive. */
 const ballEntryContentKey = (e: PlanBallEntry): string =>
-  e.kind === 'single' ? ballEntryKey(e) : `${ballEntryKey(e)}:${e.a.id}>${e.b.id}`;
+  e.kind === 'single'
+    ? entryKey(ballEntryIdentity(e))
+    : `${entryKey(ballEntryIdentity(e))}:${composeKey(e.a.id, e.b.id)}`;
 
 /** One single-ball/passive entry, stamped with its identity. */
-const itemEntry = (item: Item, prefix: string, onRemove: () => void): HTMLElement => {
+const itemEntry = (item: Item, identity: EntryIdentity, onRemove: () => void): HTMLElement => {
   const entry = planEntry(
     `<img src="${icon(item.icon)}" alt="${item.name}" width="48" height="48" loading="lazy"><span class="plan-name">${item.name}</span>`,
     onRemove,
   );
-  entry.dataset.entry = entryKey(prefix, item.id);
+  entry.dataset.entry = entryKey(identity);
   return entry;
 };
 
@@ -107,7 +122,7 @@ export function paintPlan(vm: ViewModel) {
   // changed — reconcile diffs the entry identities. Every built entry is
   // stamped with its identity (data-entry) so the badge repaint below finds
   // entries by key, never by grid position.
-  reconcile(sections.characters.grid, plan.characters.map((e) => entryKey('char', e.character.id)).join(','), () => {
+  reconcile(sections.characters.grid, plan.characters.map((e) => entryKey({ kind: 'char', id: e.character.id })).join(','), () => {
     sections.characters.grid.replaceChildren(...plan.characters.map(({ character: ch }) => {
       const base = ch.baseBallId ? ballMap.get(ch.baseBallId) : null;
       // the body is a column: name over base chip — the sprite and X stay
@@ -119,7 +134,7 @@ export function paintPlan(vm: ViewModel) {
         `</span>`,
         () => emitAction({ type: 'toggleChar', id: ch.id }),
       );
-      entry.dataset.entry = entryKey('char', ch.id);
+      entry.dataset.entry = entryKey({ kind: 'char', id: ch.id });
       return entry;
     }));
   });
@@ -132,7 +147,7 @@ export function paintPlan(vm: ViewModel) {
       sections.balls.grid.replaceChildren(
         ...plan.balls.map((e) => {
           if (e.kind === 'single') {
-            return itemEntry(e.item, 'ball', () => emitAction({ type: 'togglePlanItem', id: e.item.id }));
+            return itemEntry(e.item, { kind: 'ball', id: e.item.id }, () => emitAction({ type: 'togglePlanItem', id: e.item.id }));
           }
           // fused pairs: both icons side by side (compact, so the composed name
           // fits beside them — same shape as the single-ball entries), name right,
@@ -147,14 +162,14 @@ export function paintPlan(vm: ViewModel) {
             `<span class="plan-name">${e.name}</span>`,
             () => emitAction({ type: 'togglePlanFusion', a: e.a.id, b: e.b.id }),
           );
-          entry.dataset.entry = ballEntryKey(e);
+          entry.dataset.entry = entryKey(ballEntryIdentity(e));
           return entry;
         }),
       );
     },
   );
-  reconcile(sections.passives.grid, plan.passives.map((e) => entryKey('passive', e.item.id)).join(','), () => {
-    sections.passives.grid.replaceChildren(...plan.passives.map((e) => itemEntry(e.item, 'passive', () => emitAction({ type: 'togglePlanItem', id: e.item.id }))));
+  reconcile(sections.passives.grid, plan.passives.map((e) => entryKey({ kind: 'passive', id: e.item.id })).join(','), () => {
+    sections.passives.grid.replaceChildren(...plan.passives.map((e) => itemEntry(e.item, { kind: 'passive', id: e.item.id }, () => emitAction({ type: 'togglePlanItem', id: e.item.id }))));
   });
 
   // counts and empty hints
@@ -185,16 +200,16 @@ export function paintPlan(vm: ViewModel) {
     if (e.verdict) entry.appendChild(verdictBadge(e.verdict));
   };
   const charEntries = entryIndex(sections.characters.grid);
-  plan.characters.forEach((e) => repaintEntry(charEntries.get(entryKey('char', e.character.id)), e));
+  plan.characters.forEach((e) => repaintEntry(charEntries.get(entryKey({ kind: 'char', id: e.character.id })), e));
   const ballEntries = entryIndex(sections.balls.grid);
   // the merged ball grid: singles take an entry-level verdict badge, fused
   // pairs one verdict badge per component icon
   plan.balls.forEach((e) => {
     if (e.kind === 'single') {
-      repaintEntry(ballEntries.get(ballEntryKey(e)), e);
+      repaintEntry(ballEntries.get(entryKey(ballEntryIdentity(e))), e);
       return;
     }
-    const entry = ballEntries.get(ballEntryKey(e));
+    const entry = ballEntries.get(entryKey(ballEntryIdentity(e)));
     if (!entry) return;
     repaintEntry(entry, e);
     e.verdicts.forEach((v, j) => {
@@ -205,5 +220,5 @@ export function paintPlan(vm: ViewModel) {
     });
   });
   const passiveEntries = entryIndex(sections.passives.grid);
-  plan.passives.forEach((e) => repaintEntry(passiveEntries.get(entryKey('passive', e.item.id)), e));
+  plan.passives.forEach((e) => repaintEntry(passiveEntries.get(entryKey({ kind: 'passive', id: e.item.id })), e));
 }

@@ -7,9 +7,11 @@
 // seam). The painters themselves live in internal modules under
 // src/renderer/: grids.ts, characters.ts, chips.ts, fusion-screen.ts,
 // plan.ts, build-graphs.ts, and selection-box.ts, sharing the reconcile
-// seam (reconcile.ts), the build seam (seam.ts — the emit callback and the
-// toast adapter from src/toast.ts), and the DOM/label helpers (dom.ts,
-// labels.ts). This facade composes them; only buildAll, paint,
+// seam (reconcile.ts — the content-diff cache), the action-slot adapter
+// (action-slot.ts — the typed action a built-once handler reports), the
+// build seam (seam.ts — the emit callback and the toast adapter from
+// src/toast.ts), and the DOM/label helpers (dom.ts, labels.ts). This facade
+// composes them; only buildAll, paint,
 // BuildOptions, FUSION_PANEL_SKELETON, and FUSION_PANEL_SELECTORS are
 // public.
 //

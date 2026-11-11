@@ -19,7 +19,7 @@ Not an npm package (`"private": true`). Code is MIT-licensed; game art in
 - `src/companion.ts` — the **island**: event listening, theme, hash routing only.
 - `src/view-state.ts` — all state + derivations; `dispatch(action) → ViewModel`. The test surface.
 - `src/renderer.ts` — all DOM painting; `buildAll({ getVerdict, emit })` once, then `paint(vm)` in place.
-- `src/renderer/` — internal painters behind that facade (grids, characters, chips, fusion screen, plan, build graphs, selection box) sharing `reconcile.ts` (the painted-key seam), `seam.ts` (the emit callback and toast adapter), and `dom.ts`/`labels.ts` (icon, verdict badge, and display-text helpers).
+- `src/renderer/` — internal painters behind that facade (grids, characters, chips, fusion screen, plan, build graphs, selection box) sharing `reconcile.ts` (the content-diff cache), `action-slot.ts` (the once-built click channel: a typed `ToggleAction` refreshed by every repaint), `seam.ts` (the emit callback and toast adapter), and `dom.ts`/`labels.ts` (icon, verdict badge, and display-text helpers).
 - `src/fusion.ts` — pure fusion composer (`fuse(a, b)`); the site's editorial model of fusion, not game data.
 - `src/ball-kit.ts` — the one per-ball kit table (`BALL_KIT`): level-3 scalars and application channels together, read by both `channelsOf` (wire model) and `resolveProperties` (order model).
 - `src/fusion-properties.ts` — pure order model: `resolveProperties(a, b)` over the per-ball kits (property-set union, first-pick scalar precedence).

@@ -4,7 +4,7 @@
 // through the seam like every other built-in click handler. Internal to the
 // renderer facade.
 import { emitAction } from './seam';
-import { clearPaintedKey, paintedKey, setPaintedKey } from './reconcile';
+import { bindAction, type ActionSlot } from './action-slot';
 import { PLAN_LIMIT_TITLE, PLAN_TOGGLE_LABELS } from './labels';
 import type { SelectionBoxState, ViewModel } from '../view-state';
 
@@ -13,9 +13,10 @@ interface SelectionBoxEls {
   name: HTMLElement;
   planBtn: HTMLButtonElement;
   fusionBtn: HTMLButtonElement | null;
-  // The click handlers read the currently painted item's id from the root's
-  // painted key (the buttons are built once; the selection changes under
-  // them) — see the reconcile seam.
+  // The buttons are built once; the selection changes under them, so each
+  // button's typed action rides its own action slot, refreshed every paint.
+  planAction: ActionSlot;
+  fusionAction: ActionSlot | null;
 }
 const selectionBoxes: Record<'balls' | 'passives', SelectionBoxEls | null> = { balls: null, passives: null };
 
@@ -46,15 +47,14 @@ function buildSelectionBox(screen: 'balls' | 'passives') {
     ${withFusion ? '<button class="selection-btn" data-kind="fusion"></button>' : ''}`;
   const planBtn = root.querySelector<HTMLButtonElement>('.selection-btn[data-kind="plan"]')!;
   const fusionBtn = root.querySelector<HTMLButtonElement>('.selection-btn[data-kind="fusion"]');
-  planBtn.addEventListener('click', () => {
-    const id = paintedKey(root);
-    if (id) emitAction({ type: 'togglePlanItem', id });
-  });
-  fusionBtn?.addEventListener('click', () => {
-    const id = paintedKey(root);
-    if (id) emitAction({ type: 'toggleFusion', id });
-  });
-  selectionBoxes[screen] = { root, name: root.querySelector('.selection-name') as HTMLElement, planBtn, fusionBtn };
+  selectionBoxes[screen] = {
+    root,
+    name: root.querySelector('.selection-name') as HTMLElement,
+    planBtn,
+    fusionBtn,
+    planAction: bindAction(planBtn, emitAction),
+    fusionAction: fusionBtn ? bindAction(fusionBtn, emitAction) : null,
+  };
 }
 
 /** Build both selection boxes once. */
@@ -69,10 +69,15 @@ export function paintSelectionBoxes(vm: ViewModel) {
     if (!els) continue;
     const state = vm.selectionBoxes[screen];
     els.root.hidden = !state;
-    // the painted key is the item the once-built buttons act on; a null
-    // state clears it so no stale id survives the hidden box
-    if (state) setPaintedKey(els.root, state.item.id);
-    else clearPaintedKey(els.root);
+    // the action slots carry the item the once-built buttons act on; a null
+    // state clears them so no stale id survives the hidden box
+    if (state) {
+      els.planAction.set({ type: 'togglePlanItem', id: state.item.id });
+      els.fusionAction?.set({ type: 'toggleFusion', id: state.item.id });
+    } else {
+      els.planAction.clear();
+      els.fusionAction?.clear();
+    }
     if (!state) continue;
     els.name.textContent = state.item.name;
     els.planBtn.textContent = PLAN_BTN_LABELS[state.plan];

@@ -8,7 +8,8 @@
 // values this module paints and queries.
 import { fusionBalls } from '../fusion';
 import { emitAction } from './seam';
-import { clearPaintedKey, paintedKey, reconcile, setPaintedKey } from './reconcile';
+import { bindAction, type ActionSlot } from './action-slot';
+import { reconcile } from './reconcile';
 import { DEPTH_LABELS } from '../depth-labels';
 import { PLAN_LIMIT_TITLE, PLAN_TOGGLE_LABELS } from './labels';
 import { icon } from './dom';
@@ -39,6 +40,7 @@ let fusionPanel: {
   orderNotice: HTMLElement;
   swapBtn: HTMLButtonElement;
   planBtn: HTMLButtonElement;
+  planAction: ActionSlot;
   planRow: HTMLElement;
 } | null = null;
 
@@ -134,6 +136,7 @@ export function buildFusionPanel() {
   root.innerHTML = FUSION_PANEL_SKELETON;
   const q = (s: string) => root.querySelector(s)!;
   const sel = FUSION_PANEL_SELECTORS;
+  const planBtn = q(sel.planBtn) as HTMLButtonElement;
   fusionPanel = {
     root,
     hint: q(sel.hint) as HTMLElement,
@@ -155,22 +158,16 @@ export function buildFusionPanel() {
     exceptionsList: q(sel.exceptionsList) as HTMLElement,
     orderNotice: q(sel.orderNotice) as HTMLElement,
     swapBtn: q(sel.swapBtn) as HTMLButtonElement,
-    planBtn: q(sel.planBtn) as HTMLButtonElement,
+    planBtn,
+    // the composed fusion's plan toggle reports through the build seam. The
+    // button is built once; the picks change under it — the typed compose
+    // order it acts on rides its action slot, refreshed on every repaint.
+    planAction: bindAction(planBtn, emitAction),
     planRow: q(sel.planRow) as HTMLElement,
   };
   // the swap button is built once and hidden unless the pair is
   // order-sensitive; it reports the constant action through the seam
   fusionPanel.swapBtn.addEventListener('click', () => emitAction({ type: 'swapFusion' }));
-  // the composed fusion's plan toggle reports through the build seam. The
-  // button is built once; the picks change under it — the compose order it
-  // acts on rides the reconcile seam's painted key ("a|b"), the same channel
-  // the selection box's once-built buttons read their item through.
-  fusionPanel.planBtn.addEventListener('click', () => {
-    const key = paintedKey(fusionPanel.planBtn);
-    if (!key) return;
-    const [a, b] = key.split('|');
-    emitAction({ type: 'togglePlanFusion', a, b });
-  });
 }
 
 /** Repaint pick order, filtering, and the fusion panel. The panel is a
@@ -204,11 +201,14 @@ export function paintFusion(vm: ViewModel) {
   // the plan toggle exists only in the composed state — and not at all for
   // evolve-instead pairs (they do not fuse, so there is nothing to plan)
   p.planBtn.hidden = fp.state !== 'composed' || !!fp.fusion.evolvesInstead;
-  // the once-built plan button reads its compose order from its painted key
-  // (see the click handler) — set on every composed paint, cleared otherwise
-  // so no stale pair survives a trip through empty/pending
-  if (fp.state === 'composed') setPaintedKey(p.planBtn, `${fp.a.id}|${fp.b.id}`);
-  else clearPaintedKey(p.planBtn);
+  // the once-built plan button reads its typed compose order from its action
+  // slot (see buildFusionPanel) — set on every composed paint, cleared
+  // otherwise so no stale pair survives a trip through empty/pending
+  if (fp.state === 'composed' && !fp.fusion.evolvesInstead) {
+    p.planAction.set({ type: 'togglePlanFusion', a: fp.a.id, b: fp.b.id });
+  } else {
+    p.planAction.clear();
+  }
 
   // Pending states replace the body via hidden toggles; text nodes update in
   // place; the two head <img> elements are created exactly once (build time).
