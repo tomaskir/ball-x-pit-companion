@@ -12,19 +12,23 @@
 // items, not bare ids: fusionPanel names the fusion screen's state machine
 // (empty / pending / composed) and carries the resolved Ball objects and
 // composed fusion so the renderer never re-derives them — it switches on
-// the named state and paints. The plan rides vm.plan the same way — its
-// state and derivation live in src/plan-state.ts (PlanState: resolved
+// the named state and paints. That panel derivation (the 3-state machine,
+// order presentation, and hint) lives in src/fusion-panel.ts; this module
+// hands it the picks and the plan facts and embeds the result. The plan
+// rides vm.plan the same way — its state and derivation live in
+// src/plan-state.ts (PlanState: resolved
 // entries, verdicts, limits, over-limit marks); this module forwards the
 // plan actions to it and embeds the result in the ViewModel, handing the
 // shared selectedChars in on every derive/snapshot. The plan types are
 // re-exported here so companion.ts and share.ts keep their import paths.
-import { BALLS, type Ball } from './data/balls';
+import { BALLS } from './data/balls';
 import { PASSIVES } from './data/passives';
 import { CHARACTERS, type Character } from './data/characters';
 import { highlightSet, closure, union } from './graph';
 import { ballMap, isPassive, itemFor, graphFor, passiveMap } from './catalog';
 import { deriveBuildGraph, layoutBuildGraph, fusionNodePair, type BuildGraphLayout } from './build-graph';
-import { fusionBalls, fuse, evolvesInstead, type FusionResult } from './fusion';
+import { fusionBalls, evolvesInstead } from './fusion';
+import { deriveFusionPanel, SELECTION_FULL, type FusionPanelState } from './fusion-panel';
 import { verdictFor, type Item, type Verdict } from './synergy';
 import { createPlanState, stickyToggle, hydrateList, isFusable } from './plan-state';
 import type { PlanAction, PlanLimits, PlanState, PlanSnapshot } from './plan-state';
@@ -33,6 +37,9 @@ import type { PlanAction, PlanLimits, PlanState, PlanSnapshot } from './plan-sta
 // (companion.ts, share.ts) keep working. Types only: plan-state must never
 // be imported *by* view-state's consumers at runtime through here.
 export type { PlanAction, PlanBallEntry, PlanCharState, PlanEntryState, PlanFused, PlanFusedState, PlanLimits, PlanSnapshot, PlanState } from './plan-state';
+// The fusion panel's state machine lives in src/fusion-panel.ts — re-exported
+// so existing import paths (test-support/pins.ts) keep working.
+export type { FusionPanelState };
 
 export interface TileState { selected: boolean; related: boolean; dimmed: boolean; filtered: boolean; verdict: Verdict | null; }
 /** One character card. `blocked` is a Matchmaker pairing restriction (game
@@ -44,38 +51,6 @@ export interface CharCardState { selected: boolean; filtered: boolean; blocked: 
  *  first, 2 second), null when not picked. Baby Ball is not a fusable
  *  upgrade entity and is excluded from the list. */
 export interface FusionRowState { slot: 1 | 2 | null; filtered: boolean; }
-/** The fusion panel's state machine, named. Three states:
- *  - empty    — no picks; the panel shows only the pick-two hint.
- *  - pending  — one pick; the head shows the first ball, the second icon
- *               slot stays hidden (an src-less <img> renders as a broken-
- *               image box), and the hint asks for a second ball.
- *  - composed — both picks; the full panel (head, evo line, effect body,
- *               cross-wire, notes) paints from the fused result.
- *  The renderer switches on `state`; everything it paints per state rides
- *  here, derived in one place (testable without DOM). */
-export type FusionPanelState =
-  | { state: 'empty' }
-  | { state: 'pending'; first: Ball }
-  | {
-      state: 'composed';
-      fusion: FusionResult;
-      a: Ball;
-      b: Ball;
-      planned: boolean;
-      planFull: boolean;
-      /** True when the selection order changes the fused result: a shared
-       *  scalar collision (first pick wins) or an order-dependent reported
-       *  exception. Drives the swap affordance and its warning line. */
-      orderSensitive: boolean;
-      /** The warning line above the action row; '' when not order-sensitive. */
-      orderNotice: string;
-      /** Empty "Fused result" copy, set only when the pair has no collisions:
-       *  order-sensitive pairs say only that no shared properties exist;
-       *  order-independent pairs add that order does not matter; '' when
-       *  result rows exist. Derived here so the renderer only paints it. */
-      resultEmptyText: string;
-    };
-
 /** The balls/passives screens' selection box: the currently selected item
  *  (null = no box on that screen) and the label states for its buttons —
  *  derived here so the renderer only paints. `plan`/`fusion` label kinds:
@@ -166,48 +141,12 @@ export type ToggleAction = Extract<
  *  Baby Ball is not one (research: it is not an upgrade entity). */
 const FUSION_BALLS = fusionBalls();
 
-/** Both max-2 selections (characters, fusion picks) show this when full —
- *  the sticky-toggle semantics are shared, so is the wording. */
-const SELECTION_FULL = 'selection full — deselect one first';
-
 /** The held character whose partners are Matchmaker-blocked: exactly one
  *  character held and two allowed. Null otherwise (0 or 2 held, or limit 1
  *  — no second pick exists to block). One definition for the card state and
  *  the toggle guard, so the two cannot drift. */
 const blockedPartner = (chars: Character[], limits: PlanLimits): Character | null =>
   chars.length === 1 && limits.chars > 1 ? chars[0] : null;
-
-/** "A", "A and B", "A, B, and C" — the order notice's property list. */
-const labelList = (labels: string[]): string =>
-  labels.length <= 1 ? (labels[0] ?? '')
-  : labels.length === 2 ? `${labels[0]} and ${labels[1]}`
-  : `${labels.slice(0, -1).join(', ')}, and ${labels[labels.length - 1]}`;
-
-/** The order presentation, derived here so the renderer only paints it
- *  (decision #8). Order model: docs/research/fusion-mechanics.md §3. A pair is
- *  order-sensitive when the composed fusion has a collision or an
- *  order-dependent exception; an evolve-instead pair never fuses, so order
- *  cannot matter. */
-const orderPresentation = (
-  fusion: FusionResult,
-): { orderSensitive: boolean; orderNotice: string; resultEmptyText: string } => {
-  if (fusion.evolvesInstead) return { orderSensitive: false, orderNotice: '', resultEmptyText: '' };
-  const collisions = fusion.resolved.collisions;
-  const orderSensitive = collisions.length > 0 || fusion.exceptions.some((e) => e.orderDependent);
-  // Only pairs with no collisions reach the empty-result copy. An
-  // exception-only order-sensitive pair has no shared properties, but order
-  // still matters — the warning line above the action row says so.
-  const resultEmptyText = collisions.length > 0
-    ? ''
-    : orderSensitive
-      ? 'No shared properties.'
-      : 'No shared properties — order does not matter.';
-  if (!orderSensitive) return { orderSensitive: false, orderNotice: '', resultEmptyText };
-  const orderNotice = collisions.length
-    ? `⚠ Order matters for this pair — swapping changes ${labelList(collisions.map((c) => c.label))}.`
-    : '⚠ Order matters for this pair — a reported exception is order-dependent.';
-  return { orderSensitive: true, orderNotice, resultEmptyText };
-};
 
 export function createViewState() {
   let selectedId: string | null = null;
@@ -275,24 +214,13 @@ export function createViewState() {
         filtered: !!fusionQ && !b.name.toLowerCase().includes(fusionQ),
       });
     }
-    const a = fusionPicks[0] ? ballMap.get(fusionPicks[0]) : null;
-    const b = fusionPicks[1] ? ballMap.get(fusionPicks[1]) : null;
-    const fusionPanel: FusionPanelState = !a
-      ? { state: 'empty' }
-      : !b
-        ? { state: 'pending', first: a }
-        : (() => {
-            const fusion = fuse(a, b);
-            return {
-              state: 'composed',
-              fusion,
-              a,
-              b,
-              planned: plan.hasPair(a.id, b.id),
-              planFull: planState.counts.balls >= planState.limits.balls,
-              ...orderPresentation(fusion),
-            };
-          })();
+    // The fusion panel and its hint are derived in src/fusion-panel.ts from
+    // the pick order plus the plan facts this screen hands in — the panel's
+    // 3-state machine, order presentation, and hint live there, not here.
+    const { panel: fusionPanel, hint: fusionHint } = deriveFusionPanel(fusionPicks, {
+      hasPair: (x, y) => plan.hasPair(x, y),
+      ballSlots: { used: planState.counts.balls, capacity: planState.limits.balls },
+    });
     // The selection boxes: one per item screen, filled only when the
     // selected item lives in that screen's namespace. Plan membership and
     // capacity are queried from the plan state (has / counts / limits) —
@@ -372,10 +300,7 @@ export function createViewState() {
         : selectedChars.length < limits.chars ? 'pick a second character…'
         : SELECTION_FULL,
       fusionPanel,
-      fusionHint:
-        fusionPicks.length === 0 ? 'Pick two balls to see their fusion.'
-        : fusionPicks.length === 1 ? '…pick a second ball.'
-        : SELECTION_FULL,
+      fusionHint,
       plan: planState,
       buildGraph: { balls: ballsGraph, passives: passivesGraph, focus, related: graphRelated, collapsed: { ...graphCollapsed } },
       selectionBoxes,

@@ -7,7 +7,7 @@ import { expect } from 'vitest';
 import { globalCss, rulesFor } from './styles';
 import { ballMap } from '../catalog';
 import { fuse } from '../fusion';
-import { createViewState, type FusionPanelState } from '../view-state';
+import { deriveFusionPanel, type FusionPanelState } from '../fusion-panel';
 
 const ball = (id: string) => ballMap.get(id)!;
 
@@ -177,10 +177,13 @@ export function expectResultEmptyTextBlankForCollisionPair(
   fp?: Extract<FusionPanelState, { state: 'composed' }>,
 ): void {
   if (!fp) {
-    const view = createViewState();
-    view.dispatch({ type: 'toggleFusion', id: 'egg-sac' });
-    const vm = view.dispatch({ type: 'toggleFusion', id: 'timestop' });
-    fp = vm.fusionPanel as Extract<FusionPanelState, { state: 'composed' }>;
+    // The canonical collision pair, derived through the panel module itself —
+    // the pin does not need the whole view state.
+    const { panel } = deriveFusionPanel(['egg-sac', 'timestop'], {
+      hasPair: () => false,
+      ballSlots: { used: 0, capacity: 5 },
+    });
+    fp = panel as Extract<FusionPanelState, { state: 'composed' }>;
   }
   expect(fp.fusion.resolved.collisions.length).toBeGreaterThan(0);
   expect(fp.resultEmptyText).toBe('');

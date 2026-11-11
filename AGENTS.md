@@ -22,6 +22,7 @@ Not an npm package (`"private": true`). Code is MIT-licensed; game art in
 - `src/fusion.ts` — pure fusion composer (`fuse(a, b)`); the site's editorial model of fusion, not game data.
 - `src/fusion-properties.ts` — pure order model: hand-maintained level-3 scalar property table and `resolveProperties(a, b)` (property-set union, first-pick scalar precedence); application channels come from `channelsOf` in `fusion-knowledge.ts`.
 - `src/fusion-knowledge.ts` — the hand-maintained fusion evidence: classification tables (Destroy/cooldown/pierce/kill classes, spawn inheritance, the one application-channel classifier `channelsOf`), predicates, and the one reported-fact table (`FUSION_FACTS`: caveat prose plus reported exceptions); `fusion.ts` composes, this module answers "what class is this ball in?" and carries the reported facts.
+- `src/fusion-panel.ts` — the fusion screen's panel derivation: the named 3-state machine (empty / pending / composed), the order presentation, and the panel hint. `deriveFusionPanel(picks, plan)`; view-state embeds the result.
 - `src/pair.ts` — unordered-pair identity (`pairKey`, `parsePair`); the one home for the "reverse composition is the same pair" invariant.
 - `src/graph.ts` — pure evolution-graph helpers (depth, highlight walks, recipe notation).
 - `src/build-graph.ts` — pure Plan-screen build-graph derivation + layout (`deriveBuildGraph`/`layoutBuildGraph`); the renderer only paints it.

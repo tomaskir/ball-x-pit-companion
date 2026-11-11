@@ -312,16 +312,30 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   `pending` with the first resolved Ball / `composed` with both resolved
   Balls, the composed fusion from `src/fusion.ts`, the pair's `planned`
   mark, `planFull` — the plan's ball slots at their active limit, which
-  disables the panel's plan toggle — and the order presentation derived
-  here: `orderSensitive`, `orderNotice`, `resultEmptyText`; the composer's
+  disables the panel's plan toggle — and the order presentation:
+  `orderSensitive`, `orderNotice`, `resultEmptyText`; the composer's
   structured `collisions` and `exceptions` are read off the composed
   `fusion` (`fusion.resolved.collisions` / `fusion.exceptions`), not
-  copied onto the panel state) — derived in one place, so the renderer
-  switches on the state instead of re-deriving picks from hidden toggles.
+  copied onto the panel state). That panel derivation and the fusion hint
+  live in **Fusion panel** (`src/fusion-panel.ts`); view-state hands the
+  picks and plan facts in and embeds the result, so the renderer switches
+  on the state instead of re-deriving picks from hidden toggles.
   `swapFusion` reverses the two picks (a,b → b,a) and
   recomputes the panel; it is a no-op with fewer than two picks. The island listens to DOM events, dispatches, and
   hands the returned view model to the renderer; the view model is the test
   surface.
+- **Fusion panel** — the fusion screen's panel derivation as its own module:
+  the named 3-state machine (`empty` / `pending` / `composed`), the composed
+  pair's order presentation (`orderSensitive`, `orderNotice`,
+  `resultEmptyText`), and the panel's hint text. Module:
+  `src/fusion-panel.ts` — one interface:
+  `deriveFusionPanel(picks, plan) → { panel, hint }`. The seam is "pick order
+  + plan facts in, panel state out": the module resolves the picks through
+  the catalog, composes through `src/fusion.ts`, and reads only the plan
+  facts it needs (`hasPair` for the `planned` mark, `ballSlots` for
+  `planFull`). It never imports view-state (no runtime cycle); view-state
+  embeds the result in the ViewModel (`fusionPanel`, `fusionHint`), so the
+  renderer's named-state contract is unchanged.
 - **Fusion composer** — pure composition of a fused ball from two components:
   name "A × B" (site display; the English game name is "A X B" and the
   separator is localized; first-selected first; canonical statement:
