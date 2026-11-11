@@ -1,20 +1,22 @@
 // Corpus schema gate — the harvest corpus (docs/research/fusion-observations/)
 // is tracked and consumed by src/corpus.test.ts, so its schema rot must fail
 // `npm test` rather than wait for the next manual validator run. The checks
-// are the validator's own; this test just invokes them (the CLI remains the
-// occasional-refresh entry point — scripts/harvest/validate-observations.ts).
+// live in src/corpus.ts (the corpus module); this test just invokes them (the
+// CLI remains the occasional-refresh entry point —
+// scripts/harvest/validate-observations.ts).
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, it, expect } from 'vitest';
-import { validateObservations } from '../scripts/harvest/validate-observations';
+import { loadCorpus, validateCorpus } from './corpus';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
+const realSchema = readFileSync(join(repoRoot, 'docs/research/fusion-observations/schema.json'), 'utf8');
 
 describe('fusion-observation corpus schema (the gate)', () => {
   it('every jsonl line conforms to the schema contract', () => {
-    const findings = validateObservations(repoRoot).filter((f) => !f.warning);
+    const findings = validateCorpus(repoRoot).filter((f) => !f.warning);
     expect(
       findings.map((f) => (f.line === undefined ? `${f.file}: ${f.message}` : `${f.file}:${f.line}: ${f.message}`)),
       'corpus schema violations'
@@ -22,9 +24,11 @@ describe('fusion-observation corpus schema (the gate)', () => {
   });
 
   it('the corpus the gate just validated is the one corpus.test.ts reads', () => {
-    // Guard against the two tests drifting onto different directories.
-    const obsDir = fileURLToPath(new URL('../docs/research/fusion-observations/', import.meta.url));
-    expect(readFileSync(`${obsDir}fusion-pairs.json`, 'utf8')).toContain('"pair_count"');
+    // Guard against the two tests drifting onto different directories: both
+    // now cross the same module seam with the same root.
+    const corpus = loadCorpus(repoRoot);
+    expect(corpus.pairCount).toBe(370);
+    expect(corpus.pairs['flash+freeze']).toBeDefined();
   });
 });
 
@@ -46,18 +50,21 @@ describe('pending/ staging is outside the schema gate', () => {
     try {
       const obsDir = join(root, 'docs/research/fusion-observations');
       mkdirSync(join(obsDir, 'pending'), { recursive: true });
-      mkdirSync(join(root, 'src/data'), { recursive: true });
-      writeFileSync(join(root, 'src/data/balls.ts'), 'export const balls = [{ "id": "flash" }, { "id": "freeze" }];\n');
+      writeFileSync(join(obsDir, 'schema.json'), realSchema);
       writeFileSync(join(obsDir, 'aliases.json'), JSON.stringify({ aliases: {}, canonical: {} }));
+      writeFileSync(
+        join(obsDir, 'fusion-pairs.json'),
+        JSON.stringify({ generated: '2026-11-13', pair_count: 0, pairs: {} })
+      );
       writeFileSync(join(obsDir, 'reddit-2026-11-13.jsonl'), row(['flash', 'freeze']));
       writeFileSync(join(obsDir, 'pending/risen-ballbylon-2026-11-13.jsonl'), row(['flash', 'risen-ballbylon']));
 
-      expect(validateObservations(root)).toEqual([]);
+      expect(validateCorpus(root)).toEqual([]);
 
       // Promotion = move the staged row into the top-level wave: the same row
       // now fails the gate until the catalog gains the id.
       writeFileSync(join(obsDir, 'reddit-2026-11-13.jsonl'), row(['flash', 'risen-ballbylon']));
-      expect(validateObservations(root).map((f) => f.message)).toContain(
+      expect(validateCorpus(root).map((f) => f.message)).toContain(
         'pair id "risen-ballbylon" not in catalog'
       );
     } finally {
