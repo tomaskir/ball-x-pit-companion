@@ -9,7 +9,8 @@
 import { fusionBalls } from '../fusion';
 import { emitAction } from './seam';
 import { clearPaintedKey, paintedKey, reconcile, setPaintedKey } from './reconcile';
-import { DEPTH_LABELS, PLAN_LIMIT_TITLE, PLAN_TOGGLE_LABELS } from './labels';
+import { DEPTH_LABELS } from '../depth-labels';
+import { PLAN_LIMIT_TITLE, PLAN_TOGGLE_LABELS } from './labels';
 import { icon } from './dom';
 import type { ViewModel } from '../view-state';
 

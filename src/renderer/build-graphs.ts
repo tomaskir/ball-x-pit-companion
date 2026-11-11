@@ -6,7 +6,7 @@
 // everything else — counts, done/suppressed, positions, edge paths, the focus
 // highlight — repaints in place, found by each node's data-id and each edge's
 // stamped endpoints. Internal to the renderer facade.
-import { BUILD_GRAPH_METRICS, BUILD_GRAPH_ROWS, FUSION_ROW } from '../build-graph';
+import { BUILD_GRAPH_METRICS, BUILD_GRAPH_ROWS } from '../build-graph';
 import { emitAction } from './seam';
 import { reconcile } from './reconcile';
 import { icon } from './dom';
@@ -137,13 +137,13 @@ export function paintBuildGraphs(vm: ViewModel) {
         // inside (no nested interactive elements)
         const el = document.createElement('div');
         el.className =
-          `build-node${n.final ? ' final' : ''}${n.row === FUSION_ROW ? ' fused' : ''}` +
+          `build-node${n.final ? ' final' : ''}${n.row === BUILD_GRAPH_ROWS.balls.fusionRow ? ' fused' : ''}` +
           `${n.done ? ' done' : ''}${n.suppressed ? ' suppressed' : ''}`;
         el.dataset.id = n.id;
         placeNode(el, n);
         // icons ride one row wrapper — the fused pair's two icons sit side by
         // side (bare second img would stack under the first in the column)
-        const imgs = n.row === FUSION_ROW
+        const imgs = n.row === BUILD_GRAPH_ROWS.balls.fusionRow
           ? `<img src="${icon(n.icon)}" alt="" width="28" height="28"><img src="${icon(n.icon2!)}" alt="" width="28" height="28">`
           : `<img src="${icon(n.icon)}" alt="${n.name}" width="28" height="28">`;
         // the done check: evolved/T3/fusion nodes only — base balls dim

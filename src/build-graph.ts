@@ -40,29 +40,33 @@ import { type GraphItem, complexity, componentsOf, recipeSlots, closure, union }
 import { pairKey, parsePair } from './pair';
 import { ballMap, passiveMap, graphFor } from './catalog';
 import { evolvesInstead } from './fusion';
+import { DEPTH_LABELS } from './depth-labels';
 import type { PlanState } from './plan-state';
-
-/** Structural-depth labels — the catalog grids' tier headers and the build
- *  graph's rows share them. One definition; renderer/labels.ts re-exports. */
-export const DEPTH_LABELS = ['Basic', 'Evolved', 'Tier-3'] as const;
 
 /** The fusion row's index — the only row outside the structural depths. */
 export const FUSION_ROW = 3 as const;
+export type FusionRow = typeof FUSION_ROW;
 
 /** The graph's fixed row bands: one per structural depth plus — balls only —
  *  the fusion row. The single definition of the row count, the fusion row
- *  index, and the row labels (the renderer reads all three). */
+ *  index, and the row labels (the derivation reads the count; the renderer
+ *  reads the labels and the fusion row index). */
 export interface BuildGraphRows {
   /** Fixed row bands (empty rows keep their band). */
-  count: number;
+  rowCount: number;
   /** The fusion row's index, or null when the namespace has no fusion row. */
-  fusionRow: typeof FUSION_ROW | null;
+  fusionRow: FusionRow | null;
   /** Row labels, index-aligned with the bands. */
   labels: readonly string[];
 }
+const rows = (labels: readonly string[], fusionRow: FusionRow | null): BuildGraphRows => ({
+  rowCount: labels.length,
+  fusionRow,
+  labels,
+});
 export const BUILD_GRAPH_ROWS: Record<'balls' | 'passives', BuildGraphRows> = {
-  balls: { count: 4, fusionRow: FUSION_ROW, labels: [...DEPTH_LABELS, 'Fusions'] },
-  passives: { count: 3, fusionRow: null, labels: DEPTH_LABELS },
+  balls: rows([...DEPTH_LABELS, 'Fusions'], FUSION_ROW),
+  passives: rows(DEPTH_LABELS, null),
 };
 
 /** The plan-side input: which entities the graph must show the build for.
@@ -80,7 +84,7 @@ export interface BuildGraphNode {
   id: string;
   name: string;
   icon: string;
-  row: 0 | 1 | 2 | typeof FUSION_ROW;
+  row: 0 | 1 | 2 | FusionRow;
   /** Physical copies still needed: min when every path needs it, max when
    *  alternate paths could push it higher. Equal → show a plain count.
    *  Done marks stop their node from contributing, so these are the
@@ -370,13 +374,19 @@ export function layoutBuildGraph(model: BuildGraphModel, rows: number): BuildGra
   return { width, height: rows * rowH, nodes, edges };
 }
 
+/** The two build-graph panels' collapsed flags — session-only UI state. */
+export interface BuildGraphCollapsed {
+  balls: boolean;
+  passives: boolean;
+}
+
 /** The session-only build-graph UI state view-state owns: the focused node
  *  (null = none), the done marks (nodes the player has already built this
  *  run), and the two panels' collapsed flags. */
 export interface BuildGraphSessionState {
   focus: string | null;
   done: ReadonlySet<string>;
-  collapsed: { balls: boolean; passives: boolean };
+  collapsed: BuildGraphCollapsed;
 }
 
 /** The Plan screen's build graphs: one laid-out model per namespace (balls
@@ -390,7 +400,7 @@ export interface BuildGraphViewState {
   passives: BuildGraphLayout;
   focus: string | null;
   related: Set<string>;
-  collapsed: { balls: boolean; passives: boolean };
+  collapsed: BuildGraphCollapsed;
 }
 
 /**
@@ -425,14 +435,13 @@ export function deriveBuildGraphView(
     singles: planState.passives.filter((e) => !e.overLimit).map((e) => e.item.id),
     pairs: [],
   };
-  const balls = layoutBuildGraph(
-    deriveBuildGraph(ballTargets, ballMap, { done }),
-    BUILD_GRAPH_ROWS.balls.count,
-  );
-  const passives = layoutBuildGraph(
-    deriveBuildGraph(passiveTargets, passiveMap, { done }),
-    BUILD_GRAPH_ROWS.passives.count,
-  );
+  const deriveAndLayout = <T extends GraphItem & { name: string; icon: string }>(
+    targets: BuildGraphTargets,
+    graph: Map<string, T>,
+    rows: number,
+  ) => layoutBuildGraph(deriveBuildGraph(targets, graph, { done }), rows);
+  const balls = deriveAndLayout(ballTargets, ballMap, BUILD_GRAPH_ROWS.balls.rowCount);
+  const passives = deriveAndLayout(passiveTargets, passiveMap, BUILD_GRAPH_ROWS.passives.rowCount);
 
   let resolvedFocus = focus;
   if (resolvedFocus && ![...balls.nodes, ...passives.nodes].some((n) => n.id === resolvedFocus)) {

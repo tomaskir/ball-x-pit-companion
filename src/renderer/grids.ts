@@ -7,7 +7,7 @@ import { PASSIVES } from '../data/passives';
 import { itemFor, type Item } from '../catalog';
 import { recipeHtml } from '../graph';
 import { attachToast, emitAction } from './seam';
-import { DEPTH_LABELS } from './labels';
+import { DEPTH_LABELS } from '../depth-labels';
 import { icon, verdictBadge } from './dom';
 import type { ViewModel } from '../view-state';
 

@@ -416,12 +416,12 @@ describe('build graph view: the whole Plan-screen derivation', () => {
 
   it('the row model is one definition: row counts, fusion index, and labels', () => {
     expect(BUILD_GRAPH_ROWS.balls).toEqual({
-      count: 4,
+      rowCount: 4,
       fusionRow: FUSION_ROW,
       labels: ['Basic', 'Evolved', 'Tier-3', 'Fusions'],
     });
     expect(BUILD_GRAPH_ROWS.passives).toEqual({
-      count: 3,
+      rowCount: 3,
       fusionRow: null,
       labels: ['Basic', 'Evolved', 'Tier-3'],
     });
@@ -429,7 +429,7 @@ describe('build graph view: the whole Plan-screen derivation', () => {
       planStateWith([{ type: 'togglePlanFusion', a: 'freeze-ray', b: 'time-bomb' }]),
       session(),
     );
-    expect(view.balls.height).toBe(BUILD_GRAPH_ROWS.balls.count * BUILD_GRAPH_METRICS.rowH);
-    expect(view.passives.height).toBe(BUILD_GRAPH_ROWS.passives.count * BUILD_GRAPH_METRICS.rowH);
+    expect(view.balls.height).toBe(BUILD_GRAPH_ROWS.balls.rowCount * BUILD_GRAPH_METRICS.rowH);
+    expect(view.passives.height).toBe(BUILD_GRAPH_ROWS.passives.rowCount * BUILD_GRAPH_METRICS.rowH);
   });
 });

@@ -82,9 +82,8 @@ export interface ViewModel {
   /** The balls/passives screens' selection boxes — see SelectionBoxState. */
   selectionBoxes: { balls: SelectionBoxState | null; passives: SelectionBoxState | null };
 }
-// The build-graph view types are build-graph.ts's — re-exported so the
-// ViewModel's `buildGraph` field keeps one named shape.
-export type { BuildGraphViewState } from './build-graph';
+// The build-graph view type is build-graph.ts's; the ViewModel's
+// `buildGraph` field imports it from there.
 export type Section = 'balls' | 'passives' | 'characters' | 'fusions' | 'plan';
 export type Action =
   | { type: 'toggleItem'; id: string }
