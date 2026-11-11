@@ -43,7 +43,7 @@ Not an npm package (`"private": true`). Code is MIT-licensed; game art in
 - `scripts/parse-wiki.ts`, `scripts/emit-data.ts` — thin CLIs over the data pipeline.
 - `scripts/fact-bases.ts` — exported pure parsers (`parseRecipes`, `parseGameMechanics`, `parsePairings`, `parseLevel3`, `parseFactBases`); the test surface for the fact bases.
 - `scripts/markdown-table.ts` — the one markdown-table scanner all three parsers share; returns rows keyed by header cell (`column(row, 'Name')`), so parsers never index by position.
-- `scripts/editorial.ts` — the site's editorial synergy model (`TAGS`, `BALL_TAGS`, `PASSIVE_TAGS`, `CHAR_VERDICTS`); the only place it is set.
+- `scripts/editorial.ts` — the site's editorial synergy model (`TAGS`, `BALL_TAGS`, `PASSIVE_TAGS`, `CHAR_VERDICTS`); the only place it is set, plus `validateEditorial`, its one invariant list (bidirectional entity coverage, tag vocabulary, verdict-rule sanity, wildcard uniqueness), shared by the emit CLI and `src/data.test.ts`.
 - `scripts/generated-data.ts` — the generated-data contract (`emitData`, `renderGenerated`, `validateGenerated`, `runEmitData`); validation runs before any write and the same list is asserted in `src/data.test.ts`.
 - `scripts/slug.ts` — shared name→id slugification.
 - `scripts/harvest/validate-observations.ts` — thin CLI over `src/corpus.ts` (prints findings, sets the exit code).

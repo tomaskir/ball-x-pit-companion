@@ -1,7 +1,8 @@
 // The site's editorial synergy model — the one module where the tag
 // vocabulary, per-entity tag assignments, and per-character verdict rules are
-// set. These are content decisions, not game data (see
-// docs/research/game-mechanics.md §4); emit-data.ts only serializes them.
+// set, plus validateEditorial, its one invariant list. These are content
+// decisions, not game data (see docs/research/game-mechanics.md §4);
+// emit-data.ts only serializes them.
 
 export interface VerdictRule {
   tag: string;
@@ -295,3 +296,71 @@ export const CHAR_VERDICTS: Record<string, VerdictRule[]> = {
 };
 
 export const EDITORIAL: EditorialMaps = { TAGS, BALL_TAGS, PASSIVE_TAGS, CHAR_VERDICTS };
+
+/** The entity ids the editorial maps must cover, one namespace per map. */
+export interface EditorialEntityIds {
+  balls: Iterable<string>;
+  passives: Iterable<string>;
+  characters: Iterable<string>;
+}
+
+/**
+ * The editorial model's one invariant list. Returns human-readable findings;
+ * an empty array means the model is valid. The contract is bidirectional:
+ * every entity has an entry, and every entry resolves to an entity. Shared by
+ * validateGenerated (the emit CLI's path) and src/data.test.ts.
+ */
+export function validateEditorial(editorial: EditorialMaps, ids: EditorialEntityIds): string[] {
+  const findings: string[] = [];
+  const vocab = new Set(Object.keys(editorial.TAGS));
+  const ballIds = new Set(ids.balls);
+  const passiveIds = new Set(ids.passives);
+  const charIds = new Set(ids.characters);
+
+  const checkCoverage = (
+    kind: 'ball' | 'passive' | 'character',
+    entityIds: Set<string>,
+    entries: Record<string, unknown>,
+    missing: string,
+  ): void => {
+    for (const id of entityIds) if (!(id in entries)) findings.push(`${kind} missing ${missing}: ${id}`);
+    for (const key of Object.keys(entries)) if (!entityIds.has(key)) findings.push(`${kind} ${missing} for unknown id: ${key}`);
+  };
+
+  checkCoverage('ball', ballIds, editorial.BALL_TAGS, 'tags');
+  checkCoverage('passive', passiveIds, editorial.PASSIVE_TAGS, 'tags');
+  checkCoverage('character', charIds, editorial.CHAR_VERDICTS, 'verdicts');
+
+  // tag lists use the vocabulary; the wildcard is a verdict-only tag
+  for (const [kind, entries] of [
+    ['ball', editorial.BALL_TAGS],
+    ['passive', editorial.PASSIVE_TAGS],
+  ] as const) {
+    for (const [id, tags] of Object.entries(entries)) {
+      for (const tag of tags) {
+        if (tag === WILDCARD) findings.push(`${kind} ${id}: wildcard ${WILDCARD} is only valid in character verdicts`);
+        else if (!vocab.has(tag)) findings.push(`${kind} ${id}: unknown tag ${tag}`);
+      }
+    }
+  }
+
+  // verdict rules: vocabulary, valid verdict, a note, and no duplicate or
+  // contradictory rule for the same tag; the wildcard is used at most once
+  let wildcardUses = 0;
+  for (const [id, rules] of Object.entries(editorial.CHAR_VERDICTS)) {
+    const seen = new Map<string, VerdictRule['verdict']>();
+    for (const rule of rules) {
+      if (rule.tag === WILDCARD) wildcardUses++;
+      else if (!vocab.has(rule.tag)) findings.push(`character ${id}: unknown tag ${rule.tag}`);
+      if (rule.verdict !== 'red' && rule.verdict !== 'green') findings.push(`character ${id}: invalid verdict ${rule.verdict}`);
+      if (!rule.note?.trim()) findings.push(`character ${id}: rule for tag ${rule.tag} has no note`);
+      const previous = seen.get(rule.tag);
+      if (previous === undefined) seen.set(rule.tag, rule.verdict);
+      else if (previous !== rule.verdict) findings.push(`character ${id}: contradictory verdicts for tag ${rule.tag}`);
+      else findings.push(`character ${id}: duplicate rule for tag ${rule.tag}`);
+    }
+  }
+  if (wildcardUses > 1) findings.push(`wildcard ${WILDCARD} is used ${wildcardUses} times; it must be unique`);
+
+  return [...new Set(findings)];
+}

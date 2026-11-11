@@ -73,8 +73,11 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
 - **Generated-data contract** — `scripts/generated-data.ts`: `emitData`
   (parsed + editorial → in-memory data), `renderGenerated` (data → the five
   file contents), and `validateGenerated` (the one invariant list). The
-  `emit-data.ts` CLI runs validate before write; `src/data.test.ts` runs the
-  same list against the checked-in data.
+  editorial maps' own contract lives with the model: `validateEditorial`
+  (`scripts/editorial.ts`) checks bidirectional entity coverage, the tag
+  vocabulary, verdict-rule sanity, and wildcard uniqueness; `validateGenerated`
+  calls it. The `emit-data.ts` CLI runs validate before write;
+  `src/data.test.ts` runs the same list against the checked-in data.
 - **Tag** — one of the 17 entries in the synergy vocabulary
   (`src/data/tags.ts`): `aoe`, `single-target`, `spawns-baby-balls`,
   `spawns-allies`, `status-effect`, `pass-through`, `destroy-on-hit`,

@@ -4,7 +4,7 @@
 // runs the same validateGenerated list against the checked-in data — the
 // invariants are written once, not copied.
 import { slug } from './slug.ts';
-import { WILDCARD } from './editorial.ts';
+import { WILDCARD, validateEditorial } from './editorial.ts';
 import type { ParsedFactBases } from './fact-bases.ts';
 import type { EditorialMaps, VerdictRule } from './editorial.ts';
 
@@ -206,9 +206,8 @@ export function validateGenerated(data: GeneratedData, editorial: EditorialMaps)
       if (r.verdict !== 'red' && r.verdict !== 'green') findings.push(`character ${ch.id}: invalid verdict ${r.verdict}`);
     }
 
-  // every character has a verdict entry and a base ball that resolves
+  // every character has a base ball that resolves
   for (const ch of data.characters) {
-    if (!(ch.id in editorial.CHAR_VERDICTS)) findings.push(`character missing verdicts: ${ch.id}`);
     if (ch.baseBallId !== null && !ballIds.has(ch.baseBallId)) {
       findings.push(`character ${ch.id}: unresolved base ball ${ch.baseBallId}`);
     }
@@ -233,9 +232,9 @@ export function validateGenerated(data: GeneratedData, editorial: EditorialMaps)
     findings.push('the-false-messiah: the *all* row must exclude nobody — they can never be a second character');
   }
 
-  // every entity must have a tag entry
-  for (const b of data.balls) if (!(b.id in editorial.BALL_TAGS)) findings.push(`ball missing tags: ${b.name}`);
-  for (const p of data.passives) if (!(p.id in editorial.PASSIVE_TAGS)) findings.push(`passive missing tags: ${p.name}`);
+  // the editorial maps' own invariants: bidirectional entity coverage, tag
+  // vocabulary, verdict-rule sanity, and wildcard uniqueness
+  findings.push(...validateEditorial(editorial, { balls: ballIds, passives: passiveIds, characters: charIds }));
 
   // level-3 overlay: every key resolves to a ball, every fusable ball has text,
   // and Baby Ball (not fusable) is absent
@@ -248,7 +247,9 @@ export function validateGenerated(data: GeneratedData, editorial: EditorialMaps)
     findings.push(`level-3 texts: ${Object.keys(data.level3).length}, expected ${fusableCount}`);
   }
 
-  return findings;
+  // the data-side checks and validateEditorial overlap on vocabulary; report
+  // each finding once
+  return [...new Set(findings)];
 }
 
 /**

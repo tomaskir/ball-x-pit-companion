@@ -98,7 +98,19 @@ describe('validateGenerated: one invariant list', () => {
   it('reports a missing tag entry', () => {
     const data = valid();
     const editorialMissing = { ...editorial, BALL_TAGS: { 'baby-ball': [] } };
-    expect(validateGenerated(data, editorialMissing)).toContain('ball missing tags: Iron');
+    expect(validateGenerated(data, editorialMissing)).toContain('ball missing tags: iron');
+  });
+
+  it('reports an orphan editorial entry (validateEditorial runs inside validateGenerated)', () => {
+    const data = valid();
+    const editorialOrphan = { ...editorial, BALL_TAGS: { ...editorial.BALL_TAGS, ghost: [] } };
+    expect(validateGenerated(data, editorialOrphan)).toContain('ball tags for unknown id: ghost');
+  });
+
+  it('reports a typo\'d editorial tag key', () => {
+    const data = valid();
+    const editorialTypo = { ...editorial, BALL_TAGS: { ...editorial.BALL_TAGS, iron: ['aoe', 'nope'] } };
+    expect(validateGenerated(data, editorialTypo)).toContain('ball iron: unknown tag nope');
   });
 
   it('reports an unknown level-3 key', () => {

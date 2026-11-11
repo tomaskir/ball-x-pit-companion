@@ -45,14 +45,11 @@ describe('schema invariants (ticket 03)', () => {
 
   it('the generated data satisfies every pipeline invariant', () => {
     // One invariant list, shared with scripts/emit-data.ts: recipes resolve
-    // within their namespace, tags/verdicts use the vocabulary, every
-    // character has verdicts and a resolving base ball, pairings are
-    // symmetric, and the level-3 overlay covers every fusable ball.
+    // within their namespace, tags/verdicts use the vocabulary, the editorial
+    // maps cover every entity and resolve only to entities (validateEditorial),
+    // every character has a resolving base ball, pairings are symmetric, and
+    // the level-3 overlay covers every fusable ball.
     expect(validateGenerated({ tags: TAGS, balls: BALLS, passives: PASSIVES, characters: CHARACTERS, level3: LEVEL_3_EFFECTS }, EDITORIAL)).toEqual([]);
-  });
-
-  it('every character verdict note is present (tooltip explains the indicator)', () => {
-    for (const ch of CHARACTERS) for (const v of ch.verdicts) expect(v.note?.length ?? 0).toBeGreaterThan(0);
   });
 
   it('base balls and base passives have no recipes; evolved always do', () => {
@@ -112,8 +109,8 @@ describe('characters (ticket 06)', () => {
   it('The Ballbearer carries the *passives wildcard (red on every passive)', () => {
     const ballbearer = CHARACTERS.find((c) => c.id === 'the-ballbearer')!;
     expect(ballbearer.verdicts.some((v) => v.tag === WILDCARD && v.verdict === 'red')).toBe(true);
-    // no other character uses the wildcard
-    expect(CHARACTERS.filter((c) => c.verdicts.some((v) => v.tag === WILDCARD))).toHaveLength(1);
+    // wildcard uniqueness is an editorial invariant (validateEditorial, via
+    // the pipeline-invariant test above)
   });
 
   it('The Empty Nester and The Makeshift Sisyphus are red on spawns-baby-balls (no baby balls)', () => {
