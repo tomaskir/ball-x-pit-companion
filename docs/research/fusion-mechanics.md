@@ -113,7 +113,7 @@ cross-wires, Flicker × Radiation Beam cross-wires, Flash × Glacier does not.
 
 Whether a partner's effect rides the other component depends on the **trigger
 channel**, not just the effect kind. The governing reading is the **trigger
-matrix's source reading** (decision #18, adopted in #20): **AOE damage cannot
+matrix's source reading** (issue #18, adopted in #20): **AOE damage cannot
 trigger an On-Hit effect** — an AOE tick is not a hit — while **spawned units
 can trigger the original's abilities** (a baby ball's hit is a hit). This
 supersedes the earlier target reading recorded in #6.

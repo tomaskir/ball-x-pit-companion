@@ -242,6 +242,18 @@ describe('cross-wire exclusions (corpus no-cross-wire evidence)', () => {
     expect(notes).not.toMatch(/spawn is an on-hit effect/);
   });
 
+  it('trigger caveats fire for AOE partners even when the pair does not wire', () => {
+    // Brood Mother × Sun: Sun's field aura is not an on-hit status, so no
+    // wire — but its screen-clear damage still suppresses the on-hit spawn.
+    const bm = fuse(ball('brood-mother'), ball('sun'))!;
+    expect(bm.crossWire).toBeNull();
+    expect(bm.notes.join(' ')).toMatch(/spawn fires on hit, so a screen-wide\/AOE partner produces fewer babies/);
+    // Mosquito King × Glacier: Glacier's freeze is spawn-bound, so no wire.
+    const mk = fuse(ball('mosquito-king'), ball('glacier'))!;
+    expect(mk.crossWire).toBeNull();
+    expect(mk.notes.join(' ')).toMatch(/spawn is an on-hit effect/);
+  });
+
   it('status-only carriers do not inherit spawn-bound traits (Brood Mother / Mosquito King × Glacier)', () => {
     expect(fuse(ball('brood-mother'), ball('glacier'))!.crossWire).toBeNull();
     expect(fuse(ball('mosquito-king'), ball('glacier'))!.crossWire).toBeNull();

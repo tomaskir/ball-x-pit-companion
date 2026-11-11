@@ -325,7 +325,7 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
   // emitted nothing even though the #17/#18 research reports status
   // inheritance (degraded/probabilistic for Brood Mother). Fix: split the old
   // SPAWN_EXCLUDED_IDS into the VES hard exclusion and the status-only
-  // carriers (decision #20); on-hit statuses wire, spawn-bound traits do not,
+  // carriers (issue #20); on-hit statuses wire, spawn-bound traits do not,
   // and fuse() attaches the reported degradation/trigger caveats.
   it('status-only spawn carriers wire on-hit statuses with their caveats', async () => {
     const { fuse } = await import('./fusion');

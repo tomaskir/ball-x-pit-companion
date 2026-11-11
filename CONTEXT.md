@@ -322,8 +322,10 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   collide; the first-selected value wins) and reported exceptions for the
   panel's Fused result / Reported exceptions sections, the fixed composition
   caveats (Destroy × Destroy, hit-once dominance over pass-through, spawn
-  compensates Destroy, Dark's multiplier), and the evolve-instead note for
-  2-component evolution recipes. Module: `src/fusion.ts` (`fuse(a, b)`,
+  compensates Destroy, Dark's multiplier), the reported spawn-inheritance
+  caveats (Brood Mother degradation + trigger limit, Mosquito King trigger
+  limit, Egg Sac weaker clone), and the evolve-instead note for 2-component
+  evolution recipes. Module: `src/fusion.ts` (`fuse(a, b)`,
   `fusionBalls()`, `fusionName`, `abstractDamage`, `crossWire(a, b) →
   { line, disputed, spawnerId }`, `evolvesInstead`); the order model's canonical
   statement is `docs/research/fusion-mechanics.md` §3, implemented by

@@ -87,26 +87,23 @@ describe('corpus sanity (the spec itself is loadable)', () => {
 });
 
 describe('no-cross-wire claims → composer emits no cross-wire line', () => {
-  // Pairs whose corpus no-cross-wire claim is superseded by the #20
-  // spawn-channel decision: the status-only carriers (Brood Mother, Mosquito
-  // King) inherit the partner's on-hit status, with degradation/trigger
-  // caveats. The raw claim stays in the append-only corpus; the composer
-  // follows the resolved model.
-  const NO_WIRE_SUPERSEDED = new Set(['brood-mother+flash', 'flash+mosquito-king']);
-
-  // Corpus pairs whose evidence is exclusively negative (13 pairs, minus the
-  // superseded two). Every remaining one is a trigger-channel exclusion the
-  // composer models: spawn-bound statuses (Flash × Glacier), the VES hard
-  // exclusion, debuff-only channels (Reaper × Satan), AOE × AOE
-  // non-inheritance.
-  it.each(noWire.filter((key) => !NO_WIRE_SUPERSEDED.has(key)))('%s stays null', (key) => {
+  // Corpus pairs whose evidence is exclusively negative (11 pairs). Every one
+  // is a trigger-channel exclusion the composer models: spawn-bound statuses
+  // (Flash × Glacier), the VES hard exclusion, debuff-only channels (Reaper ×
+  // Satan), AOE × AOE non-inheritance. Two former no-wire pairs
+  // (brood-mother+flash, flash+mosquito-king) are recorded as superseded in
+  // the curated layer (issue #20) and are covered by the status-only test
+  // below.
+  it.each(noWire)('%s stays null', (key) => {
     const [a, b] = pairsData.pairs[key].components;
     expect(fuse(ball(a), ball(b))!.crossWire, key).toBeNull();
   });
 
-  it('superseded no-wire pairs wire under the #20 status-only model', () => {
-    for (const key of NO_WIRE_SUPERSEDED) {
-      const [a, b] = pairsData.pairs[key].components;
+  it('superseded no-wire claims now wire under the status-only model (issue #20)', () => {
+    for (const key of ['brood-mother+flash', 'flash+mosquito-king']) {
+      const p = pairsData.pairs[key];
+      expect(p.superseded.length, `${key}: resolution not recorded in the curated layer`).toBeGreaterThan(0);
+      const [a, b] = p.components;
       expect(fuse(ball(a), ball(b))!.crossWire, key).not.toBeNull();
     }
   });
@@ -210,9 +207,9 @@ describe('implemented cross-wire patterns → composer wires', () => {
 
 describe('cross-wire claims beyond the model → conservatively null', () => {
   // Corpus cross-wire pairs the composer deliberately does NOT implement
-  // (42 pairs), by class:
+  // (41 pairs), by class:
   //   - VES (voluptuous-egg-sac) spawn pairs — the two-hop chain drops the
-  //     property (SPAWN_EXCLUDED_IDS; CONTRADICTIONS.md §3), yet the corpus
+  //     property (SPAWN_NO_INHERITANCE_IDS; CONTRADICTIONS.md §3), yet the corpus
   //     also holds positive reports; unresolved → conservative null. The
   //     phantom/wraith VES claims ("hit effects DO trigger from VolEgg
   //     babies") are single-source against the VES exclusions and stay null.
@@ -220,7 +217,7 @@ describe('cross-wire claims beyond the model → conservatively null', () => {
   //     partner that has no on-hit status to carry (brood-mother+egg-sac,
   //     brood-mother+laser-vertical, mosquito-king+spider-queen) — the spawn
   //     channel inherits on-hit statuses only, and these partners have none
-  //     (decision #20).
+  //     (issue #20).
   //   - Spawn × spawn compounding — two spawners, or a spawn carrier whose
   //     partner has no status/kill for a channel to carry: bomb+cell,
   //     bomb+egg-sac, nosferatu+shotgun, shotgun+sniper,
@@ -276,6 +273,6 @@ describe('cross-wire claims beyond the model → conservatively null', () => {
     for (const key of [...wire]) {
       expect(classified.has(key), `unclassified wire pair: ${key}`).toBe(true);
     }
-    expect(wire.length + disputed.length + noWire.length).toBe(131);
+    expect(wire.length + disputed.length + noWire.length).toBe(129);
   });
 });

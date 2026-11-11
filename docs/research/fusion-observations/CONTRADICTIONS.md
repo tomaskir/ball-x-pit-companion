@@ -789,6 +789,30 @@ exception, no mechanism/test), `vampire+vampire-lord` (single observation).
   order-matters mechanism list will grow.
 
 ---
+
+## 14. Spawn-channel resolution — 2026-11-11 (issue #20)
+
+The spawn-channel research tickets (`research/brood-mother-spawn`,
+`research/mosquito-king-spawn`) split the old blanket spawn exclusion into a
+hard exclusion (Voluptuous Egg Sac's two-hop drop) and **status-only
+carriers** (Brood Mother, Mosquito King): their babies inherit the partner's
+on-hit status, but not spawn-bound traits. The trigger-matrix source reading
+governs — AOE damage cannot trigger an On-Hit effect, while spawned units can
+trigger the original's abilities.
+
+Two curated no-cross-wire claims are superseded by that model and moved to
+their pair's `superseded` array:
+
+- `brood-mother+flash` — "Neither direction wires…" (Steam). The pair now
+  wires Flash's blind, with the reported Brood Mother degradation and trigger
+  caveats.
+- `flash+mosquito-king` — "Mosquito King's spawn-on-hit does NOT fire from
+  Flash's screen-wide hits" (Steam). The pair now wires Flash's blind, with
+  the reported Mosquito King trigger caveat.
+
+Raw layer untouched; the composer model is `../fusion-mechanics.md` §2c–2d.
+
+---
 ---
 
 # Known corpus issues

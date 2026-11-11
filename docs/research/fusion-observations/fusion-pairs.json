@@ -3558,14 +3558,6 @@
       "effect_texts": [],
       "claims": [
         {
-          "type": "no-cross-wire",
-          "detail": "Neither direction wires: no extra balls spawn at all, and any that did would not carry Flash. Spawn channel broken for this pair.",
-          "sources": [
-            "https://steamcommunity.com/app/2062430/discussions/0/595163560549548636/"
-          ],
-          "confidence": "reported"
-        },
-        {
           "type": "bug",
           "detail": "Poster suspects Brood Mother itself is bugged.",
           "sources": [
@@ -3594,7 +3586,13 @@
           "confidence": "reported"
         }
       ],
-      "superseded": []
+      "superseded": [
+        {
+          "claim": "Neither direction wires: no extra balls spawn at all, and any that did would not carry Flash. Spawn channel broken for this pair.",
+          "source": "https://steamcommunity.com/app/2062430/discussions/0/595163560549548636/",
+          "superseded_by": "2026-11-11"
+        }
+      ]
     },
     "brood-mother+ghost": {
       "components": [
@@ -6741,16 +6739,7 @@
         "flash X mosquito king"
       ],
       "effect_texts": [],
-      "claims": [
-        {
-          "type": "no-cross-wire",
-          "detail": "Mosquito King's spawn-on-hit does NOT fire from Flash's screen-wide hits. Contradicts the naive 'every HIT spawns a mosquito' reading of the fused tooltip. Spawn channel does not cross-wire from a screen-AoE partner.",
-          "sources": [
-            "https://steamcommunity.com/app/2062430/discussions/0/693123052112846362/"
-          ],
-          "confidence": "reported"
-        }
-      ],
+      "claims": [],
       "order": {
         "matters_functionally": "unknown",
         "detail": "No order evidence for this pair. Default for non-same-property, non-both-cooldown pairs is commutativity (function-wise), but this pair was not in PSA #1's both-orders set."
@@ -6760,7 +6749,13 @@
       "source_types": [
         "steam"
       ],
-      "superseded": []
+      "superseded": [
+        {
+          "claim": "Mosquito King's spawn-on-hit does NOT fire from Flash's screen-wide hits. Contradicts the naive 'every HIT spawns a mosquito' reading of the fused tooltip. Spawn channel does not cross-wire from a screen-AoE partner.",
+          "source": "https://steamcommunity.com/app/2062430/discussions/0/693123052112846362/",
+          "superseded_by": "2026-11-11"
+        }
+      ]
     },
     "flash+mosquito-swarm": {
       "components": [
