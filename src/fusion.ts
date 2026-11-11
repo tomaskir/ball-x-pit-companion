@@ -1,41 +1,30 @@
 // Fusion module: pure composition of a fused ball from its two components.
 // The game has no fusion table — a fused ball is computed at runtime by
-// stacking the two components' effects (see docs/research/fusion-mechanics.md).
-// This module mirrors that composer over the level-3 effect text (falling back
-// to the catalog's level-1 text):
+// stacking the two components' effects. This module mirrors that composer
+// over the level-3 effect text (falling back to the catalog's level-1 text):
 //   - name is "A × B" in selection order (site display; the English game name
 //     is "A X B" and the separator is localized)
 //   - effect paragraphs concatenate per component, in selection order
 //   - a cross-wire line is emitted when one component's channel can carry the
-//     other's effect: spawn/AOE carrier + on-hit status, AOE carrier + kill-
-//     on-hit (Black Hole × Sun), spawn carrier + spawn-bound status (Glacier
-//     × Maggot) — per the community composition rules (namu's 7 rules; the
-//     status-vs-spawn split) validated against the observation corpus in
-//     docs/research/fusion-observations/ (counts derive from
-//     fusion-pairs.json). Spawn inheritance is split (issue #20): Voluptuous
-//     Egg Sac is a hard exclusion (two-hop drop); Brood Mother and Mosquito
-//     King are status-only carriers (on-hit statuses wire, spawn-bound traits
-//     do not), with reported degradation/trigger caveats emitted by fuse().
-//     crossWire() returns { line, disputed, spawnerId }: disputed marks a
-//     corpus-contradicted kill wire (flicker × reaper), which fuse() turns
-//     into a caveat note; spawnerId names the carrier whose spawn channel
-//     produced the line, so fuse() can attach the inheritance caveats.
+//     other's effect; crossWire() returns { line, disputed, spawnerId }:
+//     disputed marks a corpus-contradicted kill wire (flicker × reaper), which
+//     fuse() turns into a caveat note; spawnerId names the carrier whose spawn
+//     channel produced the line, so fuse() can attach the inheritance caveats
 //   - order is property-set union with first-pick scalar precedence: the
 //     resolver in fusion-properties.ts returns the union and the shared-key
 //     collisions (first pick wins). The collisions and reported exceptions
 //     are structured for the panel's "Fused result" / "Reported exceptions"
-//     sections (#8), not duplicated as notes. Fixed composition caveats
-//     (Destroy × Destroy, hit-once dominance over pass-through, spawn
-//     compensating Destroy, Dark's multiplier, Assassin/Warp trait priority)
-//     stay notes (docs/research/fusion-mechanics.md §2e/§3;
-//     fusion-pairs.json general_rules_notes).
+//     sections (#8), not duplicated as notes
 //   - effect paragraphs use level-3 text (the fusion screen consumes L3
 //     balls; decision #12) from the generated src/data/level-3.ts overlay,
-//     falling back to the level-1 catalog text.
+//     falling back to the level-1 catalog text
 //   - damage rolls are abstracted to "X" (fused numbers are not derivable)
 // The classification evidence behind these rules (status channels,
 // Destroy/cooldown/pierce/kill classes, spawn inheritance, caveat prose) lives
 // in fusion-knowledge.ts; this module owns only the composition algorithm.
+// Canonical statement of the composition rules and order model:
+// docs/research/fusion-mechanics.md §2-§3; evidence corpus:
+// docs/research/fusion-observations/ (counts derive from fusion-pairs.json).
 // It is the site's editorial model of fusion, not game data.
 import { BALLS, type Ball } from './data/balls';
 import {

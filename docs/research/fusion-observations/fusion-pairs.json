@@ -1,13 +1,14 @@
 {
   "generated": "2026-11-11",
   "pair_count": 370,
-  "order_notes": "Order matters for NAME and SPRITE ALWAYS, for every pair. The fused name is \"A X B\" with A = first-selected (the site displays \"A × B\"; the separator is localized); the icon usually comes from the first pick and the colour from the second (Steam Shajirr 2026-01-26); the damage-number colour changes (Reddit PSA #1); the sprite sometimes differs (wiki.gg: 'Spider Queen X Vampire Lord has a completely different sprite from Vampire Lord X Spider Queen', while 'Egg Sac X Poison looks the same as Poison X Egg Sac'); the description paragraphs list the components in selection order (al-gest commenter 2025-12-01). For STATS, COOLDOWNS and PROCS, order matters exactly where the two kits collide on a shared scalar property key: the first-selected ball's value wins and the second's is excluded (property-collision model; it subsumes the old same-property and both-cooldown classes). Equal values are not a functional difference; different application channels union; cross-wiring is a channel union, so it is order-independent; pairs with no colliding scalar key are functionally order-independent. A separate order effect that is NOT a fusion effect: base-ball pool recursion (which slot consumes a base ball so it stops appearing) — see the general_rules/pool-recursion entry. Canonical synthesis: ../fusion-mechanics.md §3 (pre-DLC v1.301).",
+  "order_notes": "Order model: canonical statement is ../fusion-mechanics.md §3 (presentation details also in §1; pre-DLC v1.301). In one line: presentation (name, icon, colour, sprite, description order) always follows selection order; function follows it only where the two kits collide on a shared scalar property key, and the first-selected value wins. Presentation evidence: the icon usually comes from the first pick and the colour from the second (Steam Shajirr 2026-01-26); the damage-number colour changes (Reddit PSA #1); the sprite sometimes differs (wiki.gg: 'Spider Queen X Vampire Lord has a completely different sprite from Vampire Lord X Spider Queen', while 'Egg Sac X Poison looks the same as Poison X Egg Sac'); the description paragraphs list the components in selection order (al-gest commenter 2025-12-01). Base-ball pool recursion is a separate order effect, documented in §3 and in general_rules_notes.",
   "rules": {
     "namu-seven-composition-rules": {
       "title": "namu.wiki — the seven fusion-composition rules",
       "source": "https://namu.moe/w/BALL%20x%20PIT/%EB%B3%BC",
       "date": "2026-08-26",
       "confidence": "reported",
+      "canonical": "../fusion-mechanics.md §2a",
       "rules": [
         {
           "n": 1,
@@ -52,7 +53,8 @@
       "source": "https://www.reddit.com/r/BALLxPIT/comments/1ulsapv/_/ov6nytb/",
       "date": "2026-07-02",
       "confidence": "reported",
-      "statement": "A partner's ON-HIT STATUS EFFECT fires from the fused ball's other hits; effects bound to SPAWNED SUB-ENTITIES (icicles, spikes, babies) do not. Verbatim: 'Flash applies on-hit *status effects* from its paired ball. Bleed, Maggot, Burn, Poison... the rules are a bit fuzzy but that's the gist. Blizzard has a Freeze effect from the spawned icicle, not the ball itself.' Author: icemage_999 (Reddit thread 1ulsapv).",
+      "canonical": "../fusion-mechanics.md §2b",
+      "statement": "Verbatim: 'Flash applies on-hit *status effects* from its paired ball. Bleed, Maggot, Burn, Poison... the rules are a bit fuzzy but that's the gist. Blizzard has a Freeze effect from the spawned icicle, not the ball itself.' Author: icemage_999 (Reddit thread 1ulsapv).",
       "predictions_confirmed": "Overgrowth X Flash cross-wires, Flicker X Radiation Beam cross-wires, Flash X Glacier does not — all three playtest-confirmed by the site author (playtest.jsonl, 2026-10-01).",
       "independent_corroboration": [
         "https://tvtropes.org/pmwiki/pmwiki.php/YMMV/BallXPit — 'Combing Flicker or Flash with any applied-on-hit status effect such as Maggot or Plant will apply the effects to every enemy on screen.'",
@@ -65,6 +67,7 @@
       "source": "https://tvtropes.org/pmwiki/pmwiki.php/VideoGame/BallXPit",
       "date": "2026-09-21",
       "confidence": "reported",
+      "canonical": "../fusion-mechanics.md §2a (rule 2)",
       "statement": "'Fusions will usually combine the benefits of the status effects applied by one of the parent balls with the area of effect benefits of the other, which can result in chain reaction effects from, say, a ball with laser beams applying splash or bleed stacks widely.'"
     },
     "self-sustaining-loop": {
@@ -72,6 +75,7 @@
       "source": "https://tvtropes.org/pmwiki/pmwiki.php/VideoGame/BallXPit",
       "date": "2026-09-21",
       "confidence": "reported",
+      "canonical": "../fusion-mechanics.md §2b",
       "statement": "'Some combinations can cause both of the applied effects to keep reapplying each other, for example Infestation with Holy Cross, where the Infestation debuff also fires Holy Cross lasers from the afflicted enemies, which spread Infestation further.' Mapped to Holy Laser x Maggot; 'Infestation' is Maggot's infest debuff, 'Holy Cross' is community shorthand for Holy Laser (independently confirmed by the Checkpoint review calling it 'an almighty holy cross beam')."
     },
     "maggot-does-not-depower": {
@@ -79,6 +83,7 @@
       "source": "https://tvtropes.org/pmwiki/pmwiki.php/YMMV/BallXPit",
       "date": "2026-08-20",
       "confidence": "reported",
+      "canonical": "../fusion-mechanics.md §2d",
       "statement": "'When an infested block dies it releases a baby ball with all the effects of the parent, including infesting. What makes Maggot potent... Maggot doesn't depower.' Spider Queen's spawned egg sacs keep full power but the further babies are weaker (diminishing returns). Asymmetry between the two spawn parents — 'Maggot doesn't depower.'"
     },
     "two-hop-spawn-exception": {
@@ -86,6 +91,7 @@
       "source": "https://steamcommunity.com/app/2062430/discussions/0/595163560549993977/",
       "date": "2025-10-25",
       "confidence": "reported",
+      "canonical": "../fusion-mechanics.md §2d",
       "statement": "Assassin's pass-through does NOT reach the entities spawned by Voluptuous Egg Sac, even though the fused tooltip advertises it ('the spawned balls do not behave the way they are advertised to in their tooltip card'). Mechanism proposed by ZedsDeadBaby: 'VES itself spawns no balls - instead it spawns Egg Sacs which themselves spawn balls' — a two-hop spawn chain (VES -> Egg Sac -> baby ball), so a partner's spawn-bound property is lost at the intermediate hop. This is the documented exception to the naive 'spawned balls inherit the partner' reading of namu rule 6.",
       "relation_to_status_vs_spawn": "Consistent with status-vs-spawn: pass-through is not an on-hit status, so it is not in the cross-wiring channel at all. The tooltip nevertheless claims inheritance — a tooltip-vs-behaviour mismatch (see CONTRADICTIONS.md)."
     },
@@ -94,6 +100,7 @@
       "source": "https://ballxpit.wiki.gg/wiki/Fusion_Mechanics",
       "date": "2026-09-19",
       "confidence": "reported",
+      "canonical": "../fusion-mechanics.md §1, §3",
       "statement": "'Fused Balls will have the name and effects of their fused balls combined... For example, fusing Bleed and Freeze will result in Bleed X Freeze.' Format is \"A X B\" with A = first-selected. Separator is language-dependent (fan re-derivation ballbylon-helper uses \" X \" in English and fullwidth \"×\" in Chinese: https://raw.githubusercontent.com/sakiooi1/ballbylon-helper/HEAD/engine.js). In-game tooltips use both \"X\" and \"×\"."
     },
     "fused-balls-terminal": {
@@ -101,6 +108,7 @@
       "source": "https://namu.moe/w/BALL%20x%20PIT/%EB%B3%BC",
       "date": "2026-08-26",
       "confidence": "reported",
+      "canonical": "../fusion-mechanics.md §1",
       "statement": "A fused ball can neither evolve further nor fuse again ('융합 볼은 추가 진화나 융합이 불가능하며'). Corroborated by TVTropes: 'This can only be done once per pair of balls as the resulting fused ball is not eligible for fusions or evolution', and by Reddit: 'You can't use other fused orbs for evolutions.' Separate namespaces: a fused ball never participates in an evolution recipe."
     },
     "fused-balls-level-on-creation": {
@@ -108,6 +116,7 @@
       "source": "https://tvtropes.org/pmwiki/pmwiki.php/VideoGame/BallXPit",
       "date": "2026-09-21",
       "confidence": "contradicted",
+      "canonical": "../fusion-mechanics.md §1",
       "statement": "TVTropes: 'fusion balls are always level 1 on creation' — the fused ball must be leveled again (Black Hole needs 2 more levels when used as a fusion component). namu.wiki instead says the fusion ball is 'complete at level 3' (완성된다) and kamigame says 'the fused equipment stays at level 3'. Superseded on the level half (2026-11-11): in-game fused tooltips (images.jsonl) all show Level 3, so the fused ball is L3 on creation (tooltip evidence). Whether sub-level-3 fusion is possible remains disputed; see CONTRADICTIONS.md §10b/§10c."
     },
     "trigger-channel-limits": {
@@ -115,6 +124,7 @@
       "source": "https://namu.moe/w/BALL%20x%20PIT/%EB%B3%BC",
       "date": "2026-08-26",
       "confidence": "reported",
+      "canonical": "../fusion-mechanics.md §2c",
       "statement": "Whether a partner's effect rides the other component depends on the TRIGGER CHANNEL, not just the effect. Evidence: (1) Satan's full-screen judgement APPLIES DEBUFFS ONLY and has no damage judgement, so it cannot trigger Hemorrhage's percentage damage (https://www.bilibili.com/opus/1124449565113581573). (2) Reaper's instant-kill is NOT triggered by Satan's AOE, but IS triggered by Flash/Flicker and by baby balls (https://www.youtube.com/watch?v=-evk6tPYWZE). (3) Blizzard's freeze is positional ('all enemies within 2 tiles'), not on-hit, so Flash's hits do not extend it (https://www.reddit.com/r/BALLxPIT/comments/1ulsapv/_/ov6k31c/). (4) Pass-through is recessive and is suppressed by hit-once+cooldown (https://steamcommunity.com/app/2062430/discussions/0/595163560549992754/). (5) Debuff-only channels do not fire on-hit damage procs."
     },
     "fixed-trait-priority": {
@@ -122,13 +132,15 @@
       "source": "https://ballxpit.wiki.gg/wiki/Fusion_Mechanics",
       "date": "2026-09-19",
       "confidence": "reported",
-      "statement": "'The priority of which effects and stats are combined are dependent on the component balls involved.' Fixed trait dominance, commutative: Assassin's 'cannot pierce the back' wins over a partner's pierce; Warp is cast before the partner's pierce; hit-once+cooldown (Egg Sac, Dark, Bomb, Black Hole, Timestop, Nuke, Vol. Egg Sac) is DOMINANT and suppresses pass-through (Ghost/Wind), which is recessive (CPT Chthonbeard, Steam 2025-10-25). Much of the 'order matters' folklore is this sentence misremembered."
+      "canonical": "../fusion-mechanics.md §2e",
+      "statement": "'The priority of which effects and stats are combined are dependent on the component balls involved.' Evidence: Assassin's 'cannot pierce the back' wins over a partner's pierce; Warp is cast before the partner's pierce; hit-once+cooldown (Egg Sac, Dark, Bomb, Black Hole, Timestop, Nuke, Vol. Egg Sac) is DOMINANT and suppresses pass-through (Ghost/Wind), which is recessive (CPT Chthonbeard, Steam 2025-10-25). Much of the 'order matters' folklore is this sentence misremembered."
     },
     "merge-model": {
       "title": "Merge model (fusion vs evolution)",
       "source": "https://tvtropes.org/pmwiki/pmwiki.php/VideoGame/BallXPit",
       "date": "2026-09-21",
       "confidence": "reported",
+      "canonical": "../fusion-mechanics.md §1",
       "statement": "Fusion = two unfused level-3 balls merged into a hybrid retaining both parents' abilities, freeing an inventory slot. Evolution = a recipe turning two specific level-3 balls into a brand-new unique ball. Fused balls cannot evolve; evolved balls CAN be fused with each other (official Steam achievement 'Fusion Evolution — Fuse two already-evolved balls together', ~74.8% unlock rate). Both components must be level 3 (namu). Whether sub-level-3 fusion is possible at all is contradicted (BPG says yes-but-wasteful; namu says L3-only) — see CONTRADICTIONS.md."
     },
     "name-sprite-order-always": {
@@ -136,7 +148,8 @@
       "source": "https://ballxpit.wiki.gg/wiki/Fusion_Mechanics",
       "date": "2026-09-19",
       "confidence": "observed",
-      "statement": "See the top-level order_notes field. This is a presentation property of every pair, not a per-pair fact."
+      "canonical": "../fusion-mechanics.md §3",
+      "statement": "Presentation property of every pair, not a per-pair fact; see the canonical statement."
     }
   },
   "general_rules_notes": {
@@ -145,6 +158,7 @@
       "source": "https://www.reddit.com/r/BALLxPIT/comments/1xrhisk/fusion_order_did_not_matter_a_year_ago_it/",
       "date": "2026-11-09",
       "confidence": "reported",
+      "canonical": "../fusion-mechanics.md §3 (pool recursion)",
       "statement": "If one component is a BASE ball (Wind, Egg Sac, Brood Mother, Burn, Cell, etc.), the FIRST-SELECTED base ball is consumed and will not appear again in the level-up/fusion pool that run; the second-selected base ball can reappear. Confirmed by the 2026-11-09 synthesis ('if a base ball ... is used as the Catalyst in a fusion, that ball will NOT appear ... ever again for that run ... if you do want the base ball to appear again, just make sure you don't use it as the Catalyst'), the 2026-05-30 Android PSA (F2PBTW_YT) and icemage_999's 'The first ball in a Fusion is always effectively Banished. This is true in all versions', and the 2026-02-26 Egg Sac/Blizzard post. This resolves the alleged polarity dispute: all verbatim texts say the first-selected ball is consumed; the harvest annotation of SpaceCatNL was a misreading.",
       "scope_dispute": "RESOLVED for base balls: the first-selected base ball is consumed. Personal_Ad9690's generalisation to any first-selected ball (his Ghost example) is unverified; Ghost is not a base ball. Treat the 'any ball' version as reported-only."
     },
@@ -153,6 +167,7 @@
       "source": "https://www.reddit.com/r/BALLxPIT/comments/1xrhisk/fusion_order_did_not_matter_a_year_ago_it/",
       "date": "2026-11-09",
       "confidence": "reported",
+      "canonical": "../fusion-mechanics.md §3",
       "statement": "Same-property pairs take the first-selected ball's variant. The 2026-11-09 synthesis adds: Banished Flame as Catalyst makes Sun adopt Banished Flame's burn stack limit/damage/duration; Brimstone as Catalyst makes Noxious spread 4 stacks of poison and burn. This corroborates PSA #2 and the Nuke × Overgrowth / Noxious × Poison examples."
     },
     "cooldown-first-wins": {
@@ -160,6 +175,7 @@
       "source": "https://www.reddit.com/r/BALLxPIT/comments/1xrhisk/fusion_order_did_not_matter_a_year_ago_it/",
       "date": "2026-11-09",
       "confidence": "reported",
+      "canonical": "../fusion-mechanics.md §3",
       "statement": "Both-cooldown pairs take the first-selected ball's cooldown. 2026-11-09 worked example: Timestop × Egg Sac keeps Timestop's 20 s L3 cooldown (the post says 30 s, its L1 value); Egg Sac × Timestop gives Timestop Egg Sac's 3 s cooldown. This independently corroborates namu.wiki's Black Hole × Timestop example and the first-selected rule."
     },
     "fused-orbs-not-evolution-components": {
@@ -181,6 +197,7 @@
       "source": "https://raw.githubusercontent.com/sakiooi1/ballbylon-helper/HEAD/engine.js",
       "date": "2026-09-26",
       "confidence": "reported",
+      "canonical": "../fusion-mechanics.md §2e",
       "statement": "'When two self-destruct balls are fused, one of their explosion/self-destruct effects may be lost.' Corroborated by the wiki's Destroy caveat ('fusing two Destroy balls may lose one of their abilities')."
     },
     "spawn-compensates-destroy": {
@@ -188,6 +205,7 @@
       "source": "https://steamcommunity.com/app/2062430/discussions/0/624436764983026080/",
       "date": "2025-10-20",
       "confidence": "reported",
+      "canonical": "../fusion-mechanics.md §2e",
       "statement": "'Cell(Clone) x Bomb(Destroy) is an indestructible bomb, since the bomb is cloned and destroyed at the clones.' Cross-component interaction: fused behaviour is more than naive text concatenation."
     },
     "evolution-components-not-always-retained": {

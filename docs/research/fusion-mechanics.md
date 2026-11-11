@@ -88,6 +88,8 @@ Consequences:
 
 ## 2. Composition rules — how two kits combine
 
+**This section is the canonical statement of the composition rules.**
+
 The rules below are community-observed (not datamined) and are the site's
 editorial model. Weighting used throughout the corpus: site-author playtest >
 controlled community test > mechanism-backed claim > structured guide >

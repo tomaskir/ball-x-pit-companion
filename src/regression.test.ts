@@ -383,8 +383,9 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
   // Bug: order was encoded as two hard-coded pair classes (cooldowns,
   // same-property), so the general rule and the Nov 2026 pairs were missing.
   // Fix: the property resolver (fusion-properties.ts) unions kits and
-  // resolves shared scalar keys to the first pick. Pinned in
-  // fusion-properties.test.ts and fusion.test.ts (order resolution describe).
+  // resolves shared scalar keys to the first pick (order model:
+  // docs/research/fusion-mechanics.md §3). Pinned in fusion-properties.test.ts
+  // and fusion.test.ts (order resolution describe).
   it('order is property-set union with first-pick precedence', () => {
     expectOrderResolutionPropertyUnion();
     expectEqualValuesAreNotCollisions();

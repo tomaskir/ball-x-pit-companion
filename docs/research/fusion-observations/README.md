@@ -72,27 +72,29 @@ consolidation happens later.
 
 ## Rule hypotheses — test every behavior claim against these
 
-These are the leading composition rules; a claim that confirms or contradicts
-them is worth more than a bare name. Mark agreement/disagreement in
-`claims[].detail` where relevant.
+The canonical statement of the composition rules and the order model is
+`../fusion-mechanics.md` §2-§3; read those sections before judging a claim.
+The one-line summaries below are the harvest prompts. A claim that confirms or
+contradicts a rule is worth more than a bare name — mark agreement/disagreement
+in `claims[].detail` where relevant.
 
 1. **Status-vs-spawn (icemage_999, Reddit thread 1ulsapv):** a partner's
    *on-hit status effect* fires from the fused ball's other hits; effects bound
-   to *spawned sub-entities* (icicles, spikes, babies) do not. Predicts:
+   to *spawned sub-entities* (icicles, spikes, babies) do not (§2b). Predicts:
    Overgrowth X Flash cross-wires, Flicker X Radiation Beam cross-wires,
    Flash X Glacier does not. All three playtest-confirmed by the site author.
-2. **Order (PSA threads 1ouhlp1, 1p5pil0; Nov 2026 post 1xrhisk):** order
-   always affects presentation (name, sprite, icon, colour). Functionally it
-   matters exactly where the two kits collide on a shared scalar property key
-   — the first-selected ball's value wins (property-collision model). The old
-   "order does not affect function" PSA is obsolete after the three free
-   updates (Regal / Shadow / Naturalist), which added property-bearing balls.
-   The paid *Risen Ballbylon* DLC (2026-11-12) is not the cause.
-   Canonical statement: `../fusion-mechanics.md` §3.
+2. **Order (PSA threads 1ouhlp1, 1p5pil0; Nov 2026 post 1xrhisk):**
+   presentation always follows selection order; functionally it matters
+   exactly where the two kits collide on a shared scalar property key, and the
+   first-selected value wins (§3). The old "order does not affect function"
+   PSA is obsolete after the three free updates (Regal / Shadow / Naturalist),
+   which added property-bearing balls. The paid *Risen Ballbylon* DLC
+   (2026-11-12) is not the cause.
 3. **Trigger matrix (wiki.gg Fusion Mechanics + namu.wiki):** combination
    semantics depend on trigger types (On-Hit / On-Damage / On-Timer ×
-   Spawn / AOE / Status). namu.wiki has the most granular statement (7 rules);
-   page is Cloudflare-blocked — quote only what you can actually retrieve.
+   Spawn / AOE / Status); the governing source reading is §2c. namu.wiki has
+   the most granular statement (7 rules); page is Cloudflare-blocked — quote
+   only what you can actually retrieve.
 
 ## Source-specific notes (from the prior survey — don't rediscover these)
 

@@ -184,10 +184,10 @@ const labelList = (labels: string[]): string =>
   : `${labels.slice(0, -1).join(', ')}, and ${labels[labels.length - 1]}`;
 
 /** The order presentation, derived here so the renderer only paints it
- *  (decision #8). A pair is order-sensitive when a shared scalar collision
- *  exists — first-pick precedence changes the value — or a reported exception
- *  is order-dependent. An evolve-instead pair never fuses, so order cannot
- *  matter. */
+ *  (decision #8). Order model: docs/research/fusion-mechanics.md §3. A pair is
+ *  order-sensitive when the composed fusion has a collision or an
+ *  order-dependent exception; an evolve-instead pair never fuses, so order
+ *  cannot matter. */
 const orderPresentation = (
   fusion: FusionResult,
 ): { orderSensitive: boolean; orderNotice: string; resultEmptyText: string } => {

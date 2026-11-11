@@ -1,12 +1,8 @@
 // Fusion property model — the order-mechanics decision (#7). The canonical
 // statement of the order model is docs/research/fusion-mechanics.md §3; this
-// module implements it.
-//
-// A ball's kit is a set of property keys. Fusion unions the sets. On a shared
-// scalar key the first-selected ball's value wins; the second's variant is
-// excluded. Set-valued application channels union. This is the site's
-// editorial model, not game data: the game files expose no property-merge
-// code (docs/research/fusion-mechanics.md §4).
+// module implements it. This is the site's editorial model, not game data:
+// the game files expose no property-merge code
+// (docs/research/fusion-mechanics.md §4).
 //
 // The module has two public contracts:
 // - `resolveProperties(a, b)` — the general rule: union the kits, resolve

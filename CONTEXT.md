@@ -19,8 +19,9 @@ The wiki (ballxpit.wiki.gg) distinguishes two mechanics that fan sites conflate:
   text using community-observed rules — damage rolls abstracted to "X" (fused
   numbers are not derivable from public sources). Component paragraphs use the
   level-3 overlay (`src/data/level-3.ts`); order resolves through
-  `src/fusion-properties.ts` (property-set union, first-pick scalar
-  precedence). This is the site's model, not game data.
+  `src/fusion-properties.ts` (property-set union, first-pick scalar precedence;
+  canonical statement: `docs/research/fusion-mechanics.md` §3). This is the
+  site's model, not game data.
 
 Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special),
 **Base Passives** (54), **Evolved Passives** (17), **Fusion Reactor**.
@@ -338,14 +339,14 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   limit, Egg Sac weaker clone), and the evolve-instead note for 2-component
   evolution recipes. Module: `src/fusion.ts` (`fuse(a, b)`,
   `fusionBalls()`, `fusionName`, `abstractDamage`, `crossWire(a, b) →
-  { line, disputed, spawnerId }`, `evolvesInstead`); the order model's canonical
-  statement is `docs/research/fusion-mechanics.md` §3, implemented by
-  `src/fusion-properties.ts`. The evidence behind the composer's
+  { line, disputed, spawnerId }`, `evolvesInstead`); the composition rules and
+  order model are stated canonically in `docs/research/fusion-mechanics.md`
+  §2-§3, with §3 implemented by `src/fusion-properties.ts`. The evidence behind the composer's
   classifications lives in `src/fusion-knowledge.ts` (Destroy/cooldown/pierce/
   kill classes, spawn-inheritance classes, status-channel predicates, caveat
   prose); `fusion.ts` composes, the knowledge module classifies. This is the
   site's editorial model of fusion,
-  not game data; the composition rules, their evidence, and the observation
+  not game data; the evidence and the observation
   corpus live in `docs/research/fusion-observations/` (counts derive from
   `fusion-pairs.json`; corpus shape and validation: `src/corpus.ts`
   (`loadCorpus`, `wirePairs`, `validateCorpus`); validation methodology:
