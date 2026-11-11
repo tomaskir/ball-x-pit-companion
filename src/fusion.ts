@@ -11,9 +11,14 @@
 //     × Maggot) — per the community composition rules (namu's 7 rules; the
 //     status-vs-spawn split) validated against the observation corpus in
 //     docs/research/fusion-observations/ (counts derive from
-//     fusion-pairs.json). crossWire() returns
-//     { line, disputed }: disputed marks a corpus-contradicted kill wire
-//     (flicker × reaper), which fuse() turns into a caveat note.
+//     fusion-pairs.json). Spawn inheritance is split (decision #20): Voluptuous
+//     Egg Sac is a hard exclusion (two-hop drop); Brood Mother and Mosquito
+//     King are status-only carriers (on-hit statuses wire, spawn-bound traits
+//     do not), with reported degradation/trigger caveats emitted by fuse().
+//     crossWire() returns { line, disputed, spawnerId }: disputed marks a
+//     corpus-contradicted kill wire (flicker × reaper), which fuse() turns
+//     into a caveat note; spawnerId names the carrier whose spawn channel
+//     produced the line, so fuse() can attach the inheritance caveats.
 //   - order is property-set union with first-pick scalar precedence: the
 //     resolver in fusion-properties.ts returns the union and the shared-key
 //     collisions (first pick wins). The collisions and reported exceptions
@@ -96,14 +101,16 @@ const CHANNEL_OVERRIDES: Record<string, StatusChannel> = { berserk: 'hit' };
  *  other on-hit status is blocked for a field-aura carrier — Freeze Ray's
  *  freeze is the evidenced negative (Sun × Freeze Ray). */
 const ON_DAMAGE_STATUS_IDS = new Set(['overgrowth', 'virus', 'hemorrhage', 'succubus']);
-/** Spawn carriers whose spawned balls do NOT inherit the partner's property
- *  (corpus): Voluptuous Egg Sac spawns Egg Sacs that spawn balls — the
+/** Spawn carriers whose spawned balls do NOT inherit the partner's property at
+ *  all (corpus): Voluptuous Egg Sac spawns Egg Sacs that spawn balls — the
  *  property drops at the second hop (Steam, playtest-confirmed by posters).
- *  Brood Mother and Mosquito King stay excluded here pending the #20
- *  decision; #17/#18 research says the blanket exclusion is too strong
- *  (Brood Mother degraded/probabilistic; Mosquito King's spawn trigger and
- *  inheritance are separate channels). */
-const SPAWN_EXCLUDED_IDS = new Set(['voluptuous-egg-sac', 'brood-mother', 'mosquito-king']);
+ *  The only hard spawn-inheritance exclusion (decision #20). */
+const SPAWN_NO_INHERITANCE_IDS = new Set(['voluptuous-egg-sac']);
+/** Spawn carriers whose reported inheritance is status-only: their babies
+ *  carry the partner's on-hit status, but not spawn-bound traits (Glacier /
+ *  Blizzard stay unwired for both). Brood Mother's inheritance is degraded and
+ *  probabilistic; Mosquito King's spawn is an on-hit effect (decision #20). */
+const SPAWN_STATUS_ONLY_IDS = new Set(['brood-mother', 'mosquito-king']);
 /** AOE carriers with no damage hits to carry a status: Satan's screen
  *  judgment is debuff-only (Bilibili) — it cannot trigger on-hit statuses
  *  like Hemorrhage's %-damage, nor Reaper's on-impact kill (corpus:
@@ -150,7 +157,30 @@ function statusChannel(b: Ball): StatusChannel {
 const dealsDamage = (b: Ball) => /\b\d+(?:\.\d+)?(?:[–-]\d+(?:\.\d+)?)?(?:x|%)?(?= damage)|\bdeals?\b/i.test(componentText(b));
 
 const hasSpawn = (b: Ball) => b.tags.some((t) => t === 'spawns-baby-balls' || t === 'spawns-allies' || t === 'clone');
-const spawnable = (b: Ball) => hasSpawn(b) && !SPAWN_EXCLUDED_IDS.has(b.id);
+/** A spawn carrier whose spawn channel can inherit the partner's effects.
+ *  VES is the hard exclusion (two-hop drop); status-only carriers pass here
+ *  and are filtered per branch instead. */
+const spawnable = (b: Ball) => hasSpawn(b) && !SPAWN_NO_INHERITANCE_IDS.has(b.id);
+/** AOE carrier rank: screen-clear > aoe > none. */
+const rank = (b: Ball) => (b.tags.includes('screen-clear') ? 2 : b.tags.includes('aoe') ? 1 : 0);
+
+/** Reported spawn-inheritance caveats (decision #20). fuse() emits the
+ *  inheritance caveats only when the wire actually uses the carrier's spawn
+ *  channel; the trigger limits describe the carrier + AOE partner, wire or
+ *  not. The Flash sentence is shared so it can be deduped when both Brood
+ *  Mother caveats fire for the same pair. */
+const BROOD_MOTHER_FLASH_REPORT =
+  'One launch-week report claims Flash × Brood Mother produced none (unverified).';
+const BROOD_MOTHER_FLASH_REPORT_TAIL =
+  'one launch-week report claims Flash × Brood Mother produced none (unverified).';
+const BROOD_MOTHER_INHERITANCE_CAVEAT =
+  `Reported - Brood Mother's babies inherit the partner's properties, but the inherited effect is weaker and the spawn is probabilistic (25/35/45% per hit). ${BROOD_MOTHER_FLASH_REPORT}`;
+const EGG_SAC_INHERITANCE_CAVEAT =
+  'Reported - Egg Sac\'s babies inherit the partner\'s properties, but the inherited effect is weaker than a full clone (namu.wiki).';
+const BROOD_MOTHER_TRIGGER_CAVEAT =
+  'Reported - Brood Mother\'s spawn fires on hit, so a screen-wide/AOE partner produces fewer babies';
+const MOSQUITO_KING_TRIGGER_CAVEAT =
+  'Reported - Mosquito King\'s spawn is an on-hit effect: the partner\'s screen-wide/AOE damage does not trigger it, so the fused ball spawns mosquitoes only from its own direct hits, not per AOE tick.';
 
 /** Cross-wire line when one component's channel can carry the other's effect.
  *  Role-named like the game's tooltip ("Spawned balls from X … as Y"), not
@@ -165,20 +195,25 @@ const spawnable = (b: Ball) => hasSpawn(b) && !SPAWN_EXCLUDED_IDS.has(b.id);
 export interface CrossWireResult {
   line: string | null;
   disputed: boolean;
+  /** The spawn carrier whose spawn channel produced the line, or null when the
+   *  line came from another channel (AOE / kill). fuse() uses it to attach the
+   *  spawn-inheritance caveats. */
+  spawnerId: string | null;
 }
 
 export function crossWire(a: Ball, b: Ball): CrossWireResult {
-  const NO_WIRE: CrossWireResult = { line: null, disputed: false };
+  const NO_WIRE: CrossWireResult = { line: null, disputed: false, spawnerId: null };
   const isKill = (b: Ball) => KILL_EFFECT_IDS.has(b.id);
   const isStatus = (b: Ball) => statusChannel(b) === 'hit';
 
-  // spawn carrier + partner's on-hit status (tooltip: Overgrowth × Maggot)
+  // spawn carrier + partner's on-hit status (tooltip: Overgrowth × Maggot).
+  // Status-only carriers (Brood Mother, Mosquito King) wire here; their
+  // reported inheritance is degraded/probabilistic (fuse() caveats it).
   const [spawner, st] = spawnable(a) && isStatus(b) ? [a, b]
     : spawnable(b) && isStatus(a) ? [b, a] : [null, null];
-  if (spawner && st) return { line: `Spawned balls from ${spawner.name} have the same properties as ${st.name}.`, disputed: false };
+  if (spawner && st) return { line: `Spawned balls from ${spawner.name} have the same properties as ${st.name}.`, disputed: false, spawnerId: spawner.id };
 
   // AOE carrier + partner's on-hit status (tooltip: Overgrowth × Flash)
-  const rank = (b: Ball) => (b.tags.includes('screen-clear') ? 2 : b.tags.includes('aoe') ? 1 : 0);
   const aoeCarrier = (b: Ball) => rank(b) > 0 && !AOE_EXCLUDED_IDS.has(b.id);
   /** An on-timer/field-aura carrier cannot trigger a status applied on the
    *  hit event (trigger matrix: AOE = On-Hit NO / On-Damage YES / On-Timer
@@ -189,7 +224,7 @@ export function crossWire(a: Ball, b: Ball): CrossWireResult {
     !(statusChannel(carrier) === 'field' && statusChannel(st) === 'hit' && !ON_DAMAGE_STATUS_IDS.has(st.id));
   const [carrier, st2] = aoeCarrier(a) && rank(a) > rank(b) && isStatus(b) && canCarryStatus(a, b) ? [a, b]
     : aoeCarrier(b) && rank(b) > rank(a) && isStatus(a) && canCarryStatus(b, a) ? [b, a] : [null, null];
-  if (carrier && st2) return { line: `Area-of-effect damage from ${carrier.name} inflicts the status effect of ${st2.name}.`, disputed: false };
+  if (carrier && st2) return { line: `Area-of-effect damage from ${carrier.name} inflicts the status effect of ${st2.name}.`, disputed: false, spawnerId: null };
 
   // AOE carrier + partner's kill-on-hit (Black Hole × Sun — the corpus meta
   // pair; kamigame: "Black Hole's effect rides on Flash's screen-wide
@@ -216,18 +251,20 @@ export function crossWire(a: Ball, b: Ball): CrossWireResult {
     return {
       line: `Area-of-effect damage from ${kCarrier.name} triggers the instant kill of ${killer.name}.`,
       disputed: KILL_DISPUTED_PAIRS.has(pairKey(a, b)),
+      spawnerId: null,
     };
   }
 
   // spawn carrier + partner's spawn-bound status (Glacier × Maggot — the
   // babies inherit the fused kit, spikes included; namu rule 6, corpus
-  // glacier+maggot / cell+glacier / blizzard+spider-queen). spawnable()
-  // filters the excluded carriers (VES, Brood Mother, Mosquito King), so
-  // their broken hop yields null here.
+  // glacier+maggot / cell+glacier / blizzard+spider-queen). Status-only
+  // carriers (Brood Mother, Mosquito King) inherit on-hit statuses but not
+  // spawn-bound traits, so they are filtered here (decision #20).
   const spawnStatus = (b: Ball) => statusChannel(b) === 'spawn';
-  const [sp2, sst] = spawnable(a) && spawnStatus(b) ? [a, b]
-    : spawnable(b) && spawnStatus(a) ? [b, a] : [null, null];
-  if (sp2 && sst) return { line: `Spawned balls from ${sp2.name} have the same properties as ${sst.name}, including its spawned effects.`, disputed: false };
+  const spawnBoundCarrier = (b: Ball) => spawnable(b) && !SPAWN_STATUS_ONLY_IDS.has(b.id);
+  const [sp2, sst] = spawnBoundCarrier(a) && spawnStatus(b) ? [a, b]
+    : spawnBoundCarrier(b) && spawnStatus(a) ? [b, a] : [null, null];
+  if (sp2 && sst) return { line: `Spawned balls from ${sp2.name} have the same properties as ${sst.name}, including its spawned effects.`, disputed: false, spawnerId: sp2.id };
   return NO_WIRE;
 }
 
@@ -312,6 +349,23 @@ export function fuse(a: Ball, b: Ball): FusionResult | null {
   }
 
   const wire = crossWire(a, b);
+
+  // Spawn-inheritance caveats (decision #20). Inheritance degradation is
+  // wire-only: it qualifies a line the panel actually shows. The trigger
+  // limit is a property of the carrier + AOE partner, wire or not.
+  if (wire.spawnerId === 'brood-mother') notes.push(BROOD_MOTHER_INHERITANCE_CAVEAT);
+  if (wire.spawnerId === 'egg-sac') notes.push(EGG_SAC_INHERITANCE_CAVEAT);
+  const broodPartner = a.id === 'brood-mother' ? b : b.id === 'brood-mother' ? a : null;
+  const mosquitoPartner = a.id === 'mosquito-king' ? b : b.id === 'mosquito-king' ? a : null;
+  if (broodPartner && rank(broodPartner) > 0) {
+    // Both caveats fire for Brood Mother × Flash; the inheritance caveat
+    // already carries the Flash sentence, so the trigger caveat drops it.
+    notes.push(wire.spawnerId === 'brood-mother'
+      ? `${BROOD_MOTHER_TRIGGER_CAVEAT}.`
+      : `${BROOD_MOTHER_TRIGGER_CAVEAT}; ${BROOD_MOTHER_FLASH_REPORT_TAIL}`);
+  }
+  if (mosquitoPartner && rank(mosquitoPartner) > 0) notes.push(MOSQUITO_KING_TRIGGER_CAVEAT);
+
   if (wire.disputed) {
     notes.push('Corpus contradiction — reports disagree on whether the instant kill fires from the partner\'s hits here (see docs/research/fusion-observations/CONTRADICTIONS.md).');
   }

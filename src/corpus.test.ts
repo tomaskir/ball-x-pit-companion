@@ -87,13 +87,28 @@ describe('corpus sanity (the spec itself is loadable)', () => {
 });
 
 describe('no-cross-wire claims → composer emits no cross-wire line', () => {
-  // Corpus pairs whose evidence is exclusively negative (13 pairs). Every one
-  // is a trigger-channel exclusion the composer models: spawn-bound statuses
-  // (Flash × Glacier), excluded carriers (VES, Brood Mother, Mosquito King),
-  // debuff-only channels (Reaper × Satan), AOE × AOE non-inheritance.
-  it.each(noWire)('%s stays null', (key) => {
+  // Pairs whose corpus no-cross-wire claim is superseded by the #20
+  // spawn-channel decision: the status-only carriers (Brood Mother, Mosquito
+  // King) inherit the partner's on-hit status, with degradation/trigger
+  // caveats. The raw claim stays in the append-only corpus; the composer
+  // follows the resolved model.
+  const NO_WIRE_SUPERSEDED = new Set(['brood-mother+flash', 'flash+mosquito-king']);
+
+  // Corpus pairs whose evidence is exclusively negative (13 pairs, minus the
+  // superseded two). Every remaining one is a trigger-channel exclusion the
+  // composer models: spawn-bound statuses (Flash × Glacier), the VES hard
+  // exclusion, debuff-only channels (Reaper × Satan), AOE × AOE
+  // non-inheritance.
+  it.each(noWire.filter((key) => !NO_WIRE_SUPERSEDED.has(key)))('%s stays null', (key) => {
     const [a, b] = pairsData.pairs[key].components;
     expect(fuse(ball(a), ball(b))!.crossWire, key).toBeNull();
+  });
+
+  it('superseded no-wire pairs wire under the #20 status-only model', () => {
+    for (const key of NO_WIRE_SUPERSEDED) {
+      const [a, b] = pairsData.pairs[key].components;
+      expect(fuse(ball(a), ball(b))!.crossWire, key).not.toBeNull();
+    }
   });
 });
 
@@ -160,7 +175,7 @@ describe('implemented cross-wire patterns → composer wires', () => {
     'laser-horizontal+poison', 'laser-horizontal+wind', 'laser-vertical+maggot', 'maggot+noxious',
     'maggot+nuclear-bomb', 'maggot+overgrowth', 'maggot+phantom', 'maggot+poison', 'maggot+reaper',
     'maggot+soul-sucker', 'maggot+succubus', 'maggot+virus', 'maggot+wraith',
-    'mosquito-swarm+nuclear-bomb', 'nuclear-bomb+overgrowth', 'nuclear-bomb+shotgun', 'overgrowth+sun',
+    'mosquito-king+virus', 'mosquito-swarm+nuclear-bomb', 'nuclear-bomb+overgrowth', 'nuclear-bomb+shotgun', 'overgrowth+sun',
     'reaper+sun', 'spider-queen+vampire-lord', 'succubus+sun', 'sun+virus',
   ];
 
@@ -201,9 +216,11 @@ describe('cross-wire claims beyond the model → conservatively null', () => {
   //     also holds positive reports; unresolved → conservative null. The
   //     phantom/wraith VES claims ("hit effects DO trigger from VolEgg
   //     babies") are single-source against the VES exclusions and stay null.
-  //   - Other excluded spawn carriers (brood-mother, mosquito-king) —
-  //     SPAWN_EXCLUDED_IDS: their spawn channel does not carry the partner
-  //     at all.
+  //   - Status-only spawn carriers (brood-mother, mosquito-king) paired with a
+  //     partner that has no on-hit status to carry (brood-mother+egg-sac,
+  //     brood-mother+laser-vertical, mosquito-king+spider-queen) — the spawn
+  //     channel inherits on-hit statuses only, and these partners have none
+  //     (decision #20).
   //   - Spawn × spawn compounding — two spawners, or a spawn carrier whose
   //     partner has no status/kill for a channel to carry: bomb+cell,
   //     bomb+egg-sac, nosferatu+shotgun, shotgun+sniper,
@@ -242,7 +259,7 @@ describe('cross-wire claims beyond the model → conservatively null', () => {
     'flash+holy-laser', 'flash+storm', 'flash+sun', 'flash+vampire', 'flesh-mound+voluptuous-egg-sac',
     'flicker+sun', 'ghost+lightning-rod', 'glacier+voluptuous-egg-sac', 'holy-laser+shotgun',
     'holy-laser+voluptuous-egg-sac', 'holy-laser+x-ray', 'inferno+spider-queen',
-    'maggot+voluptuous-egg-sac', 'mosquito-king+spider-queen', 'mosquito-king+virus', 'nosferatu+shotgun',
+    'maggot+voluptuous-egg-sac', 'mosquito-king+spider-queen', 'nosferatu+shotgun',
     'nosferatu+voluptuous-egg-sac', 'phantom+voluptuous-egg-sac', 'reaper+voluptuous-egg-sac',
     'shotgun+sniper', 'voluptuous-egg-sac+wraith',
   ];

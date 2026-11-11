@@ -50,6 +50,7 @@ describe('crossWire', () => {
     expect(crossWire(ball('overgrowth'), ball('maggot'))).toEqual({
       line: 'Spawned balls from Maggot have the same properties as Overgrowth.',
       disputed: false,
+      spawnerId: 'maggot',
     });
   });
 
@@ -57,17 +58,18 @@ describe('crossWire', () => {
     expect(crossWire(ball('flash'), ball('overgrowth'))).toEqual({
       line: 'Area-of-effect damage from Flash inflicts the status effect of Overgrowth.',
       disputed: false,
+      spawnerId: null,
     });
   });
 
   it('no cross-wire when neither channel carries (Flash × Glacier)', () => {
     // Glacier's freeze lives on spawned spikes, not a status on the ball;
     // Flash carries no status and Glacier is not a status ball.
-    expect(crossWire(ball('flash'), ball('glacier'))).toEqual({ line: null, disputed: false });
+    expect(crossWire(ball('flash'), ball('glacier'))).toEqual({ line: null, disputed: false, spawnerId: null });
   });
 
   it('status × status: no cross-wire line', () => {
-    expect(crossWire(ball('freeze'), ball('poison'))).toEqual({ line: null, disputed: false });
+    expect(crossWire(ball('freeze'), ball('poison'))).toEqual({ line: null, disputed: false, spawnerId: null });
   });
 
   it('corpus-disputed kill pair keeps the wire line and flags disputed (flicker × reaper)', () => {
@@ -76,6 +78,7 @@ describe('crossWire', () => {
     expect(crossWire(ball('flicker'), ball('reaper'))).toEqual({
       line: 'Area-of-effect damage from Flicker triggers the instant kill of Reaper.',
       disputed: true,
+      spawnerId: null,
     });
   });
 
@@ -214,12 +217,43 @@ describe('cross-wire exclusions (corpus no-cross-wire evidence)', () => {
     expect(fuse(ball('flash'), ball('berserk'))!.crossWire).not.toBeNull();
   });
 
-  it('Brood Mother spawn channel does not carry the partner property', () => {
-    expect(fuse(ball('brood-mother'), ball('flash'))!.crossWire).toBeNull();
+  it('status-only spawn carriers wire on-hit statuses (Brood Mother × Flash, Mosquito King × Virus)', () => {
+    // Decision #20: the blanket spawn exclusion was too strong. Brood Mother
+    // and Mosquito King inherit the partner's on-hit status; spawn-bound
+    // traits stay unwired (see the next test).
+    const bm = fuse(ball('brood-mother'), ball('flash'))!;
+    expect(bm.crossWire).toContain('Brood Mother');
+    expect(bm.crossWire).toContain('Flash');
+    const mk = fuse(ball('mosquito-king'), ball('virus'))!;
+    expect(mk.crossWire).toContain('Mosquito King');
+    expect(mk.crossWire).toContain('Virus');
   });
 
-  it('Mosquito King spawn-on-hit does not fire from screen hits', () => {
-    expect(fuse(ball('flash'), ball('mosquito-king'))!.crossWire).toBeNull();
+  it('Brood Mother × Flash carries the degradation and trigger caveats, Flash sentence deduped', () => {
+    const notes = fuse(ball('brood-mother'), ball('flash'))!.notes.join(' ');
+    expect(notes).toMatch(/Brood Mother's babies inherit the partner's properties, but the inherited effect is weaker/);
+    expect(notes).toMatch(/spawn fires on hit, so a screen-wide\/AOE partner produces fewer babies/);
+    // both caveats share the launch-week sentence; it must appear once
+    expect(notes.match(/launch-week report claims Flash × Brood Mother produced none/g)).toHaveLength(1);
+  });
+
+  it('Mosquito King × Virus has no trigger caveat (Virus is not AOE)', () => {
+    const notes = fuse(ball('mosquito-king'), ball('virus'))!.notes.join(' ');
+    expect(notes).not.toMatch(/spawn is an on-hit effect/);
+  });
+
+  it('status-only carriers do not inherit spawn-bound traits (Brood Mother / Mosquito King × Glacier)', () => {
+    expect(fuse(ball('brood-mother'), ball('glacier'))!.crossWire).toBeNull();
+    expect(fuse(ball('mosquito-king'), ball('glacier'))!.crossWire).toBeNull();
+  });
+
+  it('Egg Sac as spawner carries the weaker-clone caveat in both inheritance branches', () => {
+    const onHit = fuse(ball('egg-sac'), ball('hemorrhage'))!;
+    expect(onHit.crossWire).not.toBeNull();
+    expect(onHit.notes.join(' ')).toMatch(/Egg Sac's babies inherit the partner's properties, but the inherited effect is weaker than a full clone/);
+    const spawnBound = fuse(ball('egg-sac'), ball('glacier'))!;
+    expect(spawnBound.crossWire).not.toBeNull();
+    expect(spawnBound.notes.join(' ')).toMatch(/weaker than a full clone/);
   });
 
   it('Satan field judgment is debuff-only — cannot carry on-hit statuses', () => {

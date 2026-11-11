@@ -325,7 +325,7 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   compensates Destroy, Dark's multiplier), and the evolve-instead note for
   2-component evolution recipes. Module: `src/fusion.ts` (`fuse(a, b)`,
   `fusionBalls()`, `fusionName`, `abstractDamage`, `crossWire(a, b) →
-  { line, disputed }`, `evolvesInstead`); the order model's canonical
+  { line, disputed, spawnerId }`, `evolvesInstead`); the order model's canonical
   statement is `docs/research/fusion-mechanics.md` §3, implemented by
   `src/fusion-properties.ts`. This is the site's editorial model of fusion,
   not game data; the composition rules, their evidence, and the observation
@@ -333,6 +333,20 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   `fusion-pairs.json`; validation methodology:
   `../docs/research/fusion-mechanics.md`, `CONTRADICTIONS.md`; claim audit:
   `fusion-claim-register.md`).
+- **Spawn carrier** — a ball whose tags include a spawn tag
+  (`spawns-baby-balls`, `spawns-allies`, `clone`). Its spawn channel can carry
+  a partner's on-hit status across a fusion (`spawnable()` in
+  `src/fusion.ts`). Voluptuous Egg Sac is the only hard exclusion: its two-hop
+  chain drops the partner property.
+- **Status-only spawn carrier** — a spawn carrier whose babies inherit only
+  the partner's on-hit status, not spawn-bound traits (Brood Mother, Mosquito
+  King). Their inheritance is reported and degraded; spawn-bound statuses
+  (Glacier/Blizzard) stay unwired for both.
+- **Trigger-matrix source reading** — the governing reading of the trigger
+  matrix: AOE damage cannot trigger On-Hit effects (an AOE tick is not a hit),
+  while spawned units can trigger the original's abilities. Supersedes the
+  earlier target reading; canonical statement in
+  `docs/research/fusion-mechanics.md` §2c.
 
 ## Data provenance
 

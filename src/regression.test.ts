@@ -303,24 +303,42 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
 
   // Bug: the composer cross-wired pairs the corpus says do NOT wire —
   // Voluptuous Egg Sac's two-hop spawn chain (property drops at hop 2),
-  // Freeze Ray's freeze was wrongly treated as spawn-bound, Brood Mother's
-  // non-carrying spawn channel, Mosquito King's spawn-on-hit not firing from
-  // screen hits, and Satan's debuff-only field judgment. Found by
-  // cross-checking the composer
+  // Freeze Ray's freeze was wrongly treated as spawn-bound, and Satan's
+  // debuff-only field judgment. Found by cross-checking the composer
   // against all 31 no-cross-wire claims in docs/research/fusion-observations/.
-  // Fix: SPAWN_EXCLUDED_IDS / AOE_EXCLUDED_IDS / SPAWN_BOUND_IDS. Pinned with
-  // positive controls in fusion.test.ts (cross-wire exclusions describe).
+  // Fix: SPAWN_NO_INHERITANCE_IDS / AOE_EXCLUDED_IDS / SPAWN_BOUND_IDS. Pinned
+  // with positive controls in fusion.test.ts (cross-wire exclusions describe).
   it('cross-wire exclusions match the corpus no-wire evidence', async () => {
     const { fuse } = await import('./fusion');
     const { ballMap } = await import('./catalog');
     const ball = (id: string) => ballMap.get(id)!;
     for (const [a, b] of [
       ['hemorrhage', 'voluptuous-egg-sac'], ['nuclear-bomb', 'voluptuous-egg-sac'],
-      ['freeze-ray', 'sun'], ['brood-mother', 'flash'],
-      ['flash', 'mosquito-king'], ['hemorrhage', 'satan'],
+      ['freeze-ray', 'sun'], ['hemorrhage', 'satan'],
     ] as const) {
       expect(fuse(ball(a), ball(b))!.crossWire, `${a}+${b}`).toBeNull();
     }
+  });
+
+  // Bug: the composer hard-excluded Brood Mother and Mosquito King from every
+  // spawn cross-wire, so Brood Mother × Flash and Mosquito King × Virus
+  // emitted nothing even though the #17/#18 research reports status
+  // inheritance (degraded/probabilistic for Brood Mother). Fix: split the old
+  // SPAWN_EXCLUDED_IDS into the VES hard exclusion and the status-only
+  // carriers (decision #20); on-hit statuses wire, spawn-bound traits do not,
+  // and fuse() attaches the reported degradation/trigger caveats.
+  it('status-only spawn carriers wire on-hit statuses with their caveats', async () => {
+    const { fuse } = await import('./fusion');
+    const { ballMap } = await import('./catalog');
+    const ball = (id: string) => ballMap.get(id)!;
+    const bm = fuse(ball('brood-mother'), ball('flash'))!;
+    expect(bm.crossWire).not.toBeNull();
+    expect(bm.notes.join(' ')).toMatch(/inherited effect is weaker/);
+    expect(bm.notes.join(' ')).toMatch(/spawn fires on hit/);
+    expect(fuse(ball('mosquito-king'), ball('virus'))!.crossWire).not.toBeNull();
+    // spawn-bound traits stay unwired for both carriers
+    expect(fuse(ball('brood-mother'), ball('glacier'))!.crossWire).toBeNull();
+    expect(fuse(ball('mosquito-king'), ball('glacier'))!.crossWire).toBeNull();
   });
 
   // Bug: the composer showed level-1 component numbers even though fusion

@@ -112,7 +112,11 @@ cross-wires, Flicker × Radiation Beam cross-wires, Flash × Glacier does not.
 ### 2c. Trigger-channel limits (refinement of 2b)
 
 Whether a partner's effect rides the other component depends on the **trigger
-channel**, not just the effect kind:
+channel**, not just the effect kind. The governing reading is the **trigger
+matrix's source reading** (decision #18, adopted in #20): **AOE damage cannot
+trigger an On-Hit effect** — an AOE tick is not a hit — while **spawned units
+can trigger the original's abilities** (a baby ball's hit is a hit). This
+supersedes the earlier target reading recorded in #6.
 
 - Satan's full-screen judgment is **debuff-only** (no damage judgment): it
   cannot fire Hemorrhage's %-HP proc nor Reaper's on-impact kill — but it
@@ -128,8 +132,19 @@ channel**, not just the effect kind:
 
 - **Two-hop drop**: Voluptuous Egg Sac spawns Egg Sacs that spawn balls — a
   partner property is lost at the second hop (tooltip still advertises it).
-- Brood Mother's spawn channel does not carry the partner's property at all.
-- Mosquito King's spawn-on-hit does not fire from the partner's screen hits.
+  Voluptuous Egg Sac is the only hard spawn-inheritance exclusion.
+- **Status-only spawn carriers**: Brood Mother and Mosquito King's babies
+  inherit the partner's **on-hit status** (reported), but not spawn-bound
+  traits (spikes, icicles, blobs) — so Glacier/Blizzard stay unwired for both
+  carriers. Brood Mother's inheritance is degraded: the inherited effect is
+  weaker and the spawn is probabilistic (25/35/45% per hit); one launch-week
+  report claims Flash × Brood Mother produced none (unverified). Egg Sac's
+  babies inherit the partner's properties, but the inherited effect is weaker
+  than a full clone (reported, namu.wiki).
+- **Trigger limit**: Brood Mother's and Mosquito King's spawns fire **on
+  hit**, so a screen-wide/AOE partner produces fewer babies — the partner's
+  AOE damage does not trigger the spawn, only the fused ball's own direct
+  hits do.
 
 ### 2e. Fixed trait priorities and caveats (commutative — not order effects)
 
