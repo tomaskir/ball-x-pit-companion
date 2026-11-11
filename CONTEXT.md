@@ -312,10 +312,12 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   Balls, the composed fusion from `src/fusion.ts`, the pair's `planned`
   mark, `planFull` — the plan's ball slots at their active limit, which
   disables the panel's plan toggle — and the order presentation derived
-  here: `orderSensitive`, `orderNotice`, `resultEmptyText`, and the
-  composer's structured `collisions` / `exceptions`) — derived in one
-  place, so the renderer switches on the state instead of re-deriving picks
-  from hidden toggles. `swapFusion` reverses the two picks (a,b → b,a) and
+  here: `orderSensitive`, `orderNotice`, `resultEmptyText`; the composer's
+  structured `collisions` and `exceptions` are read off the composed
+  `fusion` (`fusion.resolved.collisions` / `fusion.exceptions`), not
+  copied onto the panel state) — derived in one place, so the renderer
+  switches on the state instead of re-deriving picks from hidden toggles.
+  `swapFusion` reverses the two picks (a,b → b,a) and
   recomputes the panel; it is a no-op with fewer than two picks. The island listens to DOM events, dispatches, and
   hands the returned view model to the renderer; the view model is the test
   surface.
