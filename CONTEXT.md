@@ -333,8 +333,9 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   not game data; the composition rules, their evidence, and the observation
   corpus live in `docs/research/fusion-observations/` (counts derive from
   `fusion-pairs.json`; validation methodology:
-  `../docs/research/fusion-mechanics.md`, `CONTRADICTIONS.md`; claim audit:
-  `fusion-claim-register.md`).
+  `docs/research/fusion-mechanics.md`,
+  `docs/research/fusion-observations/CONTRADICTIONS.md`; claim audit
+  (historical snapshot): `docs/research/fusion-claim-register.md`).
 - **Spawn carrier** — a ball whose tags include a spawn tag
   (`spawns-baby-balls`, `spawns-allies`, `clone`). Its spawn channel can carry
   a partner's on-hit status across a fusion (`spawnable()` in
@@ -362,9 +363,10 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   fact base `docs/research/character-pairings.md` → `src/data/parsed.json`,
   computing depth structurally) then `scripts/emit-data.ts`
   (`parsed.json` + the hand-maintained tag/verdict maps inside it →
-  `src/data/{tags,balls,passives,characters}.ts`). The five `src/data`
-  outputs are generated — edit the fact base or the maps in `emit-data.ts`,
-  never the generated files.
+  `src/data/{tags,balls,passives,characters}.ts`) and the level-3 overlay
+  (`docs/research/level-3-effects.md` → `src/data/level-3.ts`). The six
+  `src/data` outputs are generated — edit the fact base or the maps in
+  `emit-data.ts`, never the generated files.
 - **Icons** — 208 PNGs in `public/icons/`, downloaded from the wiki's
   MediaWiki API; provenance and the rights-holder disclaimer live in
   `public/icons/CREDITS.md`.

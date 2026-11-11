@@ -33,9 +33,10 @@ Not an npm package (`"private": true`). Code is MIT-licensed; game art in
 - `docs/research/game-mechanics.md` — the hand-maintained fact base the parser consumes.
 - `docs/research/character-pairings.md` — the Matchmaker pairing-restriction fact base (also parsed).
 - `docs/research/fusion-mechanics.md` — the distilled fusion fact base (not parsed; `src/fusion.ts` implements it).
-- `docs/research/fusion-observations/` — the fusion evidence corpus (append-only raw layer: dated per-source waves, `pending/` staging).
+- `docs/research/fusion-observations/` — the fusion evidence corpus (append-only raw layer: the undated 2026-10-04 files plus dated per-source waves, `pending/` staging).
 - `docs/research/fusion-observations/CONTRADICTION-RESOLUTION-2026-11-11.md` — the dated source-only resolution pass applied to the curated layer.
 - `docs/research/fusion-claim-register.md` — the claim audit trail (historical snapshot; counts predate the 2026-11-11 pass).
+- `docs/research/fusion-order-mechanism.md`, `fusion-order-claims-nov-2026.md`, `fusion-composition-revalidation-2026-11.md`, `effect-text-currency.md`, `mosquito-king-spawn.md`, `brood-mother-spawn.md` — dated research snapshots whose recommendations have landed; read their status banners first.
 - `CONTEXT.md` — domain glossary; read it first. Module headers carry the same vocabulary.
 
 ## Commands
@@ -136,9 +137,10 @@ texts cover all 90 fusable balls) and exits non-zero on violation.
   TDD commits note `(TDD)`.
 - **Design-decision provenance**: the durable record is `CONTEXT.md` plus the
   module headers themselves; keep both accurate when changing a module's
-  contract. Some comments still cite numbered decision "tickets" from an early
-  planning phase whose files were never committed — treat those numbers as
-  historical labels with no backing document, and don't add new ones.
+  contract. Some comments cite numbered decision "tickets" (e.g. #7, #8,
+  #12); these resolve to closed GitHub issues, but the issue bodies are not a
+  substitute for the module headers. Treat the numbers as historical labels
+  and don't add new ones.
 - **Concurrent sessions**: if other agent sessions may be working in this repo
   at the same time, use the `concurrent-agents` skill — work in your own
   worktree, integrate via rebase + fast-forward, never edit the shared checkout.

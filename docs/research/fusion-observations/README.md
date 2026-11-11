@@ -56,8 +56,9 @@ consolidation happens later.
 8. **The raw layer is append-only.** Existing `.jsonl` files are never edited.
    A correction is a new observation in a later wave plus a
    `CONTRADICTIONS.md` entry; supersession happens only in the curated layer.
-   This includes disclosed mistakes (the `english.jsonl:86` attribution
-   splice stays as-is).
+   One pre-rule exception: `english.jsonl:86` was corrected in place on
+   2026-10-04 (its `claims[].detail` records the attribution fix); treat that
+   row as corrected, not as an uncorrected splice.
 9. **Exact duplicates are suppressed within a wave.** If `source.url`, `text`
    and `source.date` are identical to a row already in the same wave, do not
    file it again. Cross-source duplicates are kept — do not dedupe across
@@ -84,7 +85,9 @@ them is worth more than a bare name. Mark agreement/disagreement in
    always affects presentation (name, sprite, icon, colour). Functionally it
    matters exactly where the two kits collide on a shared scalar property key
    — the first-selected ball's value wins (property-collision model). The old
-   "order does not affect function" PSA is obsolete after the DLC balls.
+   "order does not affect function" PSA is obsolete after the three free
+   updates (Regal / Shadow / Naturalist), which added property-bearing balls.
+   The paid *Risen Ballbylon* DLC (2026-11-12) is not the cause.
    Canonical statement: `../fusion-mechanics.md` §3.
 3. **Trigger matrix (wiki.gg Fusion Mechanics + namu.wiki):** combination
    semantics depend on trigger types (On-Hit / On-Damage / On-Timer ×
@@ -117,10 +120,12 @@ array recording claims a later wave dropped:
 ```
 
 `superseded_by` is the wave date that replaced the claim. The array is empty
-for the 2026-10-04 wave and the 2026-11-11 resolution pass (which re-graded
-claims without dropping any). Raw rows are never removed; supersession is
-recorded only here, so the audit stays machine-readable in the consumed layer.
-`CONTRADICTIONS.md` keeps one dated section per wave.
+for the 2026-10-04 wave. The 2026-11-11 resolution pass (issue #19) re-graded
+claims without dropping any; the 2026-11-11 spawn-channel pass (issue #20)
+dropped two no-cross-wire claims (`brood-mother+flash`,
+`flash+mosquito-king`) and recorded them here. Raw rows are never removed;
+supersession is recorded only here, so the audit stays machine-readable in the
+consumed layer. `CONTRADICTIONS.md` keeps one dated section per wave.
 
 ## Output
 

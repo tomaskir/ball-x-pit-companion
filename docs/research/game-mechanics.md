@@ -21,8 +21,9 @@ should be re-verified on game updates.
 
 **Terminology note**: the wiki distinguishes **Base Balls** (21, offered on level-up),
 **Evolved Balls** (69, made from 2+ specific level-3 balls in the Fusion Reactor), and
-**Fused Balls** (any other 2-ball combo — out of scope for the site: the site
-models only named evolutions, not property-stacking fusions).
+**Fused Balls** (any other 2-ball combo). This fact base covers the named
+evolutions only; property-stacking fusions are modeled separately by the
+site's editorial composer (`docs/research/fusion-mechanics.md`, `src/fusion.ts`).
 The site's "tier" grouping = evolution depth: Basic / Evolved (level-2) / Tier-3.
 Intermediate evolved balls that feed further evolutions are marked
 **Evo-intermediate** below.
@@ -141,8 +142,8 @@ alternate component.
 | X Ray | Tier-3 | Holy Laser + Laser Beam | — | Radiation | Emits an X-shaped laser on hit, which deals 50–75 damage to enemies and applies 1 stack of radiation (max 5 stacks; +10% damage taken per stack). |
 | Zombie | Evo | Vampire + Flesh | — | Zombie Infection, Zombie Spawn | Infects enemies on hit, giving them a 40% chance to turn into a friendly zombie on death. |
 
-Count check: 69 evolved balls in the wiki table (68 two-component + Elemental as a
-4-way; Nosferatu is the only 3-way). Cross-checked against the reference image:
+Count check: 69 evolved balls in the wiki table (67 two-component + Nosferatu as
+the only 3-way + Elemental as the only 4-way). Cross-checked against the reference image:
 the matrix shows the same pairings, including the "or" alternates and the single
 "Elemental" 4-way row at the bottom.
 
@@ -153,7 +154,9 @@ the matrix shows the same pairings, including the "or" alternates and the single
 - If two balls can evolve into an evolved ball, they cannot be merely fused — except
   pairs whose only shared evolution needs 3+ balls (Nosferatu, Elemental components).
 - Fusing two Destroy balls may lose one of their abilities (community-noted caveat).
-- Fused-ball fusion (no unique result) is out of scope for the site.
+- Fused-ball fusion (no unique result) is modeled separately by the site's
+  editorial composer (`docs/research/fusion-mechanics.md`, `src/fusion.ts`),
+  not by this fact base.
 
 ---
 
@@ -304,6 +307,10 @@ editorial tag/verdict model below.
 
 ## 4. Proposed synergy tag list
 
+**Landed:** the shipped vocabulary and assignments live in `scripts/emit-data.ts`
+(`TAGS`, `BALL_TAGS`, `PASSIVE_TAGS`, `CHAR_VERDICTS`); this section is the
+original proposal.
+
 Tags attach to balls and passives; characters carry `{tag, verdict: green|red, note}`
 rules. Indicators render from tag overlap; red wins with 2 characters selected.
 
@@ -318,7 +325,7 @@ Proposed tags:
 | `status-effect` | applies status effects (poison/burn/freeze/curse/…) | Bleed, Burn, Poison, Freeze, Charm, Vampire Lord, Brimstone, Venom, Virus |
 | `pass-through` | pierces enemies | Ghost, Wind, Ethereal Cloak, Phantom Regalia, Drill, Noxious, Erosion, Wraith, Soul Sucker |
 | `destroy-on-hit` | ball is consumed on hit | Dark, Egg Sac, Time, Bomb, Landslide, Black Hole, Timestop, Fireworks, Mosquito Swarm |
-| `lifesteal` / `healing` | heals the player | Vampire, Succubus, Mosquito family, Vampiric Sword, Soul Reaver, Bandage Roll |
+| `lifesteal` | heals the player | Vampire, Succubus, Mosquito family, Vampiric Sword, Soul Reaver, Bandage Roll |
 | `self-damage` | costs player health | Vampiric Sword |
 | `ball-speed` | scales ball speed | Flesh, Warp, Rubber Headband, Ardent Tire, Wings of the Anointed, Radiant Feather |
 | `bounce-scaling` | scales with bounces | Steel, Hourglass, Ardent Tire, Repentant (green) |
@@ -405,7 +412,7 @@ keep ~3–5 s between requests, and a descriptive User-Agent helped).
 - Damage/status numbers are wiki-as-of-2026-09-13, game v1.301; wiki pages carry a
   `{{Stub}}` template and a TODO about damage types — re-verify on game patches.
 - `Erosion` status effect is listed as "?" on the wiki; `Laser Cutter` on-hit/status
-  triggers are "?" too; `Overgrowth` AOE is marked "AOE?".
+  triggers are "?" too; the wiki's Overgrowth AOE field is marked "AOE?".
 - `Platinum Dumbbell` and `Sword Breaker` unlock conditions are unknown ("Clear ?").
 - The synergy tag list and per-character verdicts are the site's own model —
   editorial, needs playtesting validation.

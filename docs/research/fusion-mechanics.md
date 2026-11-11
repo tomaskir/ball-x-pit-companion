@@ -3,17 +3,19 @@
 Distilled knowledge about **Fusions** — merging any two unfused level-3 balls
 into a property-stacking ball with no unique identity. Companion to
 `game-mechanics.md`, which covers the 69 named **Evolutions**; the wiki's own
-terminology distinction is in `CONTEXT.md`.
+terminology distinction is in `../../CONTEXT.md`.
 
-This file is hand-maintained (evidence accessed 2026-10-01..04, game v1.301,
-**pre-DLC** — re-verify version-dependent claims after the Risen Ballbylon
-release, 2026-11-12) and is **not parsed by the data pipeline** — unlike
+This file is hand-maintained (evidence accessed 2026-10-01..04 and
+2026-11-09..11, game v1.301, **pre-DLC** — re-verify version-dependent claims
+after the Risen Ballbylon release, 2026-11-12) and is **not parsed by the data
+pipeline** — unlike
 `game-mechanics.md`, no script consumes it. The fusion composer `src/fusion.ts`
 implements the model described here, and `src/corpus.test.ts` gates that
 implementation against the observation corpus (below), so a composer change, a
 corpus refresh, or a change of mind here must keep the tests green. The
 2026-11-11 audit trail behind these claims is
-`fusion-claim-register.md` (§6).
+`fusion-claim-register.md` (a historical pre-resolution snapshot; see §6 of
+this file for the current counts).
 
 **Evidence base**: `fusion-observations/` — a harvest corpus of 1,035
 observations: **977 pair-filed rows over 370 distinct pairs** (the other 58
@@ -67,9 +69,10 @@ The single most load-bearing finding of the research:
 
 Consequences:
 
-- A "complete fusion list" is a **derivation**: the pair space is C(90,2) ≈
-  4005 minus evolution-reserved pairs (the wiki's own counts — 7836 vs 7921 —
-  are editor arithmetic; treat any exact count as unverified).
+- A "complete fusion list" is a **derivation**: the unordered pair space is
+  C(90,2) ≈ 4005 minus evolution-reserved pairs (the wiki's own ordered-pair
+  counts — 7836 vs 7921 — are editor arithmetic; treat any exact count as
+  unverified).
 - **Fused-ball numbers (damage/procs/cooldowns of the merged ball) are not
   derivable from any public source.** The site abstracts damage rolls to "X"
   and presents ability composition, never fabricated numbers.
@@ -137,8 +140,9 @@ supersedes the earlier target reading recorded in #6.
   inherit the partner's **on-hit status** (reported), but not spawn-bound
   traits (spikes, icicles, blobs) — so Glacier/Blizzard stay unwired for both
   carriers. Brood Mother's inheritance is degraded: the inherited effect is
-  weaker and the spawn is probabilistic (25/35/45% per hit); one launch-week
-  report claims Flash × Brood Mother produced none (unverified). Egg Sac's
+  weaker and the spawn is probabilistic (25/35/45% per hit); the one
+  launch-week report claiming Flash × Brood Mother produced none is superseded
+  by the 2026-11-11 spawn resolution (`CONTRADICTIONS.md` §14). Egg Sac's
   babies inherit the partner's properties, but the inherited effect is weaker
   than a full clone (reported, namu.wiki).
 - **Trigger limit**: Brood Mother's and Mosquito King's spawns fire **on
@@ -160,9 +164,12 @@ supersedes the earlier target reading recorded in #6.
   alive (Cell × Bomb is the known "indestructible bomb" example).
 - **Dark's damage multiplier carries into the fusion** — Dark is prized as
   fusion material for exactly this.
-- **9999 is a display cap, not a real cap**: computed damage ranges above 9999
-  with per-hit pop-ups pinned at 9999 have been observed; on-screen numbers
-  understate hard-hitting fusions.
+- **9999 is at least a display cap; whether it is also a real per-hit cap is
+  disputed.** Computed damage ranges above 9999 with per-hit pop-ups pinned at
+  9999 have been observed, so on-screen numbers understate hard-hitting
+  fusions. A newer 2026-09 thread argues for a real cap; no controlled test
+  settles it — do not treat the display-cap reading as final
+  (`CONTRADICTIONS.md` §8, §13).
 
 ---
 
@@ -225,10 +232,10 @@ to pairs whose kits do collide.
 - The save's 90×90 fusion-discovery counter matrix would be machine-readable
   evidence of directed pairs — but no published dump of a *completed* matrix
   exists, so whether the game records order is unverified.
-- "First-selected" vs "acquisition order" is unresolved: the wiki once claimed
-  fusion order cannot be manually selected, while the live game's ordered
-  fusion slots describe click-order selection. One UI observation would settle
-  it.
+- "First-selected" is **click/selection order**, per multiple community
+  reports; the wiki's older claim that fusion order cannot be manually
+  selected (acquisition order) is contradicted by the live game's ordered
+  fusion slots. One direct UI observation would confirm it.
 
 ---
 
@@ -261,7 +268,8 @@ to pairs whose kits do collide.
   one attribution splice not to cite). Read it before treating any pair's
   observation count as evidence weight.
 - The claim audit behind this file is `fusion-claim-register.md` (2026-11-11,
-  pre-DLC v1.301): every fusion claim's status and disposition. §3 here is
+  pre-DLC v1.301; a historical snapshot whose counts predate the 2026-11-11
+  resolution pass): every fusion claim's status and disposition. §3 here is
   the canonical order-model statement; other files link to it instead of
   restating the model.
 - Refresh routes (occasional, not part of the data pipeline): forum archive
