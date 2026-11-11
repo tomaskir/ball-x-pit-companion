@@ -14,11 +14,13 @@
 //     (flicker × reaper), which fuse() turns into a caveat note.
 //   - order is property-set union with first-pick scalar precedence: the
 //     resolver in fusion-properties.ts returns the union and the shared-key
-//     collisions (first pick wins). Fixed composition caveats (Destroy ×
-//     Destroy, hit-once dominance over pass-through, spawn compensating
-//     Destroy, Dark's multiplier, Assassin/Warp trait priority) stay notes
-//     (docs/research/fusion-mechanics.md §2e/§3; fusion-pairs.json
-//     general_rules_notes).
+//     collisions (first pick wins). The collisions and reported exceptions
+//     are structured for the panel's "Fused result" / "Reported exceptions"
+//     sections (#8), not duplicated as notes. Fixed composition caveats
+//     (Destroy × Destroy, hit-once dominance over pass-through, spawn
+//     compensating Destroy, Dark's multiplier, Assassin/Warp trait priority)
+//     stay notes (docs/research/fusion-mechanics.md §2e/§3;
+//     fusion-pairs.json general_rules_notes).
 //   - effect paragraphs use level-3 text (the fusion screen consumes L3
 //     balls; decision #12) from the generated src/data/level-3.ts overlay,
 //     falling back to the level-1 catalog text.
@@ -267,16 +269,9 @@ export function fuse(a: Ball, b: Ball): FusionResult | null {
 
   // Order resolution (fusion-mechanics.md §3, decision #7): property-set
   // union with first-pick scalar precedence. Each differing shared scalar key
-  // is a collision won by the first-selected ball.
+  // is a collision won by the first-selected ball; the panel renders these as
+  // the "Fused result" rows (#8), so they are not repeated as notes.
   const resolved = resolveProperties(a, b);
-  for (const c of resolved.collisions) {
-    const confidence = c.reported ? 'reported/unverified' : 'reported';
-    if (c.key === 'cooldown') {
-      notes.push(`Cooldown — the first-selected ball's cooldown wins (${c.value} over ${c.loserValue}; ${confidence}).`);
-    } else {
-      notes.push(`Shared property (${c.label}) — the first-selected ball's variant wins (${c.value} over ${c.loserValue}; ${confidence}).`);
-    }
-  }
 
   // Pool recursion (CONTRADICTIONS.md §2): not a fusion effect, but the
   // first-selected base ball is consumed from the level-up/fusion pool.
@@ -318,13 +313,8 @@ export function fuse(a: Ball, b: Ball): FusionResult | null {
   }
 
   // Reported anomalies outside the general rule (decision #7). Structured for
-  // the presentation's "Reported exceptions" section (#8); also surfaced as
-  // notes so the current panel does not hide them.
+  // the panel's separate "Reported exceptions" section (#8).
   const exceptions = exceptionsFor(a, b);
-  for (const e of exceptions) {
-    const marker = e.confidence === 'unverified' ? 'reported/unverified' : e.confidence;
-    notes.push(`Reported exception — ${e.title}: ${e.detail} (${marker}).`);
-  }
 
   return {
     name: fusionName(a, b),

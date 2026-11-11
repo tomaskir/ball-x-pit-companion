@@ -276,10 +276,12 @@ describe('cross-wire exclusions (corpus no-cross-wire evidence)', () => {
 describe('order resolution (property-set union, first-pick precedence)', () => {
   it('both-cooldown pairs with different values: first-selected cooldown wins (namu.wiki)', () => {
     const r = fuse(ball('black-hole'), ball('timestop'))!;
-    expect(r.notes.join(' ')).toMatch(/cooldown wins/i);
     expect(r.collisions).toContainEqual(expect.objectContaining({
       key: 'cooldown', winner: 'black-hole', value: '5 second', loser: 'timestop', loserValue: '20 second',
     }));
+    // the panel's Fused-result rows carry the resolution — notes must not
+    // duplicate it (decision #8)
+    expect(r.notes.join(' ')).not.toMatch(/cooldown wins/i);
     // equal cooldowns are not a functional collision
     expect(fuse(ball('bomb'), ball('dark'))!.collisions).toEqual([]);
     expect(fuse(ball('bomb'), ball('dark'))!.notes.join(' ')).not.toMatch(/cooldown wins/i);
@@ -289,7 +291,7 @@ describe('order resolution (property-set union, first-pick precedence)', () => {
 
   it('same-property pairs: first-selected variant wins (PSA #2)', () => {
     const r = fuse(ball('mosquito-swarm'), ball('mosquito-king'))!;
-    expect(r.notes.join(' ')).toMatch(/first-selected ball's variant/i);
+    expect(r.notes.join(' ')).not.toMatch(/first-selected ball's variant/i);
     expect(r.collisions[0]).toMatchObject({
       key: 'mosquito-spawn', winner: 'mosquito-swarm', value: '4–8 mosquitos', loser: 'mosquito-king', loserValue: 'a mosquito',
     });
@@ -372,7 +374,9 @@ describe('composition caveats (general_rules_notes)', () => {
   });
 
   it('Noxious × Poison is a same-property pair (corpus: max stacks differ by order)', () => {
-    expect(fuse(ball('noxious'), ball('poison'))!.notes.join(' ')).toMatch(/first-selected ball's variant/i);
+    expect(fuse(ball('noxious'), ball('poison'))!.collisions[0]).toMatchObject({
+      key: 'poison-max-stacks', winner: 'noxious', value: '3 stacks', loser: 'poison', loserValue: 'max 8 stacks',
+    });
   });
 
   it('base-ball pool recursion note (first-selected base ball is consumed)', () => {
@@ -402,10 +406,10 @@ describe('composition caveats (general_rules_notes)', () => {
     expect(fuse(ball('ghost'), ball('warp'))!.notes.join(' ')).toMatch(/Warp is cast before/i);
   });
 
-  it('reported exceptions surface as structured data and notes', () => {
+  it('reported exceptions surface as structured data (the panel section, not notes)', () => {
     const nuke = fuse(ball('nuclear-bomb'), ball('wraith'))!;
     expect(nuke.exceptions.map((e) => e.pair)).toContain('nuclear-bomb+wraith');
-    expect(nuke.notes.join(' ')).toMatch(/Reported exception — Order-sensitive one-off/);
+    expect(nuke.notes.join(' ')).not.toMatch(/Reported exception/);
     expect(fuse(ball('black-hole'), ball('sun'))!.exceptions.map((e) => e.pair)).toContain('black-hole+sun');
     expect(fuse(ball('time'), ball('flash'))!.exceptions.map((e) => e.pair)).toContain('time+*');
     expect(fuse(ball('banshee'), ball('flash'))!.exceptions.map((e) => e.pair)).toContain('banshee+*');

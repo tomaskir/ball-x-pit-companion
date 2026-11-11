@@ -409,7 +409,7 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
   // pass-through, spawn compensates Destroy, Dark's multiplier). Pinned in
   // fusion.test.ts (cross-wire exclusions / order side-effects / composition
   // caveats describes).
-  it('kill-on-hit rides AOE carriers and order side-effects emit notes', async () => {
+  it('kill-on-hit rides AOE carriers and order side-effects are structured', async () => {
     const { fuse } = await import('./fusion');
     const { ballMap } = await import('./catalog');
     const ball = (id: string) => ballMap.get(id)!;
@@ -417,8 +417,10 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
     expect(fuse(ball('black-hole'), ball('sun'))!.crossWire).toContain('Black Hole');
     // Glacier × Maggot: spawn-bound status rides the spawn carrier
     expect(fuse(ball('glacier'), ball('maggot'))!.crossWire).toContain('Glacier');
-    // both-cooldown pair note (namu rule: first-selected's cooldown wins)
-    expect(fuse(ball('black-hole'), ball('timestop'))!.notes.join(' ')).toMatch(/cooldown wins/);
+    // both-cooldown pair resolves to the first pick's value (namu rule)
+    expect(fuse(ball('black-hole'), ball('timestop'))!.collisions[0]).toMatchObject({
+      key: 'cooldown', winner: 'black-hole', value: '5 second', loserValue: '20 second',
+    });
   });
 
   // Bug (cross-screen remembering, 2026-10-05): the document-level
