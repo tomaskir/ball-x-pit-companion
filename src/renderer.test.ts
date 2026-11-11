@@ -388,6 +388,34 @@ describe('plan screen behavior (jsdom, through paint())', () => {
     entries[0].querySelector<HTMLElement>('.plan-x')!.click();
     expect(emit).toHaveBeenCalledWith({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
   });
+
+  it('a fused entry keeps an unordered identity while a compose-order change repaints the name', () => {
+    // The pair's identity is unordered (src/pair.ts); compose order is
+    // display content. A reversed hydrate must keep the same entry identity
+    // yet repaint the name — the ordered key this replaced made a swap look
+    // like a different pair.
+    const plan = (a: string, b: string) => ({
+      upgradesOn: true, chars: [], balls: [], passives: [], fused: [{ a, b }],
+    });
+    const grid = () => planView().querySelector<HTMLElement>('.plan-section[data-plan="balls"] .plan-grid')!;
+
+    drive({ type: 'hydrate', plan: plan('flash', 'glacier') });
+    const first = grid().querySelector<HTMLElement>('.plan-entry')!;
+    expect(first.querySelector('.plan-name')!.textContent).toBe('Flash × Glacier');
+    expect(first.dataset.entry).toBe('fused:flash+glacier');
+
+    // same compose order: the built entry (and its imgs) stays put
+    const img = first.querySelector('img');
+    paint(view.derive());
+    expect(grid().querySelector('.plan-entry')).toBe(first);
+    expect(grid().querySelector('img')).toBe(img);
+
+    // reversed compose order: same unordered identity, repainted display
+    drive({ type: 'hydrate', plan: plan('glacier', 'flash') });
+    const second = grid().querySelector<HTMLElement>('.plan-entry')!;
+    expect(second.querySelector('.plan-name')!.textContent).toBe('Glacier × Flash');
+    expect(second.dataset.entry).toBe('fused:flash+glacier');
+  });
 });
 
 // ---------- behavior: the selection box (jsdom, through paint()) ----------

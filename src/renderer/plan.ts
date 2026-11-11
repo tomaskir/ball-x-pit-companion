@@ -1,12 +1,17 @@
 // The plan screen's three sections (characters/balls/passives). The skeleton
-// is built once; entries rebuild only when their section's entry set changed
-// (reconcile's diff — the one accepted exception to never-recreate, since
-// entry sets are dynamic). Badges and over-limit marks repaint in place every
-// paint, found by each entry's stamped identity, so a character toggle (which
-// changes verdicts but not the entry set) never rebuilds. Internal to the
+// is built once; entries rebuild only when their section's reconcile content
+// key changes (reconcile's diff — the one accepted exception to
+// never-recreate, since entry sets are dynamic). Badges and over-limit marks
+// repaint in place every paint, found by each entry's stamped identity, so a
+// character toggle (which changes verdicts but not the entry set) never
+// rebuilds. A fused pair's identity is unordered (src/pair.ts); its reconcile
+// content key also carries the displayed compose order, so a swap rebuilds
+// the grid to repaint the name/icon order while the entry stamp stays the
+// same pair — the accepted cost of a name built once. Internal to the
 // renderer facade; the build graphs below the sections are their own module
 // (./build-graphs.ts).
 import { ballMap, type Item } from '../catalog';
+import { pairKeyOf } from '../pair';
 import { emitAction } from './seam';
 import { reconcile } from './reconcile';
 import { icon, verdictBadge } from './dom';
@@ -66,10 +71,15 @@ function planEntry(inner: string, onRemove: () => void): HTMLElement {
 /** A plan entry's identity: the reconcile key material and the data-entry
  *  stamp the badge repaint looks entries up by — one spelling, both uses. */
 const entryKey = (prefix: string, id: string) => `${prefix}:${id}`;
-/** A merged ball-grid entry's identity — one spelling shared by the
- *  reconcile diff, the entry stamp, and the badge lookup. */
+/** A merged ball-grid entry's unordered identity — the entry stamp and the
+ *  badge lookup use it, so the reverse composition is the same pair. */
 const ballEntryKey = (e: PlanBallEntry): string =>
-  e.kind === 'single' ? entryKey('ball', e.item.id) : entryKey('fused', `${e.a.id}+${e.b.id}`);
+  e.kind === 'single' ? entryKey('ball', e.item.id) : entryKey('fused', pairKeyOf([e.a.id, e.b.id]));
+/** The reconcile content key: the unordered identity plus the displayed
+ *  compose order. The name and icon order are built once, so a swap must
+ *  repaint them; identity stays order-insensitive. */
+const ballEntryContentKey = (e: PlanBallEntry): string =>
+  e.kind === 'single' ? ballEntryKey(e) : `${ballEntryKey(e)}:${e.a.id}>${e.b.id}`;
 
 /** One single-ball/passive entry, stamped with its identity. */
 const itemEntry = (item: Item, prefix: string, onRemove: () => void): HTMLElement => {
@@ -117,7 +127,7 @@ export function paintPlan(vm: ViewModel) {
     sections.balls.grid,
     // the merged ball grid is already in paint order (plan-state derived it:
     // complexity, most complex left) — the keys just follow it
-    plan.balls.map(ballEntryKey).join(','),
+    plan.balls.map(ballEntryContentKey).join(','),
     () => {
       sections.balls.grid.replaceChildren(
         ...plan.balls.map((e) => {
