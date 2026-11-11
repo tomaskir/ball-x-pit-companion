@@ -425,9 +425,9 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   channels in one hand-maintained table). The evidence behind the composer's
   classifications lives in `src/fusion-knowledge.ts`, exposed as questions:
   `wireFor(a, b) → Wire | null` returns the structured cross-wire (branch,
-  carrier, carried effect, disputed bit, spawner id) with the four branches
-  and their priority kept private, alongside the capability queries
-  `canCarry` / `canInheritSpawn` / `canCarryKill`, the one application-channel
+  carrier, carried effect, disputed bit, spawner id) with the four branches,
+  their priority, and the per-branch capability predicates kept private,
+  alongside the one application-channel
   classifier `channelsOf` (reads the kit table and falls back to the
   status-text heuristic for unrecorded balls; the property model and the
   cross-wire model consume the same table, and it resolves Timestop to
@@ -452,8 +452,8 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   kit and falls back to the status-text heuristic.
 - **Spawn carrier** — a ball whose tags include a spawn tag
   (`spawns-baby-balls`, `spawns-allies`, `clone`). Its spawn channel can carry
-  a partner's on-hit status across a fusion (`canInheritSpawn()` in
-  `src/fusion-knowledge.ts`). Voluptuous Egg Sac is the only hard exclusion: its two-hop
+  a partner's on-hit status across a fusion (the spawn branches of
+  `wireFor()` in `src/fusion-knowledge.ts`). Voluptuous Egg Sac is the only hard exclusion: its two-hop
   chain drops the partner property.
 - **Status-only spawn carrier** — a spawn carrier whose babies inherit only
   the partner's on-hit status, not spawn-bound traits (Brood Mother, Mosquito

@@ -5,9 +5,9 @@
 // its effects?" (`channelsOf` / `statusChannel`), and "which reported facts
 // does this pair trigger?" (`factsFor`). The evidence itself — the
 // Destroy/cooldown/pierce/kill class sets, the spawn-inheritance classes, the
-// status-text regexes, the branch priority, and the caveat prose — stays
-// private here, so a research landing is a one-table edit and callers ask
-// questions instead of reading tables.
+// status-text regexes, the per-branch capability predicates, the branch
+// priority, and the caveat prose — stays private here, so a research landing
+// is a one-table edit and callers ask questions instead of reading tables.
 //
 // Every id is a ball id in src/data/balls.ts. Nothing here composes a line:
 // `wireFor()` returns the structured wire (which branch, which carrier, which
@@ -223,8 +223,10 @@ export interface Wire {
 /** Can an AOE carrier apply the partner's on-hit status? A field-aura carrier
  *  cannot trigger a hit-bound status (trigger matrix: AOE = On-Hit NO /
  *  On-Damage YES / On-Timer NO); it can carry the corpus-evidenced
- *  damage-riding statuses. Freeze Ray × Sun is the evidenced negative. */
-export function canCarry(carrier: Ball, status: Ball): boolean {
+ *  damage-riding statuses. Freeze Ray × Sun is the evidenced negative.
+ *  Private: `wireFor` is the seam, so rank and branch priority are tested
+ *  with the capability that production actually calls. */
+function canCarry(carrier: Ball, status: Ball): boolean {
   if (!aoeCarrier(carrier) || statusChannel(status) !== 'hit') return false;
   return !(statusChannel(carrier) === 'field' && !isDamageRidingStatus(status));
 }
@@ -233,7 +235,7 @@ export function canCarry(carrier: Ball, status: Ball): boolean {
  *  spawn branches qualify: an on-hit status or a spawn-bound one. VES's
  *  two-hop chain drops the property; status-only carriers inherit on-hit
  *  statuses but not spawn-bound traits. */
-export function canInheritSpawn(carrier: Ball, status: Ball): boolean {
+function canInheritSpawn(carrier: Ball, status: Ball): boolean {
   if (!spawnable(carrier)) return false;
   const channel = statusChannel(status);
   if (channel !== 'hit' && channel !== 'spawn') return false;
@@ -244,7 +246,7 @@ export function canInheritSpawn(carrier: Ball, status: Ball): boolean {
  *  must deal damage and must not itself be a kill ball (kill × kill does not
  *  wire). Satan's debuff-only judgment carries Black Hole's instant kill but
  *  not Reaper's damage-channel proc (corpus, both directions). */
-export function canCarryKill(carrier: Ball, killer: Ball): boolean {
+function canCarryKill(carrier: Ball, killer: Ball): boolean {
   if (isKillEffect(carrier) || !isKillEffect(killer) || !dealsDamage(carrier)) return false;
   return (killer.id === 'black-hole' && carrier.id === 'satan') || aoeCarrier(carrier);
 }

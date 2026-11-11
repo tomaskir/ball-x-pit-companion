@@ -8,11 +8,9 @@ import { describe, it, expect } from 'vitest';
 import { BALLS } from './data/balls';
 import { ballMap } from './catalog';
 import { BALL_KIT } from './ball-kit';
+import * as knowledge from './fusion-knowledge';
 import {
   FUSION_FACTS,
-  canCarry,
-  canCarryKill,
-  canInheritSpawn,
   channelsOf,
   factsFor,
   statusChannel,
@@ -110,38 +108,13 @@ describe('one application-channel classification per ball', () => {
   });
 });
 
-describe('capability queries', () => {
-  it('canCarry: an AOE carrier applies on-hit statuses, with the field-aura limit', () => {
-    expect(canCarry(ball('flash'), ball('overgrowth'))).toBe(true);
-    // Sun's field aura carries the corpus-evidenced damage-riding statuses…
-    expect(canCarry(ball('sun'), ball('overgrowth'))).toBe(true);
-    // …but not a status bound to the hit event (Freeze Ray × Sun).
-    expect(canCarry(ball('sun'), ball('poison'))).toBe(false);
-    // Satan is excluded as a status carrier; Iron is not AOE.
-    expect(canCarry(ball('satan'), ball('hemorrhage'))).toBe(false);
-    expect(canCarry(ball('iron'), ball('poison'))).toBe(false);
-  });
-
-  it('canInheritSpawn: VES drops the property; status-only carriers skip spawn-bound traits', () => {
-    expect(canInheritSpawn(ball('maggot'), ball('overgrowth'))).toBe(true);
-    expect(canInheritSpawn(ball('brood-mother'), ball('flash'))).toBe(true);
-    expect(canInheritSpawn(ball('brood-mother'), ball('glacier'))).toBe(false);
-    expect(canInheritSpawn(ball('voluptuous-egg-sac'), ball('overgrowth'))).toBe(false);
-    expect(canInheritSpawn(ball('cell'), ball('glacier'))).toBe(true);
-    // A partner with no status, or a field aura, has nothing the spawn
-    // branches can inherit.
-    expect(canInheritSpawn(ball('cell'), ball('iron'))).toBe(false);
-    expect(canInheritSpawn(ball('cell'), ball('sun'))).toBe(false);
-  });
-
-  it('canCarryKill: a damage-dealing AOE carrier, with Satan allowed only for Black Hole', () => {
-    expect(canCarryKill(ball('sun'), ball('black-hole'))).toBe(true);
-    expect(canCarryKill(ball('satan'), ball('black-hole'))).toBe(true);
-    expect(canCarryKill(ball('satan'), ball('reaper'))).toBe(false);
-    expect(canCarryKill(ball('timestop'), ball('black-hole'))).toBe(false);
-    expect(canCarryKill(ball('iron'), ball('black-hole'))).toBe(false);
-    // A kill ball cannot carry another kill ball's effect (kill × kill).
-    expect(canCarryKill(ball('black-hole'), ball('reaper'))).toBe(false);
+describe('module surface', () => {
+  it('keeps the capability predicates private behind wireFor', () => {
+    // Production only crosses the oracle; a public predicate could pass its
+    // own test while the oracle's rank/branch layering is wrong.
+    for (const name of ['canCarry', 'canInheritSpawn', 'canCarryKill']) {
+      expect(knowledge).not.toHaveProperty(name);
+    }
   });
 });
 
@@ -208,6 +181,16 @@ describe('wireFor (the cross-wire oracle)', () => {
     expect(w.carrier.id).toBe('glacier');
   });
 
+  it('the AOE on-hit branch outranks the kill branch (Black Hole × Overgrowth)', () => {
+    // Both branches could fire: Black Hole is a kill-on-hit ball and an AOE
+    // carrier, and Overgrowth is an on-hit status. Branch order makes the
+    // on-hit wire win.
+    const w = wireFor(ball('black-hole'), ball('overgrowth'))!;
+    expect(w.kind).toBe('aoe-carries-on-hit');
+    expect(w.carrier.id).toBe('black-hole');
+    expect(w.status.id).toBe('overgrowth');
+  });
+
   it('is unordered: reversing the picks yields the same wire', () => {
     for (const [a, b] of [
       ['overgrowth', 'maggot'],
@@ -260,6 +243,44 @@ describe('wireFor (the cross-wire oracle)', () => {
     expect(wireFor(ball('iron'), ball('reaper'))).toBeNull();
     expect(wireFor(ball('timestop'), ball('reaper'))).toBeNull();
     expect(wireFor(ball('reaper'), ball('satan'))).toBeNull();
+    expect(wireFor(ball('timestop'), ball('black-hole'))).toBeNull();
+    expect(wireFor(ball('iron'), ball('black-hole'))).toBeNull();
+    // A kill ball cannot carry another kill ball's effect (kill × kill).
+    expect(wireFor(ball('black-hole'), ball('reaper'))).toBeNull();
+    // Satan's debuff-only judgment still carries Black Hole's kill (corpus).
+    const satan = wireFor(ball('satan'), ball('black-hole'))!;
+    expect(satan.kind).toBe('aoe-carries-kill');
+    expect(satan.carrier.id).toBe('satan');
+    expect(satan.status.id).toBe('black-hole');
+  });
+
+  it('the AOE on-hit branch carries only damage-riding statuses through a field aura', () => {
+    // Sun's field aura carries the corpus-evidenced damage-riding statuses…
+    expect(wireFor(ball('sun'), ball('overgrowth'))!.kind).toBe('aoe-carries-on-hit');
+    // …but not a status bound to the hit event (Freeze Ray × Sun).
+    expect(wireFor(ball('sun'), ball('poison'))).toBeNull();
+    // Satan is excluded as a status carrier; Iron is not AOE.
+    expect(wireFor(ball('satan'), ball('hemorrhage'))).toBeNull();
+    expect(wireFor(ball('iron'), ball('poison'))).toBeNull();
+  });
+
+  it('the spawn branches exclude VES and skip spawn-bound traits for status-only carriers', () => {
+    expect(wireFor(ball('overgrowth'), ball('voluptuous-egg-sac'))).toBeNull();
+    // A partner with no status, or a field aura, has nothing to inherit.
+    expect(wireFor(ball('cell'), ball('iron'))).toBeNull();
+    expect(wireFor(ball('cell'), ball('sun'))).toBeNull();
+    expect(wireFor(ball('brood-mother'), ball('flash'))!.kind).toBe('spawn-carries-on-hit');
+    expect(wireFor(ball('brood-mother'), ball('glacier'))).toBeNull();
+  });
+
+  it('rank gating: an AOE carrier must outrank the status ball it carries', () => {
+    // Equal-rank AOE carriers do not carry each other (Overgrowth ×
+    // Radiation Beam): the rank check is strict.
+    expect(wireFor(ball('overgrowth'), ball('radiation-beam'))).toBeNull();
+    // The higher-ranked carrier wins the direction (Flash > Overgrowth).
+    expect(wireFor(ball('overgrowth'), ball('flash'))!.carrier.id).toBe('flash');
+    // The kill branch has no rank comparison: both balls are screen-clear.
+    expect(wireFor(ball('black-hole'), ball('sun'))!.kind).toBe('aoe-carries-kill');
   });
 });
 
