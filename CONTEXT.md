@@ -343,7 +343,10 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   order model are stated canonically in `docs/research/fusion-mechanics.md`
   §2-§3, with §3 implemented by `src/fusion-properties.ts`. The evidence behind the composer's
   classifications lives in `src/fusion-knowledge.ts` (Destroy/cooldown/pierce/
-  kill classes, spawn-inheritance classes, status-channel predicates) along
+  kill classes, spawn-inheritance classes, and the one application-channel
+  classifier `channelsOf`, which both the property model and the cross-wire
+  model consume; it resolves Timestop to `field`, so a field freeze never
+  carries an on-hit status) along
   with the one reported-fact table (`FUSION_FACTS`: caveat prose plus the
   reported exceptions, each with source and confidence, resolved by
   `factsFor()`); `fusion.ts` composes, the knowledge module classifies and
