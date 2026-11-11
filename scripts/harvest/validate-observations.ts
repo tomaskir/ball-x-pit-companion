@@ -8,7 +8,8 @@
 // Usage (repo root):
 //   node --experimental-strip-types scripts/harvest/validate-observations.ts
 //
-// Checks, per line of each docs/research/fusion-observations/*.jsonl file:
+// Checks, per line of each top-level docs/research/fusion-observations/*.jsonl
+// wave file (the pending/ staging directory is skipped):
 //   - parses as JSON
 //   - matches schema.json (required fields, enums, shapes)
 //   - pair ids exist in src/data/balls.ts
@@ -59,7 +60,12 @@ export function validateObservations(root: string = join(dirname(fileURLToPath(i
     if (!ballIds.has(id)) err("aliases.json", undefined, `canonical key "${id}" is not a ball id`);
   }
 
-  const files = readdirSync(obsDir).filter((f) => f.endsWith(".jsonl"));
+  // Top-level dated wave files only. `pending/` is the DLC staging area:
+  // rows there may name balls the catalog does not have yet, so they stay
+  // outside the gate until promotion moves them into a dated wave file.
+  const files = readdirSync(obsDir, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".jsonl"))
+    .map((entry) => entry.name);
   const pairCounts = new Map<string, number>();
 
   for (const file of files) {

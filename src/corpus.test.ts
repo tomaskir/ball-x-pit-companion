@@ -20,7 +20,15 @@ import { ballMap } from './catalog';
 const corpusRoot = new URL('../docs/research/fusion-observations/', import.meta.url).pathname;
 const pairsData = JSON.parse(readFileSync(`${corpusRoot}fusion-pairs.json`, 'utf8')) as {
   pair_count: number;
-  pairs: Record<string, { components: [string, string]; status: string; claims: { type: string }[] }>;
+  pairs: Record<
+    string,
+    {
+      components: [string, string];
+      status: string;
+      claims: { type: string }[];
+      superseded: { claim: string; source: string; superseded_by: string }[];
+    }
+  >;
 };
 
 const ball = (id: string) => {
@@ -55,6 +63,19 @@ describe('corpus sanity (the spec itself is loadable)', () => {
   it('every corpus pair id resolves in the catalog', () => {
     for (const [key, p] of Object.entries(pairsData.pairs)) {
       for (const id of p.components) expect(ballMap.has(id), `${key}: ${id}`).toBe(true);
+    }
+  });
+
+  it('every pair carries the ingestion-contract superseded array', () => {
+    // Raw rows are append-only; a claim dropped by a later wave is recorded
+    // here as { claim, source, superseded_by } (README, CONTRADICTIONS.md).
+    for (const [key, p] of Object.entries(pairsData.pairs)) {
+      expect(Array.isArray(p.superseded), `${key}: superseded must be an array`).toBe(true);
+      for (const s of p.superseded) {
+        expect(typeof s.claim, `${key}: superseded.claim`).toBe('string');
+        expect(typeof s.source, `${key}: superseded.source`).toBe('string');
+        expect(s.superseded_by, `${key}: superseded.superseded_by`).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      }
     }
   });
 

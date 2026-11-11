@@ -25,6 +25,22 @@ Ordering background and the reconciliation argument: `../fusion-mechanics.md` §
 
 ---
 
+## Waves and supersession
+
+This register is the record of the **2026-10-04** wave; each future refresh
+wave adds a dated section instead of rewriting this one. The raw layer is
+append-only, so supersession is recorded in the curated layer: each pair in
+`fusion-pairs.json` carries a `superseded` array of dropped claims,
+
+```json
+{ "claim": "<dropped reading>", "source": "<URL or file:line>", "superseded_by": "YYYY-MM-DD" }
+```
+
+where `superseded_by` is the wave date that replaced the claim. The array is
+empty for the 2026-10-04 wave.
+
+---
+
 ## How to read an entry
 
 - **Conflicting claims** — the two (or more) positions, verbatim or as
@@ -651,7 +667,7 @@ the companion site can treat as settled enough to document:
 
 # Known corpus issues
 
-The raw layer (`*.jsonl`) is frozen and contains disclosed workarounds. A
+The raw layer (`*.jsonl`) is append-only and contains disclosed workarounds. A
 future reader needs to know these before treating a pair's `obs_count` as
 pair-specific evidence.
 
@@ -756,7 +772,7 @@ The Flash × Overgrowth order-matters quote in `english.jsonl` is filed under
 u/FemurFiend's praise sentence. The Arctic Shift record shows the claim is
 **u/beastlike's**, and FemurFiend is on the *order-does-not-matter* side. Both
 correct records are in `ordering.jsonl`. The raw row is kept as-is (raw layer
-is frozen); the curated layer draws from `ordering.jsonl` for this dispute.
+is append-only); the curated layer draws from `ordering.jsonl` for this dispute.
 
 ## D. Effect-text completeness
 

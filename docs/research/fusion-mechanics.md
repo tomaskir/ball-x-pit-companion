@@ -220,9 +220,15 @@ each other on direction and are unnecessary given the controlled result.
 
 ## 6. Corpus maintenance
 
-- The raw harvest layer (`fusion-observations/*.jsonl`) is **frozen** —
-  contradictions are records, not errors; both sides stay. Resolution happens
-  only in the curated layer (`fusion-pairs.json`) and this file.
+- The raw harvest layer (`fusion-observations/*.jsonl`) is **append-only**:
+  existing files are never edited, and each refresh wave adds dated per-source
+  files (`<source>-<YYYY-MM-DD>.jsonl`, date = harvest access date).
+  Contradictions are records, not errors; both sides stay. Resolution happens
+  only in the curated layer (`fusion-pairs.json`, whose per-pair `superseded`
+  array records dropped claims) and this file.
+- Rows naming balls not yet in the catalog are staged in
+  `fusion-observations/pending/`; the schema gate skips that directory until
+  promotion moves them into a dated wave.
 - `CONTRADICTIONS.md` is the register of the 25 contradicted / 26
   order-disputed pairs and the known corpus issues (anchor rows filed on
   stand-in pairs, `obs_count` semantics, one attribution splice not to cite).

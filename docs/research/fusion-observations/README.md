@@ -41,9 +41,32 @@ across sources; consolidation happens later.
 4. **Normalize names through `aliases.json`.** Community posts say "Hemo",
    "Nuke", "Dracula". The pair's canonical ids must be real catalog ids; the
    raw wording goes in `in_game_name` / `order_as_named`.
-5. **Pin the game version when known** (`game_version`), else `"unknown"`.
-   Recipes and effects move between builds (see the Bleed+Poison→Virus dispute).
+5. **Tag the game version.** Every new observation sets `game_version` to the
+   build it describes; `"unknown"` is reserved for genuinely unknown builds,
+   not a skip-default. Recipes and effects move between builds (see the
+   Bleed+Poison→Virus dispute).
 6. **No asset downloads.** Record image/video URLs only. No pirated game files.
+7. **Dated per-source wave files.** Each harvest wave writes
+   `<source>-<YYYY-MM-DD>.jsonl` at the top level of this directory, where the
+   date is the harvest access date (the wave date). Per-source files keep
+   parallel agents from colliding. The original undated files
+   (`reddit.jsonl`, `steam.jsonl`, …) are the **2026-10-04** wave and stay
+   untouched; existing citations such as `english.jsonl:86` remain valid.
+8. **The raw layer is append-only.** Existing `.jsonl` files are never edited.
+   A correction is a new observation in a later wave plus a
+   `CONTRADICTIONS.md` entry; supersession happens only in the curated layer.
+   This includes disclosed mistakes (the `english.jsonl:86` attribution
+   splice stays as-is).
+9. **Exact duplicates are suppressed within a wave.** If `source.url`, `text`
+   and `source.date` are identical to a row already in the same wave, do not
+   file it again. Cross-source duplicates are kept — do not dedupe across
+   sources or across waves.
+10. **Uncataloged balls go to `pending/`.** Rows naming ids that are not yet
+    in `src/data/balls.ts` (DLC additions) are staged in `pending/<wave>.jsonl`.
+    The schema gate skips `pending/`, so `npm test` stays green. Promotion is
+    mechanical once the catalog includes the ids: add the aliases, move the
+    file to `<source>-<wave>.jsonl` at the top level, and re-run the gate. No
+    curated-layer entries until promoted.
 
 ## Rule hypotheses — test every behavior claim against these
 
@@ -78,11 +101,28 @@ them is worth more than a bare name. Mark agreement/disagreement in
   browser session are the only routes. Quote faithfully if retrieved.
 - **Fandom mirror:** scrape blocked from this network.
 
+## Curated layer (`fusion-pairs.json`)
+
+`fusion-pairs.json` is a per-wave snapshot: `generated` is the wave date and
+`claims` is the current best reading. Each pair also carries a `superseded`
+array recording claims a later wave dropped:
+
+```json
+"superseded": [
+  { "claim": "<the dropped reading>", "source": "<URL or file:line>", "superseded_by": "YYYY-MM-DD" }
+]
+```
+
+`superseded_by` is the wave date that replaced the claim. The array is empty
+for the current 2026-10-04 wave. Raw rows are never removed; supersession is
+recorded only here, so the audit stays machine-readable in the consumed layer.
+`CONTRADICTIONS.md` keeps one dated section per wave.
+
 ## Output
 
-Each agent writes one `<source>.jsonl` file in this directory (one JSON object
-per line, matching `schema.json`), plus a short summary of counts in its final
-report. Validate before finishing:
+Each agent writes one `<source>-<YYYY-MM-DD>.jsonl` file in this directory (one
+JSON object per line, matching `schema.json`), plus a short summary of counts
+in its final report. Validate before finishing:
 
 ```sh
 node --experimental-strip-types scripts/harvest/validate-observations.ts
