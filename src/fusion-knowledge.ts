@@ -2,10 +2,10 @@
 // src/fusion.ts owns the composition algorithm; this module owns the
 // classification facts that algorithm reads — the Destroy/cooldown/pierce/
 // kill classes, the one application-channel classifier (`channelsOf`, which
-// both the property model and the cross-wire model consume), the
-// spawn-inheritance classes, and the reported-fact table (caveat prose plus
-// reported exceptions). Keeping the
-// evidence here makes a research landing a one-table edit and lets every
+// reads the per-ball kit table in ball-kit.ts and falls back to the status-text
+// heuristic for balls the kit does not record), the spawn-inheritance classes,
+// and the reported-fact table (caveat prose plus reported exceptions). Keeping
+// the evidence here makes a research landing a one-table edit and lets every
 // predicate be unit-tested directly (src/fusion-knowledge.test.ts); the
 // corpus's general_rules_notes are the fixture the tables are checked against.
 //
@@ -13,9 +13,12 @@
 // predicates answer "what class is this ball in?", and `FUSION_FACTS` /
 // `factsFor()` are the reported copy and anomalies `fuse()` emits beside
 // the composed result. `fuse()` applies the table; it never names a pair.
+import { BALL_KIT, type Channel } from './ball-kit';
 import { BALLS, type Ball } from './data/balls';
 import { LEVEL_3_EFFECTS } from './data/level-3';
 import { pairKey } from './pair';
+
+export type { Channel } from './ball-kit';
 
 /** Level-3 component text for fusion (decision #12). The catalog keeps
  *  level-1 text for the browser; the fusion screen consumes L3 balls. */
@@ -122,76 +125,6 @@ export const isSpawnBound = (b: Ball): boolean =>
 
 // ---------- one application-channel classification per ball ----------
 
-/** The property model's application-channel vocabulary. Channels are
- *  set-valued: a ball can apply effects through more than one. */
-export type Channel = 'on-hit' | 'per-second' | 'spawn' | 'field';
-
-/** Explicit per-ball channel evidence — the property model's old hand-maintained
- *  `channels` column, moved here so one classifier answers for both models.
- *  The ids mirror BALL_PROPERTIES' keys (fusion-properties.test.ts pins that
- *  every kit ball has an entry). A listed ball is classified from evidence;
- *  every other ball falls back to the status-text heuristic. An empty array is
- *  an explicit "no application channel" (the bonus-damage stat balls), not a
- *  missing entry. */
-export const CHANNEL_EVIDENCE: Readonly<Record<string, readonly Channel[]>> = {
-  // --- cooldown class (the game-file I2 effect-text dump: exactly the balls
-  // whose text lists a cooldown) ---
-  'black-hole': ['on-hit'],
-  'bomb': ['on-hit'],
-  'dark': ['on-hit'],
-  'egg-sac': ['spawn'],
-  'nuclear-bomb': ['on-hit'],
-  'timestop': ['field'], // a field freeze; the text heuristic's hit default is wrong
-  'voluptuous-egg-sac': ['spawn'],
-
-  // --- burn profiles ---
-  'banished-flame': ['on-hit'],
-  'burn': ['on-hit'],
-  'sun': ['per-second', 'field'],
-  'brimstone': ['per-second', 'field'],
-  'inferno': ['per-second', 'field'],
-  'magma': ['spawn'],
-  'satan': ['per-second', 'field'],
-  'fireworks': ['spawn'],
-
-  // --- bonus-damage stat swaps: no application channel ---
-  'erosion': [],
-  'stone': [],
-  'drill': [],
-  'assassin': [],
-  'steel': [],
-
-  // --- freeze duration ---
-  'freeze-ray': ['on-hit'],
-  'blizzard': ['spawn'],
-  'freeze': ['on-hit'],
-  'wraith': ['on-hit'],
-  'glacier': ['spawn'],
-  'time': ['spawn'],
-
-  // --- poison stack caps ---
-  'poison': ['on-hit'],
-  'noxious': ['on-hit'],
-  'swamp': ['spawn'],
-
-  // --- radiation ---
-  'radiation-beam': ['on-hit'],
-  'x-ray': ['on-hit'],
-
-  // --- mosquito spawn variants ---
-  'mosquito-king': ['spawn'],
-  'mosquito-kingdom': ['spawn'],
-  'mosquito-swarm': ['spawn'],
-
-  // --- bleed stack caps ---
-  'bleed': ['on-hit'],
-  'sacrifice': ['on-hit'],
-  'leech': ['per-second', 'spawn'],
-
-  // --- AOE range ---
-  'overgrowth': ['on-hit'],
-};
-
 /** The status vocabulary's single-channel spelling, used by the text fallback
  *  for an override. */
 const CHANNEL_FROM_STATUS: Readonly<Record<'hit' | 'spawn' | 'field', Channel>> = {
@@ -212,12 +145,13 @@ function textChannels(b: Ball): readonly Channel[] {
   return ['on-hit'];
 }
 
-/** The one classification: how a ball applies its effects. Explicit evidence
- *  wins; otherwise the status-text heuristic classifies status balls. The
- *  property model (`resolveProperties`) and the cross-wire model
- *  (`statusChannel`) both consume this, so the two cannot drift. */
+/** The one classification: how a ball applies its effects. A recorded kit's
+ *  channels win (an empty array is an explicit "no application channel");
+ *  otherwise the status-text heuristic classifies status balls. The kit table
+ *  is the same one the order model reads, so the two cannot drift. */
 export function channelsOf(b: Ball): readonly Channel[] {
-  return CHANNEL_EVIDENCE[b.id] ?? textChannels(b);
+  const kit = BALL_KIT[b.id];
+  return kit ? kit.channels : textChannels(b);
 }
 
 /** The wire-relevant single channel: spawn-bound > field (including

@@ -11,40 +11,21 @@
 // the reported fusion facts in `fusion-knowledge.ts` (`FUSION_FACTS`), so a
 // research landing edits one table.
 //
-// Values are level-3 (v1.301, pre-DLC) and are hand-maintained here so the
-// model is testable and independent of the catalog's level-1 text. Every
-// value not marked `source: 'reported'` must appear verbatim in the generated
-// level-3 overlay (src/data/level-3.ts); data.test.ts enforces that.
-//
-// Application channels are not maintained here: `channelsOf` in
-// fusion-knowledge.ts is the one classifier. The property model consumes it
-// for the balls it records a kit for; the cross-wire model consumes the same
-// classifier through `statusChannel`.
+// Each ball's kit — its level-3 scalars and its application channels — lives
+// in one hand-maintained table, `BALL_KIT` in ball-kit.ts. This module only
+// resolves two kits; the cross-wire model reads the same table through
+// `channelsOf` / `statusChannel` in fusion-knowledge.ts, so the two cannot
+// drift.
 //
 // Evidence bar (decision #7): a pair or rule enters the model with tier 1–2
 // evidence — game files, in-game tooltips, controlled tests, or multiple
 // independent current-version reports. Single reports become caveats, and a
 // collision on a pair without direct evidence is marked `reported`.
 import type { Ball } from './data/balls';
-import { channelsOf, type Channel } from './fusion-knowledge';
+import { BALL_KIT, type BallKit, type Channel, type ScalarProperty } from './ball-kit';
 import { pairKey } from './pair';
 
-export interface ScalarProperty {
-  /** Stable key; a shared key is a collision. */
-  key: string;
-  /** Display label for the presentation's collision rows. */
-  label: string;
-  /** Level-3 value, verbatim from the L3 fact base unless `source` says
-   *  otherwise. */
-  value: string;
-  /** `reported` marks a value from a community report rather than the L3
-   *  fact base (e.g. a range the wiki text does not state). */
-  source?: 'reported';
-}
-
-export interface BallProperties {
-  scalars: ScalarProperty[];
-}
+export type { ScalarProperty } from './ball-kit';
 
 export interface PropertyCollision {
   key: string;
@@ -73,96 +54,7 @@ export interface ResolvedProperties {
   collisions: PropertyCollision[];
 }
 
-const EMPTY: BallProperties = { scalars: [] };
-
-const scalar = (key: string, label: string, value: string, source?: 'reported'): ScalarProperty =>
-  source ? { key, label, value, source } : { key, label, value };
-
-const cooldown = (value: string) => scalar('cooldown', 'Cooldown', value);
-const burnMax = (value: string) => scalar('burn-max-stacks', 'Burn max stacks', value);
-const burnDuration = (value: string) => scalar('burn-duration', 'Burn duration', value);
-const burnDamage = (value: string) => scalar('burn-per-stack-damage', 'Burn damage per stack', value);
-const bonusDamage = (value: string) => scalar('bonus-damage', 'Bonus damage', value);
-const freezeDuration = (value: string) => scalar('freeze-duration', 'Freeze duration', value);
-const poisonMax = (value: string) => scalar('poison-max-stacks', 'Poison max stacks', value);
-const poisonDamage = (value: string) => scalar('poison-per-stack-damage', 'Poison damage per stack', value);
-const radiationDuration = (value: string) => scalar('radiation-duration', 'Radiation duration', value);
-const radiationMax = (value: string) => scalar('radiation-max-stacks', 'Radiation max stacks', value);
-const mosquitoSpawn = (value: string) => scalar('mosquito-spawn', 'Mosquito spawn', value);
-const bleedMax = (value: string) => scalar('bleed-max-stacks', 'Bleed max stacks', value);
-const range = (value: string, source?: 'reported') => scalar('range', 'Range', value, source);
-
-/**
- * Hand-maintained level-3 property table. Only properties that participate in
- * the fusion model are recorded; an unlisted ball has no recorded properties.
- * Keep values verbatim from docs/research/level-3-effects.md (data.test.ts
- * checks the non-reported ones).
- */
-export const BALL_PROPERTIES: Record<string, BallProperties> = {
-  // --- cooldown class (the game-file I2 effect-text dump: exactly the balls
-  // whose text lists a cooldown) ---
-  'black-hole': { scalars: [cooldown('5 second')] },
-  'bomb': { scalars: [cooldown('3 second')] },
-  'dark': { scalars: [cooldown('3 second')] },
-  'egg-sac': { scalars: [cooldown('3 second')] },
-  'nuclear-bomb': {
-    scalars: [cooldown('3 second'), radiationDuration('indefinitely'), radiationMax('max 5 stacks'), range('5x5 tiles', 'reported')],
-  },
-  'timestop': { scalars: [cooldown('20 second'), freezeDuration('6.0 seconds')] },
-  'voluptuous-egg-sac': { scalars: [cooldown('3 second')] },
-
-  // --- burn profiles (first pick's cap/duration/damage dominate) ---
-  'banished-flame': { scalars: [burnMax('max 8 stacks'), burnDuration('2 seconds'), burnDamage('1–35')] },
-  'burn': { scalars: [burnMax('max 5 stacks'), burnDuration('5 seconds'), burnDamage('7–11')] },
-  'sun': { scalars: [burnMax('max 5 stacks'), burnDuration('8 seconds'), burnDamage('9–15')] },
-  'brimstone': {
-    scalars: [burnMax('max 4 stacks'), burnDamage('1–7'), poisonMax('max 4 stacks'), poisonDamage('3–5')],
-  },
-  'inferno': { scalars: [burnDuration('10 seconds'), burnDamage('6–10')] },
-  'magma': { scalars: [burnMax('max 3 stacks'), burnDuration('3 seconds'), burnDamage('5–10')] },
-  'satan': { scalars: [burnMax('max 5 stacks'), burnDamage('15–30')] },
-  'fireworks': { scalars: [burnDamage('10–14')] },
-
-  // --- bonus-damage stat swaps (Erosion × Stone/Drill/Assassin/Steel) ---
-  'erosion': { scalars: [bonusDamage('5%')] },
-  'stone': { scalars: [bonusDamage('400%')] },
-  'drill': { scalars: [bonusDamage('100%')] },
-  'assassin': { scalars: [bonusDamage('50%')] },
-  'steel': { scalars: [bonusDamage('15%')] },
-
-  // --- freeze duration (Freeze Ray × Blizzard is the reported pair) ---
-  'freeze-ray': { scalars: [freezeDuration('13.0 seconds')] },
-  'blizzard': { scalars: [freezeDuration('1.3 seconds')] },
-  'freeze': { scalars: [freezeDuration('8.0 seconds')] },
-  'wraith': { scalars: [freezeDuration('1.8 seconds')] },
-  'glacier': { scalars: [freezeDuration('3.0 seconds')] },
-  'time': { scalars: [freezeDuration('3.0 seconds')] },
-
-  // --- poison stack caps (Noxious × Poison / × Brimstone) ---
-  'poison': { scalars: [poisonMax('max 8 stacks')] },
-  // Noxious's L3 text states the applied count ("applies 3 stacks"), not a
-  // cap; the Nov 2026 report treats it as the cap against Brimstone's max 4.
-  'noxious': { scalars: [poisonMax('3 stacks')] },
-  'swamp': { scalars: [poisonMax('max 8 stacks')] },
-
-  // --- radiation duration (Radiation Beam × Nuclear Bomb) ---
-  'radiation-beam': { scalars: [radiationDuration('15 seconds'), radiationMax('max 5 stacks')] },
-  'x-ray': { scalars: [radiationMax('max 5 stacks')] },
-
-  // --- mosquito spawn variant (Mosquito Swarm × Mosquito King) ---
-  'mosquito-king': { scalars: [mosquitoSpawn('a mosquito')] },
-  'mosquito-kingdom': { scalars: [mosquitoSpawn('2–3 mosquitos')] },
-  'mosquito-swarm': { scalars: [mosquitoSpawn('4–8 mosquitos')] },
-
-  // --- bleed stack caps (Leech × Sacrifice: different channels union, the
-  // shared cap resolves to the first pick) ---
-  'bleed': { scalars: [bleedMax('max 14 stacks')] },
-  'sacrifice': { scalars: [bleedMax('max 20 stacks')] },
-  'leech': { scalars: [bleedMax('max 48 stacks')] },
-
-  // --- AOE range (Nuke × Overgrowth: first pick's range wins) ---
-  'overgrowth': { scalars: [range('3x3 tile')] },
-};
+const EMPTY_KIT: BallKit = { scalars: [], channels: [] };
 
 /** Pairs whose collision is backed by direct tier 1–2 evidence. Every other
  *  collision is a prediction of the general rule and is marked `reported`.
@@ -180,25 +72,19 @@ const CONFIRMED_PAIRS = new Set([
   'leech+sacrifice',
 ]);
 
-/** The channels a ball contributes to the order model. Only balls with a
- *  recorded kit participate; a ball the model does not record has no modeled
- *  properties, so it contributes no channels. Its classification still exists
- *  in `channelsOf` for the wire model. */
-const propertyChannels = (b: Ball): readonly Channel[] =>
-  BALL_PROPERTIES[b.id] ? channelsOf(b) : [];
-
 /**
  * Resolve two kits in selection order: `a` is the first-selected ball.
- * Channels union (from the one classifier, for balls with a recorded kit);
- * scalar keys union; a shared key whose values differ is a collision won by
- * `a`. Equal values are not a functional collision (order cannot matter when
- * the value is the same).
+ * Channels union from the recorded kits; scalar keys union; a shared key whose
+ * values differ is a collision won by `a`. Equal values are not a functional
+ * collision (order cannot matter when the value is the same). A ball the kit
+ * table does not record contributes nothing — its classification still exists
+ * in `channelsOf` for the wire model.
  */
 export function resolveProperties(a: Ball, b: Ball): ResolvedProperties {
-  const pa = BALL_PROPERTIES[a.id] ?? EMPTY;
-  const pb = BALL_PROPERTIES[b.id] ?? EMPTY;
+  const pa = BALL_KIT[a.id] ?? EMPTY_KIT;
+  const pb = BALL_KIT[b.id] ?? EMPTY_KIT;
 
-  const channels = [...new Set([...propertyChannels(a), ...propertyChannels(b)])];
+  const channels = [...new Set([...pa.channels, ...pb.channels])];
   const scalars: ScalarProperty[] = [...pa.scalars];
   const collisions: PropertyCollision[] = [];
   const confirmed = CONFIRMED_PAIRS.has(pairKey(a.id, b.id));

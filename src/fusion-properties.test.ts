@@ -1,36 +1,46 @@
 // Fusion property model tests — the order-mechanics decision (#7).
 import { describe, it, expect } from 'vitest';
-import { BALL_PROPERTIES, resolveProperties } from './fusion-properties';
-import { CHANNEL_EVIDENCE, channelsOf } from './fusion-knowledge';
+import { resolveProperties } from './fusion-properties';
+import { BALL_KIT } from './ball-kit';
+import { channelsOf } from './fusion-knowledge';
 import { ballMap } from './catalog';
 
 const ball = (id: string) => ballMap.get(id)!;
 
-describe('property table', () => {
+describe('ball kit table', () => {
   it('every key resolves to a catalog ball', () => {
-    for (const id of Object.keys(BALL_PROPERTIES)) expect(ballMap.has(id), id).toBe(true);
+    for (const id of Object.keys(BALL_KIT)) expect(ballMap.has(id), id).toBe(true);
   });
 
   it('every entry has unique scalar keys', () => {
-    for (const [id, props] of Object.entries(BALL_PROPERTIES)) {
-      const keys = props.scalars.map((s) => s.key);
+    for (const [id, kit] of Object.entries(BALL_KIT)) {
+      const keys = kit.scalars.map((s) => s.key);
       expect(new Set(keys).size, `${id}: duplicate scalar key`).toBe(keys.length);
-      for (const s of props.scalars) expect(s.value.length, `${id} ${s.key}: empty value`).toBeGreaterThan(0);
+      for (const s of kit.scalars) expect(s.value.length, `${id} ${s.key}: empty value`).toBeGreaterThan(0);
     }
   });
 
-  it('the channel column is gone: every kit ball is classified by channelsOf', () => {
-    for (const id of Object.keys(BALL_PROPERTIES)) {
-      expect(ballMap.has(id), id).toBe(true);
-      // Every kit ball has explicit channel evidence — including the stat
-      // balls' explicit "no channel" (an empty array, not a missing entry).
-      expect(Object.prototype.hasOwnProperty.call(CHANNEL_EVIDENCE, id), `${id}: no channel evidence`).toBe(true);
+  it('carries channels in the same entry, including explicit none for the stat balls', () => {
+    for (const [id, kit] of Object.entries(BALL_KIT)) {
+      expect(Array.isArray(kit.channels), `${id}: channels must be an array`).toBe(true);
+      expect(new Set(kit.channels).size, `${id}: duplicate channel`).toBe(kit.channels.length);
+    }
+    // An empty array is an explicit "no application channel", not a missing
+    // entry: the bonus-damage stat swaps carry no effect.
+    for (const id of ['erosion', 'stone', 'drill', 'assassin', 'steel']) {
+      expect(BALL_KIT[id].channels, `${id}: stat ball has no application channel`).toEqual([]);
+    }
+  });
+
+  it('the classifier reads the kit channels for every recorded ball', () => {
+    for (const [id, kit] of Object.entries(BALL_KIT)) {
+      expect(channelsOf(ball(id)), `${id}: classifier drifted from the kit`).toEqual(kit.channels);
     }
   });
 
   it('the only reported (non-L3) value is the Nuke range', () => {
-    const reported = Object.entries(BALL_PROPERTIES).flatMap(([id, p]) =>
-      p.scalars.filter((s) => s.source === 'reported').map((s) => `${id}:${s.key}`),
+    const reported = Object.entries(BALL_KIT).flatMap(([id, kit]) =>
+      kit.scalars.filter((s) => s.source === 'reported').map((s) => `${id}:${s.key}`),
     );
     expect(reported).toEqual(['nuclear-bomb:range']);
   });
@@ -42,20 +52,20 @@ describe('resolveProperties', () => {
     expect(r.channels).toEqual(['per-second', 'spawn', 'on-hit']);
   });
 
-  it('channels come from the one classifier, scoped to recorded kits', () => {
+  it('channels come from the recorded kits, scoped to kit balls', () => {
     // Flash has a classifier channel (on-hit) but no recorded kit, so the
     // order model contributes no channels for it; the wire model still sees
     // its channel through channelsOf.
     expect(channelsOf(ball('flash'))).toEqual(['on-hit']);
     expect(resolveProperties(ball('flash'), ball('iron')).channels).toEqual([]);
-    // A kit ball's channels come from the same classifier.
+    // A kit ball's channels are its kit's channels.
     expect(resolveProperties(ball('leech'), ball('sacrifice')).channels)
-      .toEqual([...new Set([...channelsOf(ball('leech')), ...channelsOf(ball('sacrifice'))])]);
+      .toEqual([...new Set([...BALL_KIT['leech'].channels, ...BALL_KIT['sacrifice'].channels])]);
   });
 
-  it('every kit ball contributes exactly its channelsOf classification', () => {
-    for (const id of Object.keys(BALL_PROPERTIES)) {
-      expect(resolveProperties(ball(id), ball('iron')).channels, id).toEqual(channelsOf(ball(id)));
+  it('every kit ball contributes exactly its kit channels', () => {
+    for (const [id, kit] of Object.entries(BALL_KIT)) {
+      expect(resolveProperties(ball(id), ball('iron')).channels, id).toEqual(kit.channels);
     }
   });
 

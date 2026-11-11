@@ -7,7 +7,7 @@ import { CHARACTERS } from './data/characters';
 import { TAGS } from './data/tags';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { LEVEL_3_EFFECTS } from './data/level-3';
-import { BALL_PROPERTIES } from './fusion-properties';
+import { BALL_KIT } from './ball-kit';
 import { pairKey } from './pair';
 import { byId, complexity } from './graph';
 
@@ -205,10 +205,10 @@ describe('fusion property table agrees with the level-3 overlay', () => {
   // not marked `source: 'reported'` must appear verbatim in the generated L3
   // text, so the table and the composer cannot drift apart.
   it('every non-reported scalar value appears in the ball\'s L3 text', () => {
-    for (const [ballId, props] of Object.entries(BALL_PROPERTIES)) {
+    for (const [ballId, kit] of Object.entries(BALL_KIT)) {
       const text = LEVEL_3_EFFECTS[ballId];
-      expect(text, `property table key "${ballId}" has no level-3 text`).toBeTruthy();
-      for (const s of props.scalars) {
+      expect(text, `ball kit key "${ballId}" has no level-3 text`).toBeTruthy();
+      for (const s of kit.scalars) {
         if (s.source === 'reported') continue;
         expect(text.includes(s.value), `${ballId} ${s.key}: "${s.value}" not in L3 text`).toBe(true);
       }

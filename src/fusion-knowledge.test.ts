@@ -6,6 +6,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { BALLS } from './data/balls';
 import { ballMap } from './catalog';
+import { BALL_KIT } from './ball-kit';
 import {
   AOE_EXCLUDED_IDS,
   ASSASSIN_BACK_ARMOR_CAVEAT,
@@ -14,7 +15,6 @@ import {
   BROOD_MOTHER_FLASH_REPORT_FRAGMENT,
   BROOD_MOTHER_INHERITANCE_CAVEAT,
   BROOD_MOTHER_TRIGGER_CAVEAT,
-  CHANNEL_EVIDENCE,
   CHANNEL_OVERRIDES,
   COOLDOWN_CLASS_IDS,
   DARK_MULTIPLIER_CAVEAT,
@@ -76,7 +76,7 @@ describe('knowledge tables', () => {
       for (const id of ids) expect(ballMap.has(id), `${name}: ${id}`).toBe(true);
     }
     for (const id of Object.keys(CHANNEL_OVERRIDES)) expect(ballMap.has(id), `CHANNEL_OVERRIDES: ${id}`).toBe(true);
-    for (const id of Object.keys(CHANNEL_EVIDENCE)) expect(ballMap.has(id), `CHANNEL_EVIDENCE: ${id}`).toBe(true);
+    for (const id of Object.keys(BALL_KIT)) expect(ballMap.has(id), `BALL_KIT: ${id}`).toBe(true);
     for (const key of KILL_DISPUTED_PAIRS) {
       for (const id of key.split('+')) expect(ballMap.has(id), `KILL_DISPUTED_PAIRS: ${id}`).toBe(true);
     }
@@ -201,6 +201,16 @@ describe('one application-channel classification per ball', () => {
   it('explicit evidence wins over the text heuristic (Timestop is a field effect)', () => {
     expect(channelsOf(ball('timestop'))).toEqual(['field']);
     expect(statusChannel(ball('timestop'))).toBe('field');
+  });
+
+  it('reads the kit table first and falls back to the text heuristic', () => {
+    for (const [id, kit] of Object.entries(BALL_KIT)) {
+      expect(channelsOf(ball(id)), `${id}: kit channels`).toEqual(kit.channels);
+    }
+    // Flash has no recorded kit; its on-hit channel comes from the text
+    // heuristic, and the wire model still sees it.
+    expect(BALL_KIT['flash']).toBeUndefined();
+    expect(channelsOf(ball('flash'))).toEqual(['on-hit']);
   });
 
   it('a non-status ball can have application channels but no wire channel', () => {
