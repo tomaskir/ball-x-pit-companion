@@ -323,7 +323,7 @@ export function validateEditorial(editorial: EditorialMaps, ids: EditorialEntity
     entries: Record<string, unknown>,
     missing: string,
   ): void => {
-    for (const id of entityIds) if (!(id in entries)) findings.push(`${kind} missing ${missing}: ${id}`);
+    for (const id of entityIds) if (!Object.hasOwn(entries, id)) findings.push(`${kind} missing ${missing}: ${id}`);
     for (const key of Object.keys(entries)) if (!entityIds.has(key)) findings.push(`${kind} ${missing} for unknown id: ${key}`);
   };
 

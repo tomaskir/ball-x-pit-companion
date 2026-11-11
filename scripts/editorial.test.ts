@@ -133,9 +133,21 @@ describe('validateEditorial: the wildcard', () => {
     expect(validateEditorial(editorial, ids)).toContain(`wildcard ${WILDCARD} is used 2 times; it must be unique`);
   });
 
-  it('reports the wildcard in an entity tag list', () => {
+  it('reports the wildcard in a ball tag list', () => {
     const editorial = valid();
     editorial.BALL_TAGS.iron = [WILDCARD];
     expect(validateEditorial(editorial, ids)).toContain(`ball iron: wildcard ${WILDCARD} is only valid in character verdicts`);
+  });
+
+  it('reports the wildcard in a passive tag list', () => {
+    const editorial = valid();
+    editorial.PASSIVE_TAGS.magnet = [WILDCARD];
+    expect(validateEditorial(editorial, ids)).toContain(`passive magnet: wildcard ${WILDCARD} is only valid in character verdicts`);
+  });
+
+  it('accepts a single wildcard use', () => {
+    const editorial = valid();
+    editorial.CHAR_VERDICTS.alpha = [{ tag: WILDCARD, verdict: 'red', note: 'Why' }];
+    expect(validateEditorial(editorial, ids)).toEqual([]);
   });
 });

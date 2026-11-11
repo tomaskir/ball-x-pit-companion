@@ -107,10 +107,12 @@ describe('validateGenerated: one invariant list', () => {
     expect(validateGenerated(data, editorialOrphan)).toContain('ball tags for unknown id: ghost');
   });
 
-  it('reports a typo\'d editorial tag key', () => {
+  it('reports a typo\'d editorial tag key once (data-side and editorial-side agree)', () => {
     const data = valid();
     const editorialTypo = { ...editorial, BALL_TAGS: { ...editorial.BALL_TAGS, iron: ['aoe', 'nope'] } };
-    expect(validateGenerated(data, editorialTypo)).toContain('ball iron: unknown tag nope');
+    const findings = validateGenerated(data, editorialTypo);
+    expect(findings).toContain('ball iron: unknown tag nope');
+    expect(findings.filter((f) => f === 'ball iron: unknown tag nope')).toHaveLength(1);
   });
 
   it('reports an unknown level-3 key', () => {
