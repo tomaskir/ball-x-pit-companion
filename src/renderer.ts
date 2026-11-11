@@ -1050,9 +1050,9 @@ function paintSelectionBoxes(vm: ViewModel) {
 /** The build seam: everything the island injects at build time.
  *  `getVerdict` supplies the toast adapter's per-item verdict against the
  *  current character selection; `emit` is how the built-in click handlers
- *  report selection toggles back — the island dispatches the whole
- *  ToggleAction and paints. The renderer stays paint-only: it never
- *  dispatches DOM events and never touches view state. */
+ *  report actions back (selection toggles and the fusion order swap) — the
+ *  island dispatches the whole ToggleAction and paints. The renderer stays
+ *  paint-only: it never dispatches DOM events and never touches view state. */
 export interface BuildOptions {
   getVerdict: (item: Item) => Verdict | null;
   emit: (action: ToggleAction) => void;

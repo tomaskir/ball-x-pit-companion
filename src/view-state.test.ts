@@ -305,7 +305,7 @@ describe('view state: fusion panel order presentation (decision #8)', () => {
     expect(fp.orderSensitive).toBe(true);
     expect(fp.orderNotice).toContain('Order matters');
     expect(fp.orderNotice).toContain('Cooldown');
-    expect(fp.resultEmptyText).toBe('No shared properties.');
+    expect(fp.resultEmptyText).toBe('');
   });
 
   it('a pair with no shared properties is not order-sensitive and carries no notice', () => {

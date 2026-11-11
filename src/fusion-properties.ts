@@ -12,9 +12,9 @@
 // - `resolveProperties(a, b)` — the general rule: union the kits, resolve
 //   shared scalar keys to the first pick, and report the collisions.
 // - `FUSION_EXCEPTIONS` / `exceptionsFor(a, b)` — the reported anomalies the
-//   general rule deliberately does not encode (Nuke × Wraith, Black Hole ×
-//   Sun direction, Time bubble, Banshee). Each carries its source and
-//   confidence for the presentation's "Reported exceptions" section (#8).
+//   general rule deliberately does not encode (Nuke × Wraith, Time bubble,
+//   Banshee). Each carries its source and confidence for the presentation's
+//   "Reported exceptions" section (#8).
 //
 // Values are level-3 (v1.301, pre-DLC) and are hand-maintained here so the
 // model is testable and independent of the catalog's level-1 text. Every

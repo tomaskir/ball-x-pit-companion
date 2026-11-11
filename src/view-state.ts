@@ -70,9 +70,10 @@ export type FusionPanelState =
       orderSensitive: boolean;
       /** The warning line above the action row; '' when not order-sensitive. */
       orderNotice: string;
-      /** Empty "Fused result" copy: order-sensitive pairs say only that no
-       *  shared properties exist; order-independent pairs add that order
-       *  does not matter. Derived here so the renderer only paints it. */
+      /** Empty "Fused result" copy, set only when the pair has no collisions:
+       *  order-sensitive pairs say only that no shared properties exist;
+       *  order-independent pairs add that order does not matter; '' when
+       *  result rows exist. Derived here so the renderer only paints it. */
       resultEmptyText: string;
       /** Shared-property collisions, already resolved by the composer. */
       collisions: PropertyCollision[];
@@ -197,11 +198,14 @@ const orderPresentation = (
 ): { orderSensitive: boolean; orderNotice: string; resultEmptyText: string } => {
   if (fusion.evolvesInstead) return { orderSensitive: false, orderNotice: '', resultEmptyText: '' };
   const orderSensitive = fusion.collisions.length > 0 || fusion.exceptions.some((e) => e.orderDependent);
-  // An exception-only order-sensitive pair has no shared properties, but
-  // order still matters — the warning line above the action row says so.
-  const resultEmptyText = orderSensitive
-    ? 'No shared properties.'
-    : 'No shared properties — order does not matter.';
+  // Only pairs with no collisions reach the empty-result copy. An
+  // exception-only order-sensitive pair has no shared properties, but order
+  // still matters — the warning line above the action row says so.
+  const resultEmptyText = fusion.collisions.length > 0
+    ? ''
+    : orderSensitive
+      ? 'No shared properties.'
+      : 'No shared properties — order does not matter.';
   if (!orderSensitive) return { orderSensitive: false, orderNotice: '', resultEmptyText };
   const orderNotice = fusion.collisions.length
     ? `⚠ Order matters for this pair — swapping changes ${labelList(fusion.collisions.map((c) => c.label))}.`

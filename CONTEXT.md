@@ -198,8 +198,9 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
 - **Build seam** — the options object `buildAll({ getVerdict, emit })` hands
   the island's two callbacks to the renderer at build time: `getVerdict`
   feeds the toast, `emit(action)` is how built-in click handlers report
-  selection toggles back (the whole view-state `ToggleAction`, which the
-  island dispatches verbatim and paints). The renderer stays paint-only —
+  actions back — selection toggles and the fusion order swap (the whole
+  view-state `ToggleAction`, which the island dispatches verbatim and
+  paints). The renderer stays paint-only —
   it never dispatches DOM events and never depends on view state at runtime
   (its view-state imports are types only; pinned in `src/regression.test.ts`,
   the emit wiring behaviorally in `src/renderer.test.ts`).
@@ -241,8 +242,9 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   are built once and repainted in place; the plan's entries and the
   character chips rebuild only when their content key changes — the
   renderer's internal **reconcile seam**, one painted-key map shared by the
-  chips, the plan sections, the panel icons, the selection boxes, and the
-  panel's plan button — whose once-built click handler reads the compose
+  chips, the plan sections, the panel icons, the fusion result rows and
+  exceptions, the selection boxes, and the panel's plan button — whose
+  once-built click handler reads the compose
   order from its painted key, the same channel every repaint refreshes; no
   second stashed state lives beside it).
   Tiles, character cards, chips, toasts, the fusion screen,
@@ -303,8 +305,8 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   Balls, the composed fusion from `src/fusion.ts`, the pair's `planned`
   mark, `planFull` — the plan's ball slots at their active limit, which
   disables the panel's plan toggle — and the order presentation derived
-  here: `orderSensitive`, `orderNotice`, and the composer's structured
-  `collisions` / `exceptions`) — derived in one
+  here: `orderSensitive`, `orderNotice`, `resultEmptyText`, and the
+  composer's structured `collisions` / `exceptions`) — derived in one
   place, so the renderer switches on the state instead of re-deriving picks
   from hidden toggles. `swapFusion` reverses the two picks (a,b → b,a) and
   recomputes the panel; it is a no-op with fewer than two picks. The island listens to DOM events, dispatches, and

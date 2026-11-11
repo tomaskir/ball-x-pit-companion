@@ -12,6 +12,7 @@ import { deriveBuildGraph, FUSION_ID_PREFIX } from './build-graph';
 import { verdictFor } from './synergy';
 import { fuse } from './fusion';
 import { encodePlan, takeShareParam } from './share';
+import { createViewState } from './view-state';
 import { readFileSync } from 'node:fs';
 import { expectHiddenBeatsAuthorDisplay, expectFusionListScrollbarPermanentAndSeparated, expectSlotHighlightsIdentical } from './test-support/pins';
 import { mountShell } from './test-support/containers';
@@ -604,5 +605,20 @@ describe('regression: Black Hole × Sun order dispute was resolved to order-inde
   it('no longer surfaces as a reported exception', () => {
     const result = fuse(ballMap.get('black-hole')!, ballMap.get('sun')!);
     expect(result!.exceptions).toEqual([]);
+  });
+});
+
+describe('regression: resultEmptyText claimed "No shared properties" for pairs that have collisions', () => {
+  // The empty-result copy was derived from orderSensitive alone, so a
+  // collision pair (Egg Sac × Timestop) carried "No shared properties." The
+  // renderer hides it when rows exist, but the view model must not expose a
+  // false copy — and the test pinned it.
+  it('is blank when the pair has collision rows', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleFusion', id: 'egg-sac' });
+    const vm = view.dispatch({ type: 'toggleFusion', id: 'timestop' });
+    const fp = vm.fusionPanel as Extract<typeof vm.fusionPanel, { state: 'composed' }>;
+    expect(fp.collisions.length).toBeGreaterThan(0);
+    expect(fp.resultEmptyText).toBe('');
   });
 });
