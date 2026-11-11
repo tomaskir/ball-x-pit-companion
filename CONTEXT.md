@@ -295,12 +295,13 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   grid the renderer paints is one merged, complexity-ordered list
   (`PlanBallEntry`: a single or a fused pair — a pair is ONE entry), not
   two lists the renderer concatenates. The shared
-  remove-or-add toggle shape (`stickyToggle`), hydrate's per-list restore
-  (`hydrateList`), and `isFusable` are homed here too — view-state's
-  character slots and fusion picks import them, and plan-state must not
-  import view-state (no runtime cycle). The plan-capacity helpers
-  `ballSlotsUsed` / `ballCapacity` (a fused pair counts as ONE ball slot —
-  one definition, not one per call site) also live here.
+  remove-or-add toggle shape (`stickyToggle`) and hydrate's per-list restore
+  (`hydrateList`) are homed here too — view-state's character slots and
+  fusion picks import them, and plan-state must not import view-state (no
+  runtime cycle). `isFusable` (the one fusable-set definition, derived from
+  `fusionBalls()`) is exported here for hydrate's pair validation and
+  view-state's fusion label. The ball-slot rule (a fused pair counts as ONE
+  slot) is one internal definition, not one per call site.
 - **View state** — the island's state (item selection, character slots,
   fusion picks, per-screen search queries) and every derivation from it
   (highlight walks, filters, verdict badges, the composed fusion, the

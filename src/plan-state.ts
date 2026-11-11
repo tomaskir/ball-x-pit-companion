@@ -109,20 +109,19 @@ const LIMITS: { on: PlanLimits; off: PlanLimits } = {
 const activeLimits = (upgradesOn: boolean): PlanLimits => (upgradesOn ? LIMITS.on : LIMITS.off);
 
 /** Ball slots a plan occupies: every single ball is one slot, and a fused
- *  pair is ONE slot (the pair replaces its two components). The one
- *  definition every ball-side capacity read routes through. */
-export const ballSlotsUsed = (balls: readonly string[], fused: readonly PlanFused[]): number =>
+ *  pair is ONE slot (the pair replaces its two components) — one internal
+ *  definition, not one per call site. */
+const ballSlotsUsed = (balls: readonly string[], fused: readonly PlanFused[]): number =>
   balls.length + fused.length;
-/** The ball-side slot capacity the plan's singles and fused pairs share. */
-export const ballCapacity = (limits: PlanLimits): number => limits.balls;
 
 /** Fused-pair identity is the unordered pair key (src/pair.ts), so the
  *  reverse composition is the same planned pair. */
 const samePair = (p: PlanFused, a: string, b: string): boolean => pairKey(p.a, p.b) === pairKey(a, b);
 
-/** Fusable upgrade entities, indexed once — Baby Ball is not one. Needed
- *  here for hydrate's fused-pair validation and in view-state for the
- *  selection box's fusion label; one definition, exported. */
+/** Fusable upgrade entities, indexed once — Baby Ball is not one. The one
+ *  fusable-set definition, derived from `fusionBalls()` (the rule's home in
+ *  src/fusion.ts); plan-state's hydrate validation and view-state's fusion
+ *  label both consume it, so it stays exported. */
 const FUSABLE = new Set(fusionBalls().map((b) => b.id));
 export const isFusable = (id: string): boolean => FUSABLE.has(id);
 
@@ -206,7 +205,7 @@ export function createPlanState() {
       .map((e, i) => ({ ...e, overLimit: i >= limits.passives }));
     const overLimit =
       selectedChars.length > limits.chars ||
-      ballSlots > ballCapacity(limits) ||
+      ballSlots > limits.balls ||
       planPassives.length > limits.passives;
     return {
       upgradesOn,
@@ -242,7 +241,7 @@ export function createPlanState() {
             // the passive list owns its limit outright; the ball list shares
             // the ball capacity with the fused pairs (a pair is ONE slot), so
             // room is "slots used < capacity", not this list's length
-            (list) => passive ? list.length < limits.passives : ballSlotsUsed(list, planFused) < ballCapacity(limits),
+            (list) => passive ? list.length < limits.passives : ballSlotsUsed(list, planFused) < limits.balls,
             (id) => id === action.id, () => action.id);
           break;
         }
@@ -250,7 +249,7 @@ export function createPlanState() {
         // reverse composition toggles the same pair); adding past the ball
         // limit is a no-op. Compose order is kept for display.
         case 'togglePlanFusion':
-          stickyToggle(planFused, (list) => ballSlotsUsed(planBalls, list) < ballCapacity(activeLimits(upgradesOn)),
+          stickyToggle(planFused, (list) => ballSlotsUsed(planBalls, list) < activeLimits(upgradesOn).balls,
             (p) => samePair(p, action.a, action.b), () => ({ a: action.a, b: action.b }));
           break;
         case 'toggleUpgrades': upgradesOn = !upgradesOn; break;

@@ -272,6 +272,21 @@ describe('plan state: hydrate (plan side)', () => {
     expect(state.snapshot([]).chars).toEqual([]);
   });
 
+  it('drops fused pairs whose components are not fusable (Baby Ball is not an upgrade entity)', () => {
+    const state = createPlanState();
+    state.dispatch({
+      type: 'hydrate',
+      plan: {
+        upgradesOn: true,
+        chars: [],
+        balls: [],
+        passives: [],
+        fused: [{ a: 'baby-ball', b: 'flash' }],
+      },
+    });
+    expect(fusedOf(state.derive([]))).toHaveLength(0);
+  });
+
   it('validates fused pairs: unknown/non-ball/degenerate/duplicate pairs are dropped', () => {
     const state = createPlanState();
     state.dispatch({
