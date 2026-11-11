@@ -113,12 +113,12 @@ const activeLimits = (upgradesOn: boolean): PlanLimits => (upgradesOn ? LIMITS.o
 /** Ball slots a plan occupies: every single ball is one slot, and a fused
  *  pair is ONE slot (the pair replaces its two components) — one internal
  *  definition, not one per call site. */
-const ballSlotsUsed = (ballCount: number, fusedCount: number): number =>
-  ballCount + fusedCount;
+const ballSlotsUsed = (balls: readonly Ball[], fused: readonly ResolvedFusedPair[]): number =>
+  balls.length + fused.length;
 
 /** A planned fused pair resolved to its catalog balls — the pick list's
  *  stored shape. The snapshot maps it back to the persisted id pair. */
-interface ResolvedFused { a: Ball; b: Ball; }
+interface ResolvedFusedPair { a: Ball; b: Ball; }
 
 export function createPlanState() {
   /** The plan's End game upgrades toggle — on by default. */
@@ -135,7 +135,7 @@ export function createPlanState() {
     // is ONE slot), so room is "slots used < capacity", not this list's length.
     // `planFused` is declared below; the callback runs only after
     // createPlanState returns, so the forward reference is safe.
-    hasRoom: (list) => ballSlotsUsed(list.length, planFused.list().length) < activeLimits(upgradesOn).balls,
+    hasRoom: (list) => ballSlotsUsed(list, planFused.list()) < activeLimits(upgradesOn).balls,
   });
   const planPassives = createPickList<Passive, string>({
     resolve: (id) => passiveMap.get(id),
@@ -147,14 +147,14 @@ export function createPlanState() {
    *  planned pair. Resolution rejects unknown ids, non-fusable balls (Baby
    *  Ball), and degenerate pairs — derive() can therefore never meet a bad
    *  component. */
-  const planFused = createPickList<ResolvedFused, PlanFused>({
+  const planFused = createPickList<ResolvedFusedPair, PlanFused>({
     resolve: (p) => {
       const a = ballMap.get(p.a);
       const b = ballMap.get(p.b);
       return a && b && a.id !== b.id && isFusable(a.id) && isFusable(b.id) ? { a, b } : undefined;
     },
     key: (p) => pairKey(p.a.id, p.b.id),
-    hasRoom: (list) => ballSlotsUsed(planBalls.list().length, list.length) < activeLimits(upgradesOn).balls,
+    hasRoom: (list) => ballSlotsUsed(planBalls.list(), list) < activeLimits(upgradesOn).balls,
   });
 
   /** Apply a normalized plan to the in-memory state, keyed by PlanSnapshot's
@@ -188,7 +188,7 @@ export function createPlanState() {
     const planBallItems = planBalls.list();
     const planFusedPairs = planFused.list();
     const planPassiveItems = planPassives.list();
-    const ballSlots = ballSlotsUsed(planBallItems.length, planFusedPairs.length);
+    const ballSlots = ballSlotsUsed(planBallItems, planFusedPairs);
     const ballComplexity = (e: PlanBallEntry): number =>
       e.kind === 'single' ? complexity(e.item, ballMap) : complexity(e.a, ballMap) + complexity(e.b, ballMap);
     const balls: PlanBallEntry[] = [

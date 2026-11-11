@@ -163,12 +163,13 @@ const composedPresentation = (
   };
 };
 
-/** The composed state for two resolved, distinct balls. fuse() returns null
- *  for a repeated ball (the game forbids self-fusion); the pick list dedupes,
- *  so that only happens for a hand-built pick list — fall back to pending
- *  rather than carry a null `fusion` the renderer would crash on. */
+/** The composed state for two resolved balls. A repeated ball is rejected
+ *  before composing (the game forbids self-fusion); the pick list dedupes, so
+ *  that only happens for a hand-built pick list. fuse() still returns null
+ *  for it — fall back to pending rather than carry a null `fusion` the
+ *  renderer would crash on. */
 function composedPanel(a: Ball, b: Ball, plan: FusionPanelPlan): FusionPanelState {
-  const fusion = fuse(a, b);
+  const fusion = a.id === b.id ? null : fuse(a, b);
   if (!fusion) return { state: 'pending', first: a };
   return {
     state: 'composed',

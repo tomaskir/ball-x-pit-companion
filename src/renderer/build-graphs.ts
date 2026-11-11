@@ -143,9 +143,8 @@ export function paintBuildGraphs(vm: ViewModel) {
         placeNode(el, n);
         // icons ride one row wrapper — the fused pair's two icons sit side by
         // side (bare second img would stack under the first in the column)
-        const icon2 = n.icon2 ? `<img src="${icon(n.icon2)}" alt="" width="28" height="28">` : '';
         const imgs = n.row === BUILD_GRAPH_ROWS.balls.fusionRow
-          ? `<img src="${icon(n.icon)}" alt="" width="28" height="28">${icon2}`
+          ? `<img src="${icon(n.icon)}" alt="" width="28" height="28">${n.icon2 ? `<img src="${icon(n.icon2)}" alt="" width="28" height="28">` : ''}`
           : `<img src="${icon(n.icon)}" alt="${n.name}" width="28" height="28">`;
         // the done check: evolved/T3/fusion nodes only — base balls dim
         // automatically when their remaining demand hits zero. State

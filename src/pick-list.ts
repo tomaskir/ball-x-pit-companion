@@ -9,9 +9,10 @@
 // over-limit selections are kept, the user decides what to remove.
 //
 // The module is generic over the stored item and the input shape, so the
-// same semantics serve flat id lists (characters, fusion picks, plan
-// balls/passives) and object-shaped pairs (the plan's fused pairs, whose
-// `key` is the unordered pair identity). `key` is the one identity
+// same semantics serve id lists (characters, fusion picks), resolved-item
+// lists (the plan's balls/passives, stored as catalog objects), and
+// object-shaped pairs (the plan's fused pairs, whose `key` is the unordered
+// pair identity). `key` is the one identity
 // definition per list; `hasRoom` reads the whole list, so a list can share
 // capacity with another (the plan's fused pairs share the ball slots).
 // `list()` returns a snapshot copy, so a view model that captured it cannot

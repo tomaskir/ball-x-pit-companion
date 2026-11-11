@@ -49,7 +49,7 @@ describe('fusion panel: the 3-state machine', () => {
     // the panel must fall back to pending rather than hand the renderer a
     // composed state whose `fusion` is null (paintFusion would crash).
     const { panel } = deriveFusionPanel(['flash', 'flash'], plan());
-    expect(panel).toEqual({ state: 'pending', first: ballMap.get('flash')! });
+    expect(panel).toEqual({ state: 'pending', first: ballMap.get('flash') });
   });
 });
 
