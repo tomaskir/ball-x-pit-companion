@@ -114,7 +114,8 @@ array recording claims a later wave dropped:
 ```
 
 `superseded_by` is the wave date that replaced the claim. The array is empty
-for the current 2026-10-04 wave. Raw rows are never removed; supersession is
+for the 2026-10-04 wave and the 2026-11-11 resolution pass (which re-graded
+claims without dropping any). Raw rows are never removed; supersession is
 recorded only here, so the audit stays machine-readable in the consumed layer.
 `CONTRADICTIONS.md` keeps one dated section per wave.
 

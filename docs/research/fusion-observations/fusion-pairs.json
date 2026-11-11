@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-04",
+  "generated": "2026-11-11",
   "pair_count": 370,
   "order_notes": "Order matters for NAME and SPRITE ALWAYS, for every pair. The fused name is \"A X B\" with A = first-selected; the icon usually comes from the first pick and the colour from the second (Steam Shajirr 2026-01-26); the damage-number colour changes (Reddit PSA #1); the sprite sometimes differs (wiki.gg: 'Spider Queen X Vampire Lord has a completely different sprite from Vampire Lord X Spider Queen', while 'Egg Sac X Poison looks the same as Poison X Egg Sac'); the description paragraphs list the components in selection order (al-gest commenter 2025-12-01). For STATS, COOLDOWNS, PROCS and CROSS-WIRING, order is functionally irrelevant except for the two documented exceptions recorded per pair under order.matters_functionally=yes (same-property pairs; both-cooldown pairs). A third order effect exists but is NOT a fusion effect: base-ball pool recursion (which slot consumes a base ball so it stops appearing) — see the general_rules/pool-recursion entry. Full synthesis: ../fusion-mechanics.md §3.",
   "rules": {
@@ -142,25 +142,25 @@
   "general_rules_notes": {
     "base-ball-pool-recursion": {
       "title": "Base-ball pool recursion (order affects pool availability, not the fusion's effect)",
-      "source": "https://www.reddit.com/r/BALLxPIT/comments/1srjxm5/_/ohfrd4o/",
-      "date": "2026-04-21",
+      "source": "https://www.reddit.com/r/BALLxPIT/comments/1xrhisk/fusion_order_did_not_matter_a_year_ago_it/",
+      "date": "2026-11-09",
       "confidence": "reported",
-      "statement": "If one component is a BASE ball (Wind, Egg Sac, Brood Mother, Burn, etc.), the slot it is selected in decides whether it returns to the level-up/fusion pool. Verbatim (Abject_Nerve_1052): 'If one component in the fusion is a base ball (Wind, Egg Sac, Broodmother, Burn, etc.) If it is the first option chosen it will not show up again as an upgrade, if it is the second option chosen you can get another copy. (I.e. wraith x egg sac = can get another egg sac. Egg sac x wraith = no more egg sac show up in level up menu)' — i.e. the FIRST-SELECTED base ball is consumed. Independently corroborated by Personal_Ad9690 ('No, but it does disallow the first selected ball from reappearing in a FUSION. I.e. ghost x egg sac means ghost doesn't come back. Egg sac x ghost means egg sac doesn't come back') and by SpaceCatNL ('It's because you put egg sac second. If you fuse it as first slot you won't get it again that run') plus AstroTravellin's reproduction. See CONTRADICTIONS.md entry on the alleged polarity dispute — the verbatim texts agree; only the harvest annotations disagree.",
-      "scope_dispute": "Abject_Nerve_1052 qualifies the rule to BASE balls only; Personal_Ad9690 generalises it to any first-selected ball (Ghost is not a base ball). Scope unresolved."
+      "statement": "If one component is a BASE ball (Wind, Egg Sac, Brood Mother, Burn, Cell, etc.), the FIRST-SELECTED base ball is consumed and will not appear again in the level-up/fusion pool that run; the second-selected base ball can reappear. Confirmed by the 2026-11-09 synthesis ('if a base ball ... is used as the Catalyst in a fusion, that ball will NOT appear ... ever again for that run ... if you do want the base ball to appear again, just make sure you don't use it as the Catalyst'), the 2026-05-30 Android PSA (F2PBTW_YT) and icemage_999's 'The first ball in a Fusion is always effectively Banished. This is true in all versions', and the 2026-02-26 Egg Sac/Blizzard post. This resolves the alleged polarity dispute: all verbatim texts say the first-selected ball is consumed; the harvest annotation of SpaceCatNL was a misreading.",
+      "scope_dispute": "RESOLVED for base balls: the first-selected base ball is consumed. Personal_Ad9690's generalisation to any first-selected ball (his Ghost example) is unverified; Ghost is not a base ball. Treat the 'any ball' version as reported-only."
     },
     "same-property-first-wins": {
       "title": "Same-property pairs: first-selected's variant wins",
-      "source": "https://www.reddit.com/r/BALLxPIT/comments/1p5pil0/psa_2_fusion_order_additional_info/",
-      "date": "2025-11-24",
+      "source": "https://www.reddit.com/r/BALLxPIT/comments/1xrhisk/fusion_order_did_not_matter_a_year_ago_it/",
+      "date": "2026-11-09",
       "confidence": "reported",
-      "statement": "'Balls with the same exact property that are fused together take the parent (ball A) property and exclude the second ball's (ball B) specific properties that are the exact same.' Worked examples: Mosquito Swarm x Mosquito King (mosquito spawn type); Radiation Beam x Nuclear Bomb (radiation duration 15 s vs indefinite). Reconciles with namu rule 5, which BLENDS same-status-different-numbers (Leech + Sacrifice) rather than excluding."
+      "statement": "Same-property pairs take the first-selected ball's variant. The 2026-11-09 synthesis adds: Banished Flame as Catalyst makes Sun adopt Banished Flame's burn stack limit/damage/duration; Noxious as Catalyst spreads 4 stacks of poison and burn with Brimstone. This corroborates PSA #2 and the Nuke × Overgrowth / Noxious × Poison examples."
     },
     "cooldown-first-wins": {
       "title": "Both-cooldown pairs: first-selected's cooldown wins",
-      "source": "https://namu.moe/w/BALL%20x%20PIT/%EB%B3%BC",
-      "date": "2026-08-26",
+      "source": "https://www.reddit.com/r/BALLxPIT/comments/1xrhisk/fusion_order_did_not_matter_a_year_ago_it/",
+      "date": "2026-11-09",
       "confidence": "reported",
-      "statement": "'When fusing with another ball that has its own separately listed cooldown (Bomb, Black Hole, etc.), the fused ball follows the FIRST-SELECTED ball's cooldown. Example: Black Hole x Timestop fires every 5 seconds, whereas Timestop x Black Hole fires every 20 seconds.' Cooldown class (7 balls, from the game-file I2 effect-text dump): Black Hole, Bomb, Dark, Egg Sac, Voluptuous Egg Sac, Nuclear Bomb, Timestop. C(7,2) = 21 unordered pairs where order is functional. NOTE: the catalogue id for the time-stop ball is `timestop`; the separate `time` ball is NOT in the cooldown class."
+      "statement": "Both-cooldown pairs take the first-selected ball's cooldown. 2026-11-09 worked example: Timestop × Egg Sac keeps Timestop's 30 s cooldown; Egg Sac × Timestop gives Timestop Egg Sac's 3 s cooldown. This independently corroborates namu.wiki's Black Hole × Timestop example and the first-selected rule."
     },
     "fused-orbs-not-evolution-components": {
       "title": "Fused orbs cannot be used as evolution components",
@@ -220,10 +220,10 @@
     },
     "damage-cap-9999": {
       "title": "9999 damage cap (display vs real — CONTRADICTED)",
-      "source": "https://steamcommunity.com/app/2062430/discussions/0/624436764983026080/",
-      "date": "2025-10-20",
+      "source": "https://www.reddit.com/r/BALLxPIT/comments/1wah802/in_endless_are_there_any_mechanics_that/",
+      "date": "2026-09-08",
       "confidence": "contradicted",
-      "statement": "TVTropes states 'Damage-per-hit is capped at 9999'. Steam players disagree on whether 9999 is a display cap or a real cap. See CONTRADICTIONS.md."
+      "statement": "The display-vs-real cap dispute is still live. The corpus's 'display cap' reading rests on Xersin (2025-10-28: pre-cap range 14616-25580, displayed 9999). A newer 2026-09-08/13 thread splits: tsuruki23 argues 9999 is a REAL per-hit cap and uses it to explain Hemorrhage's endless-mode falloff; TheBeyond argues display cap; CommanderRedJonkks (2026-09-13) says it feels like a real cap. No controlled test. Do not treat the display-cap reading as settled."
     }
   },
   "pairs": {
@@ -938,8 +938,8 @@
         }
       ],
       "order": {
-        "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "matters_functionally": "no",
+        "detail": "Pair's own fusion order is commutative; Despair's claim is a separate multi-fusion interaction, not this pair's order."
       },
       "status": "verified",
       "obs_count": 14,
@@ -1198,7 +1198,7 @@
         "matters_functionally": "yes",
         "detail": "Both components are cooldown-class balls (their effect text carries an explicit listed cooldown). namu.wiki rule: the FIRST-SELECTED ball's cooldown wins. Cooldown class = {Black Hole, Bomb, Dark, Egg Sac, Voluptuous Egg Sac, Nuclear Bomb, Timestop}. Worked example in the source: Black Hole x Timestop fires every 5 s, Timestop x Black Hole every 20 s."
       },
-      "status": "contradicted",
+      "status": "verified",
       "obs_count": 11,
       "source_types": [
         "reddit",
@@ -1338,7 +1338,7 @@
         "matters_functionally": "unknown",
         "detail": "No order evidence for this pair. Default for non-same-property, non-both-cooldown pairs is commutativity (function-wise), but this pair was not in PSA #1's both-orders set."
       },
-      "status": "contradicted",
+      "status": "verified",
       "obs_count": 7,
       "source_types": [
         "reddit",
@@ -1601,10 +1601,10 @@
         }
       ],
       "order": {
-        "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. mmemo.jp lists this pair among its 3 extra rows beyond al-gest's 8; corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "matters_functionally": "no",
+        "detail": "PSA #1 bonus both-orders test; cross-wire non-boss-only; fusion-offer bug is general."
       },
-      "status": "contradicted",
+      "status": "verified",
       "obs_count": 50,
       "source_types": [
         "other",
@@ -3662,8 +3662,8 @@
         }
       ],
       "order": {
-        "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "matters_functionally": "no",
+        "detail": "Targeted re-test found 0 difference; base-ball pool banish is separate."
       },
       "status": "inferred",
       "obs_count": 8,
@@ -4391,8 +4391,8 @@
         }
       ],
       "order": {
-        "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. mmemo.jp lists this pair among its 3 extra rows beyond al-gest's 8; corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "matters_functionally": "no",
+        "detail": "Cross-property; Cell-first additionally banishes Cell."
       },
       "status": "verified",
       "obs_count": 5,
@@ -5064,10 +5064,10 @@
         }
       ],
       "order": {
-        "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "matters_functionally": "no",
+        "detail": "Targeted controlled test; kits coexist independently."
       },
-      "status": "contradicted",
+      "status": "verified",
       "obs_count": 5,
       "source_types": [
         "bilibili",
@@ -5416,10 +5416,10 @@
         }
       ],
       "order": {
-        "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "matters_functionally": "no",
+        "detail": "First-selected base ball banished (pool rule); fusion effect commutative."
       },
-      "status": "contradicted",
+      "status": "verified",
       "obs_count": 5,
       "source_types": [
         "reddit"
@@ -5482,8 +5482,8 @@
         }
       ],
       "order": {
-        "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "matters_functionally": "no",
+        "detail": "First-selected base ball banished; fusion effect commutative."
       },
       "status": "verified",
       "obs_count": 4,
@@ -5589,8 +5589,8 @@
         }
       ],
       "order": {
-        "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "matters_functionally": "no",
+        "detail": "First-selected base ball banished; fusion effect commutative."
       },
       "status": "inferred",
       "obs_count": 3,
@@ -5722,8 +5722,8 @@
         }
       ],
       "order": {
-        "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "matters_functionally": "no",
+        "detail": "First-selected base ball banished; fusion effect commutative."
       },
       "status": "verified",
       "obs_count": 4,
@@ -6082,8 +6082,8 @@
         }
       ],
       "order": {
-        "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "matters_functionally": "no",
+        "detail": "Description text changes only; function same (2026-11-09 analogous re-test)."
       },
       "status": "inferred",
       "obs_count": 4,
@@ -6502,10 +6502,10 @@
         }
       ],
       "order": {
-        "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. al-gest.com prescribes a fixed fusion order for this pair (8-pair boilerplate, no mechanism given); mmemo.jp transcribes the same list as a 融合1→融合2 table; corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "matters_functionally": "no",
+        "detail": "PSA #1; 9999 cap is a global open question, not pair-specific."
       },
-      "status": "contradicted",
+      "status": "verified",
       "obs_count": 32,
       "source_types": [
         "namu",
@@ -7122,10 +7122,10 @@
         }
       ],
       "order": {
-        "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. al-gest.com prescribes a fixed fusion order for this pair (8-pair boilerplate, no mechanism given); mmemo.jp transcribes the same list as a 融合1→融合2 table; u/beastlike claims Flash must be selected first; contradicted by u/FemurFiend, PSA #1's both-orders tests, and al-gest's own commenter; corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "matters_functionally": "no",
+        "detail": "PSA #1 + Leorium refutation; al-gest/mmemo folklore presentation-only."
       },
-      "status": "contradicted",
+      "status": "verified",
       "obs_count": 59,
       "source_types": [
         "namu",
@@ -8047,8 +8047,8 @@
         }
       ],
       "order": {
-        "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. al-gest.com prescribes a fixed fusion order for this pair (8-pair boilerplate, no mechanism given); mmemo.jp transcribes the same list as a 融合1→融合2 table; corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "matters_functionally": "no",
+        "detail": "PSA #1."
       },
       "status": "verified",
       "obs_count": 14,
@@ -8242,10 +8242,10 @@
         }
       ],
       "order": {
-        "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. al-gest.com prescribes a fixed fusion order for this pair (8-pair boilerplate, no mechanism given); mmemo.jp transcribes the same list as a 融合1→融合2 table; corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "matters_functionally": "no",
+        "detail": "Overgrowth stacks cross-wire; dizzy is a different channel; order commutative."
       },
-      "status": "contradicted",
+      "status": "verified",
       "obs_count": 13,
       "source_types": [
         "namu",
@@ -8429,7 +8429,7 @@
         "matters_functionally": "unknown",
         "detail": "No order evidence for this pair. Default for non-same-property, non-both-cooldown pairs is commutativity (function-wise), but this pair was not in PSA #1's both-orders set."
       },
-      "status": "contradicted",
+      "status": "verified",
       "obs_count": 10,
       "source_types": [
         "other",
@@ -9036,7 +9036,7 @@
         "matters_functionally": "unknown",
         "detail": "No order evidence for this pair. Default for non-same-property, non-both-cooldown pairs is commutativity (function-wise), but this pair was not in PSA #1's both-orders set."
       },
-      "status": "contradicted",
+      "status": "verified",
       "obs_count": 2,
       "source_types": [
         "steam"
@@ -9560,8 +9560,8 @@
         }
       ],
       "order": {
-        "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. al-gest.com prescribes a fixed fusion order for this pair (8-pair boilerplate, no mechanism given); mmemo.jp transcribes the same list as a 融合1→融合2 table; corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "matters_functionally": "no",
+        "detail": "Cross-property; al-gest folklore presentation-only."
       },
       "status": "inferred",
       "obs_count": 4,
@@ -10169,7 +10169,7 @@
         "matters_functionally": "unknown",
         "detail": "No order evidence for this pair. Default for non-same-property, non-both-cooldown pairs is commutativity (function-wise), but this pair was not in PSA #1's both-orders set."
       },
-      "status": "contradicted",
+      "status": "verified",
       "obs_count": 6,
       "source_types": [
         "bilibili",
@@ -10288,8 +10288,8 @@
         }
       ],
       "order": {
-        "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "matters_functionally": "no",
+        "detail": "PSA #1."
       },
       "status": "inferred",
       "obs_count": 6,
@@ -10463,7 +10463,7 @@
         "matters_functionally": "unknown",
         "detail": "No order evidence for this pair. Default for non-same-property, non-both-cooldown pairs is commutativity (function-wise), but this pair was not in PSA #1's both-orders set."
       },
-      "status": "contradicted",
+      "status": "verified",
       "obs_count": 9,
       "source_types": [
         "reddit",
@@ -10686,10 +10686,10 @@
         }
       ],
       "order": {
-        "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "matters_functionally": "no",
+        "detail": "Baby-ball both-orders test; cross-wire confirmed."
       },
-      "status": "contradicted",
+      "status": "verified",
       "obs_count": 28,
       "source_types": [
         "other",
@@ -11204,7 +11204,7 @@
         "matters_functionally": "unknown",
         "detail": "No order evidence for this pair. Default for non-same-property, non-both-cooldown pairs is commutativity (function-wise), but this pair was not in PSA #1's both-orders set."
       },
-      "status": "contradicted",
+      "status": "inferred",
       "obs_count": 2,
       "source_types": [
         "steam"
@@ -11311,7 +11311,7 @@
         "matters_functionally": "unknown",
         "detail": "No order evidence for this pair. Default for non-same-property, non-both-cooldown pairs is commutativity (function-wise), but this pair was not in PSA #1's both-orders set."
       },
-      "status": "contradicted",
+      "status": "verified",
       "obs_count": 4,
       "source_types": [
         "reddit"
@@ -11383,7 +11383,7 @@
         "matters_functionally": "unknown",
         "detail": "No order evidence for this pair. Default for non-same-property, non-both-cooldown pairs is commutativity (function-wise), but this pair was not in PSA #1's both-orders set."
       },
-      "status": "contradicted",
+      "status": "verified",
       "obs_count": 6,
       "source_types": [
         "reddit"
@@ -11751,8 +11751,8 @@
         }
       ],
       "order": {
-        "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "matters_functionally": "no",
+        "detail": "Targeted re-test found 0 difference."
       },
       "status": "inferred",
       "obs_count": 4,
@@ -12254,7 +12254,7 @@
         "matters_functionally": "disputed",
         "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
       },
-      "status": "contradicted",
+      "status": "verified",
       "obs_count": 27,
       "source_types": [
         "namu",
@@ -12964,8 +12964,8 @@
         }
       ],
       "order": {
-        "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. al-gest.com prescribes a fixed fusion order for this pair (8-pair boilerplate, no mechanism given); mmemo.jp transcribes the same list as a 融合1→融合2 table; corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "matters_functionally": "no",
+        "detail": "Cross-property; al-gest/mmemo folklore presentation-only."
       },
       "status": "unverified",
       "obs_count": 3,
@@ -13791,10 +13791,10 @@
         }
       ],
       "order": {
-        "matters_functionally": "unknown",
-        "detail": "No order evidence for this pair. Default for non-same-property, non-both-cooldown pairs is commutativity (function-wise), but this pair was not in PSA #1's both-orders set."
+        "matters_functionally": "yes",
+        "detail": "Same-property: first-selected max stacks win."
       },
-      "status": "contradicted",
+      "status": "verified",
       "obs_count": 1,
       "source_types": [
         "reddit"
@@ -13861,8 +13861,8 @@
         }
       ],
       "order": {
-        "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "matters_functionally": "yes",
+        "detail": "Same-property: first-selected range wins."
       },
       "status": "verified",
       "obs_count": 4,
@@ -14003,8 +14003,8 @@
         }
       ],
       "order": {
-        "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. mmemo.jp lists this pair among its 3 extra rows beyond al-gest's 8; corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "matters_functionally": "no",
+        "detail": "Cross-property; mmemo folklore presentation-only."
       },
       "status": "inferred",
       "obs_count": 5,
@@ -14133,7 +14133,7 @@
         "matters_functionally": "yes",
         "detail": "Both components are cooldown-class balls (their effect text carries an explicit listed cooldown). namu.wiki rule: the FIRST-SELECTED ball's cooldown wins. Cooldown class = {Black Hole, Bomb, Dark, Egg Sac, Voluptuous Egg Sac, Nuclear Bomb, Timestop}. Worked example in the source: Black Hole x Timestop fires every 5 s, Timestop x Black Hole every 20 s."
       },
-      "status": "contradicted",
+      "status": "verified",
       "obs_count": 6,
       "source_types": [
         "other",
@@ -14319,8 +14319,8 @@
         }
       ],
       "order": {
-        "matters_functionally": "disputed",
-        "detail": "Order-sensitivity claims for this pair are contradicted within the corpus. corpus contains order claims marked confidence=contradicted for this pair. Controlled both-orders testing (Reddit PSA #1) and the synthesis in ../fusion-mechanics.md weigh against a functional order effect here; residual dispute kept as a record, not resolved. See CONTRADICTIONS.md."
+        "matters_functionally": "no",
+        "detail": "PSA #1."
       },
       "status": "verified",
       "obs_count": 14,

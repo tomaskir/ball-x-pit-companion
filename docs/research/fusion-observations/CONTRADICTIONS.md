@@ -14,18 +14,28 @@ observation and sit outside the handful of heavily-discussed pairs).
 Game-evolution recipe disputes (the Bleed+Poison→Virus build change, etc.) live
 in `../game-mechanics.md` and are out of scope here.
 
-**Curated-layer totals** (`fusion-pairs.json`, 370 pairs):
-status `verified` 31 · `inferred` 96 · `unverified` 218 · `contradicted` 25.
-Order: `yes` 15 · `no` 74 · `disputed` 26 · `unknown` 255.
-42 pairs are contradicted **or** order-disputed. This register documents those
-conflicts; the remaining 328 pairs have no contradiction to record.
+**Curated-layer totals** (`fusion-pairs.json`, 370 pairs, after the
+2026-11-11 resolution pass): status `verified` 49 · `inferred` 97 ·
+`unverified` 218 · `contradicted` 6. Order: `yes` 17 · `no` 95 ·
+`disputed` 4 · `unknown` 254. The 2026-10-04 wave's 42 contradicted /
+order-disputed pairs were re-checked in §13: 32 resolved, 1 partially
+resolved, 1 de-scoped, 8 still inconclusive. The remaining 328 pairs have no
+contradiction to record.
 
-**Access date for all web sources: 2026-10-04.** Source content dates as cited.
-Ordering background and the reconciliation argument: `../fusion-mechanics.md` §3.
+**Access date for the §1–§12 web sources: 2026-10-04; for §13: 2026-11-11.**
+Source content dates as cited. Ordering background and the reconciliation
+argument: `../fusion-mechanics.md` §3.
 
 ---
 
 ## Waves and supersession
+
+**Section map.** §1–§12 are the historical record of the **2026-10-04** wave:
+their pair statuses, counts, and "current best reading" statements describe
+that wave, not the current curated layer. §13 is the **2026-11-11** source-only
+resolution pass and supersedes the pair-level `status` /
+`order.matters_functionally` values those sections describe. The raw layer is
+unchanged; only the curated layer moved.
 
 This register is the record of the **2026-10-04** wave; each future refresh
 wave adds a dated section instead of rewriting this one. The raw layer is
@@ -37,7 +47,8 @@ append-only, so supersession is recorded in the curated layer: each pair in
 ```
 
 where `superseded_by` is the wave date that replaced the claim. The array is
-empty for the 2026-10-04 wave.
+empty for the 2026-10-04 wave and for the 2026-11-11 resolution pass (that pass
+re-graded existing claims; it dropped none).
 
 ---
 
@@ -661,6 +672,102 @@ the companion site can treat as settled enough to document:
   order effects.
 - **No fusion table exists in the game data.** Fused display text is assembled
   at runtime. (Multiple independent game-file inspections.)
+
+---
+
+## 13. Source-only resolution pass — 2026-11-11 (issue #19)
+
+Re-checked the 42 contradicted/order-disputed pairs against sources current
+to 2026-11-11. **32 resolved, 1 partially resolved, 1 de-scoped, 8 still
+inconclusive.** Raw corpus untouched; this section records the outcome and the
+curated-layer changes.
+
+### 13a. New evidence that moved the map
+
+- **Order synthesis, 2026-11-09** (`Expensive_Sail_5138`, Reddit `1xrhisk`,
+  v1.3xx + 3 free DLCs): the old "order does NOT matter" PSA was correct at
+  the time and became misleading only because the free updates added new
+  balls. Order now matters for (1) base-ball banish, (2) both-cooldown pairs,
+  (3) same-property dominance, (4) specific DLC-ball interactions (Time,
+  Banshee, Banished Flame, Erosion, Brimstone). It re-tested Freeze Ray ×
+  Flash: description changes, function does not; freeze spread depends on the
+  freeze-type ball, not order. Corroborated in-thread by icemage_999.
+- **Base-ball banish** confirmed by the 2026-11-09 post, the 2026-05-30
+  Android PSA (`1ts1v87`), and the 2026-02-26 Egg Sac/Blizzard post
+  (`1rfpa04`). The first-selected **base** ball is consumed; the alleged
+  polarity dispute in §2 was a harvest-annotation error. The "any ball"
+  generalisation remains unverified.
+- **9999 cap still open.** A 2026-09-08/13 thread (`1wah802`) splits between
+  a real per-hit cap (tsuruki23, mechanism-backed) and a display cap
+  (TheBeyond); CommanderRedJonkks says it feels real. This is newer than the
+  corpus's Xersin report and points the other way. Keep §8's contradiction.
+- **Satan × Hemorrhage** resolves to no %HP cross-wire: the current wiki
+  effect text shows Satan is debuff-only and Hemorrhage's proc requires a hit
+  at 12+ bleed stacks. See §4; the tooltip mismatch stays.
+- **Flicker × Reaper** resolves to cross-wire: a 2026-08-07 direct re-test
+  ("Flicker Reaper does still work the same") plus 2026-05/08 reports.
+- **Base-game order folklore** (al-gest/mmemo rows) resolves to
+  presentation-only for cross-property, non-cooldown, non-base-ball pairs.
+
+### 13b. Resolved pairs
+
+`black-hole+flash` (order no), `black-hole+nuclear-bomb` (order yes; cross-wire
+non-boss-only), `black-hole+satan` (cross-wire real; break is a high-spawn
+bug), `black-hole+sun` (order no; cross-wire non-boss-only), `brood-mother+
+laser-vertical` (order no), `cell+nuclear-bomb` (order no; Cell-first
+banished), `earthquake+flash` (order no; kits coexist), `egg-sac+ghost`,
+`egg-sac+hemorrhage`, `egg-sac+maggot`, `egg-sac+poison` (first-selected base
+ball banished), `flash+flicker` (description-only), `flash+hemorrhage` (order
+no; 9999 global open), `flash+overgrowth` (order no), `flicker+hemorrhage`
+(order no), `flicker+overgrowth` (stacks cross-wire; no dizzy), `flicker+
+reaper` (cross-wire), `freeze-ray+sun` (beam carries burn; AOE does not carry
+freeze), `glacier+shotgun` (order no), `hemorrhage+satan` (no %HP cross-wire),
+`hemorrhage+sun` (order no), `hemorrhage+voluptuous-egg-sac` (bleed yes, %HP
+no), `holy-laser+maggot` (order no; cross-wire), `landslide+maggot`
+(cross-wire), `landslide+mosquito-swarm` (kill-gated), `laser-vertical+maggot`
+(order no), `magma+shotgun` (order no), `noxious+poison` (order yes),
+`nuclear-bomb+overgrowth` (order yes), `nuclear-bomb+shotgun` (order no),
+`nuclear-bomb+voluptuous-egg-sac` (cross-wire; order yes), `overgrowth+sun`
+(order no).
+
+### 13c. Partially resolved / de-scoped
+
+- `maggot+nuclear-bomb` — cross-wire confirmed; order still inconclusive
+  (Lexifer452's explosion-count claim and the 2025-11-01 "infest-first vs
+  explode-first" mechanism-backed anecdote; PSA #1 did not test the pair).
+- `iron+nuclear-bomb` — de-scoped: the pair-specific claim is Xersin's
+  pre-cap range; the 9999 dispute is global (§8) and stays contradicted.
+
+### 13d. Still inconclusive (keep both claims)
+
+`black-hole+maggot` (babies carry BH instant-kill vs spawn-bound channel says
+no; order anecdote), `blizzard+magma` (demo-era 4-tile vs 2-tile claim; no
+current-build test), `egg-sac+holy-laser` (single observation), `holy-laser+
+shotgun` (single observation), `nosferatu+reaper` (sentiment), `nosferatu+
+satan` (build/patch-dependent bug), `nuclear-bomb+wraith` (specific order
+exception, no mechanism/test), `vampire+vampire-lord` (single observation).
+
+### 13e. Follow-up implementation tickets
+
+- **Curated-layer update** — apply the `fusion-pairs.json` `status`/`order`
+  changes and the four `general_rules_notes` updates in
+  `CONTRADICTION-RESOLUTION-2026-11-11.md` §"Recommended curated-layer
+  update". Keep the raw JSONL untouched.
+- **9999-cap ticket** — one controlled test (or a game-file check of the
+  damage-application path) to settle display vs real cap. Until then, do not
+  use on-screen 9999 pop-ups as an upper bound, and do not assert a display
+  cap either.
+- **Two order exceptions** — one current-build both-orders test each for
+  `blizzard+magma` and `nuclear-bomb+wraith` would close the two specific
+  demo-era / one-off order exceptions. (The other two remaining order
+  disputes, `black-hole+maggot` and `maggot+nuclear-bomb`, need baby-inheritance
+  and explosion-count tests respectively.)
+- **Behaviour tickets** — `black-hole+maggot` (one controlled baby-inheritance
+  test), `nosferatu+satan` (one controlled run on a fixed build), and the
+  `nosferatu+reaper` sentiment (not resolvable by test; leave as record).
+- **Risen Ballbylon re-check** — the paid expansion launches 2026-11-12 with
+  24 new balls. Re-run this resolution pass after the DLC is live; the
+  order-matters mechanism list will grow.
 
 ---
 ---
