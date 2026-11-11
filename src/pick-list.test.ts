@@ -50,6 +50,15 @@ describe('pick list: sticky toggle', () => {
     expect(list.has('unknown')).toBe(false);
   });
 
+  it('list() returns a snapshot copy — a later toggle does not mutate it', () => {
+    const list = idList();
+    list.toggle('a');
+    const captured = list.list();
+    list.toggle('b');
+    expect(captured).toEqual(['a']);
+    expect(list.list()).toEqual(['a', 'b']);
+  });
+
   it('has() answers membership through the same resolution', () => {
     const list = idList();
     list.toggle('a');

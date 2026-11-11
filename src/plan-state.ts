@@ -128,7 +128,9 @@ export function createPlanState() {
     resolve: (id) => (ballMap.has(id) ? id : undefined),
     key: (id) => id,
     // the ball list shares the ball capacity with the fused pairs (a pair
-    // is ONE slot), so room is "slots used < capacity", not this list's length
+    // is ONE slot), so room is "slots used < capacity", not this list's length.
+    // `planFused` is declared below; the callback runs only after
+    // createPlanState returns, so the forward reference is safe.
     hasRoom: (list) => ballSlotsUsed(list, planFused.list()) < activeLimits(upgradesOn).balls,
   });
   const planPassives = createPickList<string, string>({
@@ -141,10 +143,7 @@ export function createPlanState() {
    *  rejects unknown ids, non-fusable balls (Baby Ball), and degenerate
    *  pairs — derive() can therefore never meet a bad component. */
   const planFused = createPickList<PlanFused, PlanFused>({
-    resolve: (p) =>
-      ballMap.has(p.a) && ballMap.has(p.b) && p.a !== p.b && isFusable(p.a) && isFusable(p.b)
-        ? { a: p.a, b: p.b }
-        : undefined,
+    resolve: (p) => (p.a !== p.b && isFusable(p.a) && isFusable(p.b) ? { a: p.a, b: p.b } : undefined),
     key: (p) => pairKey(p.a, p.b),
     hasRoom: (list) => ballSlotsUsed(planBalls.list(), list) < activeLimits(upgradesOn).balls,
   });
@@ -158,15 +157,18 @@ export function createPlanState() {
    *  renderer paints them without re-deriving. */
   const derive = (selectedChars: readonly Character[]): PlanState => {
     const limits = activeLimits(upgradesOn);
-    const ballSlots = ballSlotsUsed(planBalls.list(), planFused.list());
+    const planBallIds = planBalls.list();
+    const planFusedPairs = planFused.list();
+    const planPassiveIds = planPassives.list();
+    const ballSlots = ballSlotsUsed(planBallIds, planFusedPairs);
     const ballComplexity = (e: PlanBallEntry): number =>
       e.kind === 'single' ? complexity(e.item, ballMap) : complexity(e.a, ballMap) + complexity(e.b, ballMap);
     const balls: PlanBallEntry[] = [
-      ...planBalls.list().map((id) => {
+      ...planBallIds.map((id) => {
         const item = ballMap.get(id)!;
         return { kind: 'single' as const, item, overLimit: false, verdict: verdictFor(item, selectedChars) };
       }),
-      ...planFused.list().map(({ a, b }) => {
+      ...planFusedPairs.map(({ a, b }) => {
         const ballA = ballMap.get(a)!;
         const ballB = ballMap.get(b)!;
         return {
@@ -181,7 +183,7 @@ export function createPlanState() {
     ]
       .sort((x, y) => ballComplexity(y) - ballComplexity(x))
       .map((e, i) => ({ ...e, overLimit: i >= limits.balls }));
-    const planPassivesState = planPassives.list()
+    const planPassivesState = planPassiveIds
       .map((id) => {
         const item = passiveMap.get(id)!;
         return { item, overLimit: false, verdict: verdictFor(item, selectedChars) };
@@ -191,11 +193,11 @@ export function createPlanState() {
     const overLimit =
       selectedChars.length > limits.chars ||
       ballSlots > limits.balls ||
-      planPassives.list().length > limits.passives;
+      planPassiveIds.length > limits.passives;
     return {
       upgradesOn,
       limits,
-      counts: { chars: selectedChars.length, balls: ballSlots, passives: planPassives.list().length },
+      counts: { chars: selectedChars.length, balls: ballSlots, passives: planPassiveIds.length },
       characters: selectedChars.map((c, i) => ({
         character: c,
         overLimit: i >= limits.chars,

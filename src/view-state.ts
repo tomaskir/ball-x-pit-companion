@@ -178,6 +178,8 @@ export function createViewState() {
     const tiles = new Map<string, TileState>();
     const charCards = new Map<string, CharCardState>();
     const fusionRows = new Map<string, FusionRowState>();
+    const chars = selectedChars.list();
+    const picks = fusionPicks.list();
     const related = selectedId ? highlightSet(selectedId, graphFor(selectedId)) : new Set<string>();
     const ballQ = queries.balls.trim().toLowerCase();
     const passiveQ = queries.passives.trim().toLowerCase();
@@ -187,7 +189,7 @@ export function createViewState() {
     // two (collection, query) pairs; the graphs themselves stay separate
     for (const [items, q] of [[BALLS, ballQ], [PASSIVES, passiveQ]] as const) {
       for (const item of items) {
-        const v = verdictFor(item, selectedChars.list());
+        const v = verdictFor(item, chars);
         tiles.set(item.id, {
           selected: selectedId === item.id,
           related: !!selectedId && selectedId !== item.id && related.has(item.id),
@@ -200,9 +202,9 @@ export function createViewState() {
     // Matchmaker pairing restrictions: with exactly one character held (and
     // two allowed), forbidden partners are blocked — the game darkens them
     // on the select screen. With 0 or 2 held nothing is blocked.
-    const planState = plan.derive(selectedChars.list());
+    const planState = plan.derive(chars);
     const limits = planState.limits;
-    const held = blockedPartner(selectedChars.list(), limits);
+    const held = blockedPartner(chars, limits);
     for (const ch of CHARACTERS) {
       const blocked = !!held && ch.cannotPair.includes(held.id);
       charCards.set(ch.id, {
@@ -213,7 +215,7 @@ export function createViewState() {
       });
     }
     for (const b of FUSION_BALLS) {
-      const pick = fusionPicks.list().indexOf(b.id);
+      const pick = picks.indexOf(b.id);
       fusionRows.set(b.id, {
         slot: pick === 0 ? 1 : pick === 1 ? 2 : null,
         filtered: !!fusionQ && !b.name.toLowerCase().includes(fusionQ),
@@ -222,7 +224,7 @@ export function createViewState() {
     // The fusion panel and its hint are derived in src/fusion-panel.ts from
     // the pick order plus the plan facts this screen hands in — the panel's
     // 3-state machine, order presentation, and hint live there, not here.
-    const { panel: fusionPanel, hint: fusionHint } = deriveFusionPanel(fusionPicks.list(), {
+    const { panel: fusionPanel, hint: fusionHint } = deriveFusionPanel(picks, {
       hasPair: (x, y) => plan.hasPair(x, y),
       ballSlots: { used: planState.counts.balls, capacity: planState.limits.balls },
     });
@@ -241,7 +243,7 @@ export function createViewState() {
       ? null
       : !isFusable(selected.id) ? 'unfusable'
       : fusionPicks.has(selected.id) ? 'remove'
-      : fusionPicks.list().length >= 2 ? 'disabled'
+      : picks.length >= 2 ? 'disabled'
       : 'add';
     const selectionBoxes: ViewModel['selectionBoxes'] = {
       balls: selected && !isPassive(selected.id) ? { item: selected, plan: planLabel, fusion: fusionLabel } : null,
@@ -261,10 +263,10 @@ export function createViewState() {
       tiles,
       charCards,
       fusionRows,
-      selectedChars: selectedChars.list(),
+      selectedChars: chars,
       slotHint:
-        selectedChars.list().length === 0 ? ''
-        : selectedChars.list().length < limits.chars ? 'pick a second character…'
+        chars.length === 0 ? ''
+        : chars.length < limits.chars ? 'pick a second character…'
         : SELECTION_FULL,
       fusionPanel,
       fusionHint,

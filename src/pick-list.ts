@@ -14,8 +14,8 @@
 // `key` is the unordered pair identity). `key` is the one identity
 // definition per list; `hasRoom` reads the whole list, so a list can share
 // capacity with another (the plan's fused pairs share the ball slots).
-// `list()` returns the live list typed readonly — callers read it and
-// replace it through `restore`, never mutate it in place.
+// `list()` returns a snapshot copy, so a view model that captured it cannot
+// be mutated by a later toggle; replace the contents through `restore`.
 
 /** The per-list policy: what inputs resolve to items, how items are
  *  identified, and whether the list has room for one more. */
@@ -35,16 +35,17 @@ export interface PickList<T, S> {
   /** Sticky toggle: remove the matching member, else add the resolved
    *  input when there is room. Rejected inputs are a no-op. */
   toggle(input: S): void;
-  /** Replace the list from persisted inputs: unknown entries dropped,
-   *  duplicates dropped (first occurrence wins), capacity not enforced. */
+  /** Replace the list from persisted inputs (hydrate, clear, reorder):
+   *  unknown entries dropped, duplicates dropped (first occurrence wins),
+   *  capacity not enforced. */
   restore(source: readonly S[]): void;
-  /** The live list, typed readonly — read it; replace it via restore. */
+  /** A snapshot copy of the list in pick order. */
   list(): readonly T[];
   /** Membership by the list's identity. */
   has(input: S): boolean;
 }
 
-export function createPickList<T, S = T>(spec: PickListSpec<T, S>): PickList<T, S> {
+export function createPickList<T, S>(spec: PickListSpec<T, S>): PickList<T, S> {
   const items: T[] = [];
   const indexOf = (key: string): number => items.findIndex((item) => spec.key(item) === key);
 
@@ -64,7 +65,7 @@ export function createPickList<T, S = T>(spec: PickListSpec<T, S>): PickList<T, 
         if (indexOf(spec.key(item)) < 0) items.push(item);
       }
     },
-    list: () => items,
+    list: () => [...items],
     has(input) {
       const item = spec.resolve(input);
       return item !== undefined && indexOf(spec.key(item)) >= 0;
