@@ -7,7 +7,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createRenderer, type BuildOptions, type Renderer } from '../renderer';
 import { createViewState } from '../view-state';
-import { mountShell } from '../test-support/containers';
+import { mountShell } from '../test-support/mount-island';
 
 let live: Renderer[] = [];
 

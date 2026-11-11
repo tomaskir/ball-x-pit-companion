@@ -11,74 +11,21 @@ import { startIsland, type IslandPorts } from './companion';
 import { PLAN_KEY } from './plan-session';
 import { encodeShared, type SharedSnapshot } from './plan-codec';
 import { isClearExempt } from './clear-exempt';
-import { shellDoc } from './test-support/styles';
-
-// ---------- jsdom shell: the real index.astro markup ----------
+import { mountShell, stubPorts } from './test-support/mount-island';
 
 // The island's shell is the shipped page, not a hand-copied subset: a
 // missing container or a missing clear-exemption marker in index.astro must
-// fail here, not pass against a test-only replica. (The renderer builds the
-// rest of the DOM — grids, cards, rows, panel, selection boxes — through
-// renderer.build(), so every behavioral pin below runs against the real built DOM.)
-function mountIslandShell() {
-  document.body.innerHTML = shellDoc().body.innerHTML;
-}
-
-// ---------- stub ports ----------
+// fail here, not pass against a test-only replica. (The island's own
+// startIsland() builds the rest of the DOM — grids, cards, rows, panel,
+// selection boxes — through the renderer instance's build(), so every
+// behavioral pin below runs against the real built DOM.)
 
 const emptyShared: SharedSnapshot = { plan: { upgradesOn: true, balls: [], passives: [], fused: [] }, chars: [] };
-
-/** Stub ports over an in-memory store + fake URL. `replaceState` is a mock so
- *  tests can pin the one-shot strip; `setHash` updates the fake hash the way
- *  `location.hash = …` would (the hashchange event itself is fired by tests). */
-function stubPorts(init: {
-  stored?: Record<string, string>;
-  hash?: string;
-  copy?: IslandPorts['copy'];
-} = {}) {
-  const store = new Map(Object.entries(init.stored ?? {}));
-  let hash = init.hash ?? '';
-  const replaceState = vi.fn();
-  const setHash = vi.fn((h: string) => { hash = h; });
-  const setItem = vi.fn((k: string, v: string) => { store.set(k, String(v)); });
-  const promptCopy = vi.fn();
-  const ports: IslandPorts = {
-    storage: {
-      getItem: (k) => store.get(k) ?? null,
-      setItem,
-    },
-    location: {
-      hash: () => hash,
-      origin: () => 'https://example.com',
-      pathname: () => '/ball-x-pit-companion/',
-      setHash,
-      replaceState,
-    },
-    copy: init.copy ?? (() => undefined),
-    promptCopy,
-    prefersLight: () => false,
-  };
-  return {
-    ports,
-    store,
-    replaceState,
-    setHash,
-    setItem,
-    promptCopy,
-    setHashValue: (h: string) => { hash = h; },
-    savedPlan: (): SharedSnapshot | null => {
-      const raw = store.get(PLAN_KEY);
-      return raw ? (JSON.parse(raw) as SharedSnapshot) : null;
-    },
-    /** How many times the plan key was written — the skip-unchanged pin. */
-    planWrites: () => setItem.mock.calls.filter(([key]) => key === PLAN_KEY).length,
-  };
-}
 
 let stop: (() => void) | null = null;
 
 beforeEach(() => {
-  mountIslandShell();
+  mountShell();
 });
 
 afterEach(() => {

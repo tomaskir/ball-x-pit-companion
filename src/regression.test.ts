@@ -36,7 +36,7 @@ import {
   expectStatusOnlyCarriersWireOnHitStatuses,
   expectVesTwoHopSpawnChainDropsProperty,
 } from './test-support/pins';
-import { mountShell } from './test-support/containers';
+import { mountIsland } from './test-support/mount-island';
 
 describe('regression: structural depth (was wiki labels — Tumor et al. misplaced)', () => {
   // The wiki labeled Tumor, Laser Cutter, Nuclear Bomb, Time Bomb, Black Hole
@@ -305,23 +305,15 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
   // user-visible shape; the source-grep this test once was (p.iconB.style
   // .display = 'none') died with the table-driven fusion-painter rewrite.
   // @vitest-environment jsdom
-  it('pending second head icon is display:none, not a broken-image box', async () => {
-    const { createRenderer } = await import('./renderer');
-    const { createViewState } = await import('./view-state');
-    mountShell();
-    const renderer = createRenderer({ emit: () => {} });
-    try {
-      renderer.build();
-      const view = createViewState();
-      renderer.paint(view.dispatch({ type: 'toggleFusion', id: 'flash' }));
-      const iconB = document.querySelector<HTMLImageElement>('#fusionPanel .icon-b')!;
-      expect(iconB.style.display).toBe('none');
-      // and it comes back when the pair composes
-      renderer.paint(view.dispatch({ type: 'toggleFusion', id: 'glacier' }));
-      expect(iconB.style.display).toBe('');
-    } finally {
-      renderer.destroy();
-    }
+  it('pending second head icon is display:none, not a broken-image box', () => {
+    const island = mountIsland();
+    island.drive({ type: 'toggleFusion', id: 'flash' });
+    const iconB = island.q<HTMLImageElement>('#fusionPanel .icon-b');
+    expect(iconB.style.display).toBe('none');
+    // and it comes back when the pair composes
+    island.drive({ type: 'toggleFusion', id: 'glacier' });
+    expect(iconB.style.display).toBe('');
+    island.destroy();
   });
 
   // Bug: the fusion pick list's scrollbar was hover-only and blended into the
@@ -576,20 +568,14 @@ describe('regression: toast touch dismissal (promised in a comment, never wired)
   // outside it and outside the bound anchors (the island and its clear
   // policy are untouched). Full behavior pinned in src/toast.test.ts;
   // here through the real renderer wiring.
-  it('a toast shown from a tile hides on a tap elsewhere on the document', async () => {
-    const { createRenderer } = await import('./renderer');
-    mountShell();
-    const renderer = createRenderer({ emit: () => {} });
-    try {
-      renderer.build();
-      const tile = document.querySelector<HTMLElement>('#ballsGrid .tile[data-id="flash"]')!;
-      tile.dispatchEvent(new MouseEvent('mouseenter'));
-      expect(document.querySelector('body > .toast')).toBeTruthy();
-      document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
-      expect(document.querySelector('body > .toast')).toBeNull();
-    } finally {
-      renderer.destroy();
-    }
+  it('a toast shown from a tile hides on a tap elsewhere on the document', () => {
+    const island = mountIsland();
+    const tile = document.querySelector<HTMLElement>('#ballsGrid .tile[data-id="flash"]')!;
+    tile.dispatchEvent(new MouseEvent('mouseenter'));
+    expect(document.querySelector('body > .toast')).toBeTruthy();
+    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    expect(document.querySelector('body > .toast')).toBeNull();
+    island.destroy();
   });
 });
 

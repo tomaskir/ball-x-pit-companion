@@ -8,19 +8,13 @@
 // pinned behaviorally too: clicking a real tile / char card / chip / fusion
 // row calls emit with the right action type and id.
 // @vitest-environment jsdom
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
-import {
-  createRenderer,
-  FUSION_PANEL_SKELETON,
-  FUSION_PANEL_SELECTORS,
-  type BuildOptions,
-  type Renderer,
-} from './renderer';
-import { createViewState, type ViewModel, type Action } from './view-state';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { FUSION_PANEL_SKELETON, FUSION_PANEL_SELECTORS } from './renderer';
+import type { createViewState, ViewModel, Action } from './view-state';
 import { BUILD_GRAPH_ROWS } from './build-graph';
 import { ballMap } from './catalog';
 import { iconUrl } from './icon-url';
-import { mountShell } from './test-support/containers';
+import { mountIsland, type IslandHarness } from './test-support/mount-island';
 
 describe('fusion panel skeleton (renderer.ts)', () => {
   it('every selector the fusion panel builder queries resolves in its own skeleton', () => {
@@ -44,54 +38,34 @@ describe('fusion panel skeleton (renderer.ts)', () => {
 
 // ---------- behavior: paint() through a state sequence ----------
 
-// The panel is the last module the renderer builds; the grids/cards before it
-// need their index.astro containers — provided (with the static plan toolbar)
-// by the shared test-support shell.
+// The harness mounts index.astro's own shell and builds the renderer once;
+// every test below repaints that same DOM through reset()/drive().
 
-
-let renderer: Renderer;
-
-/** Replace the shared renderer with a fresh instance over the given seam and
- *  build it — the tests that need a mock emit rebind it this way. */
-function mount(options: BuildOptions = { emit: () => {} }): Renderer {
-  renderer?.destroy();
-  renderer = createRenderer(options);
-  renderer.build();
-  return renderer;
-}
-
-/** Repaint through the shared renderer instance. */
-const paint = (vm: ViewModel) => renderer.paint(vm);
-
-/** Drive the real view-state + renderer pair: dispatch and paint each step —
- *  the same path the island runs. Returns the last view model. */
-function drive(...steps: Action[]): ViewModel {
-  let vm: ViewModel | null = null;
-  for (const action of steps) {
-    vm = view.dispatch(action);
-    paint(vm);
-  }
-  return vm!;
-}
-
+let h: IslandHarness;
 let view: ReturnType<typeof createViewState>;
 const flash = () => ballMap.get('flash')!;
 const glacier = () => ballMap.get('glacier')!;
 
+/** Repaint through the harness's renderer instance. */
+const paint = (vm: ViewModel) => h.paint(vm);
+
+/** Drive the real view-state + renderer pair: dispatch and paint each step —
+ *  the same path the island runs. Returns the last view model. */
+const drive = (...steps: Action[]): ViewModel => h.drive(...steps);
+
 beforeAll(() => {
-  mountShell();
-  mount();
+  h = mountIsland(); // one shell mount + one renderer build for the file
 });
 
-afterAll(() => renderer.destroy());
+afterAll(() => h.destroy());
 
 beforeEach(() => {
-  view = createViewState();
-  paint(view.derive()); // initial paint: panel must start empty
+  h.reset(); // new view state + fresh emit spy; the built DOM is reused
+  view = h.view;
 });
 
 const panel = () => document.getElementById('fusionPanel')!;
-const q = <T extends HTMLElement>(s: string) => panel().querySelector<T>(s)!;
+const q = <T extends HTMLElement>(s: string) => h.q<T>(s, panel());
 
 describe('fusion panel behavior (jsdom, through paint())', () => {
   it('empty state: hint visible, everything else hidden', () => {
@@ -220,8 +194,7 @@ describe('fusion panel behavior (jsdom, through paint())', () => {
 // time — the seam that replaced the untyped CustomEvent bus.
 describe('build seam: clicks call emit (jsdom)', () => {
   it('tile click emits toggleItem with the item id', () => {
-    const emit = vi.fn();
-    mount({ emit });
+    const emit = h.emit;
     const tile = document.querySelector<HTMLElement>('#ballsGrid .tile[data-id="flash"]')!;
     expect(tile).toBeTruthy();
     tile.click();
@@ -229,8 +202,7 @@ describe('build seam: clicks call emit (jsdom)', () => {
   });
 
   it('char card click emits toggleChar with the character id', () => {
-    const emit = vi.fn();
-    mount({ emit });
+    const emit = h.emit;
     const card = document.querySelector<HTMLElement>('#charactersGrid .char-card')!;
     card.click();
     expect(emit).toHaveBeenCalledTimes(1);
@@ -238,11 +210,9 @@ describe('build seam: clicks call emit (jsdom)', () => {
   });
 
   it('the chip X button emits toggleChar; the chip body is inert (removal is X-only)', () => {
-    const emit = vi.fn();
-    mount({ emit });
+    const emit = h.emit;
     // chips only exist once a character is selected — paint the selection first
-    const view = createViewState();
-    paint(view.dispatch({ type: 'toggleChar', id: 'the-warrior' }));
+    paint(h.view.dispatch({ type: 'toggleChar', id: 'the-warrior' }));
     const chip = document.querySelector<HTMLElement>('#charChips .chip')!;
     expect(chip).toBeTruthy();
     chip.click();
@@ -255,8 +225,7 @@ describe('build seam: clicks call emit (jsdom)', () => {
   });
 
   it('fusion row click emits toggleFusion with the ball id', () => {
-    const emit = vi.fn();
-    mount({ emit });
+    const emit = h.emit;
     const row = document.querySelector<HTMLElement>('#fusionList .fusion-row[data-id="flash"]')!;
     expect(row).toBeTruthy();
     row.click();
@@ -265,21 +234,16 @@ describe('build seam: clicks call emit (jsdom)', () => {
 
   it('the emit callback actually reaches view state (the island path)', () => {
     // the island's emit: dispatch + paint — clicking a tile must select it
-    const view = createViewState();
-    mount({
-      emit: (action) => paint(view.dispatch(action)),
-    });
+    h.emit.mockImplementation((action) => { h.drive(action); });
     document.querySelector<HTMLElement>('#ballsGrid .tile[data-id="flash"]')!.click();
-    paint(view.derive());
+    paint(h.view.derive());
     expect(document.querySelector('#ballsGrid .tile[data-id="flash"]')!.classList.contains('selected')).toBe(true);
   });
 
   it('the toast verdict is the tile verdict paint() painted (one channel)', () => {
     // paint(vm) captures the view model the seam's toast reads, so hovering
     // a tile must show exactly the badge paintTiles just painted on it.
-    mount();
-    const view = createViewState();
-    const vm = view.dispatch({ type: 'toggleChar', id: 'the-ballbearer' });
+    const vm = h.view.dispatch({ type: 'toggleChar', id: 'the-ballbearer' });
     paint(vm);
     const badge = document.querySelector<HTMLElement>('#ballsGrid .tile .ind')!;
     expect(badge).toBeTruthy();
@@ -299,7 +263,7 @@ describe('build seam: clicks call emit (jsdom)', () => {
 // ---------- behavior: the plan screen (jsdom, through paint()) ----------
 
 const planView = () => document.getElementById('planView')!;
-const planQ = <T extends HTMLElement>(s: string) => planView().querySelector<T>(s)!;
+const planQ = <T extends HTMLElement>(s: string) => h.q<T>(s, planView());
 // the End game upgrades toggle is static shell markup (index.astro), outside planView
 const upgradesToggle = () => document.getElementById('planUpgrades') as HTMLInputElement;
 
@@ -335,8 +299,7 @@ describe('plan screen behavior (jsdom, through paint())', () => {
       { type: 'togglePlanItem', id: 'flash' },
       { type: 'togglePlanItem', id: 'wagon-wheel' },
     );
-    const emit = vi.fn();
-    mount({ emit });
+    const emit = h.emit;
     drive({ type: 'toggleChar', id: 'the-warrior' }, { type: 'togglePlanItem', id: 'flash' });
     const xs = [...planView().querySelectorAll<HTMLElement>('.plan-entry .plan-x')];
     expect(xs).toHaveLength(2);
@@ -416,8 +379,7 @@ describe('plan screen behavior (jsdom, through paint())', () => {
   });
 
   it('fused pairs render as one entry: both icons, ×, name, one X (emits togglePlanFusion)', () => {
-    const emit = vi.fn();
-    mount({ emit });
+    const emit = h.emit;
     drive({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
     const entries = [...planView().querySelectorAll<HTMLElement>('.plan-entry')];
     expect(entries).toHaveLength(1);
@@ -480,8 +442,7 @@ describe('selection box behavior (jsdom, through paint())', () => {
   });
 
   it('buttons emit togglePlanItem / toggleFusion through the seam', () => {
-    const emit = vi.fn();
-    mount({ emit });
+    const emit = h.emit;
     drive({ type: 'toggleItem', id: 'flash' });
     const buttons = [...document.getElementById('selection-balls')!.querySelectorAll<HTMLElement>('.selection-btn')];
     buttons[0].click();
@@ -554,8 +515,7 @@ describe('fusion panel plan button (jsdom, through paint())', () => {
     // (the action-slot adapter) — the bug class the old stashed
     // fusionPanelState module variable enabled was a second channel that a
     // repaint path could forget to refresh.
-    const emit = vi.fn();
-    mount({ emit });
+    const emit = h.emit;
     drive({ type: 'toggleFusion', id: 'flash' }, { type: 'toggleFusion', id: 'glacier' });
     q<HTMLElement>('.fusion-plan-btn').click();
     expect(emit).toHaveBeenCalledWith({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
@@ -570,8 +530,7 @@ describe('fusion panel plan button (jsdom, through paint())', () => {
   });
 
   it('click emits togglePlanFusion with the compose order; planned pair shows Remove from plan', () => {
-    const emit = vi.fn();
-    mount({ emit });
+    const emit = h.emit;
     drive({ type: 'toggleFusion', id: 'flash' }, { type: 'toggleFusion', id: 'glacier' });
     q<HTMLElement>('.fusion-plan-btn').click();
     expect(emit).toHaveBeenCalledWith({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
@@ -665,17 +624,15 @@ describe('fusion panel order presentation (jsdom, through paint())', () => {
   });
 
   it('the swap button emits swapFusion; through the island path it reverses the picks', () => {
-    const emit = vi.fn();
-    mount({ emit });
+    const emit = h.emit;
     drive({ type: 'toggleFusion', id: 'egg-sac' }, { type: 'toggleFusion', id: 'timestop' });
     q<HTMLElement>('.fusion-swap-btn').click();
     expect(emit).toHaveBeenCalledWith({ type: 'swapFusion' });
 
     // the island's emit: dispatch + paint — the panel recomputes in place
-    const view = createViewState();
-    mount({ emit: (action) => paint(view.dispatch(action)) });
-    paint(view.dispatch({ type: 'toggleFusion', id: 'egg-sac' }));
-    paint(view.dispatch({ type: 'toggleFusion', id: 'timestop' }));
+    h.reset();
+    h.emit.mockImplementation((action) => { h.drive(action); });
+    h.drive({ type: 'toggleFusion', id: 'egg-sac' }, { type: 'toggleFusion', id: 'timestop' });
     q<HTMLElement>('.fusion-swap-btn').click();
     expect(q('.name-a').textContent).toBe('Timestop');
     expect(q('.name-b').textContent).toBe('Egg Sac');
@@ -794,8 +751,7 @@ describe('plan build graphs (jsdom, through paint())', () => {
   });
 
   it('clicking a node emits toggleGraphFocus through the seam; focus lights the chain in place', () => {
-    const emit = vi.fn();
-    mount({ emit });
+    const emit = h.emit;
     drive({ type: 'togglePlanFusion', a: 'freeze-ray', b: 'time-bomb' });
     canvas('balls').querySelector<HTMLElement>('.build-node[data-id="burn"]')!.click();
     expect(emit).toHaveBeenCalledWith({ type: 'toggleGraphFocus', id: 'burn' });
@@ -818,8 +774,7 @@ describe('plan build graphs (jsdom, through paint())', () => {
   });
 
   it('the collapse toggle emits toggleGraphCollapse; paint reflects the collapsed panel', () => {
-    const emit = vi.fn();
-    mount({ emit });
+    const emit = h.emit;
     drive({ type: 'togglePlanFusion', a: 'freeze-ray', b: 'time-bomb' });
     graphEl('balls').querySelector<HTMLButtonElement>('.plan-graph-toggle')!.click();
     expect(emit).toHaveBeenCalledWith({ type: 'toggleGraphCollapse', which: 'balls' });
@@ -848,8 +803,7 @@ describe('plan build graphs: fused-node layout + done checks (jsdom, through pai
   });
 
   it('evolved/T3/fusion nodes carry a done check; base balls do not; clicking emits toggleGraphDone', () => {
-    const emit = vi.fn();
-    mount({ emit });
+    const emit = h.emit;
     drive({ type: 'togglePlanFusion', a: 'freeze-ray', b: 'time-bomb' });
     expect(byId('freeze')!.querySelector('.build-check')).toBeNull();
     for (const id of ['freeze-ray', 'time-bomb', FID]) {
