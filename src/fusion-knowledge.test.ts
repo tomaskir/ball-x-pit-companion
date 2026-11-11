@@ -18,23 +18,12 @@ import {
   factsFor,
   statusChannel,
   wireFor,
-  type CaveatContext,
   type Channel,
   type StatusChannel,
 } from './fusion-knowledge';
+import { caveatContext as ctx, noteOf } from './test-support/facts';
 
 const ball = (id: string) => ballMap.get(id)!;
-const ctx = (over: Partial<CaveatContext> = {}): CaveatContext =>
-  ({ spawnerId: null, disputed: false, ...over });
-
-/** The table's note text for a fact id, evaluated with the same context the
- *  composer passes. Tests assert which facts fire and in what order; the copy
- *  itself stays in the one table. */
-const noteOf = (id: string, a: string, b: string, c = ctx()): string => {
-  const fact = FUSION_FACTS.find((f) => f.id === id);
-  if (!fact || fact.kind !== 'note') throw new Error(`missing note fact: ${id}`);
-  return typeof fact.note === 'function' ? fact.note(ball(a), ball(b), c) : fact.note;
-};
 
 describe('one application-channel classification per ball', () => {
   // Golden classification: a future level-3 text edit must not silently
@@ -139,8 +128,10 @@ describe('capability queries', () => {
     expect(canInheritSpawn(ball('brood-mother'), ball('glacier'))).toBe(false);
     expect(canInheritSpawn(ball('voluptuous-egg-sac'), ball('overgrowth'))).toBe(false);
     expect(canInheritSpawn(ball('cell'), ball('glacier'))).toBe(true);
-    // A partner with no status has nothing to inherit.
+    // A partner with no status, or a field aura, has nothing the spawn
+    // branches can inherit.
     expect(canInheritSpawn(ball('cell'), ball('iron'))).toBe(false);
+    expect(canInheritSpawn(ball('cell'), ball('sun'))).toBe(false);
   });
 
   it('canCarryKill: a damage-dealing AOE carrier, with Satan allowed only for Black Hole', () => {
@@ -149,13 +140,15 @@ describe('capability queries', () => {
     expect(canCarryKill(ball('satan'), ball('reaper'))).toBe(false);
     expect(canCarryKill(ball('timestop'), ball('black-hole'))).toBe(false);
     expect(canCarryKill(ball('iron'), ball('black-hole'))).toBe(false);
+    // A kill ball cannot carry another kill ball's effect (kill × kill).
+    expect(canCarryKill(ball('black-hole'), ball('reaper'))).toBe(false);
   });
 });
 
 describe('wireFor (the cross-wire oracle)', () => {
   it('spawn carrier + on-hit status: the spawned balls inherit the status (Overgrowth × Maggot)', () => {
     const w = wireFor(ball('overgrowth'), ball('maggot'))!;
-    expect(w.kind).toBe('spawn-carries-status');
+    expect(w.kind).toBe('spawn-carries-on-hit');
     expect(w.carrier.id).toBe('maggot');
     expect(w.status.id).toBe('overgrowth');
     expect(w.spawnerId).toBe('maggot');
@@ -164,7 +157,7 @@ describe('wireFor (the cross-wire oracle)', () => {
 
   it('AOE carrier + on-hit status: the AOE hits apply the status (Overgrowth × Flash)', () => {
     const w = wireFor(ball('flash'), ball('overgrowth'))!;
-    expect(w.kind).toBe('aoe-carries-status');
+    expect(w.kind).toBe('aoe-carries-on-hit');
     expect(w.carrier.id).toBe('flash');
     expect(w.status.id).toBe('overgrowth');
     expect(w.spawnerId).toBeNull();
@@ -188,7 +181,7 @@ describe('wireFor (the cross-wire oracle)', () => {
 
   it('spawn carrier + spawn-bound status: the babies inherit the spawned effects (Cell × Glacier)', () => {
     const w = wireFor(ball('cell'), ball('glacier'))!;
-    expect(w.kind).toBe('spawn-carries-spawn-status');
+    expect(w.kind).toBe('spawn-carries-spawn-bound');
     expect(w.carrier.id).toBe('cell');
     expect(w.status.id).toBe('glacier');
     expect(w.spawnerId).toBe('cell');
@@ -203,7 +196,7 @@ describe('wireFor (the cross-wire oracle)', () => {
     // Both branches could fire: Maggot is a spawn carrier and Flash is an AOE
     // carrier. Branch priority makes the spawn carrier win.
     const w = wireFor(ball('maggot'), ball('flash'))!;
-    expect(w.kind).toBe('spawn-carries-status');
+    expect(w.kind).toBe('spawn-carries-on-hit');
     expect(w.carrier.id).toBe('maggot');
   });
 
@@ -211,7 +204,7 @@ describe('wireFor (the cross-wire oracle)', () => {
     // Glacier is an AOE carrier and Maggot is an on-hit status ball, so the
     // AOE branch fires before the spawn-bound branch can consider Maggot.
     const w = wireFor(ball('glacier'), ball('maggot'))!;
-    expect(w.kind).toBe('aoe-carries-status');
+    expect(w.kind).toBe('aoe-carries-on-hit');
     expect(w.carrier.id).toBe('glacier');
   });
 
@@ -278,6 +271,25 @@ describe('reported-fact table (one home for caveats and exceptions)', () => {
       if (f.kind !== 'exception') continue;
       expect(f.exception.source.length, `${f.id}: empty source`).toBeGreaterThan(0);
       expect(['reported', 'unverified', 'contradicted']).toContain(f.exception.confidence);
+    }
+  });
+
+  it('every exception pair id resolves in the ball catalog', () => {
+    for (const f of FUSION_FACTS) {
+      if (f.kind !== 'exception') continue;
+      for (const id of f.exception.pair.split('+')) {
+        if (id === '*') continue;
+        expect(ballMap.has(id), `${f.id}: ${id}`).toBe(true);
+      }
+    }
+  });
+
+  it('every depth-0 ball triggers the base-ball pool note (and only those)', () => {
+    const partner = ball('virus'); // depth 1, never a base ball
+    for (const b of BALLS) {
+      const notes = factsFor(b, partner, ctx()).notes;
+      expect(notes.includes(noteOf('base-ball-pool-recursion', b.id, 'virus')), b.id)
+        .toBe(b.depth === 0);
     }
   });
 

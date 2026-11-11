@@ -6,8 +6,8 @@
 // does this pair trigger?" (`factsFor`). The evidence itself — the
 // Destroy/cooldown/pierce/kill class sets, the spawn-inheritance classes, the
 // status-text regexes, the branch priority, and the caveat prose — stays
-// private here, so a research landing is a one-table edit and callers cannot
-// reassemble the rules themselves.
+// private here, so a research landing is a one-table edit and callers ask
+// questions instead of reading tables.
 //
 // Every id is a ball id in src/data/balls.ts. Nothing here composes a line:
 // `wireFor()` returns the structured wire (which branch, which carrier, which
@@ -195,10 +195,10 @@ const dealsDamage = (b: Ball): boolean =>
  *  `wireFor` is the branch priority: spawn × on-hit status, AOE × on-hit
  *  status, AOE × kill-on-hit, spawn × spawn-bound status. */
 export type WireKind =
-  | 'spawn-carries-status'
-  | 'aoe-carries-status'
+  | 'spawn-carries-on-hit'
+  | 'aoe-carries-on-hit'
   | 'aoe-carries-kill'
-  | 'spawn-carries-spawn-status';
+  | 'spawn-carries-spawn-bound';
 
 /** A cross-wire: one component's channel carries the other's effect.
  *  `fusion.ts` renders the line from this structure; the branch priority and
@@ -229,21 +229,23 @@ export function canCarry(carrier: Ball, status: Ball): boolean {
   return !(statusChannel(carrier) === 'field' && !isDamageRidingStatus(status));
 }
 
-/** Can a spawn carrier's babies inherit the partner's status? VES's two-hop
- *  chain drops the property; status-only carriers inherit on-hit statuses but
- *  not spawn-bound traits. A partner with no status has nothing to inherit. */
+/** Can a spawn carrier's babies inherit the partner's status? Only the two
+ *  spawn branches qualify: an on-hit status or a spawn-bound one. VES's
+ *  two-hop chain drops the property; status-only carriers inherit on-hit
+ *  statuses but not spawn-bound traits. */
 export function canInheritSpawn(carrier: Ball, status: Ball): boolean {
   if (!spawnable(carrier)) return false;
   const channel = statusChannel(status);
-  if (channel === null) return false;
+  if (channel !== 'hit' && channel !== 'spawn') return false;
   return channel !== 'spawn' || !isStatusOnlySpawner(carrier);
 }
 
 /** Can an AOE carrier trigger the partner's kill-on-hit effect? The carrier
- *  must deal damage. Satan's debuff-only judgment carries Black Hole's instant
- *  kill but not Reaper's damage-channel proc (corpus, both directions). */
+ *  must deal damage and must not itself be a kill ball (kill × kill does not
+ *  wire). Satan's debuff-only judgment carries Black Hole's instant kill but
+ *  not Reaper's damage-channel proc (corpus, both directions). */
 export function canCarryKill(carrier: Ball, killer: Ball): boolean {
-  if (!isKillEffect(killer) || !dealsDamage(carrier)) return false;
+  if (isKillEffect(carrier) || !isKillEffect(killer) || !dealsDamage(carrier)) return false;
   return (killer.id === 'black-hole' && carrier.id === 'satan') || aoeCarrier(carrier);
 }
 
@@ -253,34 +255,42 @@ export function wireFor(a: Ball, b: Ball): Wire | null {
   // 1. spawn carrier + partner's on-hit status (tooltip: Overgrowth × Maggot).
   //    Status-only carriers (Brood Mother, Mosquito King) wire here; their
   //    reported inheritance is degraded/probabilistic (factsFor() caveats it).
-  if (statusChannel(b) === 'hit' && canInheritSpawn(a, b)) return wire('spawn-carries-status', a, b);
-  if (statusChannel(a) === 'hit' && canInheritSpawn(b, a)) return wire('spawn-carries-status', b, a);
+  return directional(a, b, 'spawn-carries-on-hit', (carrier, status) =>
+      statusChannel(status) === 'hit' && canInheritSpawn(carrier, status))
+    // 2. AOE carrier + partner's on-hit status (tooltip: Overgrowth × Flash).
+    //    Only the higher-ranked carrier may carry.
+    ?? directional(a, b, 'aoe-carries-on-hit', (carrier, status) =>
+      aoeRank(carrier) > aoeRank(status) && canCarry(carrier, status))
+    // 3. AOE carrier + partner's kill-on-hit (Black Hole × Sun — the corpus
+    //    meta pair; kamigame: "Black Hole's effect rides on Flash's
+    //    screen-wide attack"). The kill ball is often itself screen-clear
+    //    (Black Hole, Reaper), so no rank comparison.
+    ?? directional(a, b, 'aoe-carries-kill', canCarryKill)
+    // 4. spawn carrier + partner's spawn-bound status (Glacier × Maggot — the
+    //    babies inherit the fused kit, spikes included; namu rule 6, corpus
+    //    glacier+maggot / cell+glacier / blizzard+spider-queen). Status-only
+    //    carriers inherit on-hit statuses but not spawn-bound traits (#20).
+    ?? directional(a, b, 'spawn-carries-spawn-bound', (carrier, status) =>
+      statusChannel(status) === 'spawn' && canInheritSpawn(carrier, status))
+    ?? null;
+}
 
-  // 2. AOE carrier + partner's on-hit status (tooltip: Overgrowth × Flash).
-  //    Only the higher-ranked carrier may carry.
-  if (aoeRank(a) > aoeRank(b) && canCarry(a, b)) return wire('aoe-carries-status', a, b);
-  if (aoeRank(b) > aoeRank(a) && canCarry(b, a)) return wire('aoe-carries-status', b, a);
-
-  // 3. AOE carrier + partner's kill-on-hit (Black Hole × Sun — the corpus meta
-  //    pair; kamigame: "Black Hole's effect rides on Flash's screen-wide
-  //    attack"). The kill ball is often itself screen-clear (Black Hole,
-  //    Reaper), so no rank comparison.
-  if (!isKillEffect(a) && canCarryKill(a, b)) return wire('aoe-carries-kill', a, b);
-  if (!isKillEffect(b) && canCarryKill(b, a)) return wire('aoe-carries-kill', b, a);
-
-  // 4. spawn carrier + partner's spawn-bound status (Glacier × Maggot — the
-  //    babies inherit the fused kit, spikes included; namu rule 6, corpus
-  //    glacier+maggot / cell+glacier / blizzard+spider-queen). Status-only
-  //    carriers inherit on-hit statuses but not spawn-bound traits (issue #20).
-  if (statusChannel(b) === 'spawn' && canInheritSpawn(a, b)) return wire('spawn-carries-spawn-status', a, b);
-  if (statusChannel(a) === 'spawn' && canInheritSpawn(b, a)) return wire('spawn-carries-spawn-status', b, a);
-
+/** Try the pair in both selection orders: `ok(carrier, effect)` decides which
+ *  ball carries, and the first order that matches wins. */
+function directional(
+  a: Ball,
+  b: Ball,
+  kind: WireKind,
+  ok: (carrier: Ball, effect: Ball) => boolean,
+): Wire | null {
+  if (ok(a, b)) return wire(kind, a, b);
+  if (ok(b, a)) return wire(kind, b, a);
   return null;
 }
 
 /** Assemble the wire structure; the branch supplies the kind and carrier. */
 function wire(kind: WireKind, carrier: Ball, status: Ball): Wire {
-  const spawn = kind === 'spawn-carries-status' || kind === 'spawn-carries-spawn-status';
+  const spawn = kind === 'spawn-carries-on-hit' || kind === 'spawn-carries-spawn-bound';
   return {
     kind,
     carrier,

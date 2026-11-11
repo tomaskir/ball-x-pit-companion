@@ -100,13 +100,13 @@ export function crossWire(a: Ball, b: Ball): CrossWireResult {
  *  priority — is fusion-knowledge.ts's call; this module only renders it. */
 function wireLine(wire: Wire): string {
   switch (wire.kind) {
-    case 'spawn-carries-status':
+    case 'spawn-carries-on-hit':
       return `Spawned balls from ${wire.carrier.name} have the same properties as ${wire.status.name}.`;
-    case 'aoe-carries-status':
+    case 'aoe-carries-on-hit':
       return `Area-of-effect damage from ${wire.carrier.name} inflicts the status effect of ${wire.status.name}.`;
     case 'aoe-carries-kill':
       return `Area-of-effect damage from ${wire.carrier.name} triggers the instant kill of ${wire.status.name}.`;
-    case 'spawn-carries-spawn-status':
+    case 'spawn-carries-spawn-bound':
       return `Spawned balls from ${wire.carrier.name} have the same properties as ${wire.status.name}, including its spawned effects.`;
   }
 }

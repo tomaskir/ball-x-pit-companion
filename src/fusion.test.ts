@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { fusionName, abstractDamage, crossWire, evolvesInstead, fuse } from './fusion';
 import { ballMap } from './catalog';
-import { FUSION_FACTS, type CaveatContext } from './fusion-knowledge';
+import { caveatContext as ctx, noteOf } from './test-support/facts';
 import {
   expectBerserkIsOnHitStatus,
   expectBlackHoleSunOrderIndependent,
@@ -23,15 +23,6 @@ import {
 } from './test-support/pins';
 
 const ball = (id: string) => ballMap.get(id)!;
-const ctx = (over: Partial<CaveatContext> = {}): CaveatContext =>
-  ({ spawnerId: null, disputed: false, ...over });
-/** The table's note text for a fact id, evaluated with the composer's context.
- *  Tests pin which facts fire and their order; the copy stays in the table. */
-const noteOf = (id: string, a: string, b: string, c = ctx()): string => {
-  const fact = FUSION_FACTS.find((f) => f.id === id);
-  if (!fact || fact.kind !== 'note') throw new Error(`missing note fact: ${id}`);
-  return typeof fact.note === 'function' ? fact.note(ball(a), ball(b), c) : fact.note;
-};
 
 describe('fusionName', () => {
   it('is "A × B" with the first-selected ball first (site display; English game name is "A X B")', () => {
