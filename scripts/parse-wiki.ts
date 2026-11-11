@@ -1,207 +1,29 @@
 #!/usr/bin/env node
 /**
- * Parses the hand-maintained fact bases into src/data/parsed.json, which
- * emit-data.ts turns into the generated data files. Run:
+ * CLI over fact-bases.ts: parses the hand-maintained fact bases into
+ * src/data/parsed.json, which emit-data.ts turns into the generated data
+ * files. Run:
  *   node --experimental-strip-types scripts/parse-wiki.ts
  *
- * Inputs:
- * - docs/research/game-mechanics.md — balls, passives, characters. Effect
- *   text is taken verbatim from the wiki tables.
- * - docs/research/character-pairings.md — the Matchmaker pairing
- *   restrictions (game data, see that file for sources) into each
- *   character's `cannotPair` (list of character names; `*all*` expands to
- *   every other character).
- * - docs/research/level-3-effects.md — level-3 effect text for the fusion
- *   composer (`level3`; Baby Ball has no per-level table and is omitted).
+ * The parsers themselves are exported from fact-bases.ts and unit-tested
+ * there; this file only reads the sources, reports counts, and writes.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
-import { slug } from './slug.ts';
-import { resolveDepths } from '../src/graph.ts';
+import { parseFactBases } from './fact-bases.ts';
 
-const SRC = new URL('../docs/research/game-mechanics.md', import.meta.url);
 const OUT = new URL('../src/data/', import.meta.url);
 
-const md = readFileSync(SRC, 'utf8');
-
-// ---------- helpers ----------
-
-const clean = (s) => s.replace(/\*\*/g, '').trim();
-
-/** Parse a markdown table (by header prefix) into array of row objects. */
-function parseTable(headerRe) {
-  const lines = md.split('\n');
-  const out = [];
-  let idx = 0;
-  while (idx < lines.length && !headerRe.test(lines[idx])) idx++;
-  if (idx === lines.length) throw new Error(`table not found: ${headerRe}`);
-  idx += 2; // skip header + separator
-  for (; idx < lines.length; idx++) {
-    const line = lines[idx];
-    if (!line.startsWith('|')) break;
-    const cells = line.split('|').slice(1, -1).map(c => c.trim());
-    out.push(cells);
-  }
-  return out;
-}
-
-/** Split a recipe cell into recipes: string[][] (OR-of-ANDs). */
-function parseRecipes(cell) {
-  // e.g. "Iron + (Ghost or Dark)" ; "Burn + Wind + Freeze + Earthquake"
-  // "Deadeye's Cross + Gracious Impaler" — component may itself be an evolved ball.
-  const c = clean(cell).replace(/\s*\(\s*4-way\s*\)/i, '');
-  const alts = c.split(' or ').map(s => s.replace(/[()]/g, '').trim());
-  // "A or B" as full-cell alternates vs "(X or Y)" inside a slot.
-  if (alts.length > 1 && !c.includes('+')) {
-    // whole-cell alternates (not present in current data, but tolerated)
-    return alts.map(a => [slug(a)]);
-  }
-  // slots separated by "+"
-  const slots = c.split('+').map(s => s.trim());
-  let recipes = [[]];
-  for (const slot of slots) {
-    const m = slot.match(/^\((.*)\)$/);
-    const opts = m ? m[1].split(/\bor\b/).map(o => o.trim()) : [slot];
-    recipes = recipes.flatMap(r => opts.map(o => [...r, slug(clean(o))]));
-  }
-  return recipes;
-}
-
-// ---------- balls ----------
-const balls = [];
-
-// Base balls (depth 0): table 1.1 — columns: Ball | On-hit | Status trigger | Status effect | Effect text | Character(s) | Unlock
-for (const [name, onhit, , , effect] of parseTable(/^\| Ball \| On-hit effect \|/m)) {
-  balls.push({ name: clean(name), depth: 0, recipes: [], onhit: clean(onhit), effect: clean(effect) });
-}
-balls.push({ name: 'Baby Ball', depth: 0, recipes: [], onhit: '', effect: 'Base attack ball, no special abilities. All characters start with a few except The Empty Nester and The Makeshift Sisyphus.' });
-
-// Evolved balls (depth 1|2): table 1.2 — columns: Ball | Depth | Recipe(s) | On-hit | Status effects | Effect text
-// Depth is computed from recipe structure, not the wiki's loose Evo/Tier-3
-// labels (which put e.g. Tumor — built from evolved Radiation Beam — in "Evo"):
-//   depth 1 (Tier-2) = recipe includes an evolved ball as a component
-//   depth 2 (Tier-3) = recipe includes a tier-2 ball as a component
-const evoRows = parseTable(/^\| Ball \| Depth \|/m);
-const evo = evoRows.map(([name, , recipeCell, onhit, , effect]) => ({
-  name: clean(name),
-  recipes: parseRecipes(recipeCell),
-  onhit: clean(onhit),
-  effect: clean(effect),
-}));
-const evoIds = new Set(evo.map((e) => slug(e.name)));
-// Depth resolution (cache + cycle guard + structuralDepth tier rule) lives in
-// graph.ts — one resolver per namespace, here and for passives below.
-const ballDepths = resolveDepths(
-  evo.map((e) => slug(e.name)),
-  evoIds,
-  (id) => evo.find((e) => slug(e.name) === id)?.recipes ?? [],
-);
-for (const ent of evo) {
-  balls.push({ name: ent.name, depth: ballDepths.get(slug(ent.name)), recipes: ent.recipes, onhit: ent.onhit, effect: ent.effect });
-}
-
-// ---------- passives ----------
-const passives = [];
-// Base passives (depth 0): Passive | Effect text | Appearance requirement | Unlock
-for (const [name, effect] of parseTable(/^\| Passive \| Effect text \(wiki\) \|/m)) {
-  passives.push({ name: clean(name), depth: 0, recipes: [], effect: clean(effect) });
-}
-// Evolved passives (depth 1|2): Passive | Recipe | Effect text — same
-// structural depth computation as balls.
-const evoPassives = parseTable(/^\| Passive \| Recipe \|/m);
-const evoPas = evoPassives.map(([name, recipeCell, effect]) => ({
-  name: clean(name),
-  recipes: parseRecipes(recipeCell),
-  effect: clean(effect),
-}));
-const evoPasIds = new Set(evoPas.map((e) => slug(e.name)));
-const passiveDepths = resolveDepths(
-  evoPas.map((e) => slug(e.name)),
-  evoPasIds,
-  (id) => evoPas.find((e) => slug(e.name) === id)?.recipes ?? [],
-);
-for (const ent of evoPas) {
-  passives.push({ name: ent.name, depth: passiveDepths.get(slug(ent.name)), recipes: ent.recipes, effect: ent.effect });
-}
-
-// ---------- characters ----------
-const characters = [];
-// Character | Base ball | Ability | Unlock | Synergy facts
-for (const [name, baseBall, ability] of parseTable(/^\| Character \| Base ball \|/m)) {
-  characters.push({
-    name: clean(name),
-    baseBall: baseBall.trim() === '*none*' ? null : clean(baseBall),
-    quirk: clean(ability),
-  });
-}
-
-// ---------- character pairing restrictions ----------
-// From docs/research/character-pairings.md — game data (the Matchmaker's
-// darkened-out pairs), not the editorial synergy model. `*all*` = the False
-// Messiah's rule: pairs with nobody, in either slot.
-const PAIRINGS_SRC = new URL('./character-pairings.md', SRC);
-const pairRows = (() => {
-  const pmd = readFileSync(PAIRINGS_SRC, 'utf8');
-  const lines = pmd.split('\n');
-  const out = [];
-  let idx = 0;
-  while (idx < lines.length && !/^\| Character \| Cannot pair with \|/.test(lines[idx])) idx++;
-  if (idx === lines.length) throw new Error('pairing table not found in character-pairings.md');
-  idx += 2; // skip header + separator
-  for (; idx < lines.length; idx++) {
-    const line = lines[idx];
-    if (!line.startsWith('|')) break;
-    out.push(line.split('|').slice(1, -1).map(c => c.trim()));
-  }
-  return out;
-})();
-const charByName = new Map(characters.map((c) => [c.name, c]));
-for (const [name, cannotCell] of pairRows) {
-  const ch = charByName.get(clean(name));
-  if (!ch) throw new Error(`pairing row for unknown character: ${name}`);
-  const others = characters.filter((c) => c.name !== ch.name).map((c) => c.name);
-  ch.cannotPair = cannotCell.startsWith('*all*')
-    ? others
-    : cannotCell.split(',').map((s) => clean(s)).filter((s) => s.length > 0);
-}
-for (const c of characters) if (!c.cannotPair) c.cannotPair = [];
-// the doc lists each forbidden pair once; the relation itself is symmetric
-// (the game darkens both directions) — expand here, once
-for (const c of [...characters]) {
-  for (const partner of c.cannotPair) {
-    const p = charByName.get(partner);
-    if (!p) throw new Error(`pairing row for ${c.name}: unknown partner "${partner}"`);
-    if (!p.cannotPair.includes(c.name)) p.cannotPair.push(c.name);
-  }
-}
-
-// ---------- level-3 effect text ----------
-// The fusion composer consumes level-3 text; the catalog stays level-1
-// (decision #12). Source: docs/research/level-3-effects.md (#22), a
-// hand-maintained fact base transcribed from the wiki's per-level tables.
-const L3_SRC = new URL('../docs/research/level-3-effects.md', import.meta.url);
-const l3md = readFileSync(L3_SRC, 'utf8');
-const level3 = {};
-{
-  const lines = l3md.split('\n');
-  let idx = 0;
-  while (idx < lines.length && !/^\| Ball \| Level-3 effect text \|/.test(lines[idx])) idx++;
-  if (idx === lines.length) throw new Error('level-3 table not found in level-3-effects.md');
-  idx += 2; // skip header + separator
-  for (; idx < lines.length; idx++) {
-    const line = lines[idx];
-    if (!line.startsWith('|')) break;
-    const [name, text] = line.split('|').slice(1, -1).map((c) => c.trim());
-    // Baby Ball has no per-level table and is not fusable — the row is "—".
-    if (!text || text === '—' || text === '-') continue;
-    level3[slug(clean(name))] = clean(text);
-  }
-}
+const parsed = parseFactBases({
+  mechanics: readFileSync(new URL('../docs/research/game-mechanics.md', import.meta.url), 'utf8'),
+  pairings: readFileSync(new URL('../docs/research/character-pairings.md', import.meta.url), 'utf8'),
+  level3: readFileSync(new URL('../docs/research/level-3-effects.md', import.meta.url), 'utf8'),
+});
 
 // ---------- report ----------
-console.log(`balls: ${balls.length} (depth0=${balls.filter(b => b.depth === 0).length}, depth1=${balls.filter(b => b.depth === 1).length}, depth2=${balls.filter(b => b.depth === 2).length})`);
-console.log(`passives: ${passives.length} (depth0=${passives.filter(p => p.depth === 0).length}, evolved=${passives.filter(p => p.depth > 0).length})`);
-console.log(`characters: ${characters.length}`);
-console.log(`level-3 effect texts: ${Object.keys(level3).length}`);
+console.log(`balls: ${parsed.balls.length} (depth0=${parsed.balls.filter(b => b.depth === 0).length}, depth1=${parsed.balls.filter(b => b.depth === 1).length}, depth2=${parsed.balls.filter(b => b.depth === 2).length})`);
+console.log(`passives: ${parsed.passives.length} (depth0=${parsed.passives.filter(p => p.depth === 0).length}, evolved=${parsed.passives.filter(p => p.depth > 0).length})`);
+console.log(`characters: ${parsed.characters.length}`);
+console.log(`level-3 effect texts: ${Object.keys(parsed.level3).length}`);
 
-writeFileSync(new URL('./parsed.json', OUT), JSON.stringify({ balls, passives, characters, level3 }, null, 2));
+writeFileSync(new URL('./parsed.json', OUT), JSON.stringify(parsed, null, 2));
 console.log('wrote src/data/parsed.json');

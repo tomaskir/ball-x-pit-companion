@@ -35,7 +35,12 @@ Not an npm package (`"private": true`). Code is MIT-licensed; game art in
 - `src/icon-url.ts` — the base-URL × icon-path join.
 - `src/styles/global.css` — the island's stylesheet; `src/styles.test.ts` pins markup/CSS coupling.
 - `src/data/{balls,passives,characters,tags,level-3}.ts` — **generated** data files.
-- `scripts/parse-wiki.ts`, `scripts/emit-data.ts`, `scripts/slug.ts` — the data pipeline.
+- `scripts/parse-wiki.ts`, `scripts/emit-data.ts` — thin CLIs over the data pipeline.
+- `scripts/fact-bases.ts` — exported pure parsers (`parseRecipes`, `parseGameMechanics`, `parsePairings`, `parseLevel3`, `parseFactBases`); the test surface for the fact bases.
+- `scripts/markdown-table.ts` — the one markdown-table scanner all three parsers share.
+- `scripts/editorial.ts` — the site's editorial synergy model (`TAGS`, `BALL_TAGS`, `PASSIVE_TAGS`, `CHAR_VERDICTS`); the only place it is set.
+- `scripts/generated-data.ts` — the generated-data contract (`emitData`, `renderGenerated`, `validateGenerated`, `runEmitData`); validation runs before any write and the same list is asserted in `src/data.test.ts`.
+- `scripts/slug.ts` — shared name→id slugification.
 - `scripts/harvest/validate-observations.ts` — thin CLI over `src/corpus.ts` (prints findings, sets the exit code).
 - `docs/research/game-mechanics.md` — the hand-maintained fact base the parser consumes.
 - `docs/research/character-pairings.md` — the Matchmaker pairing-restriction fact base (also parsed).
@@ -80,7 +85,7 @@ Hand-edited:
 - `docs/research/level-3-effects.md` — the level-3 effect-text fact base
   (wiki per-level tables, v1.301 pre-DLC; parsed into `src/data/level-3.ts`).
   The fusion composer consumes it; the catalog stays level-1.
-- Tag/verdict assignments live **inside `scripts/emit-data.ts`** (`TAGS`,
+- Tag/verdict assignments live **inside `scripts/editorial.ts`** (`TAGS`,
   `BALL_TAGS`, `PASSIVE_TAGS`, `CHAR_VERDICTS`) — this is the only place the
   editorial synergy model is set.
 
@@ -88,9 +93,12 @@ Generated — never edit by hand:
 - `src/data/parsed.json`, `src/data/balls.ts`, `src/data/passives.ts`,
   `src/data/characters.ts`, `src/data/tags.ts`, `src/data/level-3.ts`.
 
-`emit-data.ts` validates on every run (recipes resolve within namespace, tags in
-vocabulary, every character has a verdict entry, base balls resolve, level-3
-texts cover all 90 fusable balls) and exits non-zero on violation.
+`scripts/generated-data.ts` validates on every run (recipes resolve within
+namespace, tags in vocabulary, every character has a verdict entry, base balls
+resolve, pairings are symmetric, level-3 texts cover all 90 fusable balls)
+**before** writing any file, and the CLI exits non-zero on violation.
+`src/data.test.ts` runs the same `validateGenerated` list against the
+checked-in data, so the invariants are written once.
 
 ## Architectural invariants — do not break
 

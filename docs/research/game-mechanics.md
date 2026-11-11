@@ -307,7 +307,7 @@ editorial tag/verdict model below.
 
 ## 4. Proposed synergy tag list
 
-**Landed:** the shipped vocabulary and assignments live in `scripts/emit-data.ts`
+**Landed:** the shipped vocabulary and assignments live in `scripts/editorial.ts`
 (`TAGS`, `BALL_TAGS`, `PASSIVE_TAGS`, `CHAR_VERDICTS`); this section is the
 original proposal.
 

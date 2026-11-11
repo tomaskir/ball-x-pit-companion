@@ -1,5 +1,7 @@
 // Data invariants — from ticket 03 (data schema), ticket 02 (fact base counts),
-// and the emit-data.ts validations. These guard the generated data files.
+// and the generated-data contract. The pipeline invariants are asserted once,
+// through validateGenerated (shared with scripts/emit-data.ts); the rest are
+// content assertions specific to this fact base.
 import { describe, it, expect } from 'vitest';
 import { BALLS } from './data/balls';
 import { PASSIVES } from './data/passives';
@@ -10,9 +12,10 @@ import { LEVEL_3_EFFECTS } from './data/level-3';
 import { BALL_KIT } from './ball-kit';
 import { pairKey } from './pair';
 import { byId, complexity } from './graph';
+import { validateGenerated } from '../scripts/generated-data.ts';
+import { EDITORIAL } from '../scripts/editorial.ts';
 
 const ballIds = new Set(BALLS.map((b) => b.id));
-const passiveIds = new Set(PASSIVES.map((p) => p.id));
 const WILDCARD = '*passives';
 
 describe('fact-base counts (ticket 02, game v1.301)', () => {
@@ -41,25 +44,12 @@ describe('schema invariants (ticket 03)', () => {
     }
   });
 
-  it('every recipe component resolves within its own namespace (graphs never cross)', () => {
-    for (const b of BALLS) for (const r of b.recipes) for (const c of r) expect(ballIds.has(c)).toBe(true);
-    for (const p of PASSIVES) for (const r of p.recipes) for (const c of r) expect(passiveIds.has(c)).toBe(true);
-  });
-
-  it('every tag on a ball/passive is in the vocabulary', () => {
-    const vocab = new Set(Object.keys(TAGS));
-    for (const b of BALLS) for (const t of b.tags) expect(vocab.has(t)).toBe(true);
-    for (const p of PASSIVES) for (const t of p.tags) expect(vocab.has(t)).toBe(true);
-  });
-
-  it('every character has verdict rules with valid tags and red/green verdicts', () => {
-    const vocab = new Set(Object.keys(TAGS));
-    for (const ch of CHARACTERS) {
-      for (const v of ch.verdicts) {
-        expect(['red', 'green']).toContain(v.verdict);
-        expect(vocab.has(v.tag) || v.tag === WILDCARD).toBe(true);
-      }
-    }
+  it('the generated data satisfies every pipeline invariant', () => {
+    // One invariant list, shared with scripts/emit-data.ts: recipes resolve
+    // within their namespace, tags/verdicts use the vocabulary, every
+    // character has verdicts and a resolving base ball, pairings are
+    // symmetric, and the level-3 overlay covers every fusable ball.
+    expect(validateGenerated({ tags: TAGS, balls: BALLS, passives: PASSIVES, characters: CHARACTERS, level3: LEVEL_3_EFFECTS }, EDITORIAL)).toEqual([]);
   });
 
   it('every character verdict note is present (tooltip explains the indicator)', () => {
@@ -138,22 +128,6 @@ describe('characters (ticket 06)', () => {
 describe('Matchmaker pairing restrictions (character-pairings.md)', () => {
   const byId = new Map(CHARACTERS.map((c) => [c.id, c]));
 
-  it('every character carries a cannotPair list; every partner resolves; no self-pairs', () => {
-    for (const ch of CHARACTERS) {
-      expect(Array.isArray(ch.cannotPair)).toBe(true);
-      for (const p of ch.cannotPair) {
-        expect(byId.has(p)).toBe(true);
-        expect(p).not.toBe(ch.id);
-      }
-    }
-  });
-
-  it('the relation is symmetric', () => {
-    for (const ch of CHARACTERS)
-      for (const p of ch.cannotPair)
-        expect(byId.get(p)!.cannotPair).toContain(ch.id);
-  });
-
   it('17 forbidden pairs over the 22 pairable characters (the doc\'s table)', () => {
     const pairs = new Set(
       CHARACTERS.flatMap((c) => c.cannotPair.map((p) => pairKey(c.id, p))),
@@ -161,11 +135,6 @@ describe('Matchmaker pairing restrictions (character-pairings.md)', () => {
     // 17 regular pairs + the False Messiah's 22 (they pair with nobody)
     expect(pairs.size).toBe(39);
     expect(pairs.size - [...pairs].filter((k) => k.includes('the-false-messiah')).length).toBe(17);
-  });
-
-  it('the False Messiah pairs with nobody (never a second character)', () => {
-    const messiah = byId.get('the-false-messiah')!;
-    expect(messiah.cannotPair).toHaveLength(CHARACTERS.length - 1);
   });
 
   it('spot-checks from the research: Repentant x Shieldbearer, Cohabitants x Juggler, Itchy Finger x Tactician', () => {
@@ -185,10 +154,6 @@ describe('level-3 effect-text overlay (decision #12, transcription #22)', () => 
       if (b.id === 'baby-ball') continue;
       expect(LEVEL_3_EFFECTS[b.id], `missing level-3 text for ${b.id}`).toBeTruthy();
     }
-  });
-
-  it('every level-3 key resolves to a catalog ball', () => {
-    for (const id of Object.keys(LEVEL_3_EFFECTS)) expect(ballIds.has(id), id).toBe(true);
   });
 
   it('only Elemental and Ghost have no L3 diff (the transcription\'s two documented cases)', () => {

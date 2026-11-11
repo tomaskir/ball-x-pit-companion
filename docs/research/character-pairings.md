@@ -3,9 +3,10 @@
 Which characters the game refuses to team up in a two-character (Matchmaker)
 run. This is **game data** — the game hard-codes the darkened-out pairs on
 the character select screen — unlike the synergy tags/verdicts, which are the
-site's editorial model. Consumed by the data pipeline: `scripts/parse-wiki.ts`
-reads the table below into `parsed.json`, and `scripts/emit-data.ts` emits it
-as `cannotPair` on each character in `src/data/characters.ts`.
+site's editorial model. Consumed by the data pipeline: `scripts/fact-bases.ts`
+parses the table below (expanding the symmetric relation once) into
+`parsed.json`, and `scripts/generated-data.ts` emits it as `cannotPair` on each
+character in `src/data/characters.ts`.
 
 The wiki's own Matchmaker page has an "Allowable Character Combinations"
 section that is still a `{?TODO}` stub (checked 2026-10-10), so the pair list

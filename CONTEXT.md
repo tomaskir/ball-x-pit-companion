@@ -60,6 +60,16 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
 - **Slug** — name→id normalization (apostrophes dropped, kebab-case,
   abbreviation table for Laser H/V and hilted daggers). Single source of
   truth: `scripts/slug.ts`; both pipeline scripts import it.
+- **Fact-base parser** — an exported pure function in `scripts/fact-bases.ts`
+  that turns one hand-maintained markdown fact base into data
+  (`parseGameMechanics`, `parsePairings`, `parseLevel3`; `parseFactBases`
+  composes them). Markdown tables are read through the one scanner in
+  `scripts/markdown-table.ts`.
+- **Generated-data contract** — `scripts/generated-data.ts`: `emitData`
+  (parsed + editorial → in-memory data), `renderGenerated` (data → the five
+  file contents), and `validateGenerated` (the one invariant list). The
+  `emit-data.ts` CLI runs validate before write; `src/data.test.ts` runs the
+  same list against the checked-in data.
 - **Tag** — one of the 17 entries in the synergy vocabulary
   (`src/data/tags.ts`): `aoe`, `single-target`, `spawns-baby-balls`,
   `spawns-allies`, `status-effect`, `pass-through`, `destroy-on-hit`,
@@ -421,14 +431,15 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   Guide of Evolutions" charts. Effect text is verbatim from the wiki. The
   overview catalog is **level-1** text; fusion consumes the level-3 overlay
   `src/data/level-3.ts` (generated from `docs/research/level-3-effects.md`).
-- **Pipeline** — `scripts/parse-wiki.ts` (fact base + the Matchmaker pairing
-  fact base `docs/research/character-pairings.md` → `src/data/parsed.json`,
-  computing depth structurally) then `scripts/emit-data.ts`
-  (`parsed.json` + the hand-maintained tag/verdict maps inside it →
-  `src/data/{tags,balls,passives,characters}.ts`) and the level-3 overlay
-  (`docs/research/level-3-effects.md` → `src/data/level-3.ts`). The six
-  `src/data` outputs are generated — edit the fact base or the maps in
-  `emit-data.ts`, never the generated files.
+- **Pipeline** — `scripts/fact-bases.ts` parses the fact base, the Matchmaker
+  pairing fact base `docs/research/character-pairings.md`, and the level-3
+  overlay `docs/research/level-3-effects.md` (computing depth structurally);
+  `scripts/parse-wiki.ts` writes the result to `src/data/parsed.json`.
+  `scripts/generated-data.ts` turns that plus the hand-maintained maps in
+  `scripts/editorial.ts` into `src/data/{tags,balls,passives,characters,
+  level-3}.ts`, validating before writing. The six `src/data` outputs are
+  generated — edit the fact bases or `scripts/editorial.ts`, never the
+  generated files.
 - **Icons** — 208 PNGs in `public/icons/`, downloaded from the wiki's
   MediaWiki API; provenance and the rights-holder disclaimer live in
   `public/icons/CREDITS.md`.
