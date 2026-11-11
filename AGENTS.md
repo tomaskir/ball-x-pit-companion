@@ -33,7 +33,7 @@ Not an npm package (`"private": true`). Code is MIT-licensed; game art in
 - `src/build-graph.ts` — pure Plan-screen build-graph derivation + layout: `deriveBuildGraphView(planState, { focus, done, collapsed })` owns the graph's inputs (targets, including Evolves-instead resolution), both namespace graphs, focus validation, the related-set walk, and the row model (row counts, fusion row index, labels); `deriveBuildGraph`/`layoutBuildGraph` are its pure parts. The renderer only paints it.
 - `src/depth-labels.ts` — the structural-depth display labels shared by the catalog grids, the fusion screen, and the build-graph row model.
 - `src/catalog.ts` — ball/passive collections indexed; **namespace resolution lives here and nowhere else**.
-- `src/corpus.ts` — the fusion-observation corpus module: curated `fusion-pairs.json` loading (`loadCorpus` → pairs / `pair(key)` / `wirePairs()`) and raw `.jsonl` validation (`validateCorpus`); the seam both corpus tests and the harvest CLI cross.
+- `src/corpus.ts` — the fusion-observation corpus module: curated `fusion-pairs.json` loading (`loadCorpus` → `pair(key)` / `pairKeys()` / `wirePairs()` / `generalRules()`) and raw `.jsonl` validation (`validateCorpus`); the seam both corpus tests and the harvest CLI cross.
 - `src/synergy.ts` — red/green verdict from tag overlap.
 - `src/icon-url.ts` — the base-URL × icon-path join.
 - `src/styles/global.css` — the island's stylesheet; `src/styles.test.ts` pins markup/CSS coupling.

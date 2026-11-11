@@ -5,7 +5,6 @@
 // note describes is either encoded behind this interface or explicitly listed
 // as out of scope, so a new note forces a decision.
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
 import { BALLS } from './data/balls';
 import { ballMap } from './catalog';
 import { BALL_KIT } from './ball-kit';
@@ -21,6 +20,7 @@ import {
   type Channel,
   type StatusChannel,
 } from './fusion-knowledge';
+import { loadCorpus } from './corpus';
 import { caveatContext as ctx, noteOf } from './test-support/facts';
 
 const ball = (id: string) => ballMap.get(id)!;
@@ -382,9 +382,7 @@ describe('reported-fact table (one home for caveats and exceptions)', () => {
 });
 
 describe('corpus general_rules_notes coverage', () => {
-  const corpus = JSON.parse(
-    readFileSync(new URL('../docs/research/fusion-observations/fusion-pairs.json', import.meta.url), 'utf8'),
-  ) as { general_rules_notes: Record<string, unknown> };
+  const notes = loadCorpus().generalRules();
 
   /** Notes whose class a knowledge table, fact row, or wire branch encodes.
    *  Each check exercises the public behavior the note calls out, so a table
@@ -429,14 +427,14 @@ describe('corpus general_rules_notes coverage', () => {
   ]);
 
   it('every note is either represented by a table or explicitly out of scope', () => {
-    for (const key of Object.keys(corpus.general_rules_notes)) {
+    for (const key of Object.keys(notes)) {
       expect(ENCODED_CLASSES[key] ?? NOT_CLASS_NOTES.has(key), `unclassified corpus note: ${key}`).toBeTruthy();
     }
   });
 
   it('the encoded classes are present in the corpus and backed by the named ids', () => {
     for (const [key, represented] of Object.entries(ENCODED_CLASSES)) {
-      expect(corpus.general_rules_notes[key], `${key} missing from corpus`).toBeDefined();
+      expect(notes[key], `${key} missing from corpus`).toBeDefined();
       expect(represented(), `${key} not represented by knowledge`).toBe(true);
     }
   });

@@ -8,8 +8,10 @@
 //     `pending/` is the DLC staging area and stays outside the gate.
 //
 // Callers cross this module instead of re-encoding the corpus shape:
-// `loadCorpus(root)` gives the curated pairs plus the derived wire/no-wire/
-// disputed partition; `loadRawObservations(root)` gives the parsed raw rows;
+// `loadCorpus(root)` answers the questions consumers ask — `pair(key)` /
+// `pairKeys()` for the curated entries, `wirePairs()` for the once-computed
+// wire/no-wire/disputed partition, and `generalRules()` for the cross-pair
+// rule notes; `loadRawObservations(root)` gives the parsed raw rows;
 // `validateCorpus(root)` runs both layers' schema checks and returns findings
 // (the CLI prints them, the vitest gate asserts none).
 //
@@ -70,13 +72,29 @@ export interface WirePartition {
   disputed: string[];
 }
 
+/** One curated general-rule note (`general_rules_notes`): a cross-pair claim
+ *  with its provenance, not tied to a single pair. */
+export interface GeneralRuleNote {
+  title: string;
+  source: string;
+  date: string;
+  confidence: string;
+  canonical?: string;
+  statement: string;
+  scope_dispute?: string;
+}
+
 export interface Corpus {
   /** The declared `pair_count` (kept as a pin even if it disagrees with the
    *  actual entry count; `findings` reports the disagreement). */
   pairCount: number;
-  pairs: Record<string, CorpusPair>;
+  /** Curated pair keys, in file order. */
+  pairKeys(): readonly string[];
   pair(key: string): CorpusPair | undefined;
+  /** The derived polarity partition, computed once at load. */
   wirePairs(): WirePartition;
+  /** The curated layer's general rule notes, keyed by note id. */
+  generalRules(): Record<string, GeneralRuleNote>;
   /** Curated-layer shape findings. The raw layer is validated separately by
    *  `validateCorpus`/`loadRawObservations`. */
   findings: Finding[];
@@ -183,6 +201,7 @@ function partition(pairs: Record<string, CorpusPair>): WirePartition {
 interface CuratedLayer {
   pairCount: number;
   pairs: Record<string, CorpusPair>;
+  generalRules: Record<string, GeneralRuleNote>;
   findings: Finding[];
 }
 
@@ -193,6 +212,12 @@ function readCurated(root: string, contract: SchemaContract): CuratedLayer {
   const rawPairs: Record<string, any> =
     raw?.pairs && typeof raw.pairs === 'object' && !Array.isArray(raw.pairs) ? raw.pairs : {};
   const pairs: Record<string, CorpusPair> = {};
+  const generalRules: Record<string, GeneralRuleNote> =
+    raw?.general_rules_notes &&
+    typeof raw.general_rules_notes === 'object' &&
+    !Array.isArray(raw.general_rules_notes)
+      ? raw.general_rules_notes
+      : {};
 
   const count = Object.keys(rawPairs).length;
   if (typeof raw?.pair_count !== 'number') err('pair_count must be a number');
@@ -271,6 +296,7 @@ function readCurated(root: string, contract: SchemaContract): CuratedLayer {
   return {
     pairCount: typeof raw?.pair_count === 'number' ? raw.pair_count : count,
     pairs,
+    generalRules,
     findings,
   };
 }
@@ -280,11 +306,21 @@ function readCurated(root: string, contract: SchemaContract): CuratedLayer {
 export function loadCorpus(root: string = defaultRoot()): Corpus {
   const contract = loadSchemaContract(root);
   const curated = readCurated(root, contract);
+  // Query results are computed once and frozen: callers get the corpus's
+  // answer, not a mutable view of its storage.
+  const pairKeys = Object.freeze(Object.keys(curated.pairs));
+  const wirePartition = partition(curated.pairs);
+  Object.freeze(wirePartition.wire);
+  Object.freeze(wirePartition.noWire);
+  Object.freeze(wirePartition.disputed);
+  Object.freeze(wirePartition);
+  Object.freeze(curated.generalRules);
   return {
     pairCount: curated.pairCount,
-    pairs: curated.pairs,
+    pairKeys: () => pairKeys,
     pair: (key) => curated.pairs[key],
-    wirePairs: () => partition(curated.pairs),
+    wirePairs: () => wirePartition,
+    generalRules: () => curated.generalRules,
     findings: curated.findings,
   };
 }

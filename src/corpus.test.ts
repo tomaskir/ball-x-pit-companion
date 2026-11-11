@@ -21,7 +21,7 @@ import { loadCorpus } from './corpus';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 const corpus = loadCorpus(repoRoot);
-const { pairs, pair, pairCount } = corpus;
+const { pair, pairCount } = corpus;
 const { wire, noWire, disputed } = corpus.wirePairs();
 
 const ball = (id: string) => {
@@ -96,30 +96,13 @@ const BEYOND_MODEL = [
 describe('corpus sanity (the spec itself is loadable)', () => {
   it('fusion-pairs.json is the 370-pair curated layer the docs cite', () => {
     expect(pairCount).toBe(370);
-    expect(Object.keys(pairs).length).toBe(370);
+    expect(corpus.pairKeys().length).toBe(370);
   });
 
   it('the corpus module reports no curated-layer shape findings', () => {
+    // The module owns the curated shape (component ids, superseded entries,
+    // claim types); no findings means every pair passed those checks.
     expect(corpus.findings).toEqual([]);
-  });
-
-  it('every corpus pair id resolves in the catalog', () => {
-    for (const [key, p] of Object.entries(pairs)) {
-      for (const id of p.components) expect(ballMap.has(id), `${key}: ${id}`).toBe(true);
-    }
-  });
-
-  it('every pair carries the ingestion-contract superseded array', () => {
-    // Raw rows are append-only; a claim dropped by a later wave is recorded
-    // here as { claim, source, superseded_by } (README, CONTRADICTIONS.md).
-    for (const [key, p] of Object.entries(pairs)) {
-      expect(Array.isArray(p.superseded), `${key}: superseded must be an array`).toBe(true);
-      for (const s of p.superseded) {
-        expect(typeof s.claim, `${key}: superseded.claim`).toBe('string');
-        expect(typeof s.source, `${key}: superseded.source`).toBe('string');
-        expect(s.superseded_by, `${key}: superseded.superseded_by`).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-      }
-    }
   });
 
   it('wire claims exist (the sets below are not vacuous)', () => {

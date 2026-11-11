@@ -30,7 +30,7 @@ describe('fusion-observation corpus schema (the gate)', () => {
     // gate just read.
     const corpus = loadCorpus(repoRoot);
     expect(corpus.findings).toEqual([]);
-    expect(corpus.pairs['flash+freeze']).toBeDefined();
+    expect(corpus.pair('flash+freeze')).toBeDefined();
   });
 });
 

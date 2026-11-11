@@ -435,7 +435,7 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   not game data; the evidence and the observation
   corpus live in `docs/research/fusion-observations/` (counts derive from
   `fusion-pairs.json`; corpus shape and validation: `src/corpus.ts`
-  (`loadCorpus`, `wirePairs`, `validateCorpus`); validation methodology:
+  (`loadCorpus`, `pair`, `wirePairs`, `generalRules`, `validateCorpus`); validation methodology:
   `docs/research/fusion-mechanics.md`,
   `docs/research/fusion-observations/CONTRADICTIONS.md`; claim audit
   (historical snapshot): `docs/research/fusion-claim-register.md`).

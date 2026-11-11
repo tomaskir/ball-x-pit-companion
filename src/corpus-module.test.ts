@@ -92,7 +92,7 @@ describe('loadCorpus', () => {
 
     const corpus = loadCorpus(root);
     expect(corpus.pairCount).toBe(4);
-    expect(Object.keys(corpus.pairs)).toHaveLength(4);
+    expect(corpus.pairKeys()).toHaveLength(4);
     expect(corpus.pair('flash+freeze')!.components).toEqual(['flash', 'freeze']);
     expect(corpus.pair('missing+pair')).toBeUndefined();
     expect(corpus.wirePairs()).toEqual({
@@ -100,7 +100,47 @@ describe('loadCorpus', () => {
       noWire: ['burn+flash'],
       disputed: ['bleed+flash'],
     });
+    expect(corpus.generalRules()).toEqual({});
     expect(corpus.findings).toEqual([]);
+  });
+
+  it('exposes the curated general rule notes as typed queries', () => {
+    const root = fixture({
+      pairs: {
+        ...curated({}),
+        general_rules_notes: {
+          'damage-cap-9999': {
+            title: 'Damage cap',
+            source: 'https://example.com/post',
+            date: '2026-11-11',
+            confidence: 'reported',
+            canonical: '../fusion-mechanics.md §2',
+            statement: 'Damage caps at 9999.',
+          },
+        },
+      },
+    });
+
+    expect(loadCorpus(root).generalRules()).toEqual({
+      'damage-cap-9999': {
+        title: 'Damage cap',
+        source: 'https://example.com/post',
+        date: '2026-11-11',
+        confidence: 'reported',
+        canonical: '../fusion-mechanics.md §2',
+        statement: 'Damage caps at 9999.',
+      },
+    });
+  });
+
+  it('computes the wire/no-wire/disputed partition once at load', () => {
+    const root = fixture({
+      pairs: curated({ 'flash+freeze': curatedPair(['flash', 'freeze'], [{ type: 'cross-wire' }]) }),
+    });
+    const corpus = loadCorpus(root);
+    expect(corpus.wirePairs()).toBe(corpus.wirePairs());
+    // Each load owns its own partition; the cache is per-load, not module-wide.
+    expect(loadCorpus(root).wirePairs()).not.toBe(loadCorpus(root).wirePairs());
   });
 
   it('reports a malformed pair entry as a finding instead of throwing from wirePairs()', () => {
