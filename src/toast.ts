@@ -38,7 +38,8 @@ export interface ToastAdapter {
   /** Bind an anchor: hover/tap shows the toast for the item getItem()
    *  returns at show time, mouseleave hides. */
   bind(anchor: HTMLElement, getItem: () => Item | null): void;
-  /** Hide any shown toast and remove the document-level dismissal listener
+  /** Hide any shown toast, remove the document-level dismissal listener, and
+   *  make the adapter inert — later showFor/bind calls are no-ops
    *  (renderer.destroy() tears the instance's adapter down; tests do too). */
   destroy(): void;
 }
@@ -47,6 +48,7 @@ export function createToast({ getVerdict }: ToastOptions): ToastAdapter {
   const icon = (p: string) => iconUrl(import.meta.env.BASE_URL, p);
 
   let toastEl: HTMLElement | null = null;
+  let destroyed = false;
   const anchors: HTMLElement[] = [];
 
   function buildToast(item: Item) {
@@ -82,6 +84,7 @@ export function createToast({ getVerdict }: ToastOptions): ToastAdapter {
   }
 
   function showFor(anchor: HTMLElement, item: Item) {
+    if (destroyed) return;
     hide();
     toastEl = buildToast(item);
     document.body.appendChild(toastEl);
@@ -94,6 +97,7 @@ export function createToast({ getVerdict }: ToastOptions): ToastAdapter {
   }
 
   function bind(anchor: HTMLElement, getItem: () => Item | null) {
+    if (destroyed) return;
     anchors.push(anchor);
     anchor.addEventListener('mouseenter', () => {
       const item = getItem();
@@ -125,7 +129,9 @@ export function createToast({ getVerdict }: ToastOptions): ToastAdapter {
     hide,
     bind,
     destroy: () => {
+      destroyed = true;
       hide();
+      anchors.length = 0;
       document.removeEventListener('pointerdown', onDocPointerDown);
     },
   };

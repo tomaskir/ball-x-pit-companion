@@ -63,6 +63,9 @@ export function createBuildGraphs({ emitAction, reconcile }: { emitAction: Emit;
 
   function build() {
     const root = document.getElementById('planView')!;
+    // local idempotence: a rebuild replaces any graph panels already present
+    // (plan.build resets #planView first, but build() must not depend on that)
+    for (const el of root.querySelectorAll('.plan-graph')) el.remove();
     root.insertAdjacentHTML('beforeend', (['balls', 'passives'] as const).map((ns) => `
         <section class="plan-graph" data-graph="${ns}">
           <button class="plan-graph-toggle" type="button" aria-expanded="true">

@@ -83,8 +83,9 @@ export interface Renderer {
    *  only when their section's entry set changes (the reconcile seam). */
   paint(vm: ViewModel): void;
   /** Tear the instance down: hide any shown toast and remove its
-   *  document-level dismissal listener, and clear every painter registry.
-   *  Idempotent. */
+   *  document-level dismissal listener, clear every painter registry, and
+   *  make the seam inert (built-once DOM handlers cannot emit or show toasts
+   *  afterwards). Idempotent and terminal — a later build() is a no-op. */
   destroy(): void;
 }
 
@@ -103,9 +104,11 @@ export function createRenderer(options: BuildOptions): Renderer {
   const graphs = createBuildGraphs({ emitAction: seam.emitAction, reconcile });
   const selection = createSelectionBoxes({ emitAction: seam.emitAction });
   let built = false;
+  let destroyed = false;
 
   return {
     build() {
+      if (destroyed) return;
       seam.capture(null); // a rebuild starts unpainted; no stale toast verdict
       grids.build();
       characters.build();
@@ -117,7 +120,7 @@ export function createRenderer(options: BuildOptions): Renderer {
       built = true;
     },
     paint(vm) {
-      if (!built) return;
+      if (!built || destroyed) return;
       seam.capture(vm);
       grids.paint(vm);
       characters.paint(vm);
@@ -128,6 +131,8 @@ export function createRenderer(options: BuildOptions): Renderer {
       selection.paint(vm);
     },
     destroy() {
+      if (destroyed) return;
+      destroyed = true;
       seam.destroy();
       reconciler.reset();
       grids.destroy();

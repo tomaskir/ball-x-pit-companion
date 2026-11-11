@@ -80,7 +80,8 @@ describe('renderer lifecycle (jsdom)', () => {
   });
 
   it('destroy hides the toast, removes its document listener, and clears the registries', () => {
-    const renderer = make();
+    const emit = vi.fn();
+    const renderer = make({ emit });
     renderer.build();
     tile().dispatchEvent(new MouseEvent('mouseenter'));
     expect(document.querySelector('body > .toast')).toBeTruthy();
@@ -94,11 +95,29 @@ describe('renderer lifecycle (jsdom)', () => {
       remove.mockRestore();
     }
 
+    // the seam is inert: built-once DOM handlers that outlive the renderer
+    // cannot show a toast or emit an action
+    tile().dispatchEvent(new MouseEvent('mouseenter'));
+    expect(document.querySelector('body > .toast')).toBeNull();
+    tile().click();
+    expect(emit).not.toHaveBeenCalled();
+
     // registries cleared and built=false: a later paint is a safe no-op
     const vm = createViewState().dispatch({ type: 'toggleItem', id: 'flash' });
     expect(() => renderer.paint(vm)).not.toThrow();
     expect(tile().classList.contains('selected')).toBe(false);
     // destroy is idempotent
     expect(() => renderer.destroy()).not.toThrow();
+  });
+
+  it('destroy is terminal: a later build() is a no-op', () => {
+    const renderer = make();
+    renderer.build();
+    renderer.destroy();
+
+    // clear the built DOM, then try to rebuild through the dead instance
+    document.getElementById('ballsGrid')!.innerHTML = '';
+    expect(() => renderer.build()).not.toThrow();
+    expect(document.querySelectorAll('#ballsGrid .tile')).toHaveLength(0);
   });
 });

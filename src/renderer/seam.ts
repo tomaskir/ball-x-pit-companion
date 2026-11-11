@@ -29,26 +29,38 @@ export interface PainterSeam {
 
 /** The renderer instance's seam. capture() records the view model paint() is
  *  about to paint (the toast's only verdict source; null drops a stale one);
- *  destroy() hides any shown toast and removes the adapter's document-level
- *  dismissal listener. */
+ *  destroy() hides any shown toast, removes the adapter's document-level
+ *  dismissal listener, and makes the seam inert (later emitAction/attachToast
+ *  calls are no-ops). */
 export interface Seam extends PainterSeam {
   capture(vm: ViewModel | null): void;
   destroy(): void;
 }
 
 /** Create the seam for one renderer instance: capture the island's callback,
- *  the latest painted view model, and the toast adapter this instance owns. */
+ *  the latest painted view model, and the toast adapter this instance owns.
+ *  destroy() makes the seam inert — built-once DOM handlers that outlive the
+ *  renderer cannot emit or show toasts afterwards. */
 export function createSeam({ emit }: SeamOptions): Seam {
   let latest: ViewModel | null = null;
+  let destroyed = false;
   const toast = createToast({
     getVerdict: (item: Item) => latest?.tiles.get(item.id)?.verdict ?? null,
   });
   return {
-    emitAction: (action) => emit(action),
-    attachToast: (anchor, getItem) => toast.bind(anchor, getItem),
+    emitAction: (action) => {
+      if (!destroyed) emit(action);
+    },
+    attachToast: (anchor, getItem) => {
+      if (!destroyed) toast.bind(anchor, getItem);
+    },
     capture: (vm) => {
       latest = vm;
     },
-    destroy: () => toast.destroy(),
+    destroy: () => {
+      destroyed = true;
+      latest = null;
+      toast.destroy();
+    },
   };
 }

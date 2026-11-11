@@ -172,7 +172,7 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   `src/plan-state.ts` (`createPlanState` — the `PlanState` derivation, the
   `PlanSnapshot` currency, and the capacity/toggle invariants), forwarded and
   embedded into the ViewModel by `src/view-state.ts`; painting in
-  `src/renderer.ts` (`buildPlan`/`paintPlan`, plus the build graphs —
+  `src/renderer.ts` (`createPlan` — build/paint, plus the build graphs —
   see **Build graph**).
 - **Build graph** — the Plan screen's layered "how do I build this" view
   (one collapsible panel per namespace, under the plan sections): every
@@ -212,7 +212,7 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   `src/build-graph.test.ts`. `src/view-state.ts` only embeds the result
   (`vm.buildGraph`; focus, collapse, and done marks ride
   `toggleGraphFocus`/`toggleGraphCollapse`/`toggleGraphDone` through the
-  build seam); painting in `src/renderer.ts` (`paintBuildGraphs` — the
+  build seam); painting in `src/renderer.ts` (`createBuildGraphs` — the
   canvas rebuilds through the reconcile seam on structural change only
   (which nodes/edges exist — the key is order-insensitive, so a pure
   reorder is not a rebuild); counts, done/suppressed state, positions,
