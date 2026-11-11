@@ -147,3 +147,13 @@ non-zero on violation.
 - The synergy tag list and per-character verdicts are this site's **editorial
   model**, not game data — playtest-unverified. Changes there are content
   decisions, not just code.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues (`tomaskir/ball-x-pit-companion`), managed with the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Five canonical roles map to `needs-assessment`, `needs-more-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
