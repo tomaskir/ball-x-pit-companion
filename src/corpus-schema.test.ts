@@ -23,11 +23,13 @@ describe('fusion-observation corpus schema (the gate)', () => {
     ).toEqual([]);
   });
 
-  it('the corpus the gate just validated is the one corpus.test.ts reads', () => {
+  it('the curated corpus loads from the same root the gate validates', () => {
     // Guard against the two tests drifting onto different directories: both
-    // now cross the same module seam with the same root.
+    // now cross the same module seam with the same root. The 370 pin lives in
+    // corpus.test.ts; this only proves the curated layer is the one the raw
+    // gate just read.
     const corpus = loadCorpus(repoRoot);
-    expect(corpus.pairCount).toBe(370);
+    expect(corpus.findings).toEqual([]);
     expect(corpus.pairs['flash+freeze']).toBeDefined();
   });
 });

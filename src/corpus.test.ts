@@ -187,8 +187,9 @@ describe('disputed pairs → resolved per CONTRADICTIONS.md', () => {
     expect(fuse(ball('landslide'), ball('maggot'))!.crossWire).toContain('Maggot');
   });
 
-  it('every DISPUTED_WIRED pair is in the corpus disputed set', () => {
+  it('every DISPUTED_WIRED and NULL_RESOLVED pair is in the corpus disputed set', () => {
     for (const key of DISPUTED_WIRED) expect(disputed, key).toContain(key);
+    for (const key of NULL_RESOLVED.map(([k]) => k)) expect(disputed, key).toContain(key);
   });
 });
 
@@ -270,11 +271,12 @@ describe('cross-wire claims beyond the model → conservatively null', () => {
     expect(fuse(ball(a), ball(b))!.crossWire, key).toBeNull();
   });
 
-  it('every corpus wire/disputed pair is classified', () => {
+  it('classifies every corpus wire/disputed pair (regression: the old coverage loop was vacuous)', () => {
     // No unclassified pair: a corpus refresh adding wire claims must land the
     // new pair in IMPLEMENTED, BEYOND_MODEL, NULL_RESOLVED or DISPUTED_WIRED
-    // explicitly. (The old assertion built `classified` from `wire` and then
-    // looped over `wire`, so it was vacuously true.)
+    // explicitly. The old assertion built `classified` from `wire` and then
+    // looped over `wire`, so membership was always true; this one compares
+    // the boundary set against the union of the editorial lists.
     const boundary = new Set([...wire, ...disputed]);
     const classified = new Set([
       ...IMPLEMENTED,

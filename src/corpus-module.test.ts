@@ -102,6 +102,19 @@ describe('loadCorpus', () => {
     expect(corpus.findings).toEqual([]);
   });
 
+  it('reports a malformed pair entry as a finding instead of throwing from wirePairs()', () => {
+    // Regression: readCurated assigned the raw entry before checking it, so a
+    // null pair reached hasClaim() and wirePairs() threw a TypeError.
+    const root = fixture({
+      pairs: { generated: '2026-11-11', pair_count: 1, pairs: { 'flash+freeze': null } },
+    });
+
+    const corpus = loadCorpus(root);
+    expect(corpus.findings.map((finding) => finding.message)).toContain('pair "flash+freeze" must be an object');
+    expect(() => corpus.wirePairs()).not.toThrow();
+    expect(corpus.wirePairs()).toEqual({ wire: [], noWire: [], disputed: [] });
+  });
+
   it('reports curated shape findings: count, key order, catalog ids, superseded dates', () => {
     const root = fixture({
       pairs: {

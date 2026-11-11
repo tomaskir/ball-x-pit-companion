@@ -19,11 +19,12 @@
 //     changes the gate;
 //   - ball ids come from src/catalog.ts (the namespace authority), never by
 //     scraping the generated data file's formatting;
-//   - node built-ins only, so the harvest CLI can load this module directly.
+//   - node built-ins plus the catalog import (no new dependencies), so the
+//     harvest CLI can load this module directly under type stripping.
 //
-// The editorial pair lists (IMPLEMENTED / BEYOND_MODEL / NULL_RESOLVED) are
-// the composer's boundary spec and stay in src/corpus.test.ts — they are not
-// corpus shape.
+// The editorial pair lists (IMPLEMENTED / BEYOND_MODEL / NULL_RESOLVED /
+// DISPUTED_WIRED) are the composer's boundary spec and stay in
+// src/corpus.test.ts — they are not corpus shape.
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -41,7 +42,6 @@ export interface Finding {
 export interface CorpusClaim {
   type: string;
   detail: string;
-  sources?: string[];
   confidence?: string;
 }
 
@@ -52,18 +52,12 @@ export interface SupersededClaim {
 }
 
 /** One curated pair entry. Only the fields this site consumes are typed;
- *  the curated layer may carry additional research fields. */
+ *  the curated layer carries additional research fields. */
 export interface CorpusPair {
   components: [string, string];
   status: string;
   claims: CorpusClaim[];
   superseded: SupersededClaim[];
-  names_seen?: string[];
-  effect_texts?: unknown[];
-  order?: Record<string, unknown>;
-  obs_count?: number;
-  source_types?: string[];
-  rules?: unknown;
 }
 
 /** The polarity partition derived from curated claims: a pair with both
@@ -76,8 +70,6 @@ export interface WirePartition {
 }
 
 export interface Corpus {
-  root: string;
-  generated: string;
   /** The declared `pair_count` (kept as a pin even if it disagrees with the
    *  actual entry count; `findings` reports the disagreement). */
   pairCount: number;
@@ -188,7 +180,6 @@ function partition(pairs: Record<string, CorpusPair>): WirePartition {
 }
 
 interface CuratedLayer {
-  generated: string;
   pairCount: number;
   pairs: Record<string, CorpusPair>;
   findings: Finding[];
@@ -198,7 +189,6 @@ function readCurated(root: string, contract: SchemaContract): CuratedLayer {
   const raw = JSON.parse(readFileSync(join(root, CORPUS_DIR, PAIRS_FILE), 'utf8'));
   const findings: Finding[] = [];
   const err = (message: string) => findings.push({ file: PAIRS_FILE, message });
-  const ballIds = ballMap;
   const rawPairs: Record<string, any> =
     raw?.pairs && typeof raw.pairs === 'object' && !Array.isArray(raw.pairs) ? raw.pairs : {};
   const pairs: Record<string, CorpusPair> = {};
@@ -211,11 +201,11 @@ function readCurated(root: string, contract: SchemaContract): CuratedLayer {
   }
 
   for (const [key, pair] of Object.entries(rawPairs)) {
-    pairs[key] = pair as CorpusPair;
-    if (!pair || typeof pair !== 'object') {
+    if (!pair || typeof pair !== 'object' || Array.isArray(pair)) {
       err(`pair "${key}" must be an object`);
       continue;
     }
+    pairs[key] = pair as CorpusPair;
     const components = pair.components;
     if (
       !Array.isArray(components) ||
@@ -227,7 +217,7 @@ function readCurated(root: string, contract: SchemaContract): CuratedLayer {
       const sorted = [...components].sort();
       if (key !== sorted.join('+')) err(`pair key "${key}" is not its sorted components "${sorted.join('+')}"`);
       for (const id of components) {
-        if (!ballIds.has(id)) err(`pair "${key}" component "${id}" not in catalog`);
+        if (!ballMap.has(id)) err(`pair "${key}" component "${id}" not in catalog`);
       }
     }
 
@@ -277,7 +267,6 @@ function readCurated(root: string, contract: SchemaContract): CuratedLayer {
   }
 
   return {
-    generated: typeof raw?.generated === 'string' ? raw.generated : '',
     pairCount: typeof raw?.pair_count === 'number' ? raw.pair_count : count,
     pairs,
     findings,
@@ -290,8 +279,6 @@ export function loadCorpus(root: string = defaultRoot()): Corpus {
   const contract = loadSchemaContract(root);
   const curated = readCurated(root, contract);
   return {
-    root,
-    generated: curated.generated,
     pairCount: curated.pairCount,
     pairs: curated.pairs,
     pair: (key) => curated.pairs[key],

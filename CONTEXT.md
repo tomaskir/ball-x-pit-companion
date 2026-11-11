@@ -334,7 +334,8 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   `src/fusion-properties.ts`. This is the site's editorial model of fusion,
   not game data; the composition rules, their evidence, and the observation
   corpus live in `docs/research/fusion-observations/` (counts derive from
-  `fusion-pairs.json`; validation methodology:
+  `fusion-pairs.json`; corpus shape and validation: `src/corpus.ts`
+  (`loadCorpus`, `wirePairs`, `validateCorpus`); validation methodology:
   `docs/research/fusion-mechanics.md`,
   `docs/research/fusion-observations/CONTRADICTIONS.md`; claim audit
   (historical snapshot): `docs/research/fusion-claim-register.md`).

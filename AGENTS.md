@@ -24,12 +24,13 @@ Not an npm package (`"private": true`). Code is MIT-licensed; game art in
 - `src/graph.ts` — pure evolution-graph helpers (depth, highlight walks, recipe notation).
 - `src/build-graph.ts` — pure Plan-screen build-graph derivation + layout (`deriveBuildGraph`/`layoutBuildGraph`); the renderer only paints it.
 - `src/catalog.ts` — ball/passive collections indexed; **namespace resolution lives here and nowhere else**.
+- `src/corpus.ts` — the fusion-observation corpus module: curated `fusion-pairs.json` loading (`loadCorpus` → pairs / `pair(key)` / `wirePairs()`) and raw `.jsonl` validation (`validateCorpus`); the seam both corpus tests and the harvest CLI cross.
 - `src/synergy.ts` — red/green verdict from tag overlap.
 - `src/icon-url.ts` — the base-URL × icon-path join.
 - `src/styles/global.css` — the island's stylesheet; `src/styles.test.ts` pins markup/CSS coupling.
 - `src/data/{balls,passives,characters,tags,level-3}.ts` — **generated** data files.
 - `scripts/parse-wiki.ts`, `scripts/emit-data.ts`, `scripts/slug.ts` — the data pipeline.
-- `scripts/harvest/validate-observations.ts` — corpus schema gate (used by `src/corpus-schema.test.ts`).
+- `scripts/harvest/validate-observations.ts` — thin CLI over `src/corpus.ts` (prints findings, sets the exit code).
 - `docs/research/game-mechanics.md` — the hand-maintained fact base the parser consumes.
 - `docs/research/character-pairings.md` — the Matchmaker pairing-restriction fact base (also parsed).
 - `docs/research/fusion-mechanics.md` — the distilled fusion fact base (not parsed; `src/fusion.ts` implements it).
@@ -119,7 +120,7 @@ texts cover all 90 fusable balls) and exits non-zero on violation.
 - The fusion corpus is an executable spec: `src/corpus.test.ts` checks the
   composer against `docs/research/fusion-observations/fusion-pairs.json`,
   `src/corpus-schema.test.ts` gates the corpus's own schema (via
-  `scripts/harvest/validate-observations.ts`), and `data.test.ts` pins the
+  `src/corpus.ts`), and `data.test.ts` pins the
   level-3 overlay to the catalog (90 fusable balls) and the property table's
   scalar values to the level-3 text. Changing the composer, the corpus, the
   property table, or the wiki effect text must keep all of them green — a

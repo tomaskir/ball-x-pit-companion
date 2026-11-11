@@ -20,22 +20,11 @@
 
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { validateCorpus, type Finding } from "../../src/corpus.ts";
-
-export type { Finding };
-
-/** Run the full corpus validation. Returns every finding; an empty list
- *  (ignoring warnings) means the corpus conforms. Root is the repo root —
- *  defaults to this script's ../../ so the CLI works unchanged. */
-export function validateObservations(
-  root: string = join(dirname(fileURLToPath(import.meta.url)), "../..")
-): Finding[] {
-  return validateCorpus(root);
-}
+import { validateCorpus } from "../../src/corpus.ts";
 
 function main() {
   const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
-  const findings = validateObservations(root);
+  const findings = validateCorpus(root);
   const errors = findings.filter((f) => !f.warning);
   for (const f of findings) {
     const at = f.line === undefined ? f.file : `${f.file}:${f.line}`;
