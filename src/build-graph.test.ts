@@ -5,8 +5,19 @@
 // row (Freeze Ray 1, Bomb 1), the tier-3 row (Time Bomb 1) and the fusion
 // row (the pair), all connected component → builder.
 import { describe, it, expect } from 'vitest';
-import { deriveBuildGraph, layoutBuildGraph, BUILD_GRAPH_METRICS, fusionNodeId, fusionNodePair } from './build-graph';
+import {
+  deriveBuildGraph,
+  deriveBuildGraphView,
+  layoutBuildGraph,
+  BUILD_GRAPH_METRICS,
+  BUILD_GRAPH_ROWS,
+  FUSION_ROW,
+  fusionNodeId,
+  fusionNodePair,
+  type BuildGraphSessionState,
+} from './build-graph';
 import { ballMap, passiveMap } from './catalog';
+import { createPlanState, type PlanAction } from './plan-state';
 
 const node = (model: ReturnType<typeof deriveBuildGraph>, id: string) =>
   model.nodes.find((n) => n.id === id);
@@ -15,7 +26,6 @@ describe('build graph: the Freeze Ray × Time Bomb example', () => {
   const model = deriveBuildGraph(
     { singles: [], pairs: [{ a: 'freeze-ray', b: 'time-bomb' }] },
     ballMap,
-    { fusionRow: true },
   );
 
   it('the base row aggregates every base ball with its demand', () => {
@@ -75,7 +85,6 @@ describe('build graph: count semantics', () => {
     const model = deriveBuildGraph(
       { singles: ['bomb', 'time-bomb'], pairs: [] },
       ballMap,
-      { fusionRow: true },
     );
     expect(node(model, 'bomb')).toMatchObject({ min: 2, max: 2, final: true });
     expect(node(model, 'burn')).toMatchObject({ min: 2, max: 2 });
@@ -88,7 +97,6 @@ describe('build graph: count semantics', () => {
     const model = deriveBuildGraph(
       { singles: ['freeze-ray', 'laser-beam'], pairs: [] },
       ballMap,
-      { fusionRow: true },
     );
     expect(node(model, 'laser-horizontal')).toMatchObject({ min: 0, max: 2 });
     expect(node(model, 'laser-vertical')).toMatchObject({ min: 0, max: 2 });
@@ -100,7 +108,6 @@ describe('build graph: count semantics', () => {
     const model = deriveBuildGraph(
       { singles: ['holy-laser', 'laser-beam'], pairs: [] },
       ballMap,
-      { fusionRow: true },
     );
     expect(node(model, 'laser-horizontal')).toMatchObject({ min: 1, max: 2 });
     expect(node(model, 'laser-vertical')).toMatchObject({ min: 1, max: 2 });
@@ -110,7 +117,6 @@ describe('build graph: count semantics', () => {
     const model = deriveBuildGraph(
       { singles: ['freeze-ray'], pairs: [{ a: 'freeze-ray', b: 'time-bomb' }] },
       ballMap,
-      { fusionRow: true },
     );
     expect(node(model, 'freeze-ray')).toMatchObject({ min: 2, max: 2, final: true });
     expect(node(model, 'freeze')).toMatchObject({ min: 2, max: 2 });
@@ -120,7 +126,7 @@ describe('build graph: count semantics', () => {
 describe('build graph: shape rules', () => {
   it('passives derive in their own namespace with no fusion row', () => {
     // Deadeye's Impaler = Deadeye's Cross + Gracious Impaler (both passives)
-    const model = deriveBuildGraph({ singles: ['deadeyes-impaler'], pairs: [] }, passiveMap, { fusionRow: false });
+    const model = deriveBuildGraph({ singles: ['deadeyes-impaler'], pairs: [] }, passiveMap);
     expect(node(model, 'deadeyes-impaler')).toMatchObject({ row: 2, final: true });
     expect(node(model, 'deadeyes-cross')).toMatchObject({ row: 1 });
     expect(model.nodes.every((n) => n.row !== 3)).toBe(true);
@@ -129,7 +135,7 @@ describe('build graph: shape rules', () => {
   });
 
   it('a base ball planned alone is a final node in the base row', () => {
-    const model = deriveBuildGraph({ singles: ['burn'], pairs: [] }, ballMap, { fusionRow: true });
+    const model = deriveBuildGraph({ singles: ['burn'], pairs: [] }, ballMap);
     expect(node(model, 'burn')).toMatchObject({ row: 0, min: 1, max: 1, final: true });
     expect(model.nodes).toHaveLength(1);
     expect(model.edges).toHaveLength(0);
@@ -142,7 +148,6 @@ describe('build graph: shape rules', () => {
     const model = deriveBuildGraph(
       { singles: ['inferno', 'frozen-flame', 'bomb', 'elemental'], pairs: [] },
       ballMap,
-      { fusionRow: true },
     );
     const row1 = model.nodes.filter((n) => n.row === 1).map((n) => n.id);
     expect(row1).toEqual(['elemental', 'bomb', 'frozen-flame', 'inferno']);
@@ -155,7 +160,6 @@ describe('build graph: shape rules', () => {
     const model = deriveBuildGraph(
       { singles: [], pairs: [{ a: 'freeze-ray', b: 'time-bomb' }, { a: 'bomb', b: 'burn' }] },
       ballMap,
-      { fusionRow: true },
     );
     const fid1 = fusionNodeId('freeze-ray', 'time-bomb');
     const fid2 = fusionNodeId('bomb', 'burn');
@@ -166,9 +170,9 @@ describe('build graph: shape rules', () => {
 
 describe('build graph layout', () => {
   it('fixed row bands: the canvas height never depends on which rows are filled', () => {
-    const oneRow = layoutBuildGraph(deriveBuildGraph({ singles: ['burn'], pairs: [] }, ballMap, { fusionRow: true }), 4);
+    const oneRow = layoutBuildGraph(deriveBuildGraph({ singles: ['burn'], pairs: [] }, ballMap), 4);
     const full = layoutBuildGraph(
-      deriveBuildGraph({ singles: [], pairs: [{ a: 'freeze-ray', b: 'time-bomb' }] }, ballMap, { fusionRow: true }),
+      deriveBuildGraph({ singles: [], pairs: [{ a: 'freeze-ray', b: 'time-bomb' }] }, ballMap),
       4,
     );
     expect(oneRow.height).toBe(full.height);
@@ -177,7 +181,7 @@ describe('build graph layout', () => {
 
   it('nodes stack left-to-right within a band, centered vertically in it', () => {
     const layout = layoutBuildGraph(
-      deriveBuildGraph({ singles: ['bomb', 'time-bomb'], pairs: [] }, ballMap, { fusionRow: true }),
+      deriveBuildGraph({ singles: ['bomb', 'time-bomb'], pairs: [] }, ballMap),
       4,
     );
     const bomb = layout.nodes.find((n) => n.id === 'bomb')!;
@@ -196,7 +200,7 @@ describe('build graph layout', () => {
 
   it('edges become bezier paths from the builder above to the component below', () => {
     const layout = layoutBuildGraph(
-      deriveBuildGraph({ singles: ['bomb'], pairs: [] }, ballMap, { fusionRow: true }),
+      deriveBuildGraph({ singles: ['bomb'], pairs: [] }, ballMap),
       4,
     );
     expect(layout.edges).toHaveLength(2); // burn → bomb, iron → bomb
@@ -217,12 +221,11 @@ describe('build graph: done tracking', () => {
     const all = deriveBuildGraph(
       { singles: [], pairs: [{ a: 'freeze-ray', b: 'time-bomb' }] },
       ballMap,
-      { fusionRow: true },
     );
     const done = deriveBuildGraph(
       { singles: [], pairs: [{ a: 'freeze-ray', b: 'time-bomb' }] },
       ballMap,
-      { fusionRow: true, done: new Set(['freeze-ray']) },
+      { done: new Set(['freeze-ray']) },
     );
     // Freeze Ray done: Freeze and both lasers drop to zero remaining demand
     expect(node(done, 'freeze')).toMatchObject({ min: 0, max: 0 });
@@ -240,7 +243,7 @@ describe('build graph: done tracking', () => {
     const done = deriveBuildGraph(
       { singles: [], pairs: [{ a: 'freeze-ray', b: 'time-bomb' }] },
       ballMap,
-      { fusionRow: true, done: new Set(['fusion:freeze-ray+time-bomb']) },
+      { done: new Set(['fusion:freeze-ray+time-bomb']) },
     );
     const fid = fusionNodeId('freeze-ray', 'time-bomb');
     expect(node(done, fid)!.done).toBe(true);
@@ -260,7 +263,7 @@ describe('build graph: done tracking', () => {
     const done = deriveBuildGraph(
       { singles: ['bomb', 'time-bomb'], pairs: [] },
       ballMap,
-      { fusionRow: true, done: new Set(['time-bomb']) },
+      { done: new Set(['time-bomb']) },
     );
     expect(node(done, 'bomb')).toMatchObject({ min: 1, max: 1, done: false });
     expect(node(done, 'burn')).toMatchObject({ min: 1, max: 1 });
@@ -271,7 +274,7 @@ describe('build graph: done tracking', () => {
     const done = deriveBuildGraph(
       { singles: [], pairs: [{ a: 'freeze-ray', b: 'time-bomb' }] },
       ballMap,
-      { fusionRow: true, done: new Set<string>() },
+      { done: new Set<string>() },
     );
     expect(node(done, 'laser-horizontal')).toMatchObject({ min: 0, max: 1, suppressed: false });
   });
@@ -284,7 +287,7 @@ describe('build graph: done/suppressed nodes sort to the right of their row', ()
     const model = deriveBuildGraph(
       { singles: [], pairs: [{ a: 'freeze-ray', b: 'time-bomb' }] },
       ballMap,
-      { fusionRow: true, done: new Set(['freeze-ray']) },
+      { done: new Set(['freeze-ray']) },
     );
     const row0 = model.nodes.filter((n) => n.row === 0).map((n) => n.id);
     const freed = new Set(['freeze', 'laser-horizontal', 'laser-vertical']);
@@ -301,7 +304,7 @@ describe('build graph: done/suppressed nodes sort to the right of their row', ()
     const model = deriveBuildGraph(
       { singles: ['bomb', 'time-bomb'], pairs: [] },
       ballMap,
-      { fusionRow: true, done: new Set(['bomb']) },
+      { done: new Set(['bomb']) },
     );
     const row1 = model.nodes.filter((n) => n.row === 1).map((n) => n.id);
     expect(row1[row1.length - 1]).toBe('bomb');
@@ -312,7 +315,7 @@ describe('build graph: done/suppressed nodes sort to the right of their row', ()
       deriveBuildGraph(
         { singles: [], pairs: [{ a: 'freeze-ray', b: 'time-bomb' }] },
         ballMap,
-        { fusionRow: true, done: new Set(['freeze-ray']) },
+        { done: new Set(['freeze-ray']) },
       ),
       4,
     );
@@ -320,5 +323,113 @@ describe('build graph: done/suppressed nodes sort to the right of their row', ()
     const freeze = row0.find((n) => n.id === 'freeze')!;
     const burn = row0.find((n) => n.id === 'burn')!;
     expect(freeze.x).toBeGreaterThan(burn.x);
+  });
+});
+
+describe('build graph view: the whole Plan-screen derivation', () => {
+  const planStateWith = (actions: PlanAction[]) => {
+    const plan = createPlanState();
+    for (const action of actions) plan.dispatch(action);
+    return plan.derive([]);
+  };
+  const session = (over: Partial<BuildGraphSessionState> = {}): BuildGraphSessionState => ({
+    focus: null,
+    done: new Set<string>(),
+    collapsed: { balls: false, passives: false },
+    ...over,
+  });
+  const fusionId = fusionNodeId('freeze-ray', 'time-bomb');
+
+  it('derives both namespace graphs from the plan and embeds the session state', () => {
+    const collapsed = { balls: true, passives: false };
+    const view = deriveBuildGraphView(
+      planStateWith([{ type: 'togglePlanFusion', a: 'freeze-ray', b: 'time-bomb' }]),
+      session({ collapsed }),
+    );
+    expect(view.balls.nodes.some((n) => n.id === fusionId)).toBe(true);
+    expect(view.passives.nodes).toHaveLength(0);
+    expect(view.focus).toBe(null);
+    expect(view.related.size).toBe(0);
+    expect(view.collapsed).toEqual(collapsed);
+    // the flags are copied, not shared with the caller's session object
+    expect(view.collapsed).not.toBe(collapsed);
+  });
+
+  it('resolves a planned Evolves-instead pair into a single target of the evolved ball', () => {
+    const view = deriveBuildGraphView(
+      planStateWith([{ type: 'togglePlanFusion', a: 'freeze', b: 'laser-horizontal' }]),
+      session(),
+    );
+    expect(view.balls.nodes.find((n) => n.id === 'freeze-ray')!.final).toBe(true);
+    expect(view.balls.nodes.some((n) => n.row === FUSION_ROW)).toBe(false);
+  });
+
+  it('keeps over-limit entries out of the graph', () => {
+    const view = deriveBuildGraphView(
+      planStateWith([{
+        type: 'hydrate',
+        plan: {
+          upgradesOn: false,
+          chars: [],
+          balls: ['bomb', 'inferno', 'frozen-flame', 'elemental', 'time-bomb'],
+          passives: [],
+          fused: [],
+        },
+      }]),
+      session(),
+    );
+    expect(view.balls.nodes.some((n) => n.id === 'frozen-flame')).toBe(false);
+    expect(view.balls.nodes.some((n) => n.id === 'time-bomb')).toBe(true);
+  });
+
+  it('validates the focus id against both graphs and walks upstream + downstream', () => {
+    const planState = planStateWith([{ type: 'togglePlanFusion', a: 'freeze-ray', b: 'time-bomb' }]);
+    const onBall = deriveBuildGraphView(planState, session({ focus: 'burn' }));
+    expect(onBall.focus).toBe('burn');
+    expect(onBall.related.has('bomb')).toBe(true); // downstream
+    expect(onBall.related.has(fusionId)).toBe(true); // rides in via bomb
+    expect(onBall.related.has('freeze')).toBe(false); // other branch
+
+    const onFusion = deriveBuildGraphView(planState, session({ focus: fusionId }));
+    expect(onFusion.focus).toBe(fusionId);
+    expect(onFusion.related.has('freeze')).toBe(true); // pair ancestry
+    expect(onFusion.related.has('freeze-ray')).toBe(true);
+    expect(onFusion.related.has('time-bomb')).toBe(true);
+
+    // an id outside both graphs (and a passive id with only a ball plan)
+    // highlights nothing
+    for (const focus of ['bleed', 'deadeyes-impaler']) {
+      const outside = deriveBuildGraphView(planState, session({ focus }));
+      expect(outside.focus, focus).toBe(null);
+      expect(outside.related.size, focus).toBe(0);
+    }
+  });
+
+  it('done marks ride into both graphs and free their components', () => {
+    const view = deriveBuildGraphView(
+      planStateWith([{ type: 'togglePlanFusion', a: 'freeze-ray', b: 'time-bomb' }]),
+      session({ done: new Set(['freeze-ray']) }),
+    );
+    expect(view.balls.nodes.find((n) => n.id === 'freeze-ray')!.done).toBe(true);
+    expect(view.balls.nodes.find((n) => n.id === 'freeze')!.min).toBe(0);
+  });
+
+  it('the row model is one definition: row counts, fusion index, and labels', () => {
+    expect(BUILD_GRAPH_ROWS.balls).toEqual({
+      count: 4,
+      fusionRow: FUSION_ROW,
+      labels: ['Basic', 'Evolved', 'Tier-3', 'Fusions'],
+    });
+    expect(BUILD_GRAPH_ROWS.passives).toEqual({
+      count: 3,
+      fusionRow: null,
+      labels: ['Basic', 'Evolved', 'Tier-3'],
+    });
+    const view = deriveBuildGraphView(
+      planStateWith([{ type: 'togglePlanFusion', a: 'freeze-ray', b: 'time-bomb' }]),
+      session(),
+    );
+    expect(view.balls.height).toBe(BUILD_GRAPH_ROWS.balls.count * BUILD_GRAPH_METRICS.rowH);
+    expect(view.passives.height).toBe(BUILD_GRAPH_ROWS.passives.count * BUILD_GRAPH_METRICS.rowH);
   });
 });

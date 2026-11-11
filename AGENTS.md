@@ -27,7 +27,7 @@ Not an npm package (`"private": true`). Code is MIT-licensed; game art in
 - `src/fusion-panel.ts` — the fusion screen's panel derivation: the named 3-state machine (empty / pending / composed), the composed state's result/exception display rows and section visibility, the order presentation, and the panel hint. `deriveFusionPanel(picks, plan)`; view-state embeds the result.
 - `src/pair.ts` — unordered-pair identity (`pairKey`, `pairKeyOf`, `parsePair`); the one home for the "reverse composition is the same pair" invariant.
 - `src/graph.ts` — pure evolution-graph helpers (depth, highlight walks, recipe notation).
-- `src/build-graph.ts` — pure Plan-screen build-graph derivation + layout (`deriveBuildGraph`/`layoutBuildGraph`); the renderer only paints it.
+- `src/build-graph.ts` — pure Plan-screen build-graph derivation + layout: `deriveBuildGraphView(planState, { focus, done, collapsed })` owns the graph's inputs (targets, including Evolves-instead resolution), both namespace graphs, focus validation, the related-set walk, and the row model (row counts, fusion row index, labels); `deriveBuildGraph`/`layoutBuildGraph` are its pure parts. The renderer only paints it.
 - `src/catalog.ts` — ball/passive collections indexed; **namespace resolution lives here and nowhere else**.
 - `src/corpus.ts` — the fusion-observation corpus module: curated `fusion-pairs.json` loading (`loadCorpus` → pairs / `pair(key)` / `wirePairs()`) and raw `.jsonl` validation (`validateCorpus`); the seam both corpus tests and the harvest CLI cross.
 - `src/synergy.ts` — red/green verdict from tag overlap.

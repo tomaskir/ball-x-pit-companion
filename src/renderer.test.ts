@@ -11,6 +11,7 @@
 import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
 import { buildAll, paint, FUSION_PANEL_SKELETON, FUSION_PANEL_SELECTORS } from './renderer';
 import { createViewState, type ViewModel, type Action } from './view-state';
+import { BUILD_GRAPH_ROWS } from './build-graph';
 import { ballMap } from './catalog';
 import { iconUrl } from './icon-url';
 import { mountShell } from './test-support/containers';
@@ -711,7 +712,12 @@ describe('plan build graphs (jsdom, through paint())', () => {
     paint(view.derive());
     const graphs = [...planView().querySelectorAll<HTMLElement>('.plan-graph')];
     expect(graphs.map((g) => g.dataset.graph)).toEqual(['balls', 'passives']);
-    // balls get the fusion row label, passives don't (no passive fusions)
+    // balls get the fusion row label, passives don't (no passive fusions) —
+    // both read the build-graph row model, one definition
+    const labels = (ns: 'balls' | 'passives') =>
+      [...graphEl(ns).querySelectorAll<HTMLElement>('.plan-graph-rowlabel')].map((l) => l.textContent);
+    expect(labels('balls')).toEqual([...BUILD_GRAPH_ROWS.balls.labels]);
+    expect(labels('passives')).toEqual([...BUILD_GRAPH_ROWS.passives.labels]);
     expect(graphs[0].querySelectorAll('.plan-graph-rowlabel')).toHaveLength(4);
     expect(graphs[1].querySelectorAll('.plan-graph-rowlabel')).toHaveLength(3);
     for (const ns of ['balls', 'passives'] as const) {

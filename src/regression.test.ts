@@ -466,7 +466,6 @@ describe('regression: build-graph fusion node ids are namespaced (the fusion row
     const model = deriveBuildGraph(
       { singles: [], pairs: [{ a: 'freeze-ray', b: 'time-bomb' }] },
       ballMap,
-      { fusionRow: true },
     );
     const fusionNodes = model.nodes.filter((n) => n.row === 3);
     expect(fusionNodes).toHaveLength(1);

@@ -6,10 +6,9 @@
 // everything else — counts, done/suppressed, positions, edge paths, the focus
 // highlight — repaints in place, found by each node's data-id and each edge's
 // stamped endpoints. Internal to the renderer facade.
-import { BUILD_GRAPH_METRICS } from '../build-graph';
+import { BUILD_GRAPH_METRICS, BUILD_GRAPH_ROWS, FUSION_ROW } from '../build-graph';
 import { emitAction } from './seam';
 import { reconcile } from './reconcile';
-import { DEPTH_LABELS } from './labels';
 import { icon } from './dom';
 import type { ViewModel } from '../view-state';
 
@@ -30,10 +29,6 @@ const GRAPH_EMPTY_HINTS = {
 } as const;
 
 const GRAPH_TITLES = { balls: 'Ball build graph', passives: 'Passive build graph' } as const;
-const GRAPH_ROW_LABELS = {
-  balls: [...DEPTH_LABELS, 'Fusions'],
-  passives: [...DEPTH_LABELS],
-} as const;
 
 /** Append the two graph panels below the plan sections and bind their
  *  collapse toggles through the build seam. */
@@ -49,7 +44,7 @@ export function buildBuildGraphs() {
           <p class="plan-graph-empty">${GRAPH_EMPTY_HINTS[ns]}</p>
           <div class="plan-graph-cols">
             <div class="plan-graph-rowlabels" aria-hidden="true">
-              ${GRAPH_ROW_LABELS[ns].map((l) => `<span class="plan-graph-rowlabel" style="height:${BUILD_GRAPH_METRICS.rowH}px">${l}</span>`).join('')}
+              ${BUILD_GRAPH_ROWS[ns].labels.map((l) => `<span class="plan-graph-rowlabel" style="height:${BUILD_GRAPH_METRICS.rowH}px">${l}</span>`).join('')}
             </div>
             <div class="plan-graph-scroll"><div class="plan-graph-canvas"><svg class="plan-graph-edges" aria-hidden="true"></svg></div></div>
           </div>
@@ -142,13 +137,13 @@ export function paintBuildGraphs(vm: ViewModel) {
         // inside (no nested interactive elements)
         const el = document.createElement('div');
         el.className =
-          `build-node${n.final ? ' final' : ''}${n.row === 3 ? ' fused' : ''}` +
+          `build-node${n.final ? ' final' : ''}${n.row === FUSION_ROW ? ' fused' : ''}` +
           `${n.done ? ' done' : ''}${n.suppressed ? ' suppressed' : ''}`;
         el.dataset.id = n.id;
         placeNode(el, n);
         // icons ride one row wrapper — the fused pair's two icons sit side by
         // side (bare second img would stack under the first in the column)
-        const imgs = n.row === 3
+        const imgs = n.row === FUSION_ROW
           ? `<img src="${icon(n.icon)}" alt="" width="28" height="28"><img src="${icon(n.icon2!)}" alt="" width="28" height="28">`
           : `<img src="${icon(n.icon)}" alt="${n.name}" width="28" height="28">`;
         // the done check: evolved/T3/fusion nodes only — base balls dim

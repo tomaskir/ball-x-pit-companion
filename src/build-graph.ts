@@ -2,16 +2,24 @@
 // targets — one layered graph per namespace (balls, passives; the graphs are
 // strictly separate, as everywhere) showing every step to build the planned
 // items: base entities → evolved → tier-3, plus — balls only — a fusion row
-// for the planned fused pairs. Pure derivation and layout, unit-tested in
+// for the planned fused pairs. Pure derivation, layout, and the whole
+// Plan-screen view derivation (`deriveBuildGraphView`), unit-tested in
 // src/build-graph.test.ts; the renderer only paints the laid-out model.
+//
+// The module owns the graph's inputs, row model, and highlight rule:
+// `deriveBuildGraphView(planState, { focus, done, collapsed })` assembles the
+// targets from the plan (including Evolves-instead resolution), derives and
+// lays out both namespace graphs, validates the focus id, walks the related
+// set, and carries the fixed row model (row counts, fusion row index, row
+// labels). view-state only embeds the result.
 //
 // The model rules (settled with the user):
 // - One node per id across the whole graph (deduped by id). A planned fused
 //   pair is one fusion-layer node whose id carries the `fusion:` prefix so
 //   it can never collide with a catalog id (the namespace invariant). A
 //   planned pair that Evolves instead of Fusing never reaches here as a
-//   pair — view-state resolves it into a single target of the evolved ball
-//   (it is just a way of building that ball).
+//   pair — `deriveBuildGraphView` resolves it into a single target of the
+//   evolved ball (it is just a way of building that ball).
 // - Counts are physical copies: a node's demand is the sum over everything
 //   that needs it. Being a planned target adds 1; each parent (a model node
 //   whose recipes include the node) adds the parent's own demand × the slot
@@ -28,12 +36,38 @@
 //   complexity (graph.complexity, most complex left), ties in catalog order;
 //   done/suppressed nodes read as disabled and move right of everything
 //   still needed in their row.
-import { type GraphItem, complexity, componentsOf, recipeSlots } from './graph';
+import { type GraphItem, complexity, componentsOf, recipeSlots, closure, union } from './graph';
 import { pairKey, parsePair } from './pair';
+import { ballMap, passiveMap, graphFor } from './catalog';
+import { evolvesInstead } from './fusion';
+import type { PlanState } from './plan-state';
+
+/** Structural-depth labels — the catalog grids' tier headers and the build
+ *  graph's rows share them. One definition; renderer/labels.ts re-exports. */
+export const DEPTH_LABELS = ['Basic', 'Evolved', 'Tier-3'] as const;
+
+/** The fusion row's index — the only row outside the structural depths. */
+export const FUSION_ROW = 3 as const;
+
+/** The graph's fixed row bands: one per structural depth plus — balls only —
+ *  the fusion row. The single definition of the row count, the fusion row
+ *  index, and the row labels (the renderer reads all three). */
+export interface BuildGraphRows {
+  /** Fixed row bands (empty rows keep their band). */
+  count: number;
+  /** The fusion row's index, or null when the namespace has no fusion row. */
+  fusionRow: typeof FUSION_ROW | null;
+  /** Row labels, index-aligned with the bands. */
+  labels: readonly string[];
+}
+export const BUILD_GRAPH_ROWS: Record<'balls' | 'passives', BuildGraphRows> = {
+  balls: { count: 4, fusionRow: FUSION_ROW, labels: [...DEPTH_LABELS, 'Fusions'] },
+  passives: { count: 3, fusionRow: null, labels: DEPTH_LABELS },
+};
 
 /** The plan-side input: which entities the graph must show the build for.
  *  Planned pairs that Evolve instead of Fuse arrive as singles of the
- *  evolved ball (resolved by view-state, which owns the fusion model). */
+ *  evolved ball (resolved by `deriveBuildGraphView`). */
 export interface BuildGraphTargets {
   singles: string[];
   pairs: { a: string; b: string }[];
@@ -46,7 +80,7 @@ export interface BuildGraphNode {
   id: string;
   name: string;
   icon: string;
-  row: 0 | 1 | 2 | 3;
+  row: 0 | 1 | 2 | typeof FUSION_ROW;
   /** Physical copies still needed: min when every path needs it, max when
    *  alternate paths could push it higher. Equal → show a plain count.
    *  Done marks stop their node from contributing, so these are the
@@ -114,8 +148,7 @@ export interface BuildGraphLayout {
 
 /**
  * Derive the build graph for one namespace: `graph` is that namespace's
- * catalog map (balls or passives — never both), `fusionRow` adds the fusion
- * layer for the planned pairs (balls only). Every target plus its full
+ * catalog map (balls or passives — never both). Every target plus its full
  * component ancestry becomes a node; demands aggregate as min-sum/max-sum
  * over the model's parent edges (see the module header). The dataset is
  * verified acyclic (graph.ts's stance); a cycle would yield a
@@ -124,7 +157,7 @@ export interface BuildGraphLayout {
 export function deriveBuildGraph<T extends GraphItem & { name: string; icon: string }>(
   targets: BuildGraphTargets,
   graph: Map<string, T>,
-  { fusionRow, done: doneMarks = new Set<string>() }: { fusionRow: boolean; done?: ReadonlySet<string> },
+  { done: doneMarks = new Set<string>() }: { done?: ReadonlySet<string> } = {},
 ): BuildGraphModel {
   // --- collect the model's node ids: targets + recursive components
   const modelIds = new Set<string>(targets.singles);
@@ -223,7 +256,7 @@ export function deriveBuildGraph<T extends GraphItem & { name: string; icon: str
         name: `${a.name} × ${b.name}`,
         icon: a.icon,
         icon2: b.icon,
-        row: 3,
+        row: FUSION_ROW,
         min,
         max,
         final: true,
@@ -311,7 +344,7 @@ export function layoutBuildGraph(model: BuildGraphModel, rows: number): BuildGra
       currentRow = n.row;
       cursor = padX;
     }
-    const w = n.row === 3 ? fusedW : nodeW;
+    const w = n.row === FUSION_ROW ? fusedW : nodeW;
     nodes.push({
       ...n,
       w,
@@ -335,4 +368,97 @@ export function layoutBuildGraph(model: BuildGraphModel, rows: number): BuildGra
       return { ...e, path: `M ${sx} ${sy} C ${sx} ${sy + dy}, ${tx} ${ty - dy}, ${tx} ${ty}` };
     });
   return { width, height: rows * rowH, nodes, edges };
+}
+
+/** The session-only build-graph UI state view-state owns: the focused node
+ *  (null = none), the done marks (nodes the player has already built this
+ *  run), and the two panels' collapsed flags. */
+export interface BuildGraphSessionState {
+  focus: string | null;
+  done: ReadonlySet<string>;
+  collapsed: { balls: boolean; passives: boolean };
+}
+
+/** The Plan screen's build graphs: one laid-out model per namespace (balls
+ *  with a fusion row, passives without — the graphs stay strictly separate),
+ *  the focused node id (null = nothing focused), the related set the
+ *  renderer lights for it (the focus plus its full upstream AND downstream
+ *  chains — for a fusion node, the pair balls and their ancestries), and
+ *  the session-only collapsed flags for the two panels. */
+export interface BuildGraphViewState {
+  balls: BuildGraphLayout;
+  passives: BuildGraphLayout;
+  focus: string | null;
+  related: Set<string>;
+  collapsed: { balls: boolean; passives: boolean };
+}
+
+/**
+ * Derive the whole Plan-screen graph view from the plan state plus the
+ * session-only graph UI state. This module owns the graph's inputs: the
+ * targets are the plan's kept (non-over-limit) entries — over-limit and
+ * everything else the plan merely marks stays out of the picture. A planned
+ * pair that Evolves instead of Fusing is just a way of building the evolved
+ * ball, so it becomes a single target of the result (deduped against a
+ * directly planned single by the derivation's id set). Both namespace graphs
+ * are derived and laid out here; the focus id is validated against them and
+ * the related set walks the focused node's upstream AND downstream chains in
+ * its own namespace (a base ball has no upstream, a fusion no downstream —
+ * "both directions" covers both). A fusion node lights its pair balls and
+ * their ancestries; a lit ball rides its fusion nodes in.
+ */
+export function deriveBuildGraphView(
+  planState: PlanState,
+  { focus, done, collapsed }: BuildGraphSessionState,
+): BuildGraphViewState {
+  const ballTargets: BuildGraphTargets = { singles: [], pairs: [] };
+  for (const e of planState.balls) {
+    if (e.overLimit) continue;
+    if (e.kind === 'single') ballTargets.singles.push(e.item.id);
+    else {
+      const evo = evolvesInstead(e.a, e.b);
+      if (evo) ballTargets.singles.push(evo.id);
+      else ballTargets.pairs.push({ a: e.a.id, b: e.b.id });
+    }
+  }
+  const passiveTargets: BuildGraphTargets = {
+    singles: planState.passives.filter((e) => !e.overLimit).map((e) => e.item.id),
+    pairs: [],
+  };
+  const balls = layoutBuildGraph(
+    deriveBuildGraph(ballTargets, ballMap, { done }),
+    BUILD_GRAPH_ROWS.balls.count,
+  );
+  const passives = layoutBuildGraph(
+    deriveBuildGraph(passiveTargets, passiveMap, { done }),
+    BUILD_GRAPH_ROWS.passives.count,
+  );
+
+  let resolvedFocus = focus;
+  if (resolvedFocus && ![...balls.nodes, ...passives.nodes].some((n) => n.id === resolvedFocus)) {
+    resolvedFocus = null;
+  }
+  const related = new Set<string>();
+  if (resolvedFocus) {
+    const focusPair = fusionNodePair(resolvedFocus);
+    if (focusPair) {
+      const [a, b] = focusPair;
+      related.add(resolvedFocus);
+      related.add(a);
+      related.add(b);
+      for (const id of closure([a, b], ballMap, false)) related.add(id);
+    } else {
+      const g = graphFor(resolvedFocus);
+      for (const id of union(closure([resolvedFocus], g, false), closure([resolvedFocus], g, true))) {
+        related.add(id);
+      }
+      related.add(resolvedFocus);
+      for (const n of balls.nodes) {
+        if (n.row !== FUSION_ROW) continue;
+        const pair = fusionNodePair(n.id);
+        if (pair && (related.has(pair[0]) || related.has(pair[1]))) related.add(n.id);
+      }
+    }
+  }
+  return { balls, passives, focus: resolvedFocus, related, collapsed: { ...collapsed } };
 }

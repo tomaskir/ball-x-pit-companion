@@ -1,7 +1,9 @@
 // Shared display text for the internal painters: the structural-depth
-// labels, the plan-limit tooltip (fusion panel and selection box), and the
-// plan toggle's add/remove wording (selection box and fusion panel).
-export const DEPTH_LABELS = ['Basic', 'Evolved', 'Tier-3'] as const;
+// labels (owned by the build-graph row model, re-exported here for the
+// catalog grids and fusion screen), the plan-limit tooltip (fusion panel and
+// selection box), and the plan toggle's add/remove wording (selection box and
+// fusion panel).
+export { DEPTH_LABELS } from '../build-graph';
 
 /** Disabled buttons suppress mouse events, so a title on the button itself
  *  never shows — the title rides the nearest container instead (with

@@ -24,10 +24,10 @@
 import { BALLS } from './data/balls';
 import { PASSIVES } from './data/passives';
 import { CHARACTERS, type Character } from './data/characters';
-import { highlightSet, closure, union } from './graph';
-import { ballMap, isPassive, itemFor, graphFor, passiveMap } from './catalog';
-import { deriveBuildGraph, layoutBuildGraph, fusionNodePair, type BuildGraphLayout } from './build-graph';
-import { fusionBalls, evolvesInstead } from './fusion';
+import { highlightSet } from './graph';
+import { isPassive, itemFor, graphFor } from './catalog';
+import { deriveBuildGraphView, type BuildGraphViewState } from './build-graph';
+import { fusionBalls } from './fusion';
 import { deriveFusionPanel, type FusionPanelState } from './fusion-panel';
 import { verdictFor, type Item, type Verdict } from './synergy';
 import { createPlanState, stickyToggle, hydrateList, isFusable } from './plan-state';
@@ -82,19 +82,9 @@ export interface ViewModel {
   /** The balls/passives screens' selection boxes — see SelectionBoxState. */
   selectionBoxes: { balls: SelectionBoxState | null; passives: SelectionBoxState | null };
 }
-/** The Plan screen's build graphs: one laid-out model per namespace (balls
- *  with a fusion row, passives without — the graphs stay strictly separate),
- *  the focused node id (null = nothing focused), the related set the
- *  renderer lights for it (the focus plus its full upstream AND downstream
- *  chains — for a fusion node, the pair balls and their ancestries), and
- *  the session-only collapsed flags for the two panels. */
-export interface BuildGraphViewState {
-  balls: BuildGraphLayout;
-  passives: BuildGraphLayout;
-  focus: string | null;
-  related: Set<string>;
-  collapsed: { balls: boolean; passives: boolean };
-}
+// The build-graph view types are build-graph.ts's — re-exported so the
+// ViewModel's `buildGraph` field keeps one named shape.
+export type { BuildGraphViewState } from './build-graph';
 export type Section = 'balls' | 'passives' | 'characters' | 'fusions' | 'plan';
 export type Action =
   | { type: 'toggleItem'; id: string }
@@ -245,54 +235,16 @@ export function createViewState() {
       balls: selected && !isPassive(selected.id) ? { item: selected, plan: planLabel, fusion: fusionLabel } : null,
       passives: selected && isPassive(selected.id) ? { item: selected, plan: planLabel, fusion: fusionLabel } : null,
     };
-    // The build graphs: targets are the plan's kept (non-over-limit)
-    // entries — over-limit and everything else the plan merely marks stays
-    // out of the picture. A planned pair that Evolves instead of Fusing is
-    // just a way of building the evolved ball, so it becomes a single
-    // target of the result (deduped against a directly planned single by
-    // the derivation's id set).
-    const ballTargets = { singles: [] as string[], pairs: [] as { a: string; b: string }[] };
-    for (const e of planState.balls) {
-      if (e.overLimit) continue;
-      if (e.kind === 'single') ballTargets.singles.push(e.item.id);
-      else {
-        const evo = evolvesInstead(e.a, e.b);
-        if (evo) ballTargets.singles.push(evo.id);
-        else ballTargets.pairs.push({ a: e.a.id, b: e.b.id });
-      }
-    }
-    const passiveTargets = {
-      singles: planState.passives.filter((e) => !e.overLimit).map((e) => e.item.id),
-      pairs: [] as { a: string; b: string }[],
-    };
-    const ballsGraph = layoutBuildGraph(deriveBuildGraph(ballTargets, ballMap, { fusionRow: true, done: graphDone }), 4);
-    const passivesGraph = layoutBuildGraph(deriveBuildGraph(passiveTargets, passiveMap, { fusionRow: false, done: graphDone }), 3);
-    // Focus highlight: the focused node plus its full upstream AND downstream
-    // chains in its own namespace (a base ball has no upstream, a fusion no
-    // downstream — "both directions" covers both). A fusion node lights its
-    // pair balls and their ancestries; a lit ball rides its fusion nodes in.
-    let focus = graphFocus;
-    if (focus && ![...ballsGraph.nodes, ...passivesGraph.nodes].some((n) => n.id === focus)) focus = null;
-    const graphRelated = new Set<string>();
-    if (focus) {
-      const focusPair = fusionNodePair(focus);
-      if (focusPair) {
-        const [a, b] = focusPair;
-        graphRelated.add(focus);
-        graphRelated.add(a);
-        graphRelated.add(b);
-        for (const id of closure([a, b], ballMap, false)) graphRelated.add(id);
-      } else {
-        const g = graphFor(focus);
-        for (const id of union(closure([focus], g, false), closure([focus], g, true))) graphRelated.add(id);
-        graphRelated.add(focus);
-        for (const n of ballsGraph.nodes) {
-          if (n.row !== 3) continue;
-          const pair = fusionNodePair(n.id);
-          if (pair && (graphRelated.has(pair[0]) || graphRelated.has(pair[1]))) graphRelated.add(n.id);
-        }
-      }
-    }
+    // The build graphs: src/build-graph.ts's deriveBuildGraphView owns the
+    // graph's inputs — targets (including Evolves-instead resolution), both
+    // namespace graphs, layout, focus validation, the related-set walk, and
+    // the row model. This module only hands in the plan state and the
+    // session-only graph UI state, then embeds the result.
+    const buildGraph = deriveBuildGraphView(planState, {
+      focus: graphFocus,
+      done: graphDone,
+      collapsed: graphCollapsed,
+    });
     return {
       tiles,
       charCards,
@@ -305,7 +257,7 @@ export function createViewState() {
       fusionPanel,
       fusionHint,
       plan: planState,
-      buildGraph: { balls: ballsGraph, passives: passivesGraph, focus, related: graphRelated, collapsed: { ...graphCollapsed } },
+      buildGraph,
       selectionBoxes,
     };
   };

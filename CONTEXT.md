@@ -165,9 +165,13 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   Over-limit entries stay out
   of the graph; a panel with nothing to show carries a hint. Pure
   derivation + layout in
-  `src/build-graph.ts` (`deriveBuildGraph`/`layoutBuildGraph`, unit-tested
-  in `src/build-graph.test.ts`); targets resolved from the plan by
-  `src/view-state.ts` (`vm.buildGraph`; focus, collapse, and done marks ride
+  `src/build-graph.ts`: `deriveBuildGraphView(planState, { focus, done,
+  collapsed })` owns the graph's inputs (targets, including Evolves-instead
+  resolution), both namespace graphs, focus validation, the related-set
+  walk, and the row model (row counts, fusion row index, labels);
+  `deriveBuildGraph`/`layoutBuildGraph` are its pure parts, unit-tested in
+  `src/build-graph.test.ts`. `src/view-state.ts` only embeds the result
+  (`vm.buildGraph`; focus, collapse, and done marks ride
   `toggleGraphFocus`/`toggleGraphCollapse`/`toggleGraphDone` through the
   build seam); painting in `src/renderer.ts` (`paintBuildGraphs` — the
   canvas rebuilds through the reconcile seam on structural change only
