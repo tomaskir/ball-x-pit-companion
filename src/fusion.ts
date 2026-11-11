@@ -1,7 +1,8 @@
 // Fusion module: pure composition of a fused ball from its two components.
 // The game has no fusion table — a fused ball is computed at runtime by
 // stacking the two components' effects (see docs/research/fusion-mechanics.md).
-// This module mirrors that composer over the catalog's effect text:
+// This module mirrors that composer over the level-3 effect text (falling back
+// to the catalog's level-1 text):
 //   - name is "A × B" in selection order (site display; the English game name
 //     is "A X B" and the separator is localized)
 //   - effect paragraphs concatenate per component, in selection order
