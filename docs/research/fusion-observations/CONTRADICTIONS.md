@@ -7,10 +7,11 @@ this file records the conflict, and the curated layer
 `order.matters_functionally: "disputed"`.
 
 Scope: conflicts **within** the fused-ball observation corpus
-(`fusion-observations/*.jsonl`, 1,035 observations over **370 distinct pair
-keys** — the validator's exact count across all 11 files; an earlier hand
-estimate of "~250" was simply low, because 224 pairs have exactly one
-observation and sit outside the handful of heavily-discussed pairs).
+(`fusion-observations/*.jsonl`, 1,035 observations: **977 pair-filed rows over
+370 distinct pair keys** plus 58 global `composition-rule` rows with no pair —
+the validator's exact count across all 11 files; an earlier hand estimate of
+"~250" was simply low, because 224 pairs have exactly one observation and sit
+outside the handful of heavily-discussed pairs).
 Game-evolution recipe disputes (the Bleed+Poison→Virus build change, etc.) live
 in `../game-mechanics.md` and are out of scope here.
 
@@ -149,6 +150,14 @@ order effects exist:
    separate `time` ball is **not** in the cooldown class.)
 4. **Base-ball pool recursion** — order decides which base ball stops appearing
    in the level-up/fusion pool. Not a fusion effect; see §2.
+
+**Superseded (2026-11-11, historical record above retained).** This
+2026-10-04 two-class reading is superseded by the property-collision model
+(canonical statement: `../fusion-mechanics.md` §3; resolution pass: §13). The
+same-property and both-cooldown classes are subsets of one rule — a shared
+scalar key resolves to the first pick — and "blends" is superseded by
+"different application channels union; a shared scalar key takes the first
+pick". The presentation and pool-recursion points stand.
 
 al-gest/mmemo's 8–11 pairs are **contradicted folklore** (all cross-property,
 none same-property, none both-cooldown; several directly refuted by PSA #1's
@@ -512,9 +521,14 @@ question — see `../fusion-mechanics.md` §4.)
 - **namu.wiki** (2026-08-26): the fusion ball is "완성된다" (complete) at level 3.
 - **kamigame** (2026-09-13): "融合後も装備はレベル3のままとなる" — the fused
   equipment stays at level 3.
-**Best reading: unresolved.** namu + kamigame agree (two sources); TVTropes
-dissents. Could be a reading of *component* level (both components are level 3
-when fused) vs *result* level. One playtest settles it.
+**Best reading (2026-10-04): unresolved.** namu + kamigame agree (two
+sources); TVTropes dissents. Could be a reading of *component* level (both
+components are level 3 when fused) vs *result* level. One playtest settles it.
+
+**Superseded on the level half (2026-11-11):** in-game fused tooltips in
+`images.jsonl` all show **Level 3**, so the fused ball is L3 on creation
+(tooltip evidence). Whether fusion below level 3 is possible remains disputed
+(§10c).
 
 ### 10c. Sub-level-3 fusion possible vs not
 - **blueprintedgaming** (2026-09-06): fusing below Level 3 is possible but
@@ -656,7 +670,11 @@ reconciliation is possible from the corpus as it stands.
 ## 12. Cross-cutting: where the corpus agrees
 
 Not contradictions, but useful boundaries on the above — the composition model
-the companion site can treat as settled enough to document:
+the companion site can treat as settled enough to document. **Superseded
+(2026-11-11):** the older "order functionally irrelevant except the two
+exceptions" framing is superseded by the property-collision model — order
+matters wherever a shared scalar key collides (`../fusion-mechanics.md` §3).
+The boundaries below stand.
 
 - Fused name format is `"A X B"`, A = first-selected. Language-dependent
   separator (`X` / `×`).
@@ -885,19 +903,19 @@ is append-only); the curated layer draws from `ordering.jsonl` for this dispute.
 
 Only 11 `effect-text` observations exist corpus-wide. Of those:
 
-- `images.jsonl` rows 2–7 are full tooltip transcriptions (`complete: true`)
-  except **row 1 (Bleed X Freeze)** — the panel is scrolled, the Freeze half is
-  off-frame — and **row 8 (Voluptuous Egg Sac X Nuclear Bomb)** — the header and
-  the start of the Nuclear Bomb line are scrolled off. Both are marked
-  `complete: false`.
+- `images.jsonl` rows 2–7 are full tooltip transcriptions (marked
+  `complete: true` in the curated layer). **Row 1 (Bleed X Freeze)** — the
+  panel is scrolled, the Freeze half is off-frame — and **row 8 (Voluptuous
+  Egg Sac X Nuclear Bomb)** — the header and the start of the Nuclear Bomb
+  line are scrolled off — are marked `complete: false`.
 - `reddit.jsonl:260` (Satan X Hemorrhage) is a **quote of the tooltip's white
   line**, not a transcription of the whole panel. Recorded as `complete: false`
   and mirrored under `rules[]` as `effect-text-quote`.
 - `game-files.jsonl:3–4` are unfused templates (see §B).
 
-So the corpus contains **5 complete fused tooltips** (Egg Sac X Poison, Poison
-X Egg Sac, Spider Queen X Vampire Lord, Vampire Lord X Spider Queen, Overgrowth
-× Maggot, Satan × Reaper — 6 counting both orders of the same pairs) and two
+So the corpus contains **6 complete fused tooltip rows over 4 distinct pairs**
+(Egg Sac X Poison and Poison X Egg Sac, Spider Queen X Vampire Lord and
+Vampire Lord X Spider Queen, Overgrowth × Maggot, Satan × Reaper) and two
 partial ones. Everything else about fused effect text is behavioural claim.
 
 ## E. `names_seen` hygiene

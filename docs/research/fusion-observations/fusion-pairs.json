@@ -1,7 +1,7 @@
 {
   "generated": "2026-11-11",
   "pair_count": 370,
-  "order_notes": "Order matters for NAME and SPRITE ALWAYS, for every pair. The fused name is \"A X B\" with A = first-selected; the icon usually comes from the first pick and the colour from the second (Steam Shajirr 2026-01-26); the damage-number colour changes (Reddit PSA #1); the sprite sometimes differs (wiki.gg: 'Spider Queen X Vampire Lord has a completely different sprite from Vampire Lord X Spider Queen', while 'Egg Sac X Poison looks the same as Poison X Egg Sac'); the description paragraphs list the components in selection order (al-gest commenter 2025-12-01). For STATS, COOLDOWNS, PROCS and CROSS-WIRING, order is functionally irrelevant except for the two documented exceptions recorded per pair under order.matters_functionally=yes (same-property pairs; both-cooldown pairs). A third order effect exists but is NOT a fusion effect: base-ball pool recursion (which slot consumes a base ball so it stops appearing) — see the general_rules/pool-recursion entry. Full synthesis: ../fusion-mechanics.md §3.",
+  "order_notes": "Order matters for NAME and SPRITE ALWAYS, for every pair. The fused name is \"A X B\" with A = first-selected (the site displays \"A × B\"; the separator is localized); the icon usually comes from the first pick and the colour from the second (Steam Shajirr 2026-01-26); the damage-number colour changes (Reddit PSA #1); the sprite sometimes differs (wiki.gg: 'Spider Queen X Vampire Lord has a completely different sprite from Vampire Lord X Spider Queen', while 'Egg Sac X Poison looks the same as Poison X Egg Sac'); the description paragraphs list the components in selection order (al-gest commenter 2025-12-01). For STATS, COOLDOWNS, PROCS and CROSS-WIRING, order matters exactly where the two kits collide on a shared scalar property key: the first-selected ball's value wins and the second's is excluded (property-collision model; it subsumes the old same-property and both-cooldown classes). Equal values are not a functional difference; different application channels union; pairs with no colliding scalar key are functionally order-independent. A separate order effect that is NOT a fusion effect: base-ball pool recursion (which slot consumes a base ball so it stops appearing) — see the general_rules/pool-recursion entry. Canonical synthesis: ../fusion-mechanics.md §3 (pre-DLC v1.301).",
   "rules": {
     "namu-seven-composition-rules": {
       "title": "namu.wiki — the seven fusion-composition rules",
@@ -32,7 +32,7 @@
         {
           "n": 5,
           "text": "볼만 다르고 같은 상태 이상 = 두 상태 이상의 중첩제한이나 효과가 조절된다.",
-          "gloss": "Same status from different balls = the stacking limits/effects are adjusted (blended, not first-wins). Worked example: Leech (per-second 3, max 48) + Sacrifice (on-hit 6, max 20) = fused (on-hit 6 + per-second 6, max 20) — both application channels kept, max adjusted to the lower value."
+          "gloss": "Same status from different balls = different application channels union; a shared scalar key takes the first pick. Worked example: Leech (per-second 3, max 48) + Sacrifice (on-hit 6, max 20) = fused (on-hit 6 + per-second 6, one stack cap — the first-selected ball's)."
         },
         {
           "n": 6,
@@ -108,7 +108,7 @@
       "source": "https://tvtropes.org/pmwiki/pmwiki.php/VideoGame/BallXPit",
       "date": "2026-09-21",
       "confidence": "contradicted",
-      "statement": "TVTropes: 'fusion balls are always level 1 on creation' — the fused ball must be leveled again (Black Hole needs 2 more levels when used as a fusion component). namu.wiki instead says the fusion ball is 'complete at level 3' (완성된다) and kamigame says 'the fused equipment stays at level 3'. Genuinely in tension; see CONTRADICTIONS.md."
+      "statement": "TVTropes: 'fusion balls are always level 1 on creation' — the fused ball must be leveled again (Black Hole needs 2 more levels when used as a fusion component). namu.wiki instead says the fusion ball is 'complete at level 3' (완성된다) and kamigame says 'the fused equipment stays at level 3'. Superseded on the level half (2026-11-11): in-game fused tooltips (images.jsonl) all show Level 3, so the fused ball is L3 on creation (tooltip evidence). Whether sub-level-3 fusion is possible remains disputed; see CONTRADICTIONS.md §10b/§10c."
     },
     "trigger-channel-limits": {
       "title": "Trigger-channel limits",
@@ -11869,7 +11869,7 @@
         },
         {
           "type": "priority",
-          "detail": "English gloss (namu rule 5 of 7): 'Same status from different balls = the stacking limits/effects are adjusted.' Worked example: Leech (3/sec, max 48) + Sacrifice (6 on-hit, max 20) = fused (6 on-hit + 6/sec, max 20) — both application channels kept, max limit adjusted to the lower value. Says nothing about selection order: the adjustment is symmetric/blended, NOT 'first ball wins'. This sits next to PSA #2's same-property rule and narrows it: exact-same-property variants resolve by order (first wins); same-status-different-numbers blend. Pairless in spirit; pair here is the named worked example.",
+          "detail": "English gloss (namu rule 5 of 7): 'Same status from different balls = the stacking limits/effects are adjusted.' Worked example: Leech (3/sec, max 48) + Sacrifice (6 on-hit, max 20) = fused (6 on-hit + 6/sec, one stack cap — the first-selected ball's). Different application channels union; a shared scalar key takes the first pick (property-collision model, fusion-mechanics.md §3). Pairless in spirit; pair here is the named worked example.",
           "sources": [
             "https://namu.moe/w/BALL%20x%20PIT/%EB%B3%BC"
           ],

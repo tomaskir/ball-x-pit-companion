@@ -2,14 +2,16 @@
 // The game has no fusion table — a fused ball is computed at runtime by
 // stacking the two components' effects (see docs/research/fusion-mechanics.md).
 // This module mirrors that composer over the catalog's effect text:
-//   - name is "A × B" in selection order (function is order-independent)
-//   - effect paragraphs concatenate per component, in name order
+//   - name is "A × B" in selection order (site display; the English game name
+//     is "A X B" and the separator is localized)
+//   - effect paragraphs concatenate per component, in selection order
 //   - a cross-wire line is emitted when one component's channel can carry the
 //     other's effect: spawn/AOE carrier + on-hit status, AOE carrier + kill-
 //     on-hit (Black Hole × Sun), spawn carrier + spawn-bound status (Glacier
 //     × Maggot) — per the community composition rules (namu's 7 rules; the
-//     status-vs-spawn split) validated against the 1,035-observation corpus
-//     in docs/research/fusion-observations/. crossWire() returns
+//     status-vs-spawn split) validated against the observation corpus in
+//     docs/research/fusion-observations/ (counts derive from
+//     fusion-pairs.json). crossWire() returns
 //     { line, disputed }: disputed marks a corpus-contradicted kill wire
 //     (flicker × reaper), which fuse() turns into a caveat note.
 //   - order is property-set union with first-pick scalar precedence: the
@@ -45,7 +47,8 @@ export function fusionBalls(): Ball[] {
   return BALLS.filter((b) => b.id !== 'baby-ball');
 }
 
-/** "A × B" — the game uses U+00D7, first-selected ball first. */
+/** "A × B" — the site's display choice (the English game name is "A X B";
+ *  the separator is localized), first-selected ball first. */
 export const fusionName = (a: Ball, b: Ball): string => `${a.name} × ${b.name}`;
 
 /** Abstract damage rolls to "X damage" / "X". Durations, stacks, cooldowns,
@@ -77,8 +80,9 @@ const FIELD_AURA = /\b(while on the field|when launched|while active|every secon
 /** Community-evidenced exceptions to the text-derived channel: Blizzard's
  *  freeze comes from spawned icicles (icemage_999). Freeze Ray is NOT
  *  spawn-bound: its freeze is on-hit/AOE and spreads with Flash (Nov 2026
- *  community test + wiki taxonomy). Sun's field aura still does not apply it
- *  (corpus freeze-ray+sun — the beam carries Sun's burn, not the reverse). */
+ *  community test + wiki taxonomy, pre-DLC v1.301). Sun's field aura still
+ *  does not apply it (corpus freeze-ray+sun — the beam carries Sun's burn,
+ *  not the reverse). */
 const SPAWN_BOUND_IDS = new Set(['blizzard']);
 /** Text-derived channel exceptions. Berserk is applied on hit (40% at L3),
  *  not a field aura — the "every second" phrase describes the berserk
@@ -243,8 +247,8 @@ export function evolvesInstead(a: Ball, b: Ball): Ball | null {
 export interface FusionResult {
   /** "A × B" — first-selected ball first. */
   name: string;
-  /** Component effect paragraphs (level-3 text), in name order, damage rolls
-   *  abstracted. */
+  /** Component effect paragraphs (level-3 text), in selection order, damage
+   *  rolls abstracted. */
   paragraphs: [string, string];
   /** Cross-wire line, or null when no channel carries the partner's effect. */
   crossWire: string | null;

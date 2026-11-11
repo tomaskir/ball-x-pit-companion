@@ -6,7 +6,7 @@ import { ballMap } from './catalog';
 const ball = (id: string) => ballMap.get(id)!;
 
 describe('fusionName', () => {
-  it('is "A × B" with the first-selected ball first (U+00D7)', () => {
+  it('is "A × B" with the first-selected ball first (site display; English game name is "A X B")', () => {
     expect(fusionName(ball('flash'), ball('glacier'))).toBe('Flash × Glacier');
     expect(fusionName(ball('glacier'), ball('flash'))).toBe('Glacier × Flash');
   });
@@ -106,7 +106,7 @@ describe('evolvesInstead', () => {
 });
 
 describe('fuse', () => {
-  it('composes name, paragraphs in name order, and caveats', () => {
+  it('composes name, paragraphs in selection order, and caveats', () => {
     const r = fuse(ball('glacier'), ball('flash'))!;
     expect(r.name).toBe('Glacier × Flash');
     expect(r.paragraphs[0]).toContain('glacial spikes');

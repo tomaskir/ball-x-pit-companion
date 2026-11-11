@@ -1,4 +1,6 @@
-// Fusion property model — the order-mechanics decision (#7).
+// Fusion property model — the order-mechanics decision (#7). The canonical
+// statement of the order model is docs/research/fusion-mechanics.md §3; this
+// module implements it.
 //
 // A ball's kit is a set of property keys. Fusion unions the sets. On a shared
 // scalar key the first-selected ball's value wins; the second's variant is

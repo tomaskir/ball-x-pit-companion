@@ -146,9 +146,11 @@ texts cover all 90 fusable balls) and exits non-zero on violation.
 
 ## Content caveats
 
-- Game data is wiki-as-of-2026-09-13 (game v1.301); the wiki pages carry
-  `{{Stub}}` notices. Re-verify numbers on game patches — see the uncertainty
-  summary at the end of `docs/research/game-mechanics.md`.
+- Game data is wiki-as-of-2026-09-13 (pre-DLC game v1.301); the wiki pages
+  carry `{{Stub}}` notices. The overview catalog is level-1 text; fusion
+  consumes the level-3 overlay (`src/data/level-3.ts`). Re-verify numbers on
+  game patches — see the uncertainty summary at the end of
+  `docs/research/game-mechanics.md`.
 - The synergy tag list and per-character verdicts are this site's **editorial
   model**, not game data — playtest-unverified. Changes there are content
   decisions, not just code.

@@ -10,8 +10,8 @@ Workflow guidance lives in `AGENTS.md`; the game-data fact base is
 The wiki (ballxpit.wiki.gg) distinguishes two mechanics that fan sites conflate:
 
 - **Evolution** — combining 2+ specific level-3 balls in the Fusion Reactor into
-  a new *named* Evolved Ball (69 of them as of game v1.301). Modeled from the
-  fact base.
+  a new *named* Evolved Ball (69 of them as of pre-DLC game v1.301). Modeled
+  from the fact base.
 - **Fusion** — merging any two unfused level-3 balls into a property-stacking
   ball with no unique identity. Modeled **editorially** on the Fusions screen:
   the game stores no fusion table (see `docs/research/fusion-mechanics.md`),
@@ -311,29 +311,36 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   hands the returned view model to the renderer; the view model is the test
   surface.
 - **Fusion composer** — pure composition of a fused ball from two components:
-  name "A × B" (first-selected first), component effect paragraphs in name
-  order with damage rolls abstracted to "X", a role-named cross-wire line
-  when a channel can carry the partner's effect (spawn/AOE carrier × on-hit
-  status; AOE carrier × kill-on-hit, e.g. Black Hole × Sun; spawn carrier ×
-  spawn-bound status, e.g. Glacier × Maggot), structured shared-property
-  collisions (first-selected wins) and reported exceptions for the panel's
-  Fused result / Reported exceptions sections, the fixed composition caveats
-  (Destroy × Destroy, hit-once dominance over pass-through, spawn compensates
-  Destroy, Dark's multiplier), and the evolve-instead note for 2-component
-  evolution recipes. Module: `src/fusion.ts` (`fuse(a, b)`, `fusionBalls()`,
-  `fusionName`, `abstractDamage`, `crossWire(a, b) → { line, disputed }`,
-  `evolvesInstead`) — the
-  site's editorial model of fusion, not game data; the composition rules,
-  their evidence, and the full 370-pair observation corpus live in
-  `docs/research/fusion-observations/` (validation methodology:
-  `../docs/research/fusion-mechanics.md`, `CONTRADICTIONS.md`).
+  name "A × B" (site display; the English game name is "A X B" and the
+  separator is localized; first-selected first), component effect paragraphs
+  in selection order with damage rolls abstracted to "X", a role-named
+  cross-wire line when a channel can carry the partner's effect (spawn/AOE
+  carrier × on-hit status; AOE carrier × kill-on-hit, e.g. Black Hole × Sun;
+  spawn carrier × spawn-bound status, e.g. Glacier × Maggot), structured
+  property-set union with first-pick scalar precedence (shared scalar keys
+  collide; the first-selected value wins) and reported exceptions for the
+  panel's Fused result / Reported exceptions sections, the fixed composition
+  caveats (Destroy × Destroy, hit-once dominance over pass-through, spawn
+  compensates Destroy, Dark's multiplier), and the evolve-instead note for
+  2-component evolution recipes. Module: `src/fusion.ts` (`fuse(a, b)`,
+  `fusionBalls()`, `fusionName`, `abstractDamage`, `crossWire(a, b) →
+  { line, disputed }`, `evolvesInstead`); the order model's canonical
+  statement is `docs/research/fusion-mechanics.md` §3, implemented by
+  `src/fusion-properties.ts`. This is the site's editorial model of fusion,
+  not game data; the composition rules, their evidence, and the observation
+  corpus live in `docs/research/fusion-observations/` (counts derive from
+  `fusion-pairs.json`; validation methodology:
+  `../docs/research/fusion-mechanics.md`, `CONTRADICTIONS.md`; claim audit:
+  `fusion-claim-register.md`).
 
 ## Data provenance
 
 - **Fact base** — `docs/research/game-mechanics.md`: hand-maintained
-  transcription of ballxpit.wiki.gg tables (fetched 2026-09-13, game v1.301
-  *Naturalist* update), cross-checked against the community "Ultimate Guide
-  of Evolutions" charts. Effect text is verbatim from the wiki.
+  transcription of ballxpit.wiki.gg tables (fetched 2026-09-13, pre-DLC game
+  v1.301 *Naturalist* update), cross-checked against the community "Ultimate
+  Guide of Evolutions" charts. Effect text is verbatim from the wiki. The
+  overview catalog is **level-1** text; fusion consumes the level-3 overlay
+  `src/data/level-3.ts` (generated from `docs/research/level-3-effects.md`).
 - **Pipeline** — `scripts/parse-wiki.ts` (fact base + the Matchmaker pairing
   fact base `docs/research/character-pairings.md` → `src/data/parsed.json`,
   computing depth structurally) then `scripts/emit-data.ts`
@@ -344,5 +351,6 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
 - **Icons** — 208 PNGs in `public/icons/`, downloaded from the wiki's
   MediaWiki API; provenance and the rights-holder disclaimer live in
   `public/icons/CREDITS.md`.
-- **Counts** (pinned by `src/data.test.ts`): 91 balls (21 base + Baby Ball +
-  69 evolved), 71 passives (54 + 17), 23 characters, 17 tags.
+- **Counts** (pinned by `src/data.test.ts`, pre-DLC v1.301): 91 balls (21
+  base + Baby Ball + 69 evolved), 71 passives (54 + 17), 23 characters, 17
+  tags.

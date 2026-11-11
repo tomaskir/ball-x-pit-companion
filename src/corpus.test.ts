@@ -103,12 +103,13 @@ describe('disputed pairs → resolved per CONTRADICTIONS.md', () => {
   //   - The disputed channel is the one the site would display → wire it and
   //     caveat it with the contradiction note (flicker+reaper, §10e).
   //   - The disputed channel is one the model refuses anyway (spawn-bound
-  //     kills, VES hops, debuff-only judgments, AOE coexistence, beam-path
-  //     binding) → null, no note: there is no displayed claim to caveat.
+  //     kills, VES hops, debuff-only judgments, AOE coexistence, Sun's
+  //     field-aura binding) → null, no note: there is no displayed claim to
+  //     caveat.
   //     The composer may still wire an *undisputed* channel of the same pair.
   const NULL_RESOLVED: [string, string][] = [
     ['earthquake+flash', '§10f — kits coexist, neither inherits the other\'s scope'],
-    ['freeze-ray+sun', '§7 — freeze is beam-path-bound; Sun\'s AOE does not apply it'],
+    ['freeze-ray+sun', '§7 — Sun\'s field aura does not apply the freeze'],
     ['hemorrhage+satan', '§4 — Satan\'s judgment is debuff-only, cannot fire the %HP proc'],
     ['hemorrhage+voluptuous-egg-sac', '§3 — VES two-hop chain drops the property'],
     ['nuclear-bomb+voluptuous-egg-sac', '§3 — VES two-hop chain drops the property'],
@@ -176,7 +177,7 @@ describe('implemented cross-wire patterns → composer wires', () => {
     }
   });
 
-  it('the wire line is order-independent (function is commutative; CONTRADICTIONS.md §1)', () => {
+  it('the wire line is order-independent (cross-wiring is commutative; order only resolves shared scalar keys — fusion-mechanics.md §3)', () => {
     for (const key of IMPLEMENTED) {
       const [a, b] = pairsData.pairs[key].components;
       const ab = fuse(ball(a), ball(b))!.crossWire;

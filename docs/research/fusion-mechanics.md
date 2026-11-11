@@ -5,21 +5,25 @@ into a property-stacking ball with no unique identity. Companion to
 `game-mechanics.md`, which covers the 69 named **Evolutions**; the wiki's own
 terminology distinction is in `CONTEXT.md`.
 
-This file is hand-maintained (evidence accessed 2026-10-01..04, game v1.301)
-and is **not parsed by the data pipeline** — unlike `game-mechanics.md`, no
-script consumes it. The fusion composer `src/fusion.ts` implements the model
-described here, and `src/corpus.test.ts` gates that implementation against the
-observation corpus (below), so a composer change, a corpus refresh, or a
-change of mind here must keep the tests green.
+This file is hand-maintained (evidence accessed 2026-10-01..04, game v1.301,
+**pre-DLC** — re-verify version-dependent claims after the Risen Ballbylon
+release, 2026-11-12) and is **not parsed by the data pipeline** — unlike
+`game-mechanics.md`, no script consumes it. The fusion composer `src/fusion.ts`
+implements the model described here, and `src/corpus.test.ts` gates that
+implementation against the observation corpus (below), so a composer change, a
+corpus refresh, or a change of mind here must keep the tests green. The
+2026-11-11 audit trail behind these claims is
+`fusion-claim-register.md` (§6).
 
 **Evidence base**: `fusion-observations/` — a harvest corpus of 1,035
-observations over **370 distinct pairs** from community sources (forum
-archives, community hubs, video descriptions, non-English wikis, datamined
-game files, and the site author's playtests), with a curated layer
-(`fusion-pairs.json`: 31 verified / 96 inferred / 218 unverified / 25
-contradicted) and a contradiction register (`CONTRADICTIONS.md`). Raw
-community claims are kept verbatim there with sources and dates; this file
-names no sites or users by policy.
+observations: **977 pair-filed rows over 370 distinct pairs** (the other 58
+are global `composition-rule` rows with no pair), from community sources
+(forum archives, community hubs, video descriptions, non-English wikis,
+datamined game files, and the site author's playtests), with a curated layer
+(`fusion-pairs.json`: after the 2026-11-11 resolution pass, 49 verified / 97
+inferred / 218 unverified / 6 contradicted) and a contradiction register
+(`CONTRADICTIONS.md`). Raw community claims are kept verbatim there with
+sources and dates; this file names no sites or users by policy.
 
 ---
 
@@ -33,14 +37,15 @@ names no sites or users by policy.
   3+ balls can still fuse.
 - A fused ball is **terminal**: it cannot fuse again, cannot evolve, and is
   never an evolution component.
-- **Name** is `"A × B"` with A = first-selected (separator is
-  language-dependent). Icon usually comes from the first pick, colour from the
+- **Name**: the site displays `"A × B"` with A = first-selected. The English
+  game name is `"A X B"`; the separator is localized, so `×` is the site's
+  display choice. Icon usually comes from the first pick, colour from the
   second; the sprite *sometimes* differs by order; description paragraphs list
   components in selection order.
-- Whether the fused ball is level 1 or level 3 on creation is **disputed**
-  (two sources say complete at level 3, one says level 1); whether fusion
-  below level 3 is possible at all is also disputed (one tips column says
-  yes-but-wasteful; the Korean wiki says level-3 only).
+- The fused ball is **level 3 on creation** (in-game fused tooltips in
+  `images.jsonl` all show Level 3); whether fusion below level 3 is possible
+  at all is disputed (one tips column says yes-but-wasteful; the Korean wiki
+  says level-3 only).
 
 ### 1.1 There is no fusion table — the result is a rule, not a row
 
@@ -68,11 +73,13 @@ Consequences:
 - **Fused-ball numbers (damage/procs/cooldowns of the merged ball) are not
   derivable from any public source.** The site abstracts damage rolls to "X"
   and presents ability composition, never fabricated numbers.
-- The game *does* recompute some component stats at merge time. Observed
-  per-ball values (thresholds −1, spawn counts +1, proc chances up) are the
-  level-3 base values, transcribed in `docs/research/level-3-effects.md` and
-  generated into `src/data/level-3.ts`; the composer consumes that overlay
-  (decision #12). No fused-specific override is evidenced.
+- Observed fused tooltips show per-ball values (thresholds −1, spawn counts
+  +1, proc chances up) that match the **level-3 base values**, transcribed in
+  `docs/research/level-3-effects.md` and generated into `src/data/level-3.ts`;
+  the composer consumes that overlay (decision #12). No fused-specific
+  override is evidenced; only damage rolls are fused-specific, and the site
+  abstracts them to "X". The hand-maintained property table that resolves
+  shared keys lives in `src/fusion-properties.ts`.
 
 ---
 
@@ -89,8 +96,9 @@ single anecdote > second-hand report.
 2. AOE + status → enemies hit in the range also suffer the status.
 3. AOE + additional ball creation → created balls have the same range.
 4. Different statuses → both apply simultaneously.
-5. Same status, different numbers → limits/effects are **blended** (e.g.
-   Leech + Sacrifice keeps both application channels, max 20).
+5. Same status, different numbers → **different application channels union;
+   a shared scalar key takes the first pick** (e.g. Leech + Sacrifice keeps
+   both application channels, one stack cap — the first-selected ball's).
 6. Status + ball creation → created balls also carry the status.
 7. Ball creation + ball creation → both effects, amounts adjusted.
 
@@ -111,8 +119,10 @@ channel**, not just the effect kind:
   *does* apply Black Hole's instant kill (an instant-kill is a debuff).
 - Reaper's kill fires from Flash/Flicker hits and from baby balls, not from
   Satan's AOE.
-- Blizzard's freeze is positional (spawned icicles), Freeze Ray's freeze is
-  bound to the beam path — neither rides a partner's hits.
+- Blizzard's freeze is positional (spawned icicles) and does not ride a
+  partner's hits. Freeze Ray's freeze is on-hit: it spreads through Flash's
+  AOE (Freeze Ray × Flash), but Sun's field aura does not apply it
+  (Freeze Ray × Sun) — the beam carries Sun's burn, not the reverse.
 
 ### 2d. Spawn-channel exceptions
 
@@ -143,33 +153,34 @@ channel**, not just the effect kind:
 
 ## 3. Order — when does it matter?
 
-The controlled evidence (one community test of ~60 pairs in **both orders**,
-plus the wiki and multiple independent reports, plus the site author's
-playtests) says:
+**This section is the canonical statement of the order model.** The model is
+the **property-collision** rule (supersedes the older two-class
+"same-property / both-cooldown, otherwise irrelevant" claim):
 
 1. **Always, cosmetically.** Name, icon, colour, damage-number colour,
    sometimes sprite, description paragraph order follow selection order.
-2. **Shared-property pairs (function).** A ball's kit is a set of property
-   keys; fusion unions the sets. When both balls carry the *same scalar key*
-   (cooldown, stack cap, duration, per-stack damage, bonus %, range, spawn
-   variant, …), the first-selected ball's value wins and the second's is
-   excluded. Same-status-different-numbers pairs are the same rule: different
-   application channels union; a shared scalar key resolves to the first pick
-   (Leech × Sacrifice keeps both channels, one stack cap). Known pairs:
+2. **Functionally, order matters exactly where the two kits collide on a
+   scalar property key.** A ball's kit is a set of property keys; fusion
+   unions the sets. When both balls carry the *same scalar key* (cooldown,
+   stack cap, duration, per-stack damage, bonus %, range, spawn variant, …)
+   with different values, the first-selected ball's value wins and the
+   second's is excluded. The old "same-property" and "both-cooldown" classes
+   are subsets of this rule — `cooldown` is just one key. Known pairs:
    Mosquito Swarm × Mosquito King (spawn variant), Radiation Beam × Nuclear
    Bomb (radiation duration 15 s vs infinite), Noxious × Poison (max stacks),
    Banished Flame × Sun (burn cap/duration/damage), Erosion ×
    Stone/Drill/Assassin/Steel (bonus %), Egg Sac × Timestop (cooldown), Nuke ×
-   Overgrowth (range).
-3. **Both-cooldown pairs are the `cooldown` key of the same rule.** When both
-   balls list their own cooldown (7 balls: Black Hole, Bomb, Dark, Egg Sac,
-   Voluptuous Egg Sac, Nuclear Bomb, Timestop), the first-selected ball's
-   cooldown wins. Worked example: Black Hole × Timestop fires every 5 s one
-   way, every 20 s the other. Equal values are not a functional difference.
-4. **Otherwise order does not matter** for stats, abilities, or cross-wiring.
-   Unresolved reported pairs (Freeze Ray × Blizzard, Noxious × Brimstone) are
-   marked reported/unverified; anomalies (Nuke × Wraith, Black Hole × Sun
-   direction, Time bubble, Banshee curse) are reported exceptions.
+   Overgrowth (range), Freeze Ray × Blizzard (freeze duration, reported),
+   Noxious × Brimstone (poison stacks, reported). Different application
+   channels always union; only a shared scalar key resolves to the first pick
+   (Leech × Sacrifice keeps both channels, one stack cap).
+3. **Equal values are not a functional difference.** A shared key with the
+   same value on both sides cannot make order matter.
+4. **Otherwise order is irrelevant** for stats, abilities, and cross-wiring.
+   Reported anomalies outside the rule (Nuke × Wraith, Black Hole × Sun
+   direction, Time bubble, Banshee curse) stay reported exceptions, not a
+   general order effect. The Nov 2026 report's Freeze Ray × Blizzard and
+   Noxious × Brimstone collisions are predictions marked reported/unverified.
 
 **Pool recursion** (order-adjacent, but not a fusion effect): the
 **first-selected base ball** is consumed and does not reappear in the
@@ -179,13 +190,14 @@ better evidenced.
 
 **Folklore, refuted.** A Japanese guide prescribes a fixed order for 8 of its
 favourite pairs (transcribed as an 11-row table by a second page — one source
-lineage, not two confirmations). All 8 are cross-property pairs, so neither
-real order rule applies; the controlled test covered several in both orders
-with zero difference; the guide's own comment section says only the
-description order differs. Best explanation: the fused *name* follows
-selection order, and the naming convention was converted into a functional
-caution without testing. Community "which ball first" folk rules contradict
-each other on direction and are unnecessary given the controlled result.
+lineage, not two confirmations). All 8 are cross-property pairs with no
+colliding scalar key, so the property-collision model predicts no functional
+difference; the controlled test covered several in both orders with zero
+difference; the guide's own comment section says only the description order
+differs. Best explanation: the fused *name* follows selection order, and the
+naming convention was converted into a functional caution without testing.
+The specific refutation stands; the guide's blanket claim does not generalise
+to pairs whose kits do collide.
 
 ---
 
@@ -229,10 +241,15 @@ each other on direction and are unnecessary given the controlled result.
 - Rows naming balls not yet in the catalog are staged in
   `fusion-observations/pending/`; the schema gate skips that directory until
   promotion moves them into a dated wave.
-- `CONTRADICTIONS.md` is the register of the 25 contradicted / 26
-  order-disputed pairs and the known corpus issues (anchor rows filed on
-  stand-in pairs, `obs_count` semantics, one attribution splice not to cite).
-  Read it before treating any pair's observation count as evidence weight.
+- `CONTRADICTIONS.md` is the register of the 6 contradicted / 4
+  order-disputed pairs (after the 2026-11-11 resolution pass) and the known
+  corpus issues (anchor rows filed on stand-in pairs, `obs_count` semantics,
+  one attribution splice not to cite). Read it before treating any pair's
+  observation count as evidence weight.
+- The claim audit behind this file is `fusion-claim-register.md` (2026-11-11,
+  pre-DLC v1.301): every fusion claim's status and disposition. §3 here is
+  the canonical order-model statement; other files link to it instead of
+  restating the model.
 - Refresh routes (occasional, not part of the data pipeline): forum archive
   APIs keyed on the "A × B" naming convention (heavily rate-limited),
   community-hub screenshot/discussion search, video metadata. The durable
@@ -244,18 +261,22 @@ each other on direction and are unnecessary given the controlled result.
 
 ## Uncertainty summary
 
-- The two functional order rules (same-property, both-cooldown) are
-  **reported, never playtested here** — one playtest each (Mosquito Swarm ×
-  Mosquito King; Black Hole × Timestop) would upgrade them to observed.
+- The property-collision rule is **reported, never playtested here** — one
+  playtest each of a same-property pair (Mosquito Swarm × Mosquito King) and
+  a both-cooldown pair (Black Hole × Timestop) would upgrade it to observed.
 - One playtest of Satan × Hemorrhage on a boss would settle the cleanest
   tooltip-vs-behaviour mismatch (§1.1).
-- Fused-ball level on creation and sub-level-3 fusion remain disputed (§1).
-- The stat-merge formula for fused balls is unknown publicly; the observed
-  per-ball values are level-3 base values (`docs/research/level-3-effects.md`),
-  not fused-specific overrides.
+- Fused-ball level on creation is L3 (tooltip evidence); sub-level-3 fusion
+  remains disputed (§1).
+- The stat-merge formula for fused balls is unknown publicly; observed
+  per-ball values match the level-3 base values
+  (`docs/research/level-3-effects.md`), and only damage rolls are
+  fused-specific (abstracted to "X").
 - Whether the save format records directed fusion pairs (NumCombos symmetry)
   is unverified (§4).
-- Corpus coverage is ~3% of the pair space but concentrated on the meta; pair
-  counts from any single harvest session are a floor, not a ceiling.
+- Corpus coverage is 370 distinct pairs ≈ 9.2% of C(90,2) (977 pair-filed
+  observations; 58 global composition-rule rows have no pair), concentrated
+  on the meta; pair counts from any single harvest session are a floor, not a
+  ceiling.
 - Demo-era claims (pre-release builds) may describe different builds; several
   contradictions in the register are of this kind.

@@ -302,9 +302,10 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
 
   // Bug: the composer cross-wired pairs the corpus says do NOT wire —
   // Voluptuous Egg Sac's two-hop spawn chain (property drops at hop 2),
-  // Freeze Ray's beam-path-bound freeze, Brood Mother's non-carrying spawn
-  // channel, Mosquito King's spawn-on-hit not firing from screen hits, and
-  // Satan's debuff-only field judgment. Found by cross-checking the composer
+  // Freeze Ray's freeze was wrongly treated as spawn-bound, Brood Mother's
+  // non-carrying spawn channel, Mosquito King's spawn-on-hit not firing from
+  // screen hits, and Satan's debuff-only field judgment. Found by
+  // cross-checking the composer
   // against all 31 no-cross-wire claims in docs/research/fusion-observations/.
   // Fix: SPAWN_EXCLUDED_IDS / AOE_EXCLUDED_IDS / SPAWN_BOUND_IDS. Pinned with
   // positive controls in fusion.test.ts (cross-wire exclusions describe).
@@ -403,13 +404,13 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
   // effects (Black Hole, Reaper) did not ride AOE carriers — Black Hole ×
   // Sun is the corpus's single most-discussed pair (7 cross-wire claims) —
   // and spawn carriers did not carry spawn-bound statuses (Glacier × Maggot,
-  // Cell × Glacier: namu rule 6). Also missing entirely: the two order
-  // side-effects (both-cooldown pairs, same-property pairs) and the fixed
-  // composition caveats (Destroy × Destroy, hit-once dominance over
-  // pass-through, spawn compensates Destroy, Dark's multiplier). Pinned in
-  // fusion.test.ts (cross-wire exclusions / order side-effects / composition
-  // caveats describes).
-  it('kill-on-hit rides AOE carriers and order side-effects are structured', async () => {
+  // Cell × Glacier: namu rule 6). Also missing entirely: order resolution
+  // (shared scalar keys, first pick wins) and the fixed composition caveats
+  // (Destroy × Destroy, hit-once dominance over pass-through, spawn
+  // compensates Destroy, Dark's multiplier). Pinned in fusion.test.ts
+  // (cross-wire exclusions / order resolution / composition caveats
+  // describes).
+  it('kill-on-hit rides AOE carriers and order resolution is structured', async () => {
     const { fuse } = await import('./fusion');
     const { ballMap } = await import('./catalog');
     const ball = (id: string) => ballMap.get(id)!;

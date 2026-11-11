@@ -25,8 +25,9 @@ Observation kinds (see `schema.json`):
   download images).
 - `name-only` — the pair was named in play context (existence evidence only).
 
-One observation = one source saying one thing about one pair. Do not dedupe
-across sources; consolidation happens later.
+One observation = one source saying one thing about one pair (global
+`composition-rule` rows have no pair). Do not dedupe across sources;
+consolidation happens later.
 
 ## The contract
 
@@ -79,10 +80,12 @@ them is worth more than a bare name. Mark agreement/disagreement in
    to *spawned sub-entities* (icicles, spikes, babies) do not. Predicts:
    Overgrowth X Flash cross-wires, Flicker X Radiation Beam cross-wires,
    Flash X Glacier does not. All three playtest-confirmed by the site author.
-2. **Order (PSA threads 1ouhlp1, 1p5pil0):** fusion order does not affect
-   function — name and sprite only. Exception: same-property pairs resolve by
-   order (first-selected ball's version wins). Sourced from the official
-   Discord via repost.
+2. **Order (PSA threads 1ouhlp1, 1p5pil0; Nov 2026 post 1xrhisk):** order
+   always affects presentation (name, sprite, icon, colour). Functionally it
+   matters exactly where the two kits collide on a shared scalar property key
+   — the first-selected ball's value wins (property-collision model). The old
+   "order does not affect function" PSA is obsolete after the DLC balls.
+   Canonical statement: `../fusion-mechanics.md` §3.
 3. **Trigger matrix (wiki.gg Fusion Mechanics + namu.wiki):** combination
    semantics depend on trigger types (On-Hit / On-Damage / On-Timer ×
    Spawn / AOE / Status). namu.wiki has the most granular statement (7 rules);
