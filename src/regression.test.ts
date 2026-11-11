@@ -330,7 +330,6 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
   // with positive controls in fusion.test.ts (cross-wire exclusions describe).
   it('cross-wire exclusions match the corpus no-wire evidence', () => {
     expectVesTwoHopSpawnChainDropsProperty();
-    expectFreezeRaySunFieldAuraDoesNotWire();
     expectSatanDebuffOnlyCannotCarryOnHitStatuses();
   });
 

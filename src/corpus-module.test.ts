@@ -138,6 +138,15 @@ describe('loadCorpus', () => {
     expect(messages).toContain('pair "flash+not-a-ball" component "not-a-ball" not in catalog');
     expect(messages).toContain('pair "burn+flash" superseded.superseded_by must be YYYY-MM-DD');
   });
+
+  it('rejects a curated self-pair, mirroring the raw-layer check', () => {
+    const root = fixture({
+      pairs: curated({ 'flash+flash': curatedPair(['flash', 'flash']) }),
+    });
+    expect(loadCorpus(root).findings.map((finding) => finding.message)).toContain(
+      'pair "flash+flash" cannot fuse a ball with itself'
+    );
+  });
 });
 
 describe('loadRawObservations', () => {
@@ -153,6 +162,25 @@ describe('loadRawObservations', () => {
     expect(raw.findings).toEqual([]);
     expect(raw.observations).toHaveLength(1);
     expect(raw.observations[0]).toMatchObject({ file: 'reddit-2026-11-13.jsonl', line: 1 });
+  });
+
+  it('reports a non-object JSON row as a line finding instead of crashing', () => {
+    // Regression: JSON.parse('null') returns null, which validateObservation
+    // dereferenced — collapsing the whole raw layer into one unreadable
+    // directory-level finding and losing the file:line.
+    const root = fixture({ jsonl: { 'reddit-2026-11-13.jsonl': 'null\n' + row() } });
+    const raw = loadRawObservations(root);
+    expect(raw.findings).toContainEqual(
+      expect.objectContaining({ file: 'reddit-2026-11-13.jsonl', line: 1, message: 'row must be a JSON object' })
+    );
+    expect(raw.observations).toHaveLength(1);
+  });
+
+  it('validates claims on non-behavior-claim rows when present', () => {
+    const root = fixture({
+      jsonl: { 'reddit-2026-11-13.jsonl': row({ kind: 'name-only', claims: [{ type: 'nonsense', detail: 'x' }] }) },
+    });
+    expect(validateCorpus(root).map((finding) => finding.message)).toContain('bad claim.type: nonsense');
   });
 
   it('reports catalog, ordering and enum violations', () => {

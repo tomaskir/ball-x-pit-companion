@@ -216,6 +216,7 @@ function readCurated(root: string, contract: SchemaContract): CuratedLayer {
     } else {
       const sorted = [...components].sort();
       if (key !== sorted.join('+')) err(`pair key "${key}" is not its sorted components "${sorted.join('+')}"`);
+      if (components[0] === components[1]) err(`pair "${key}" cannot fuse a ball with itself`);
       for (const id of components) {
         if (!ballMap.has(id)) err(`pair "${key}" component "${id}" not in catalog`);
       }
@@ -273,8 +274,8 @@ function readCurated(root: string, contract: SchemaContract): CuratedLayer {
   };
 }
 
-/** Read and validate the curated layer. Throws only if the file is missing or
- *  not JSON; shape problems come back as findings. */
+/** Read and validate the curated layer. Throws if the curated file or
+ *  schema.json is missing or not JSON; shape problems come back as findings. */
 export function loadCorpus(root: string = defaultRoot()): Corpus {
   const contract = loadSchemaContract(root);
   const curated = readCurated(root, contract);
@@ -374,11 +375,14 @@ function validateObservation(
     }
   }
 
-  if (kind === 'behavior-claim') {
+  if (obs.claims !== undefined) {
     const claims = obs.claims;
-    if (!Array.isArray(claims) || !claims.length) {
-      err(file, lineNo, 'behavior-claim must carry at least one claim');
+    if (!Array.isArray(claims)) {
+      err(file, lineNo, 'claims must be an array');
     } else {
+      if (kind === 'behavior-claim' && !claims.length) {
+        err(file, lineNo, 'behavior-claim must carry at least one claim');
+      }
       for (const claim of claims) {
         if (!claim || typeof claim !== 'object') {
           err(file, lineNo, 'claim must be an object');
@@ -403,6 +407,8 @@ function validateObservation(
         }
       }
     }
+  } else if (kind === 'behavior-claim') {
+    err(file, lineNo, 'behavior-claim must carry at least one claim');
   }
 
   if (obs.order_as_named !== undefined) {
@@ -458,6 +464,10 @@ function readRaw(root: string, contract: SchemaContract): RawLayer {
         data = JSON.parse(line);
       } catch {
         err(file, lineNo, 'not valid JSON');
+        return;
+      }
+      if (!data || typeof data !== 'object' || Array.isArray(data)) {
+        err(file, lineNo, 'row must be a JSON object');
         return;
       }
       observations.push({ file, line: lineNo, data });

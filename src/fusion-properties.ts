@@ -18,8 +18,8 @@
 // level-3 overlay (src/data/level-3.ts); data.test.ts enforces that.
 //
 // `Channel` here is the property-model application channel. It is related to,
-// but not the same as, `fusion.ts`'s cross-wire `StatusChannel` (which also
-// models the spawn-bound/field split for wire emission).
+// but not the same as, `fusion-knowledge.ts`'s cross-wire `StatusChannel`
+// (which also models the spawn-bound/field split for wire emission).
 //
 // Evidence bar (decision #7): a pair or rule enters the model with tier 1–2
 // evidence — game files, in-game tooltips, controlled tests, or multiple
