@@ -13,4 +13,15 @@ describe('typecheck', () => {
     }
     expect(out.trim(), out || 'tsc failed with no output').toBe('');
   });
+
+  it('strictNullChecks is enabled, so the gate checks null contracts', () => {
+    // The gate is only as strong as the config it runs under: pin the
+    // resolved option so a later tsconfig edit cannot silently drop it.
+    const out = execFileSync('npx', ['tsc', '--showConfig'], {
+      encoding: 'utf8',
+      cwd: new URL('..', import.meta.url).pathname,
+      stdio: 'pipe',
+    });
+    expect(JSON.parse(out).compilerOptions.strictNullChecks).toBe(true);
+  });
 });

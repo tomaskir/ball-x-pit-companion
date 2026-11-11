@@ -172,7 +172,8 @@ export function deriveBuildGraph<T extends GraphItem & { name: string; icon: str
     stack.push(a, b);
   }
   while (stack.length) {
-    const id = stack.pop()!;
+    const id = stack.pop();
+    if (id === undefined) break;
     const item = graph.get(id);
     if (!item) continue;
     for (const c of componentsOf(item)) {
@@ -253,8 +254,9 @@ export function deriveBuildGraph<T extends GraphItem & { name: string; icon: str
     const suppressed = !isDone && min === 0 && max === 0;
     const fusion = fusionByNode.get(id);
     if (fusion) {
-      const a = graph.get(fusion.a)!;
-      const b = graph.get(fusion.b)!;
+      const a = graph.get(fusion.a);
+      const b = graph.get(fusion.b);
+      if (!a || !b) continue; // resolution guards keep this unreachable
       nodes.push({
         id,
         name: `${a.name} × ${b.name}`,
@@ -269,7 +271,8 @@ export function deriveBuildGraph<T extends GraphItem & { name: string; icon: str
       });
       continue;
     }
-    const item = graph.get(id)!;
+    const item = graph.get(id);
+    if (!item) continue;
     nodes.push({
       id,
       name: item.name,
@@ -359,18 +362,17 @@ export function layoutBuildGraph(model: BuildGraphModel, rows: number): BuildGra
     width = Math.max(width, cursor - gapX + padX);
   }
   const byId = new Map(nodes.map((n) => [n.id, n]));
-  const edges = model.edges
-    .filter((e) => byId.has(e.from) && byId.has(e.to))
-    .map((e) => {
-      const f = byId.get(e.from)!;
-      const t = byId.get(e.to)!;
-      const sx = f.x + f.w / 2;
-      const sy = f.y + nodeH;
-      const tx = t.x + t.w / 2;
-      const ty = t.y;
-      const dy = (ty - sy) / 2;
-      return { ...e, path: `M ${sx} ${sy} C ${sx} ${sy + dy}, ${tx} ${ty - dy}, ${tx} ${ty}` };
-    });
+  const edges = model.edges.flatMap((e) => {
+    const f = byId.get(e.from);
+    const t = byId.get(e.to);
+    if (!f || !t) return [];
+    const sx = f.x + f.w / 2;
+    const sy = f.y + nodeH;
+    const tx = t.x + t.w / 2;
+    const ty = t.y;
+    const dy = (ty - sy) / 2;
+    return [{ ...e, path: `M ${sx} ${sy} C ${sx} ${sy + dy}, ${tx} ${ty - dy}, ${tx} ${ty}` }];
+  });
   return { width, height: rows * rowH, nodes, edges };
 }
 

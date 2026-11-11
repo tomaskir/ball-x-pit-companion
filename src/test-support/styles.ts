@@ -109,9 +109,9 @@ let shell: Document | null = null;
 /** index.astro's shell parsed as a DOM document (frontmatter stripped — it is
  *  build-time TypeScript, not markup). */
 export function shellDoc(): Document {
-  if (!shell) {
-    const astro = readFileSync('src/pages/index.astro', 'utf8').replace(/^---[\s\S]*?---/, '');
-    shell = new JSDOM(astro).window.document;
-  }
-  return shell;
+  if (shell) return shell;
+  const astro = readFileSync('src/pages/index.astro', 'utf8').replace(/^---[\s\S]*?---/, '');
+  const doc: Document = new JSDOM(astro).window.document;
+  shell = doc;
+  return doc;
 }

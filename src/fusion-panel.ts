@@ -163,6 +163,24 @@ const composedPresentation = (
   };
 };
 
+/** The composed state for two resolved, distinct balls. fuse() returns null
+ *  for a repeated ball (the game forbids self-fusion); the pick list dedupes,
+ *  so that only happens for a hand-built pick list — fall back to pending
+ *  rather than carry a null `fusion` the renderer would crash on. */
+function composedPanel(a: Ball, b: Ball, plan: FusionPanelPlan): FusionPanelState {
+  const fusion = fuse(a, b);
+  if (!fusion) return { state: 'pending', first: a };
+  return {
+    state: 'composed',
+    fusion,
+    a,
+    b,
+    planned: plan.hasPair(a.id, b.id),
+    planFull: plan.ballSlots.used >= plan.ballSlots.capacity,
+    ...composedPresentation(fusion),
+  };
+}
+
 /** Derive the fusion screen's panel and hint from the pick order and the
  *  plan facts. The panel resolves the picks through the catalog (an unknown
  *  id reads as no pick) and composes the pair through src/fusion.ts; the
@@ -178,18 +196,7 @@ export function deriveFusionPanel(
     ? { state: 'empty' }
     : !b
       ? { state: 'pending', first: a }
-      : (() => {
-          const fusion = fuse(a, b);
-          return {
-            state: 'composed',
-            fusion,
-            a,
-            b,
-            planned: plan.hasPair(a.id, b.id),
-            planFull: plan.ballSlots.used >= plan.ballSlots.capacity,
-            ...composedPresentation(fusion),
-          };
-        })();
+      : composedPanel(a, b, plan);
   const hint =
     picks.length === 0 ? 'Pick two balls to see their fusion.'
     : picks.length === 1 ? '…pick a second ball.'

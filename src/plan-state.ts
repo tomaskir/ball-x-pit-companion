@@ -18,6 +18,7 @@
 // pairs, one merged grid) and passives sort by complexity — how many base
 // entities the final form contains (graph.complexity), most complex left.
 import { type Ball } from './data/balls';
+import { type Passive } from './data/passives';
 import { type Character } from './data/characters';
 import { ballMap, passiveMap, isPassive } from './catalog';
 import { complexity } from './graph';
@@ -112,8 +113,12 @@ const activeLimits = (upgradesOn: boolean): PlanLimits => (upgradesOn ? LIMITS.o
 /** Ball slots a plan occupies: every single ball is one slot, and a fused
  *  pair is ONE slot (the pair replaces its two components) — one internal
  *  definition, not one per call site. */
-const ballSlotsUsed = (balls: readonly string[], fused: readonly PlanFused[]): number =>
-  balls.length + fused.length;
+const ballSlotsUsed = (ballCount: number, fusedCount: number): number =>
+  ballCount + fusedCount;
+
+/** A planned fused pair resolved to its catalog balls — the pick list's
+ *  stored shape. The snapshot maps it back to the persisted id pair. */
+interface ResolvedFused { a: Ball; b: Ball; }
 
 export function createPlanState() {
   /** The plan's End game upgrades toggle — on by default. */
@@ -123,28 +128,33 @@ export function createPlanState() {
    *  plan's characters are the shared selectedChars — one selection feeds
    *  verdicts, chips, plan. Resolution guards reject unknown ids (the
    *  catalog decides the namespace at the dispatch seam). */
-  const planBalls = createPickList<string, string>({
-    resolve: (id) => (ballMap.has(id) ? id : undefined),
-    key: (id) => id,
+  const planBalls = createPickList<Ball, string>({
+    resolve: (id) => ballMap.get(id),
+    key: (ball) => ball.id,
     // the ball list shares the ball capacity with the fused pairs (a pair
     // is ONE slot), so room is "slots used < capacity", not this list's length.
     // `planFused` is declared below; the callback runs only after
     // createPlanState returns, so the forward reference is safe.
-    hasRoom: (list) => ballSlotsUsed(list, planFused.list()) < activeLimits(upgradesOn).balls,
+    hasRoom: (list) => ballSlotsUsed(list.length, planFused.list().length) < activeLimits(upgradesOn).balls,
   });
-  const planPassives = createPickList<string, string>({
-    resolve: (id) => (passiveMap.has(id) ? id : undefined),
-    key: (id) => id,
+  const planPassives = createPickList<Passive, string>({
+    resolve: (id) => passiveMap.get(id),
+    key: (passive) => passive.id,
     hasRoom: (list) => list.length < activeLimits(upgradesOn).passives,
   });
-  /** Planned fused pairs in compose order; identity is the sorted id pair,
-   *  so the reverse composition is the same planned pair. Resolution
-   *  rejects unknown ids, non-fusable balls (Baby Ball), and degenerate
-   *  pairs — derive() can therefore never meet a bad component. */
-  const planFused = createPickList<PlanFused, PlanFused>({
-    resolve: (p) => (p.a !== p.b && isFusable(p.a) && isFusable(p.b) ? { a: p.a, b: p.b } : undefined),
-    key: (p) => pairKey(p.a, p.b),
-    hasRoom: (list) => ballSlotsUsed(planBalls.list(), list) < activeLimits(upgradesOn).balls,
+  /** Planned fused pairs in compose order, resolved to their catalog balls;
+   *  identity is the sorted id pair, so the reverse composition is the same
+   *  planned pair. Resolution rejects unknown ids, non-fusable balls (Baby
+   *  Ball), and degenerate pairs — derive() can therefore never meet a bad
+   *  component. */
+  const planFused = createPickList<ResolvedFused, PlanFused>({
+    resolve: (p) => {
+      const a = ballMap.get(p.a);
+      const b = ballMap.get(p.b);
+      return a && b && a.id !== b.id && isFusable(a.id) && isFusable(b.id) ? { a, b } : undefined;
+    },
+    key: (p) => pairKey(p.a.id, p.b.id),
+    hasRoom: (list) => ballSlotsUsed(planBalls.list().length, list.length) < activeLimits(upgradesOn).balls,
   });
 
   /** Apply a normalized plan to the in-memory state, keyed by PlanSnapshot's
@@ -175,47 +185,42 @@ export function createPlanState() {
    *  renderer paints them without re-deriving. */
   const derive = (selectedChars: readonly Character[]): PlanState => {
     const limits = activeLimits(upgradesOn);
-    const planBallIds = planBalls.list();
+    const planBallItems = planBalls.list();
     const planFusedPairs = planFused.list();
-    const planPassiveIds = planPassives.list();
-    const ballSlots = ballSlotsUsed(planBallIds, planFusedPairs);
+    const planPassiveItems = planPassives.list();
+    const ballSlots = ballSlotsUsed(planBallItems.length, planFusedPairs.length);
     const ballComplexity = (e: PlanBallEntry): number =>
       e.kind === 'single' ? complexity(e.item, ballMap) : complexity(e.a, ballMap) + complexity(e.b, ballMap);
     const balls: PlanBallEntry[] = [
-      ...planBallIds.map((id) => {
-        const item = ballMap.get(id)!;
-        return { kind: 'single' as const, item, overLimit: false, verdict: verdictFor(item, selectedChars) };
-      }),
-      ...planFusedPairs.map(({ a, b }) => {
-        const ballA = ballMap.get(a)!;
-        const ballB = ballMap.get(b)!;
-        return {
-          kind: 'fused' as const,
-          a: ballA,
-          b: ballB,
-          name: fusionName(ballA, ballB),
-          overLimit: false,
-          verdicts: [verdictFor(ballA, selectedChars), verdictFor(ballB, selectedChars)] as [Verdict | null, Verdict | null],
-        };
-      }),
+      ...planBallItems.map((item) => ({
+        kind: 'single' as const,
+        item,
+        overLimit: false,
+        verdict: verdictFor(item, selectedChars),
+      })),
+      ...planFusedPairs.map(({ a, b }) => ({
+        kind: 'fused' as const,
+        a,
+        b,
+        name: fusionName(a, b),
+        overLimit: false,
+        verdicts: [verdictFor(a, selectedChars), verdictFor(b, selectedChars)] as [Verdict | null, Verdict | null],
+      })),
     ]
       .sort((x, y) => ballComplexity(y) - ballComplexity(x))
       .map((e, i) => ({ ...e, overLimit: i >= limits.balls }));
-    const planPassivesState = planPassiveIds
-      .map((id) => {
-        const item = passiveMap.get(id)!;
-        return { item, overLimit: false, verdict: verdictFor(item, selectedChars) };
-      })
+    const planPassivesState = planPassiveItems
+      .map((item) => ({ item, overLimit: false, verdict: verdictFor(item, selectedChars) }))
       .sort((x, y) => complexity(y.item, passiveMap) - complexity(x.item, passiveMap))
       .map((e, i) => ({ ...e, overLimit: i >= limits.passives }));
     const overLimit =
       selectedChars.length > limits.chars ||
       ballSlots > limits.balls ||
-      planPassiveIds.length > limits.passives;
+      planPassiveItems.length > limits.passives;
     return {
       upgradesOn,
       limits,
-      counts: { chars: selectedChars.length, balls: ballSlots, passives: planPassiveIds.length },
+      counts: { chars: selectedChars.length, balls: ballSlots, passives: planPassiveItems.length },
       characters: selectedChars.map((c, i) => ({
         character: c,
         overLimit: i >= limits.chars,
@@ -268,9 +273,9 @@ export function createPlanState() {
     snapshot(): PlanSnapshot {
       return {
         upgradesOn,
-        balls: [...planBalls.list()],
-        passives: [...planPassives.list()],
-        fused: planFused.list().map((p) => ({ ...p })),
+        balls: planBalls.list().map((ball) => ball.id),
+        passives: planPassives.list().map((passive) => passive.id),
+        fused: planFused.list().map((p) => ({ a: p.a.id, b: p.b.id })),
       };
     },
     /** Plan membership of one id, namespace resolved through the catalog —

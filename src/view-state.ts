@@ -207,12 +207,12 @@ export function createViewState() {
     const limits = planState.limits;
     const held = blockedPartner(chars, limits);
     for (const ch of CHARACTERS) {
-      const blocked = !!held && ch.cannotPair.includes(held.id);
+      const blockedBy = held && ch.cannotPair.includes(held.id) ? held.name : null;
       charCards.set(ch.id, {
         selected: selectedChars.has(ch.id),
         filtered: !!charQ && !(ch.name.toLowerCase().includes(charQ) || ch.quirk.toLowerCase().includes(charQ) || (ch.baseBallId && itemFor(ch.baseBallId)?.name.toLowerCase().includes(charQ) || false)),
-        blocked,
-        blockedBy: blocked ? held!.name : null,
+        blocked: blockedBy !== null,
+        blockedBy,
       });
     }
     for (const b of FUSION_BALLS) {

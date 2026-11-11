@@ -69,7 +69,8 @@ const recipeMarkup = (item: { recipes: string[][] }): string =>
 /** Repaint selection/search/verdict state on the existing tiles. */
 export function paintTiles(vm: ViewModel) {
   for (const { tile, item } of tiles.values()) {
-    const t = vm.tiles.get(item.id)!;
+    const t = vm.tiles.get(item.id);
+    if (!t) continue;
     tile.classList.remove('selected', 'related', 'dimmed', 'filtered');
     if (t.selected) tile.classList.add('selected');
     else if (t.related) tile.classList.add('related');

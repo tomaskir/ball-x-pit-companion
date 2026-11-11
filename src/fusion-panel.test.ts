@@ -42,6 +42,15 @@ describe('fusion panel: the 3-state machine', () => {
     expect(panel).toEqual({ state: 'empty' });
     expect(hint).toBe('…pick a second ball.');
   });
+
+  it('a repeated ball is rejected at the panel seam, not composed (regression)', () => {
+    // fuse() returns null for a repeated ball (the game forbids self-fusion).
+    // The pick list dedupes, so this only guards a hand-built pick list — but
+    // the panel must fall back to pending rather than hand the renderer a
+    // composed state whose `fusion` is null (paintFusion would crash).
+    const { panel } = deriveFusionPanel(['flash', 'flash'], plan());
+    expect(panel).toEqual({ state: 'pending', first: ballMap.get('flash')! });
+  });
 });
 
 describe('fusion panel: hint text', () => {

@@ -42,7 +42,8 @@ export function buildCharacters() {
 
 export function paintCharCards(vm: ViewModel) {
   for (const { ch, card } of charCards) {
-    const c = vm.charCards.get(ch.id)!;
+    const c = vm.charCards.get(ch.id);
+    if (!c) continue;
     card.classList.toggle('selected', c.selected);
     card.classList.toggle('filtered', c.filtered);
     // Matchmaker pairing restriction: dimmed, not-allowed cursor, and a

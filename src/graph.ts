@@ -32,7 +32,8 @@ export function closure(ids: string[], graph: Graph, down: boolean): Set<string>
   const seen = new Set<string>();
   const queue = [...ids];
   while (queue.length) {
-    const id = queue.pop()!;
+    const id = queue.pop();
+    if (id === undefined) break;
     if (seen.has(id)) continue;
     seen.add(id);
     if (down) {
@@ -87,7 +88,8 @@ export function resolveDepths(ids: string[], evolvedIds: Set<string>, recipesOf:
       depths.set(id, 0); // base entity — still record it so the map covers every id
       return 0;
     }
-    if (depths.has(id)) return depths.get(id)!;
+    const known = depths.get(id);
+    if (known !== undefined) return known;
     depths.set(id, 1); // guard against cycles
     const d = structuralDepth(recipesOf(id), (c) => evolvedIds.has(c), depthOf);
     depths.set(id, d);
@@ -114,7 +116,10 @@ export function complexity(item: GraphItem, graph: Graph, seen: Set<string> = ne
   if (seen.has(item.id)) return 0;
   seen.add(item.id);
   const perRecipe = item.recipes.map((r) =>
-    r.reduce((sum, c) => sum + (graph.has(c) ? complexity(graph.get(c)!, graph, seen) : 0), 0),
+    r.reduce((sum, c) => {
+      const component = graph.get(c);
+      return sum + (component ? complexity(component, graph, seen) : 0);
+    }, 0),
   );
   seen.delete(item.id);
   return Math.max(...perRecipe);
