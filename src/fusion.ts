@@ -38,12 +38,12 @@ import { BALLS, type Ball } from './data/balls';
 import { LEVEL_3_EFFECTS } from './data/level-3';
 import {
   exceptionsFor,
-  pairKey,
   resolveProperties,
   type FusionException,
   type PropertyCollision,
   type ResolvedProperties,
 } from './fusion-properties';
+import { pairKey } from './pair';
 
 /** Balls offered by the fusion pick list: every ball except Baby Ball, which
  *  is not a fusable upgrade entity (research: docs/research/fusion-*.md).
@@ -251,7 +251,7 @@ export function crossWire(a: Ball, b: Ball): CrossWireResult {
   if (kCarrier && killer) {
     return {
       line: `Area-of-effect damage from ${kCarrier.name} triggers the instant kill of ${killer.name}.`,
-      disputed: KILL_DISPUTED_PAIRS.has(pairKey(a, b)),
+      disputed: KILL_DISPUTED_PAIRS.has(pairKey(a.id, b.id)),
       spawnerId: null,
     };
   }
@@ -366,7 +366,7 @@ export function fuse(a: Ball, b: Ball): FusionResult | null {
 
   // Freeze Ray × Sun: the corpus resolves the direction — the beam applies
   // Sun's burn, not the reverse (the AOE branch correctly emits no wire).
-  if (pairKey(a, b) === 'freeze-ray+sun') {
+  if (pairKey(a.id, b.id) === 'freeze-ray+sun') {
     notes.push(`Reported direction — Freeze Ray's beam applies Sun's burn; Sun's field aura does not apply Freeze Ray's freeze.`);
   }
 

@@ -5,7 +5,7 @@
 // row (Freeze Ray 1, Bomb 1), the tier-3 row (Time Bomb 1) and the fusion
 // row (the pair), all connected component → builder.
 import { describe, it, expect } from 'vitest';
-import { deriveBuildGraph, layoutBuildGraph, BUILD_GRAPH_METRICS, fusionNodeId } from './build-graph';
+import { deriveBuildGraph, layoutBuildGraph, BUILD_GRAPH_METRICS, fusionNodeId, fusionNodePair } from './build-graph';
 import { ballMap, passiveMap } from './catalog';
 
 const node = (model: ReturnType<typeof deriveBuildGraph>, id: string) =>
@@ -45,6 +45,13 @@ describe('build graph: the Freeze Ray × Time Bomb example', () => {
       min: 1,
       max: 1,
     });
+  });
+
+  it('fusionNodePair reverses fusionNodeId; non-fusion ids yield null', () => {
+    const fid = fusionNodeId('time-bomb', 'freeze-ray');
+    expect(fusionNodePair(fid)).toEqual(['freeze-ray', 'time-bomb']);
+    expect(fusionNodePair('freeze-ray')).toBeNull();
+    expect(fusionNodePair('fusion:freeze-ray')).toBeNull();
   });
 
   it('edges connect every component to its builder, alternates included', () => {

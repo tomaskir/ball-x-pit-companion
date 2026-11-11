@@ -22,6 +22,7 @@ import { ballMap, passiveMap, isPassive, itemFor } from './catalog';
 import { complexity } from './graph';
 import { fusionBalls, fusionName } from './fusion';
 import { verdictFor, type Item, type Verdict } from './synergy';
+import { pairKey } from './pair';
 
 /** The plan screen's slot limits: without end-game upgrades 1 character,
  *  4 balls, 4 passives; with them 2 / 5 / 5. */
@@ -115,9 +116,8 @@ export const ballSlotsUsed = (balls: readonly string[], fused: readonly PlanFuse
 /** The ball-side slot capacity the plan's singles and fused pairs share. */
 export const ballCapacity = (limits: PlanLimits): number => limits.balls;
 
-/** Fused-pair identity: the sorted id pair, so the reverse composition is
- *  the same planned pair. */
-const pairKey = (a: string, b: string): string => [a, b].sort().join('+');
+/** Fused-pair identity is the unordered pair key (src/pair.ts), so the
+ *  reverse composition is the same planned pair. */
 const samePair = (p: PlanFused, a: string, b: string): boolean => pairKey(p.a, p.b) === pairKey(a, b);
 
 /** Fusable upgrade entities, indexed once — Baby Ball is not one. Needed

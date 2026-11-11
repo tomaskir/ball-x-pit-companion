@@ -30,6 +30,7 @@
 // independent current-version reports. Single reports become caveats, and a
 // collision on a pair without direct evidence is marked `reported`.
 import type { Ball } from './data/balls';
+import { pairKey } from './pair';
 
 /** How a ball applies its status/effect. Channels are set-valued: fusion
  *  unions them, so different application channels survive together. */
@@ -189,9 +190,6 @@ const CONFIRMED_PAIRS = new Set([
   'leech+sacrifice',
 ]);
 
-/** Unordered pair key ("a+b", sorted). */
-export const pairKey = (a: Ball, b: Ball): string => [a.id, b.id].sort().join('+');
-
 /**
  * Resolve two kits in selection order: `a` is the first-selected ball.
  * Channels union; scalar keys union; a shared key whose values differ is a
@@ -205,7 +203,7 @@ export function resolveProperties(a: Ball, b: Ball): ResolvedProperties {
   const channels = [...new Set([...pa.channels, ...pb.channels])];
   const scalars: ScalarProperty[] = [...pa.scalars];
   const collisions: PropertyCollision[] = [];
-  const confirmed = CONFIRMED_PAIRS.has(pairKey(a, b));
+  const confirmed = CONFIRMED_PAIRS.has(pairKey(a.id, b.id));
 
   for (const sb of pb.scalars) {
     const sa = pa.scalars.find((s) => s.key === sb.key);
@@ -275,7 +273,7 @@ export const FUSION_EXCEPTIONS: FusionException[] = [
 
 /** Exceptions that apply to this pair (exact pair or a ball-wide wildcard). */
 export function exceptionsFor(a: Ball, b: Ball): FusionException[] {
-  const key = pairKey(a, b);
+  const key = pairKey(a.id, b.id);
   return FUSION_EXCEPTIONS.filter(
     (e) => e.pair === key || e.pair === `${a.id}+*` || e.pair === `${b.id}+*`,
   );

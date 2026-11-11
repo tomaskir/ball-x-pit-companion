@@ -23,7 +23,7 @@ import { PASSIVES } from './data/passives';
 import { CHARACTERS, type Character } from './data/characters';
 import { highlightSet, closure, union } from './graph';
 import { ballMap, isPassive, itemFor, graphFor, passiveMap } from './catalog';
-import { deriveBuildGraph, layoutBuildGraph, FUSION_ID_PREFIX, type BuildGraphLayout } from './build-graph';
+import { deriveBuildGraph, layoutBuildGraph, fusionNodePair, type BuildGraphLayout } from './build-graph';
 import { fusionBalls, fuse, evolvesInstead, type FusionResult } from './fusion';
 import type { FusionException, PropertyCollision } from './fusion-properties';
 import { verdictFor, type Item, type Verdict } from './synergy';
@@ -350,8 +350,9 @@ export function createViewState() {
     if (focus && ![...ballsGraph.nodes, ...passivesGraph.nodes].some((n) => n.id === focus)) focus = null;
     const graphRelated = new Set<string>();
     if (focus) {
-      if (focus.startsWith(FUSION_ID_PREFIX)) {
-        const [a, b] = focus.slice(FUSION_ID_PREFIX.length).split('+');
+      const focusPair = fusionNodePair(focus);
+      if (focusPair) {
+        const [a, b] = focusPair;
         graphRelated.add(focus);
         graphRelated.add(a);
         graphRelated.add(b);
@@ -362,8 +363,8 @@ export function createViewState() {
         graphRelated.add(focus);
         for (const n of ballsGraph.nodes) {
           if (n.row !== 3) continue;
-          const [a, b] = n.id.slice(FUSION_ID_PREFIX.length).split('+');
-          if (graphRelated.has(a) || graphRelated.has(b)) graphRelated.add(n.id);
+          const pair = fusionNodePair(n.id);
+          if (pair && (graphRelated.has(pair[0]) || graphRelated.has(pair[1]))) graphRelated.add(n.id);
         }
       }
     }

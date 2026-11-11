@@ -29,6 +29,7 @@
 //   done/suppressed nodes read as disabled and move right of everything
 //   still needed in their row.
 import { type GraphItem, complexity, componentsOf, recipeSlots } from './graph';
+import { pairKey, parsePair } from './pair';
 
 /** The plan-side input: which entities the graph must show the build for.
  *  Planned pairs that Evolve instead of Fuse arrive as singles of the
@@ -77,7 +78,14 @@ export interface BuildGraphModel {
  *  namespace, so its ids are namespaced to keep the no-collision invariant. */
 export const FUSION_ID_PREFIX = 'fusion:';
 export const fusionNodeId = (a: string, b: string): string =>
-  `${FUSION_ID_PREFIX}${[a, b].sort().join('+')}`;
+  `${FUSION_ID_PREFIX}${pairKey(a, b)}`;
+
+/** The two component ids of a fusion node id, or null when `id` is not one
+ *  (no prefix, or a malformed pair key). The reverse of `fusionNodeId`. */
+export function fusionNodePair(id: string): [string, string] | null {
+  if (!id.startsWith(FUSION_ID_PREFIX)) return null;
+  return parsePair(id.slice(FUSION_ID_PREFIX.length));
+}
 
 /** Fixed layout metrics — the renderer reads them for the node cards and
  *  the row-label column, so one source pins both. */

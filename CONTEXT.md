@@ -33,6 +33,11 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
 - **Namespace** — which of the two strictly-separate collections (balls,
   passives) an id lives in. Namespace resolution is decided in one place,
   `src/catalog.ts`; callers pass the id or item only.
+- **Pair key** — unordered-pair identity: the two ids sorted and joined with
+  `+`, so the reverse composition is the same pair. One home: `src/pair.ts`
+  (`pairKey(a, b)`, `parsePair(key)`); the fusion property model, the plan's
+  fused pairs, and the build graph's `fusion:` node ids all consume it
+  (`fusionNodeId` / `fusionNodePair` in `src/build-graph.ts` build on it).
 - **Recipe notation** — the compact per-slot rendering of multi-recipe
   entities: "a+(b/c)", "(a/b)+(c/d)", "a+b+c". Faithful only because every
   multi-recipe entity factorizes into per-slot alternates

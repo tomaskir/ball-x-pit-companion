@@ -4,7 +4,6 @@ import {
   BALL_PROPERTIES,
   FUSION_EXCEPTIONS,
   exceptionsFor,
-  pairKey,
   resolveProperties,
 } from './fusion-properties';
 import { ballMap } from './catalog';
@@ -104,10 +103,6 @@ describe('resolveProperties', () => {
     expect(r.collisions).toEqual([]);
   });
 
-  it('pairKey is order-insensitive', () => {
-    expect(pairKey(ball('egg-sac'), ball('timestop'))).toBe('egg-sac+timestop');
-    expect(pairKey(ball('timestop'), ball('egg-sac'))).toBe('egg-sac+timestop');
-  });
 });
 
 describe('exception table (decision #7 anomalies)', () => {
