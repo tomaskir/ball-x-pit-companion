@@ -1,6 +1,8 @@
 // Fusion-panel module: the fusion screen's panel derivation — the named
-// 3-state machine (empty / pending / composed), the composed pair's order
-// presentation (the order-sensitive warning), and the panel's hint text.
+// 3-state machine (empty / pending / composed), the composed state's
+// presentation (the "Fused result" and "Reported exceptions" display rows
+// plus their section visibility, and the order-sensitive warning), and the
+// panel's hint text.
 // One interface:
 // deriveFusionPanel(picks, plan) → { panel, hint }. The seam is "picks + the
 // plan facts in, panel state out": the module resolves the picks through the
@@ -12,13 +14,46 @@ import { ballMap } from './catalog';
 import { fuse, type FusionResult } from './fusion';
 import { type Ball } from './data/balls';
 
+/** One "Fused result" display row — a shared scalar collision resolved to
+ *  the first pick. Text-only, so the renderer never blinks an icon. */
+export interface FusionResultRow {
+  /** Reconcile identity, derived from the row content: a swap changes the
+   *  winner/value, so the key changes and the rows repaint. */
+  key: string;
+  label: string;
+  value: string;
+  /** The first pick's ball name — its value wins. */
+  winner: string;
+  /** Tooltip: "<winner>'s <value> wins over <loser>'s <loserValue>". */
+  title: string;
+  /** True for community-reported values; the presentation marks them
+   *  "· reported". */
+  reported: boolean;
+}
+
+/** One "Reported exceptions" display row — an anomaly outside the general
+ *  rule. */
+export interface FusionExceptionRow {
+  /** Reconcile identity, derived from the row content. */
+  key: string;
+  title: string;
+  detail: string;
+  source: string;
+  confidence: string;
+  /** True when the report says the two selection orders behave differently. */
+  orderDependent: boolean;
+}
+
 /** The fusion panel's state machine, named. Three states:
  *  - empty    — no picks; the panel shows only the pick-two hint.
  *  - pending  — one pick; the head shows the first ball, the second icon
  *               slot stays hidden (an src-less <img> renders as a broken-
  *               image box), and the hint asks for a second ball.
  *  - composed — both picks; the full panel (head, evo line, effect body,
- *               cross-wire, notes) paints from the fused result.
+ *               cross-wire, notes, result rows, exception rows) paints from
+ *               this state. The result/exception presentation — display
+ *               rows and section visibility — is derived here, so the
+ *               renderer paints data rather than FusionResult internals.
  *  The renderer switches on `state`; everything it paints per state rides
  *  here, derived in one place (testable without DOM). */
 export type FusionPanelState =
@@ -31,6 +66,14 @@ export type FusionPanelState =
       b: Ball;
       planned: boolean;
       planFull: boolean;
+      /** The "Fused result" rows; empty when the pair has no collisions. */
+      resultRows: FusionResultRow[];
+      /** The "Reported exceptions" rows; empty when the pair has none. */
+      exceptions: FusionExceptionRow[];
+      /** Whether the "Fused result" section shows (there are collisions). */
+      showResult: boolean;
+      /** Whether the "Reported exceptions" section shows. */
+      showExceptions: boolean;
       /** True when the selection order changes the fused result: a shared
        *  scalar collision (first pick wins) or an order-dependent reported
        *  exception. Drives the swap affordance and its warning line. */
@@ -79,6 +122,41 @@ const orderPresentation = (
   return { orderSensitive: true, orderNotice };
 };
 
+/** The composed state's result/exception presentation: display rows plus
+ *  section visibility. The renderer paints these fields and never reads
+ *  `fusion.resolved.collisions` or `fusion.exceptions` itself. An
+ *  evolve-instead pair does not fuse, so it carries no rows and hides both
+ *  sections. */
+const resultPresentation = (
+  fusion: FusionResult,
+): Pick<Extract<FusionPanelState, { state: 'composed' }>, 'resultRows' | 'exceptions' | 'showResult' | 'showExceptions'> => {
+  if (fusion.evolvesInstead) {
+    return { resultRows: [], exceptions: [], showResult: false, showExceptions: false };
+  }
+  const resultRows: FusionResultRow[] = fusion.resolved.collisions.map((c) => ({
+    key: `${c.key}|${c.winner}|${c.value}|${c.reported}`,
+    label: c.label,
+    value: c.value,
+    winner: c.winnerName,
+    title: `${c.winnerName}'s ${c.value} wins over ${c.loserName}'s ${c.loserValue}`,
+    reported: c.reported,
+  }));
+  const exceptions: FusionExceptionRow[] = fusion.exceptions.map((e) => ({
+    key: `${e.pair}|${e.title}|${e.confidence}|${e.orderDependent}`,
+    title: e.title,
+    detail: e.detail,
+    source: e.source,
+    confidence: e.confidence,
+    orderDependent: e.orderDependent,
+  }));
+  return {
+    resultRows,
+    exceptions,
+    showResult: resultRows.length > 0,
+    showExceptions: exceptions.length > 0,
+  };
+};
+
 /** Derive the fusion screen's panel and hint from the pick order and the
  *  plan facts. The panel resolves the picks through the catalog (an unknown
  *  id reads as no pick) and composes the pair through src/fusion.ts; the
@@ -103,6 +181,7 @@ export function deriveFusionPanel(
             b,
             planned: plan.hasPair(a.id, b.id),
             planFull: plan.ballSlots.used >= plan.ballSlots.capacity,
+            ...resultPresentation(fusion),
             ...orderPresentation(fusion),
           };
         })();

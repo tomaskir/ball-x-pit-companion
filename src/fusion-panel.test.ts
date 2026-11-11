@@ -113,3 +113,70 @@ describe('fusion panel: plan marks', () => {
     expect(composed(['flash', 'glacier'], plan({ ballSlots: { used: 6, capacity: 5 } })).planFull).toBe(true);
   });
 });
+
+describe('fusion panel: composed presentation', () => {
+  it('a collision pair carries display rows and shows the result section', () => {
+    const fp = composed(['egg-sac', 'timestop']);
+    expect(fp.showResult).toBe(true);
+    expect(fp.resultRows).toHaveLength(1);
+    expect(fp.resultRows[0]).toMatchObject({
+      label: 'Cooldown',
+      value: '3 second',
+      winner: 'Egg Sac',
+      reported: false,
+    });
+    expect(fp.resultRows[0].title).toContain("Egg Sac's 3 second wins over Timestop's");
+  });
+
+  it('a pair with no collisions carries no rows and hides the result section', () => {
+    const fp = composed(['flash', 'glacier']);
+    expect(fp.showResult).toBe(false);
+    expect(fp.resultRows).toEqual([]);
+  });
+
+  it('a reported collision row is marked reported', () => {
+    const fp = composed(['freeze-ray', 'blizzard']);
+    expect(fp.showResult).toBe(true);
+    expect(fp.resultRows[0]).toMatchObject({ label: 'Freeze duration', value: '13.0 seconds', reported: true });
+  });
+
+  it('reversing the picks changes the row content (the reconcile key follows it)', () => {
+    const forward = composed(['egg-sac', 'timestop']);
+    const reversed = composed(['timestop', 'egg-sac']);
+    expect(forward.resultRows[0].key).not.toBe(reversed.resultRows[0].key);
+    expect(reversed.resultRows[0].winner).toBe('Timestop');
+  });
+
+  it('an order-dependent exception carries display rows with source, confidence, and the order mark', () => {
+    const fp = composed(['nuclear-bomb', 'wraith']);
+    expect(fp.showResult).toBe(false);
+    expect(fp.showExceptions).toBe(true);
+    expect(fp.exceptions).toHaveLength(1);
+    expect(fp.exceptions[0]).toMatchObject({
+      title: 'Order-sensitive one-off',
+      confidence: 'reported',
+      orderDependent: true,
+    });
+    expect(fp.exceptions[0].source).toBeTruthy();
+  });
+
+  it('a non-order exception still shows the exceptions section but marks the row not order-dependent', () => {
+    const fp = composed(['banshee', 'flash']);
+    expect(fp.showExceptions).toBe(true);
+    expect(fp.exceptions[0]).toMatchObject({ title: 'Whole-field curse override', orderDependent: false });
+  });
+
+  it('a pair with no exceptions hides the exceptions section', () => {
+    const fp = composed(['flash', 'glacier']);
+    expect(fp.showExceptions).toBe(false);
+    expect(fp.exceptions).toEqual([]);
+  });
+
+  it('an evolve-instead pair carries no result or exception rows', () => {
+    const fp = composed(['bleed', 'poison']);
+    expect(fp.showResult).toBe(false);
+    expect(fp.showExceptions).toBe(false);
+    expect(fp.resultRows).toEqual([]);
+    expect(fp.exceptions).toEqual([]);
+  });
+});

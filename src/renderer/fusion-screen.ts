@@ -291,31 +291,29 @@ export function paintFusion(vm: ViewModel) {
     return li;
   }));
 
-  // "Fused result" — the shared-property collisions, resolved to the first
-  // pick. The section only exists for pairs that have collisions: with no
-  // shared properties there is nothing to show, so it stays hidden. Rows are
-  // text-only, so repainting never blinks an icon; the reconcile key is the
-  // row content (a swap changes the winner/value).
-  const collisions = f.resolved.collisions;
-  p.result.hidden = collisions.length === 0;
-  const rowsKey = collisions.map((c) => `${c.key}|${c.winner}|${c.value}|${c.reported}`).join(',');
-  reconcile(p.resultRows, rowsKey, () => {
-    p.resultRows.replaceChildren(...collisions.map((c) => {
+  // "Fused result" — the panel state's display rows, one per shared scalar
+  // collision resolved to the first pick. The section only exists for pairs
+  // that have collisions. Rows are text-only, so repainting never blinks an
+  // icon; the reconcile key is the row content (a swap changes the
+  // winner/value, so the panel's row keys change with it).
+  p.result.hidden = !fp.showResult;
+  reconcile(p.resultRows, fp.resultRows.map((r) => r.key).join(','), () => {
+    p.resultRows.replaceChildren(...fp.resultRows.map((r) => {
       const li = document.createElement('li');
       li.className = 'fusion-result-row';
-      li.title = `${c.winnerName}'s ${c.value} wins over ${c.loserName}'s ${c.loserValue}`;
+      li.title = r.title;
       const label = document.createElement('span');
       label.className = 'fusion-result-label';
-      label.textContent = c.label;
+      label.textContent = r.label;
       const value = document.createElement('span');
       value.className = 'fusion-result-value';
-      value.textContent = c.value;
+      value.textContent = r.value;
       const winner = document.createElement('span');
       winner.className = 'fusion-result-winner';
-      winner.textContent = c.winnerName;
+      winner.textContent = r.winner;
       li.append(label, ': ', value, ' — ', winner);
       // confirmed rows carry no marker; unverified ones a compact "· reported"
-      if (c.reported) {
+      if (r.reported) {
         const reported = document.createElement('span');
         reported.className = 'fusion-result-reported';
         reported.textContent = ' · reported';
@@ -325,23 +323,23 @@ export function paintFusion(vm: ViewModel) {
     }));
   });
 
-  // "Reported exceptions" — anomalies outside the general rule, separate
-  // from the result rows.
-  p.exceptions.hidden = f.exceptions.length === 0;
-  reconcile(p.exceptionsList, f.exceptions.map((e) => e.pair).join(','), () => {
-    p.exceptionsList.replaceChildren(...f.exceptions.map((e) => {
+  // "Reported exceptions" — the panel state's exception rows, separate from
+  // the result rows.
+  p.exceptions.hidden = !fp.showExceptions;
+  reconcile(p.exceptionsList, fp.exceptions.map((r) => r.key).join(','), () => {
+    p.exceptionsList.replaceChildren(...fp.exceptions.map((r) => {
       const li = document.createElement('li');
       li.className = 'fusion-exception';
-      li.title = e.source;
+      li.title = r.source;
       const title = document.createElement('span');
       title.className = 'fusion-exception-title';
-      title.textContent = e.title;
+      title.textContent = r.title;
       const detail = document.createElement('span');
       detail.className = 'fusion-exception-detail';
-      detail.textContent = ` — ${e.detail}`;
+      detail.textContent = ` — ${r.detail}`;
       const confidence = document.createElement('span');
       confidence.className = 'fusion-exception-confidence';
-      confidence.textContent = ` · ${e.confidence}`;
+      confidence.textContent = ` · ${r.confidence}`;
       li.append(title, detail, confidence);
       return li;
     }));
