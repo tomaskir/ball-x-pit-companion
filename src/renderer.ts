@@ -531,9 +531,10 @@ function paintFusion(vm: ViewModel) {
   // pick. Rows are text-only, so repainting never blinks an icon; the
   // reconcile key is the row content (a swap changes the winner/value).
   p.result.hidden = false;
-  const rowsKey = fp.collisions.map((c) => `${c.key}|${c.winner}|${c.value}|${c.reported}`).join(',');
+  const collisions = f.resolved.collisions;
+  const rowsKey = collisions.map((c) => `${c.key}|${c.winner}|${c.value}|${c.reported}`).join(',');
   reconcile(p.resultRows, rowsKey, () => {
-    p.resultRows.replaceChildren(...fp.collisions.map((c) => {
+    p.resultRows.replaceChildren(...collisions.map((c) => {
       const li = document.createElement('li');
       li.className = 'fusion-result-row';
       li.title = `${c.winnerName}'s ${c.value} wins over ${c.loserName}'s ${c.loserValue}`;
@@ -557,15 +558,15 @@ function paintFusion(vm: ViewModel) {
       return li;
     }));
   });
-  const noCollisions = fp.collisions.length === 0;
+  const noCollisions = collisions.length === 0;
   p.resultEmpty.hidden = !noCollisions;
   if (noCollisions) p.resultEmpty.textContent = fp.resultEmptyText;
 
   // "Reported exceptions" — anomalies outside the general rule, separate
   // from the result rows.
-  p.exceptions.hidden = fp.exceptions.length === 0;
-  reconcile(p.exceptionsList, fp.exceptions.map((e) => e.pair).join(','), () => {
-    p.exceptionsList.replaceChildren(...fp.exceptions.map((e) => {
+  p.exceptions.hidden = f.exceptions.length === 0;
+  reconcile(p.exceptionsList, f.exceptions.map((e) => e.pair).join(','), () => {
+    p.exceptionsList.replaceChildren(...f.exceptions.map((e) => {
       const li = document.createElement('li');
       li.className = 'fusion-exception';
       li.title = e.source;

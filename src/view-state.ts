@@ -25,7 +25,6 @@ import { highlightSet, closure, union } from './graph';
 import { ballMap, isPassive, itemFor, graphFor, passiveMap } from './catalog';
 import { deriveBuildGraph, layoutBuildGraph, fusionNodePair, type BuildGraphLayout } from './build-graph';
 import { fusionBalls, fuse, evolvesInstead, type FusionResult } from './fusion';
-import type { FusionException, PropertyCollision } from './fusion-properties';
 import { verdictFor, type Item, type Verdict } from './synergy';
 import { createPlanState, stickyToggle, hydrateList, isFusable } from './plan-state';
 import type { PlanAction, PlanLimits, PlanState, PlanSnapshot } from './plan-state';
@@ -75,10 +74,6 @@ export type FusionPanelState =
        *  order-independent pairs add that order does not matter; '' when
        *  result rows exist. Derived here so the renderer only paints it. */
       resultEmptyText: string;
-      /** Shared-property collisions, already resolved by the composer. */
-      collisions: PropertyCollision[];
-      /** Reported anomalies outside the general rule. */
-      exceptions: FusionException[];
     };
 
 /** The balls/passives screens' selection box: the currently selected item
@@ -197,18 +192,19 @@ const orderPresentation = (
   fusion: FusionResult,
 ): { orderSensitive: boolean; orderNotice: string; resultEmptyText: string } => {
   if (fusion.evolvesInstead) return { orderSensitive: false, orderNotice: '', resultEmptyText: '' };
-  const orderSensitive = fusion.collisions.length > 0 || fusion.exceptions.some((e) => e.orderDependent);
+  const collisions = fusion.resolved.collisions;
+  const orderSensitive = collisions.length > 0 || fusion.exceptions.some((e) => e.orderDependent);
   // Only pairs with no collisions reach the empty-result copy. An
   // exception-only order-sensitive pair has no shared properties, but order
   // still matters — the warning line above the action row says so.
-  const resultEmptyText = fusion.collisions.length > 0
+  const resultEmptyText = collisions.length > 0
     ? ''
     : orderSensitive
       ? 'No shared properties.'
       : 'No shared properties — order does not matter.';
   if (!orderSensitive) return { orderSensitive: false, orderNotice: '', resultEmptyText };
-  const orderNotice = fusion.collisions.length
-    ? `⚠ Order matters for this pair — swapping changes ${labelList(fusion.collisions.map((c) => c.label))}.`
+  const orderNotice = collisions.length
+    ? `⚠ Order matters for this pair — swapping changes ${labelList(collisions.map((c) => c.label))}.`
     : '⚠ Order matters for this pair — a reported exception is order-dependent.';
   return { orderSensitive: true, orderNotice, resultEmptyText };
 };
@@ -295,8 +291,6 @@ export function createViewState() {
               planned: plan.hasPair(a.id, b.id),
               planFull: planState.counts.balls >= planState.limits.balls,
               ...orderPresentation(fusion),
-              collisions: fusion.collisions,
-              exceptions: fusion.exceptions,
             };
           })();
     // The selection boxes: one per item screen, filled only when the

@@ -342,10 +342,10 @@ describe('order resolution (property-set union, first-pick precedence)', () => {
   it('same-property pairs: first-selected variant wins (PSA #2)', () => {
     const r = fuse(ball('mosquito-swarm'), ball('mosquito-king'))!;
     expect(r.notes.join(' ')).not.toMatch(/first-selected ball's variant/i);
-    expect(r.collisions[0]).toMatchObject({
+    expect(r.resolved.collisions[0]).toMatchObject({
       key: 'mosquito-spawn', winner: 'mosquito-swarm', value: '4–8 mosquitos', loser: 'mosquito-king', loserValue: 'a mosquito',
     });
-    expect(fuse(ball('radiation-beam'), ball('nuclear-bomb'))!.collisions[0]).toMatchObject({
+    expect(fuse(ball('radiation-beam'), ball('nuclear-bomb'))!.resolved.collisions[0]).toMatchObject({
       key: 'radiation-duration', value: '15 seconds', loserValue: 'indefinitely',
     });
   });
@@ -353,27 +353,28 @@ describe('order resolution (property-set union, first-pick precedence)', () => {
   it('reported pairs from the Nov 2026 claims collide', () => {
     expectOrderResolutionPropertyUnion();
     // Egg Sac × Timestop: 3 s vs 20 s cooldown
-    expect(fuse(ball('egg-sac'), ball('timestop'))!.collisions[0]).toMatchObject({
+    expect(fuse(ball('egg-sac'), ball('timestop'))!.resolved.collisions[0]).toMatchObject({
       key: 'cooldown', value: '3 second', loserValue: '20 second',
     });
     // Banished Flame × Sun: cap, duration and per-stack damage all collide
     const bf = fuse(ball('banished-flame'), ball('sun'))!;
-    expect(bf.collisions.every((c) => c.winner === 'banished-flame')).toBe(true);
+    expect(bf.resolved.collisions.map((c) => c.key).sort()).toEqual(['burn-duration', 'burn-max-stacks', 'burn-per-stack-damage']);
+    expect(bf.resolved.collisions.every((c) => c.winner === 'banished-flame')).toBe(true);
     // Erosion × Stone/Drill/Assassin/Steel: first pick's bonus % wins
     for (const [id, value] of [['stone', '400%'], ['drill', '100%'], ['assassin', '50%'], ['steel', '15%']] as const) {
-      expect(fuse(ball('erosion'), ball(id))!.collisions[0]).toMatchObject({
+      expect(fuse(ball('erosion'), ball(id))!.resolved.collisions[0]).toMatchObject({
         key: 'bonus-damage', winner: 'erosion', value: '5%', loser: id, loserValue: value,
       });
-      expect(fuse(ball(id), ball('erosion'))!.collisions[0]).toMatchObject({
+      expect(fuse(ball(id), ball('erosion'))!.resolved.collisions[0]).toMatchObject({
         key: 'bonus-damage', winner: id, value, loser: 'erosion', loserValue: '5%',
       });
     }
     // Freeze Ray × Blizzard: 13 s vs 1.3 s — unresolved, marked reported
-    expect(fuse(ball('freeze-ray'), ball('blizzard'))!.collisions[0]).toMatchObject({
+    expect(fuse(ball('freeze-ray'), ball('blizzard'))!.resolved.collisions[0]).toMatchObject({
       key: 'freeze-duration', value: '13.0 seconds', loserValue: '1.3 seconds', reported: true,
     });
     // Noxious × Brimstone: 3 vs max 4 poison stacks — unresolved, marked reported
-    expect(fuse(ball('noxious'), ball('brimstone'))!.collisions[0]).toMatchObject({
+    expect(fuse(ball('noxious'), ball('brimstone'))!.resolved.collisions[0]).toMatchObject({
       key: 'poison-max-stacks', reported: true,
     });
   });
@@ -381,15 +382,15 @@ describe('order resolution (property-set union, first-pick precedence)', () => {
   it('collisions are order-sensitive: reversing the picks reverses the winner', () => {
     const ab = fuse(ball('egg-sac'), ball('timestop'))!;
     const ba = fuse(ball('timestop'), ball('egg-sac'))!;
-    expect(ab.collisions[0].winner).toBe('egg-sac');
-    expect(ba.collisions[0].winner).toBe('timestop');
-    expect(ba.collisions[0].value).toBe('20 second');
+    expect(ab.resolved.collisions[0].winner).toBe('egg-sac');
+    expect(ba.resolved.collisions[0].winner).toBe('timestop');
+    expect(ba.resolved.collisions[0].value).toBe('20 second');
   });
 
   it('channel union keeps both application channels (Leech × Sacrifice)', () => {
     const r = fuse(ball('leech'), ball('sacrifice'))!;
     expect(r.resolved.channels).toEqual(expect.arrayContaining(['per-second', 'spawn', 'on-hit']));
-    expect(r.collisions[0]).toMatchObject({
+    expect(r.resolved.collisions[0]).toMatchObject({
       key: 'bleed-max-stacks', value: 'max 48 stacks', loserValue: 'max 20 stacks',
     });
   });
@@ -424,7 +425,7 @@ describe('composition caveats (general_rules_notes)', () => {
   });
 
   it('Noxious × Poison is a same-property pair (corpus: max stacks differ by order)', () => {
-    expect(fuse(ball('noxious'), ball('poison'))!.collisions[0]).toMatchObject({
+    expect(fuse(ball('noxious'), ball('poison'))!.resolved.collisions[0]).toMatchObject({
       key: 'poison-max-stacks', winner: 'noxious', value: '3 stacks', loser: 'poison', loserValue: 'max 8 stacks',
     });
   });

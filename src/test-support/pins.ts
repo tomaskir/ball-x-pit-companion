@@ -130,9 +130,9 @@ export function expectBerserkIsOnHitStatus(): void {
  *  Sun collides on three burn keys and Erosion × Stone resolves bonus damage
  *  to the first pick. */
 export function expectOrderResolutionPropertyUnion(): void {
-  expect(fuse(ball('banished-flame'), ball('sun'))!.collisions.map((c) => c.key).sort())
+  expect(fuse(ball('banished-flame'), ball('sun'))!.resolved.collisions.map((c) => c.key).sort())
     .toEqual(['burn-duration', 'burn-max-stacks', 'burn-per-stack-damage']);
-  expect(fuse(ball('erosion'), ball('stone'))!.collisions).toContainEqual(expect.objectContaining({
+  expect(fuse(ball('erosion'), ball('stone'))!.resolved.collisions).toContainEqual(expect.objectContaining({
     key: 'bonus-damage', winner: 'erosion', value: '5%', loserValue: '400%',
   }));
 }
@@ -140,7 +140,7 @@ export function expectOrderResolutionPropertyUnion(): void {
 /** Equal values are not a functional collision (Bomb and Dark both list a
  *  3 second cooldown). */
 export function expectEqualValuesAreNotCollisions(): void {
-  expect(fuse(ball('bomb'), ball('dark'))!.collisions).toEqual([]);
+  expect(fuse(ball('bomb'), ball('dark'))!.resolved.collisions).toEqual([]);
 }
 
 /** Kill-on-hit effects ride damage-dealing AOE carriers (Black Hole × Sun —
@@ -156,7 +156,7 @@ export function expectSpawnCarriersCarrySpawnBoundStatuses(): void {
 
 /** Both-cooldown pairs resolve to the first pick's value (namu rule). */
 export function expectFirstPickCooldownWins(): void {
-  expect(fuse(ball('black-hole'), ball('timestop'))!.collisions).toContainEqual(expect.objectContaining({
+  expect(fuse(ball('black-hole'), ball('timestop'))!.resolved.collisions).toContainEqual(expect.objectContaining({
     key: 'cooldown', winner: 'black-hole', value: '5 second', loser: 'timestop', loserValue: '20 second',
   }));
 }
@@ -182,6 +182,6 @@ export function expectResultEmptyTextBlankForCollisionPair(
     const vm = view.dispatch({ type: 'toggleFusion', id: 'timestop' });
     fp = vm.fusionPanel as Extract<FusionPanelState, { state: 'composed' }>;
   }
-  expect(fp.collisions.length).toBeGreaterThan(0);
+  expect(fp.fusion.resolved.collisions.length).toBeGreaterThan(0);
   expect(fp.resultEmptyText).toBe('');
 }

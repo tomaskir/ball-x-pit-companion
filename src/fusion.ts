@@ -42,7 +42,6 @@ import {
   exceptionsFor,
   resolveProperties,
   type FusionException,
-  type PropertyCollision,
   type ResolvedProperties,
 } from './fusion-properties';
 import {
@@ -222,10 +221,10 @@ export interface FusionResult {
   evolvesInstead: { id: string; name: string } | null;
   /** Display caveats — this composition is the site's model, not game data. */
   notes: string[];
-  /** Property-set union with first-pick scalar precedence (decision #7). */
+  /** Property-set union with first-pick scalar precedence (decision #7);
+   *  `resolved.collisions` are the shared scalar keys whose values differ —
+   *  the first pick wins. */
   resolved: ResolvedProperties;
-  /** Shared scalar keys whose values differ; the first pick wins. */
-  collisions: PropertyCollision[];
   /** Reported anomalies outside the general rule (decision #7 / #8). */
   exceptions: FusionException[];
 }
@@ -294,7 +293,6 @@ export function fuse(a: Ball, b: Ball): FusionResult | null {
     evolvesInstead: evo ? { id: evo.id, name: evo.name } : null,
     notes,
     resolved,
-    collisions: resolved.collisions,
     exceptions,
   };
 }
