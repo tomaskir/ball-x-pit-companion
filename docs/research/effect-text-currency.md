@@ -9,6 +9,13 @@ the balls implicated in fusion-order / fusion-composition claims.
 **Catalog under audit:** `src/data/balls.ts` / `docs/research/game-mechanics.md`,
 tagged "2026-09-13, game v1.301".
 
+> **Status — landed (2026-11-11).** This is a dated research snapshot. The
+> level-3 migration it recommended landed: the composer reads
+> `src/data/level-3.ts`, and the old `FUSED_STATS` override table was removed.
+> The L1/L3 diff tables below remain the research record; the "current state"
+> references to `FUSED_STATS` are superseded (see the inline updates in §2 and
+> §6).
+
 ---
 
 ## 1. Current game version
@@ -37,18 +44,20 @@ the catalog fetch — to add a per-level table (levels 1/2/3); e.g. the
 (`Cargo: rebuild from {{BallData}} (P3b)`, Coolshell, 2026-09-15T19:36:20Z).
 
 This matters because **fusion requires both components at level 3**, and the
-game's fused tooltips use the **level-3** component text. The repo already
-encodes that fact: `FUSED_STATS` in `src/fusion.ts` overrides the catalog's
-level-1 strings with level-3 values (Egg Sac `2–4` → `3–5`; Voluptuous Egg Sac
-`2–3` → `3–4`; Poison `max 5 / 6 s / 1–4` → `max 8 / 9 s / X`), and
-`docs/research/fusion-observations/fusion-pairs.json` cites a
-**"game-file I2 effect-text dump"** for the cooldown class and uses level-3
-cooldowns in its worked example (Black Hole × Timestop = 5 s / 20 s, not the
-catalog's 7 s / 30 s).
+game's fused tooltips use the **level-3** component text. At audit time the
+repo encoded that fact with `FUSED_STATS` in `src/fusion.ts`, which overrode
+the catalog's level-1 strings with level-3 values (Egg Sac `2–4` → `3–5`;
+Voluptuous Egg Sac `2–3` → `3–4`; Poison `max 5 / 6 s / 1–4` → `max 8 / 9 s /
+X`). **Update (2026-11-11):** the L3 overlay (`src/data/level-3.ts`) replaced
+that table, so the composer now reads L3 text directly. Separately,
+`docs/research/fusion-observations/fusion-pairs.json` cites a **"game-file I2
+effect-text dump"** for the cooldown class and uses level-3 cooldowns in its
+worked example (Black Hole × Timestop = 5 s / 20 s, not the catalog's
+7 s / 30 s).
 
 So the catalog is not merely "old": it is **level-1-only**, while the fusion
-model needs level-3 values. Two entries are outright wrong even at level 1
-(Time, Brimstone).
+model needs level-3 values. Two entries were outright wrong even at level 1
+(Time, Brimstone); both were fixed in the fact base on 2026-11-11.
 
 ---
 
@@ -78,7 +87,8 @@ per-level tables rebuilt 2026-09-15/17 from the wiki's `{{BallData}}` records.
 | Frozen Flame | 20 s; max 4; 8–12; +25% | 20 s; max 4; 8–12; +25% | none | [Frozen Flame](https://ballxpit.wiki.gg/wiki/Frozen_Flame) |
 
 **Direct level-1 defects: 2** — Time (20 s → 2.0 s) and Brimstone (missing
-burn/poison damage clause). The Time error originates in the wiki's Balls
+burn/poison damage clause). Both were fixed in the fact base on 2026-11-11
+(commit `4211b60`). The Time error originates in the wiki's Balls
 overview table, which still says "20 seconds" while its own Time page says
 2.0 s; the gameplay video and FuxoLogy corroborate 2.0 s. The Brimstone
 truncation is a transcription loss in `game-mechanics.md` (the Balls overview
@@ -160,6 +170,9 @@ level tables).
 
 ### 5.1 Wrong at level 1 — fix regardless of the level-model decision
 
+**Update (2026-11-11):** both entries below were fixed in
+`docs/research/game-mechanics.md`; this section records the pre-fix audit.
+
 1. **Time** — catalog says the snare stays 20 s; current L1 is **2.0 s**
    (L2 2.5 s, L3 3.0 s). The 20 s figure is a typo in the wiki's Balls
    overview table, corroborated as 2 s by an April 2026 gameplay video and an
@@ -195,14 +208,17 @@ The ticket's four "known discrepancies" resolve as follows:
 
 ## 6. Impact on the fusion model
 
-- `docs/research/fusion-mechanics.md` §3's worked example — "Black Hole ×
-  Timestop fires every 5 s one way, every 20 s the other" — is **already
-  level-3-correct** (Black Hole L3 = 5 s, Timestop L3 = 20 s). The catalog's
-  7 s / 30 s are level-1 values and must not be used to "correct" it.
-- `src/fusion.ts`'s `FUSED_STATS` overrides are level-3 corrections of the
+- The order research's worked example — "Black Hole × Timestop fires every
+  5 s one way, every 20 s the other" (`fusion-order-claims-nov-2026.md` §4.1;
+  `ordering.jsonl`) — is **already level-3-correct** (Black Hole L3 = 5 s,
+  Timestop L3 = 20 s). The catalog's 7 s / 30 s are level-1 values and must
+  not be used to "correct" it.
+- `src/fusion.ts`'s `FUSED_STATS` overrides were level-3 corrections of the
   level-1 catalog text (Egg Sac 3–5, Voluptuous Egg Sac 3–4, Poison max 8 /
-  9 s). If the catalog is migrated to level-3 text, those overrides become
-  no-ops and the `data.test.ts` substring pin must be updated with them.
+  9 s). **Update (2026-11-11):** this landed via the L3 overlay instead of a
+  catalog rewrite — `FUSED_STATS` was removed, `src/data/level-3.ts` supplies
+  the text, and the `data.test.ts` pin now checks the overlay against the
+  catalog.
 - The "Noxious × Poison (max stacks)" same-property claim depends on Poison's
   **L3 max 8**, not the catalog's max 5.
 - No fusion-order claim in the corpus is contradicted by the current values;

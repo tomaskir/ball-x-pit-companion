@@ -1,7 +1,7 @@
 # Fusion composition rules — re-validation (November 2026)
 
 Research ticket: **#6 — Re-validate composition and cross-wire rules against
-current sources** (`tomaskir/ball-x-pit-companion`). Branch
+current sources** (`tomaskir/ball-x-pit-companion`). Merged branch
 `research/composition-rules`. Research date **2026-11-11**.
 
 This is a source-only re-validation. No playtest was run for this ticket; every
@@ -12,6 +12,15 @@ labelled as such. The existing fact base is
 [`fusion-observations/`](./fusion-observations/). This file does **not** edit
 either — it records what still holds, what has changed, and what the current
 model should say.
+
+> **Status — landed (2026-11-11).** This is a dated research snapshot. The
+> recommendations in §4 were applied: `freeze-ray` was removed from
+> `SPAWN_BOUND_IDS`, the spawn exclusion was split into
+> `SPAWN_NO_INHERITANCE_IDS` / `SPAWN_STATUS_ONLY_IDS` with trigger and
+> degradation caveats, the Satan rationale was reframed to the trigger model,
+> and Assassin/Warp notes were added. Where this file says "the current model"
+> or "the current code", read `docs/research/fusion-mechanics.md` and
+> `src/fusion.ts`; inline corrections are marked **Update (2026-11-11)**.
 
 ## Version tags used below
 
@@ -60,11 +69,16 @@ model should say.
 
 ### 1.1 The Freeze Ray × Flash correction (the ticket's named change)
 
-The current model (`fusion-mechanics.md` §2c; `src/fusion.ts`
-`SPAWN_BOUND_IDS`) says:
+The model at research time (`fusion-mechanics.md` §2c; `src/fusion.ts`
+`SPAWN_BOUND_IDS`) said:
 
 > "Blizzard's freeze is positional (spawned icicles), Freeze Ray's freeze is
 > bound to the beam path — neither rides a partner's hits."
+
+**Update (2026-11-11):** the model was corrected as recommended.
+`fusion-mechanics.md` §2c now says Freeze Ray's freeze is on-hit/AOE and
+spreads through Flash, and `src/fusion.ts`'s `SPAWN_BOUND_IDS` is
+`{blizzard}` only.
 
 **That is now contradicted by a newer, more careful community test.** The
 2026-11-09 post (v1.5, Nov 2026) tested the pair after an earlier 2026-11-06
@@ -107,9 +121,13 @@ fire.
 
 **Caveat:** the correction tested **Flash**, not **Sun**. Removing
 `freeze-ray` from `SPAWN_BOUND_IDS` would also make the model assert
-Freeze Ray × Sun cross-wires, which the corpus still marks **contradicted**
-(`freeze-ray+sun`, 2 observations). That pair needs either a separate
+Freeze Ray × Sun cross-wires, which the corpus marked **contradicted** at the
+time (`freeze-ray+sun`, 2 observations). That pair needs either a separate
 exception or an explicit "disputed" note; the correction does not settle it.
+
+**Update (2026-11-11):** the pair was resolved as a direction note, not a
+cross-wire: the beam applies Sun's burn, not the reverse. `freeze-ray+sun` is
+now `verified` in the curated layer, and `fuse()` emits the direction caveat.
 
 ### 1.2 Brood Mother's blanket exclusion is too strong
 
@@ -140,6 +158,10 @@ not a clean exclusion. The blanket "does not carry at all" should be softened
 to "carries unreliably / at reduced strength," and the model should not claim
 a definite no-cross-wire. Confidence: **Reported, mixed** (v1.301–v1.5).
 
+**Update (2026-11-11):** landed. `SPAWN_STATUS_ONLY_IDS` models Brood Mother
+as a status-only carrier with degradation and trigger caveats, and
+`fusion-mechanics.md` §2d no longer claims a blanket exclusion.
+
 ### 1.3 Mosquito King: the exclusion conflates two different channels
 
 The fact-base sentence is accurate: "Mosquito King's spawn-on-hit does not fire
@@ -158,6 +180,10 @@ which the corpus does not support:
 not ride a partner's screen hits; its **spawned mosquitoes** can carry a
 partner's status (Virus). A blanket `spawnable()` exclusion hides the positive
 case. Confidence: **Reported** (v1.301).
+
+**Update (2026-11-11):** landed. `SPAWN_NO_INHERITANCE_IDS` (Voluptuous Egg
+Sac only) and `SPAWN_STATUS_ONLY_IDS` (Brood Mother, Mosquito King) split the
+two meanings; the trigger caveat is emitted for screen-clear partners.
 
 ### 1.4 The trigger-channel model is now more formal on the wiki
 
@@ -225,7 +251,7 @@ report; **Disputed** = sources disagree and both sides are retained.
 | 2 | **AOE + status** → enemies damaged by the AOE also suffer the status. | Wiki Fusion Mechanics matrix (2026-09-19, v1.301/v1.5): AOE On-Damage YES. Wiki Balls: "AOE: when balls deal damage." namu rule 2 (2026-08-26). Corpus: Overgrowth × Flash, Flash × Hemorrhage, etc. | Reported / mechanism-backed | Holds; `crossWire` AOE+status branch. |
 | 3 | **AOE + spawn** → created balls inherit the AOE/range. | namu rule 3 (2026-08-26, v1.5). Corpus: Maggot × Laser, Holy Laser × Maggot, Glacier × Maggot. | Reported | Partially modelled (spawn+status line); range inheritance not separately emitted. |
 | 4 | **Different statuses** → both apply simultaneously. | namu rule 4 (2026-08-26, v1.5); corpus (Bleed + Poison, Burn + Poison, etc.). | Reported | Holds; effect paragraphs concatenate. |
-| 5 | **Same status, different numbers** → blended. | namu rule 5 (2026-08-26, v1.5): Leech + Sacrifice keeps both channels, max 20. | Reported | Holds via text + `FUSED_STATS`; no general blend formula. |
+| 5 | **Same status, different numbers** → blended. | namu rule 5 (2026-08-26, v1.5): Leech + Sacrifice keeps both channels, max 20. | Reported | Refined: channels union, shared scalar key takes the first pick; no general blend formula. |
 | 6 | **Status + spawn** → created balls also carry the status. | namu rule 6 (2026-08-26, v1.5); fused tooltips (Overgrowth × Maggot); corpus. | Reported / tooltip-backed | Holds; spawn+status branch. Spawn-bound *traits* (pass-through, positional freeze) do not carry. |
 | 7 | **Spawn + spawn** → both effects, amounts adjusted. | namu rule 7 (2026-08-26, v1.5); corpus Brood Mother + Egg Sac, Cell + Egg Sac. | Reported | Holds; text concatenation. |
 | 8 | **Status-vs-spawn cross-wire** — a partner's on-hit status rides the fused ball's hits; spawn-bound statuses do not. | Reddit icemage_999 (2026-07-02, v1.5); site-author playtests (2026-10-01): Overgrowth × Flash wires, Flicker × Radiation Beam wires, Flash × Glacier does not. | **Observed** (site-author playtest) | Holds for the three tested cases. |
@@ -236,8 +262,8 @@ report; **Disputed** = sources disagree and both sides are retained.
 | 13 | **Brood Mother spawn channel** — degraded/probabilistic, not a clean no-carry. | Positive: gonugame (2026-01-25), Bilibili (2025-10-12), GameRant commenter (2025-11-30). Negative: Steam Noobc0re (2025-10-21). Middle: namu (2026-08-26) "downgraded special-baby-ball creation." | **Reported, mixed** | **FLAG:** "does not carry at all" is too strong; model as degraded/unreliable. |
 | 14 | **Mosquito King spawn-on-hit** does not fire from a partner's screen hits, but its mosquitoes can carry a partner status (Virus). | Negative: Steam PHAELANX (2025-12-30). Positive: GameRant (2025-10-26) Mosquito King × Virus. | Reported | **FLAG:** blanket `SPAWN_EXCLUDED_IDS` conflates trigger with inheritance. |
 | 15 | **Hit-once + cooldown is dominant over pass-through.** | Steam CPT Chthonbeard (2025-10-25, unknown); Sacrifice × Ghost tooltip mismatch (CONTRADICTIONS §7). | Reported | Holds. |
-| 16 | **Assassin's "cannot pierce the back" wins over a partner's pierce.** | namu (2026-08-26, v1.5). | Reported | Holds; current code does not emit a note for it. |
-| 17 | **Warp is cast before a partner's pierce.** | namu (2026-08-26, v1.5). | Reported | Holds; current code does not emit a note for it. |
+| 16 | **Assassin's "cannot pierce the back" wins over a partner's pierce.** | namu (2026-08-26, v1.5). | Reported | Holds; `fuse()` now emits the Assassin note (2026-11-11). |
+| 17 | **Warp is cast before a partner's pierce.** | namu (2026-08-26, v1.5). | Reported | Holds; `fuse()` now emits the Warp note (2026-11-11). |
 | 18 | **Destroy × Destroy** may lose one of the two effects. | Wiki Balls (2026-09-10, v1.5); ballbylon `engine.js` (2026-09-26). | Reported | Holds. |
 | 19 | **Spawn compensates Destroy** — Cell × Bomb is an "indestructible bomb"; Cell × Nuke/Black Hole clones survive the first destruction. | Wiki Balls (2026-09-10); al-gest (2025-10-27); Reddit 1qpdiou (2026-01-28). | Reported (multiple) | Holds. |
 | 20 | **Dark's damage multiplier carries** (3–5×; 5× at level 3). | namu (2026-08-26, v1.5); Bilibili (2026-08-07, v1.5); Reddit (2025-10-20/21). | Reported | Holds. |
@@ -263,8 +289,8 @@ and the current wiki's trigger matrix is a formalisation of the same model:
    spawn+status line but does not separately model range inheritance.
 4. **Different statuses** → both apply. No new contradiction.
 5. **Same status, different numbers** → blended (Leech + Sacrifice, max 20).
-   The model handles observed cases through effect text + `FUSED_STATS`, not a
-   general formula.
+   The model handles observed cases through effect text + the property
+   resolver, not a general formula.
 6. **Status + ball creation** → created balls carry the status. Tooltip-backed
    (Overgrowth × Maggot) and corpus-backed. The important boundary: spawned
    entities inherit **statuses**, not **spawn-bound traits** (pass-through,
@@ -326,11 +352,13 @@ On-Timer, On-Shoot, Spawn). The practical consequences:
   Nuclear Bomb, Timestop. Note the separate `time` ball is **not** in the
   cooldown class.
 - **Assassin's back-pierce priority** — reported (namu, 2026-08-26): "cannot
-  pierce the back" wins over a partner's "pierces enemies." The current code
-  does not emit a note for this; it only uses `PIERCE_IDS` for the
-  hit-once/cooldown note.
+  pierce the back" wins over a partner's "pierces enemies." The code at the
+  time emitted no note for this; it only used `PIERCE_IDS` for the
+  hit-once/cooldown note. **Update (2026-11-11):** `fuse()` now emits the
+  Assassin note.
 - **Warp before pierce** — reported (namu, 2026-08-26): Warp is cast first and
-  can waste a partner's pierce. Not emitted by the current code.
+  can waste a partner's pierce. Not emitted at the time. **Update
+  (2026-11-11):** `fuse()` now emits the Warp note.
 - **Destroy × Destroy** — reported (wiki Balls, 2026-09-10; ballbylon,
   2026-09-26): two self-destruct balls may lose one effect.
 - **Spawn compensates Destroy** — reported (wiki Balls, 2026-09-10; al-gest,
@@ -353,6 +381,11 @@ On-Timer, On-Shoot, Spawn). The practical consequences:
 
 ### 3.5 Claims contradicted by newer evidence
 
+**Update (2026-11-11):** the first three rows landed (§1.1–§1.3). The 9999
+row was reopened by the resolution pass — the display-vs-real dispute is still
+live (`CONTRADICTIONS.md` §13). Flicker × Reaper was resolved to cross-wire by
+the same pass (2026-08-07 re-test).
+
 | Claim | Newer evidence | Status |
 | --- | --- | --- |
 | Freeze Ray's freeze is positional/beam-bound and does not ride a partner's hits (`fusion-mechanics.md` §2c; `SPAWN_BOUND_IDS`). | Reddit 1xrhisk, 2026-11-09 (v1.5): Freeze Ray × Flash spreads freeze; stacked-enemy proof. Wiki Balls taxonomy: Freeze Ray = On-Hit + AOE. | **Contradicted — change the model.** |
@@ -367,6 +400,9 @@ On-Timer, On-Shoot, Spawn). The practical consequences:
 ---
 
 ## 4. Implications for `src/fusion.ts` (research only — no code change in this ticket)
+
+**Update (2026-11-11):** recommendations 1–5 landed in `src/fusion.ts`; the
+bullets below are the research record.
 
 1. **Remove `freeze-ray` from `SPAWN_BOUND_IDS`.** Update the comment to cite
    the Nov 2026 correction. With the current tags this makes the AOE+status
@@ -392,7 +428,7 @@ On-Timer, On-Shoot, Spawn). The practical consequences:
    Destroy × Destroy, spawn-compensates-Destroy, Dark's multiplier, and the
    9999 display cap all still hold at their prior confidence.
 7. **Test gates.** Any change must keep `src/corpus.test.ts`,
-   `src/corpus-schema.test.ts`, and the `FUSED_STATS` substring gate green.
+   `src/corpus-schema.test.ts`, and the level-3 overlay gate green.
    A disagreement between the composer and the corpus is a content decision,
    not a test to relax.
 
@@ -428,7 +464,7 @@ On-Timer, On-Shoot, Spawn). The practical consequences:
 | <https://ballxpit.wiki.gg/wiki/Game_Updates> (rev 4223) | current | v1.5 | Naturalist = last free update; Risen Ballbylon = 2026-11-12. |
 | <https://www.reddit.com/r/BALLxPIT/comments/1xrhisk/fusion_order_did_not_matter_a_year_ago_it/> | 2026-11-09 | v1.5 (Nov 2026) | **Freeze Ray × Flash correction**; Freeze/Wraith vs Glacier/Blizzard; Erosion; order findings. |
 | <https://www.reddit.com/r/BALLxPIT/comments/1xpkoe0/fusion_order_matters/> | 2026-11-06 | v1.5 (Nov 2026) | The claim the correction tested (Flash × Freeze Ray order). |
-| <https://gamefaqs.gamespot.com/ps5/715485-ball-x-pit-risen-ballbylon/faqs/82305> | 2026-08-14 | v1.5 | Current effect text; fusions not listed; result level 1 claim. |
+| <https://gamefaqs.gamespot.com/ps5/715485-ball-x-pit-risen-ballbylon/faqs/82305> | 2026-08-14 | v1.5 | Current effect text; fusions not listed; result level 1 claim (contradicted by in-game fused tooltips showing Level 3 — `fusion-mechanics.md` §1). |
 | <https://namu.moe/w/BALL%20x%20PIT/%EB%B3%BC> | 2026-08-26 | v1.5 | Seven composition rules; Assassin back-pierce; Warp-before-pierce; Dark multiplier; Brood Mother degraded spawn. |
 | <https://www.bilibili.com/opus/1124449565113581573> | 2026-08-07 | v1.5 | Satan debuff-only mechanism; Dark 5×. |
 | <https://steamcommunity.com/app/2062430/discussions/0/595163560549992754/> | 2025-10-25 | unknown | Hit-once + cooldown dominance; Sacrifice × Ghost. |

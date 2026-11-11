@@ -3,7 +3,8 @@
 **Ticket:** wayfinder research #2 — validate the functional claims in the Nov 2026
 r/BALLxPIT post *"Fusion Order did not matter a year ago, it certainly DOES matter now"*.
 **Status:** research complete, source-only (no playtest capability).
-**Date:** 2026-11-11. **Branch:** `research/reddit-order-claims`.
+**Date:** 2026-11-11. **Branch:** `research/reddit-order-claims` (merged;
+commit `3c559f2`).
 **Version scope:** game **v1.301** (the Naturalist update, released 2026-08-06) — the
 current build on the post's date (2026-11-09). No patch was announced between
 2026-08-06 and 2026-11-09 (Steam news feed); the paid *Risen Ballbylon* DLC releases
@@ -13,6 +14,15 @@ current build on the post's date (2026-11-09). No patch was announced between
 This file is research, not a fact-base rewrite. The frozen raw corpus
 (`fusion-observations/*.jsonl`) is untouched; none of the claim pairs below appear
 in it.
+
+> **Status — landed (2026-11-11).** This is a dated research snapshot. Its
+> findings were applied: the composer now reads the level-3 overlay
+> (`src/data/level-3.ts`), the order model is the property-collision rule
+> (`docs/research/fusion-mechanics.md` §3, `src/fusion-properties.ts`), and
+> Freeze Ray is no longer spawn-bound (`src/fusion.ts`). Where this file
+> describes "the site's current model" or the catalog's L1 text (§2, §5, §6),
+> read the landed state; inline corrections are marked **Update
+> (2026-11-11)**.
 
 ---
 
@@ -37,8 +47,10 @@ which is already the corpus's `reddit.jsonl` rows 1–16.
 
 The post's own thesis is narrower than its title: order is functional for
 **same-property pairs** and **cooldown-bearing pairs**, and for the **base-ball pool
-recursion**; otherwise it is cosmetic. That is the same shape as the site's existing
-model (`docs/research/fusion-mechanics.md` §3), extended to DLC-era balls.
+recursion**; otherwise it is cosmetic. That was the same shape as the site's
+model at research time (`docs/research/fusion-mechanics.md` §3), extended to
+free-update-era balls (the paid *Risen Ballbylon* DLC was not live). The
+canonical §3 now generalises the two classes to the property-collision rule.
 
 ---
 
@@ -75,6 +87,10 @@ text for these balls, so a fused ball rendered by `src/fusion.ts` would show L1 
 caps/durations, not the L3 values the game actually uses. That is a content decision
 for a separate ticket, not something this research changes.
 
+**Update (2026-11-11):** this landed. The composer now reads the level-3
+overlay (`src/data/level-3.ts`), so fused text uses L3 values; the paragraph
+above records the pre-migration state.
+
 ---
 
 ## 3. Verdict table
@@ -106,7 +122,7 @@ cooldown. However, if it's Egg Sac x Timestop instead, then Timestop gains Egg S
 incredibly short cooldown time of 3 SECONDS!"
 
 **What the sources say.** The both-cooldown rule is already in the model
-(`fusion-mechanics.md` §3.3) and in the corpus: namu.wiki (2026-08-26) states that
+(`fusion-mechanics.md` §3) and in the corpus: namu.wiki (2026-08-26) states that
 when two balls each list a cooldown, the **first-selected ball's cooldown wins**, with
 the worked example "Black Hole x Timestop fires every 5 seconds, whereas Timestop x
 Black Hole fires every 20 seconds." The wiki's per-level tables give Black Hole L3 =
@@ -263,24 +279,32 @@ The Nov 9 post says its own testing **disproved** this:
 order claim should not be carried forward.
 
 **Important for this repo:** the Nov 9 replacement finding — that **Freeze Ray ×
-Flash does spread freeze** — contradicts the site's current model. `fusion-mechanics.md`
-§2c says "Freeze Ray's freeze is bound to the beam path — neither [Blizzard nor Freeze
-Ray] rides a partner's hits", and §2b's playtest list does not include Freeze Ray ×
-Flash. The Nov 2026 report says the opposite for Freeze Ray (it *does* ride Flash's
-screen AOE; Glacier and Blizzard do not). This is a content decision for the model,
-not something this research edits. Flagging it because it is the one place where the
-post and the repo's distilled model disagree on behaviour rather than on a number.
+Flash does spread freeze** — contradicted the model at the time of this
+research. `fusion-mechanics.md` §2c then said "Freeze Ray's freeze is bound to
+the beam path — neither [Blizzard nor Freeze Ray] rides a partner's hits", and
+§2b's playtest list did not include Freeze Ray × Flash. The Nov 2026 report says
+the opposite for Freeze Ray (it *does* ride Flash's screen AOE; Glacier and
+Blizzard do not).
+
+**Update (2026-11-11):** resolved in the report's favour. `fusion-mechanics.md`
+§2c now states Freeze Ray's freeze is on-hit/AOE and spreads through Flash, and
+`src/fusion.ts`'s `SPAWN_BOUND_IDS` is `{blizzard}` only.
 
 ---
 
 ## 6. Cross-check against the site's current model
 
+**Update (2026-11-11):** this table describes the model before the
+property-collision rewrite. `fusion-mechanics.md` §3 no longer has §3.2/§3.3
+subsections; the two classes are now subsets of the single collision rule.
+The rows are retained as the research record.
+
 | Model statement (`fusion-mechanics.md`) | This research |
 |---|---|
-| §3.3 both-cooldown pairs: first-selected cooldown wins (7 balls incl. Egg Sac, Timestop) | **Supported.** Claim 1 is an instance. |
-| §3.2 same-property pairs: first-selected variant wins | **Supported and extended** to BF×Sun, Erosion×bonus-damage balls, Noxious×Brimstone, Freeze Ray×Blizzard. |
+| Both-cooldown class: first-selected cooldown wins (7 balls incl. Egg Sac, Timestop) | **Supported.** Claim 1 is an instance. |
+| Same-property class: first-selected variant wins | **Supported and extended** to BF×Sun, Erosion×bonus-damage balls, Noxious×Brimstone, Freeze Ray×Blizzard. |
 | §3 "Pool recursion": first-selected base ball is consumed; scope disputed | **Supported** by three independent reports; scope still disputed. |
-| §2c Freeze Ray's freeze does not ride a partner's hits | **Contradicted** by the Nov 9 post (Freeze Ray × Flash spreads freeze). Content decision needed. |
+| §2c Freeze Ray's freeze does not ride a partner's hits | **Contradicted** by the Nov 9 post (Freeze Ray × Flash spreads freeze). **Resolved (2026-11-11):** §2c now says it does ride Flash's AOE. |
 | Wiki *Fusion Mechanics* general claim: "the order … does not change the functional stats/abilities" | **Stale/contradicted** by the wiki's own *Erosion*/*Stone* pages (2026-10-01) and by this post. |
 
 ---
@@ -299,7 +323,7 @@ post and the repo's distilled model disagree on behaviour rather than on a numbe
   stale general "order does not matter" claim.
 - `https://ballxpit.wiki.gg/wiki/Balls` (2026-09-10) — L1 overview numbers.
 
-**Recent community reports (Nov 2026 DLC-era):**
+**Recent community reports (Nov 2026, free-update era; pre-Risen Ballbylon):**
 - Post under test: `1xrhisk` (2026-11-09).
 - Preceding post: `1xpkoe0` "Fusion Order Matters" (2026-11-06) — source of the
   retracted Freeze Ray × Flash claim and the pool-recursion comment.

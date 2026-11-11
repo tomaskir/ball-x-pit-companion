@@ -12,8 +12,16 @@ reconcile same-status blending (Leech + Sacrifice) with first-pick dominance
 **Catalog under audit:** `src/data/balls.ts` / `docs/research/game-mechanics.md`,
 tagged "2026-09-13, game v1.301".
 **Corpus:** `docs/research/fusion-observations/` (1,035 observations / 370
-pairs; access date 2026-10-04, so the Nov 2026 Reddit posts below are new
-material, not in the corpus).
+pairs; access date 2026-10-04). The Nov 2026 Reddit posts below were new
+material at research time, not in the raw 2026-10-04 wave; they were later
+ingested into the curated layer.
+
+> **Status — landed (2026-11-11).** This is a dated research snapshot. Its
+> candidate model was adopted: `docs/research/fusion-mechanics.md` §3 now
+> states the property-collision model, and `src/fusion-properties.ts`
+> implements it. Where this file describes "the current model" or "current
+> code" (§6), read the landed state in those files; the research record below
+> is preserved. Inline corrections are marked **Update (2026-11-11)**.
 
 ---
 
@@ -23,7 +31,8 @@ Sources were weighted per the ticket:
 
 1. **Tier 1** — current-version game files, in-game tooltip screenshots,
    controlled tests.
-2. **Tier 2** — recent community reports (Nov 2026 DLC-era).
+2. **Tier 2** — recent community reports (Nov 2026, free-update era;
+   pre-Risen Ballbylon).
 3. **Tier 3** — older wiki snapshots and guides.
 
 Every observation is version-tagged. Confidence labels used below:
@@ -69,8 +78,9 @@ property" model).
   order-agnostic in its text and is consistent with first-pick on the shared
   bleed cap (see §3.4).
 - A small residual class of **per-pair anomalies** is not explained by the
-  property model (Nuke × Wraith direction, Black Hole × Sun direction,
-  Banshee curse override). Keep these as reported exceptions/bugs, not as a
+  property model (Nuke × Wraith direction, Black Hole × Sun direction —
+  later resolved by the 2026-11-11 pass — and Banshee curse override). Keep
+  these as reported exceptions/bugs, not as a
   competing general rule.
 
 The model is **inferred**, not datamined: the public game-file dumps contain
@@ -146,7 +156,7 @@ This is exactly how the community describes it:
 
 The "same-property" class is therefore not a list of three pairs; it is the
 whole set of pairs with a scalar collision. The current
-`SAME_PROPERTY_PAIRS` set in `src/fusion.ts` is a small, evidence-backed
+`SAME_PROPERTY_PAIRS` set in `src/fusion.ts` at research time was a small, evidence-backed
 subset, not the full class. The "both-cooldown" class is the subset where the
 shared key happens to be `cooldown`.
 
@@ -225,11 +235,12 @@ Read through the property model:
 | Scalar properties (cap, duration, damage, cooldown, range, bonus %) | Single value — first pick wins | BF × Sun burn cap/duration/damage; Noxious × Poison max stacks; Timestop × Egg Sac cooldown |
 
 So "same-status blending" is the union of **different channels**; it is not a
-counterexample to first-pick dominance on a **shared scalar**. The current
-`fusion-mechanics.md` §3 wording — "Same-status-different-numbers pairs
-instead *blend*" — is imprecise and should be read as "same status through
-different channels → both channels kept; shared scalar key → first pick
-wins." This is a documentation refinement, not a new game rule.
+counterexample to first-pick dominance on a **shared scalar**. The
+`fusion-mechanics.md` §3 wording at research time — "Same-status-different-numbers
+pairs instead *blend*" — was imprecise and should be read as "same status
+through different channels → both channels kept; shared scalar key → first
+pick wins." **Update (2026-11-11):** the canonical §3 now states this
+refinement directly; the old wording is gone.
 
 **Residual uncertainty.** The namu example's order is unstated, and no
 controlled test has run Leech + Sacrifice in both orders. If a test showed the
@@ -248,11 +259,13 @@ These are reported exceptions, not evidence for a different general rule:
   is "terrible" while Sun × Black Hole "DOES insta kill everything"
   (mattkk177, 2026-11-06 [S6]); another says both orders kill all non-boss
   enemies every second (JarlOctaviusoEdynbro, 2026-11-06 [S8]). No shared
-  property is obvious; unresolved.
+  property is obvious; unresolved. **Resolved (2026-11-11):** the resolution
+  pass cleared the order question (PSA #1 both-orders test; cross-wire real,
+  non-boss-only); `black-hole+sun` is `verified` / order `no`.
 - **Banshee curse override** — "Banshee's curse application to the whole field
   has overridden some other curse effects I have tried" (icemage_999,
   2026-11-09 [S8]). A possible same-property (curse) collision, but untested
-  and DLC-era.
+  and the free-update era.
 - **Spider Queen × Vampire Lord hit damage** — the two order tooltips show
   identical ability numbers but different hit damage (234–421 vs 556–1030)
   [S9]. Could be run context (upgrades/buffs) or a real order-dependent stat;
@@ -285,7 +298,7 @@ Source labels are expanded in §8. "Tier" follows the ticket's hierarchy.
 | 12 | Base-ball pool: first-selected base ball is removed from the level-up/fusion pool for the run ("shadow banish"); second-selected returns | S4, S6, S7, S8 | 2025-11-23 → 2026-11-09 | Multiple | 2 / 3 | Reported | Separate order effect, not a fusion property; well-corroborated |
 | 13 | Freeze Ray × Blizzard: Freeze Ray first = 13 s freeze; Blizzard first = 1.3 s | S7 | 2026-11-09 | Post-Naturalist v1.301 | 2 | Reported | Scalar collision (freeze duration); matches L3 13 s / 1.3 s [S13] |
 | 14 | Noxious × Brimstone: Brimstone first = poison/burn cap 4; Noxious first = cap 3 | S7 | 2026-11-09 | Post-Naturalist v1.301 | 2 | Reported | Scalar collision (status caps) |
-| 15 | Time scales its bubble size to the ball it is fused to when Time is second (Nuke × Time = huge bubble); Banshee's curse overrides other curse effects | S8 (icemage_999) | 2026-11-09 | Post-Naturalist v1.301 | 2 | Reported | Scalar collision (range/size); DLC-era residual |
+| 15 | Time scales its bubble size to the ball it is fused to when Time is second (Nuke × Time = huge bubble); Banshee's curse overrides other curse effects | S8 (icemage_999) | 2026-11-09 | Post-Naturalist v1.301 | 2 | Reported | Scalar collision (range/size); free-update-era residual |
 | 16 | Flash × Freeze Ray order matters (Flash first = freeze on beam; Freeze Ray first = freeze on screen flash) | S6 | 2026-11-06 | Post-Naturalist v1.301 | 2 | Reported, then **self-retracted** 2026-11-07 ("You're right, my bad") | Challenged by S7's test: function same; freeze spread depends on the freeze-type ball, not order. Does not support a general order rule |
 | 17 | Flash × Freeze Ray function is the same both ways; freeze spread depends on the freeze-type ball used (Freeze/Freeze Ray/Wraith work with Flash; Glacier/Blizzard do not), regardless of order | S7 | 2026-11-09 | Post-Naturalist v1.301 | 2 | Reported | Supports trigger-channel model over order folklore |
 | 18 | In-game tooltips, Egg Sac × Poison vs Poison × Egg Sac: ability numbers identical (poison max 8/9 s/10–25; baby balls 3–5); hit damage 84–135 vs 85–137 | S9 | 2026-02-03 | Version not stated | 1 (in-game screenshot) | Observed | Supports no-collision commutativity for different property keys |
@@ -321,8 +334,8 @@ post-v1.301 balance patch [S13]. The catalog in `src/data/balls.ts` is
 **level-1** text, so its smaller numbers (BF max 6, Sun 6 s, Erosion 3%,
 Stone 300%, Drill 50%, Assassin 30%, Steel 10%, Freeze Ray 10 s, Blizzard
 0.8 s, Poison max 5) are not the fusion-relevant values. This is the subject
-of the concurrent ticket-#3 research (`research/effect-text-currency`,
-`docs/research/effect-text-currency.md`).
+of the concurrent ticket-#3 research (merged branch
+`research/effect-text-currency`, `docs/research/effect-text-currency.md`).
 
 One numeric discrepancy remains: the Nov 2026 report says Timestop has a
 **30 s** cooldown, while the v1.301 L3 table says **20 s** (L1 = 30 s). The
@@ -343,7 +356,7 @@ error or an L1 reading; the rule is unaffected.
   set/scalar distinction. The game files do not expose the merge code, so the
   model is a synthesis of convergent reports, not a datamined rule.
 - **Unverified:** Leech + Sacrifice order-dependence; Nuke × Wraith mechanism;
-  Black Hole × Sun direction; Banshee curse override; Spider Queen × Vampire
+  Banshee curse override; Spider Queen × Vampire
   Lord hit-damage difference; whether the save's `NumCombos` matrix records
   directed pairs.
 
@@ -351,7 +364,7 @@ error or an L1 reading; the rule is unaffected.
 
 - **PSA #1 is the only controlled both-orders test** in the public record. It
   is strong for the no-collision majority but explicitly did not test
-  same-property pairs, and it predates the DLC balls. It cannot refute the
+  same-property pairs, and it predates the free-update balls. It cannot refute the
   property model; it is the model's complement.
 - **The Abject property posts** are older (Tier 3 by date) but are the most
   mechanism-explicit and are independently convergent with the Nov 2026
@@ -375,6 +388,12 @@ error or an L1 reading; the rule is unaffected.
 ---
 
 ## 6. Reconciliation with the current model and implementation
+
+**Update (2026-11-11):** this section describes the pre-landing state. The
+property model is now canonical in `fusion-mechanics.md` §3 and implemented in
+`src/fusion-properties.ts`; `SAME_PROPERTY_PAIRS` was removed, and the
+composer reads the level-3 overlay (`src/data/level-3.ts`). The bullets below
+are retained as the research record.
 
 - `docs/research/fusion-mechanics.md` §3 currently lists **two functional
   order classes** (same-property; both-cooldown) plus presentation and pool
@@ -410,8 +429,9 @@ error or an L1 reading; the rule is unaffected.
    is first-pick or min. The namu example is order-agnostic.
 4. **Nuke × Wraith / Wraith × Nuke** mechanism — the clearest residual
    anomaly; no shared property is known.
-5. **Black Hole × Sun direction** — two Nov 2026 commenters disagree; one
-   controlled test would settle it.
+5. **Black Hole × Sun direction** — resolved by the 2026-11-11 pass (order
+   `no`; cross-wire real, non-boss-only); retained here as the research
+   question that prompted it.
 6. **Post-Risen Ballbylon re-check** (DLC releases 2026-11-12, one day after
    this research): 24 new balls may add new property collisions and new
    anomalies. Re-run the order check against the post-DLC build.

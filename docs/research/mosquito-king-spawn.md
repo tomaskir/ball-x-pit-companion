@@ -13,6 +13,14 @@ labelled as such. The existing fact base is
 either the raw corpus or the fact base — it records what the sources say and
 what the composer model should do.
 
+> **Status — landed (2026-11-11).** This is a dated research snapshot. Its
+> recommendation landed: `src/fusion.ts` now has `SPAWN_NO_INHERITANCE_IDS`
+> (Voluptuous Egg Sac only) and `SPAWN_STATUS_ONLY_IDS` (Brood Mother,
+> Mosquito King), and emits the Mosquito King trigger caveat for screen-clear
+> partners. Where this file describes the old `SPAWN_EXCLUDED_IDS` or "the
+> current code", read the landed state; inline corrections are marked
+> **Update (2026-11-11)**.
+
 ## The two claims, separated
 
 | # | Claim | Verdict | Confidence |
@@ -231,11 +239,12 @@ inherited property is the partner's status/effect.
   different spawn channel and does not apply to Mosquito King's one-hop
   mosquito spawn.
 - **The fact base's blanket sentence** — "Brood Mother's spawn channel does not
-  carry the partner's property at all" (`fusion-mechanics.md` §2d) and the
-  `SPAWN_EXCLUDED_IDS` comment in `src/fusion.ts` — is **too strong**. The
-  current wiki's Brood Mother page says the opposite, and the positive reports
-  outnumber the one negative bug report. The blanket exclusion should not be
-  inherited by Mosquito King.
+  carry the partner's property at all" (`fusion-mechanics.md` §2d at research
+  time) and the `SPAWN_EXCLUDED_IDS` comment in `src/fusion.ts` — was **too
+  strong**. The current wiki's Brood Mother page says the opposite, and the
+  positive reports outnumber the one negative bug report. The blanket
+  exclusion should not be inherited by Mosquito King. **Update (2026-11-11):**
+  §2d now states the status-only/degraded model and the code sets were split.
 
 ### 2.4 What "properties" means here
 
@@ -249,6 +258,10 @@ spawned units inherit statuses, not spawn-bound traits — is already the fact
 base's §2b/§2c model and is not changed by this ticket.
 
 ## 3. Recommended composer model
+
+**Update (2026-11-11):** this recommendation landed as described; the
+`FUSED_STATS` gate mentioned in the implementation sketch no longer exists
+(the L3 overlay replaced it).
 
 **Recommendation: (a) inheritance wire with a trigger caveat when the partner is
 a screen-clear / AOE carrier.**
@@ -307,7 +320,7 @@ a screen-clear / AOE carrier.**
    the Steam observation. Record the correction in the fact base when the
    decision ticket lands.
 6. **Test gates.** Any change must keep `src/corpus.test.ts`,
-   `src/corpus-schema.test.ts`, and the `FUSED_STATS` substring gate green. A
+   `src/corpus-schema.test.ts`, and the level-3 overlay gate green. A
    composer/corpus disagreement is a content decision, not a test to relax.
 
 ## 4. Claim register for this ticket

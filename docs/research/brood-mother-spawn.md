@@ -12,8 +12,16 @@ exist yet. Every observation below is version-tagged.
 
 **Evidence hierarchy used** (per the issue): current-version game files /
 in-game tooltip screenshots / controlled tests > recent community reports
-(Nov 2026 DLC-era) > older wiki snapshots and guides. Claims that were not
-directly observed are marked **reported**.
+(Nov 2026, free-update era; pre-Risen Ballbylon) > older wiki snapshots and
+guides. Claims that were not directly observed are marked **reported**.
+
+> **Status — landed (2026-11-11).** This is a dated research snapshot. Its
+> recommended model landed: `src/fusion.ts` now has
+> `SPAWN_NO_INHERITANCE_IDS` (Voluptuous Egg Sac) and
+> `SPAWN_STATUS_ONLY_IDS` (Brood Mother, Mosquito King), with the degradation
+> and trigger caveats. Where this file describes the old
+> `SPAWN_EXCLUDED_IDS` or "the current code", read the landed state; inline
+> corrections are marked **Update (2026-11-11)**.
 
 ---
 
@@ -186,10 +194,11 @@ tooltip would not settle it without a behaviour test.
 
 - **(c) hard exclusion is contradicted** by the current wiki, namu, TVTropes,
   the 2026 Hemorrhage/Nuke builds, and the Reddit Flash test. The repo's
-  current `SPAWN_EXCLUDED_IDS` entry for `brood-mother` and the
+  then-current `SPAWN_EXCLUDED_IDS` entry for `brood-mother` and the
   `fusion-mechanics.md` §2d sentence "Brood Mother's spawn channel does not
-  carry the partner's property at all" encode the launch-week outlier as if
-  it were settled. It is not.
+  carry the partner's property at all" encoded the launch-week outlier as if
+  it were settled. It is not. **Update (2026-11-11):** both were replaced by
+  the status-only/degraded model.
 - **(b) no wire + caveat understates the evidence.** The inheritance is
   well-enough evidenced to show a wire; hiding it would make the composer
   less useful than the current community understanding.
@@ -202,6 +211,11 @@ tooltip would not settle it without a behaviour test.
 
 ## Recommendation for `src/fusion.ts`
 
+**Update (2026-11-11):** this recommendation landed for Brood Mother. The
+companion Mosquito King ticket went further and moved `mosquito-king` to
+`SPAWN_STATUS_ONLY_IDS` rather than keeping it hard-excluded; the caveats are
+emitted by `spawnInheritanceCaveats()`.
+
 ### Model
 
 Treat Brood Mother as a **degraded spawn carrier**, not a hard-excluded one.
@@ -212,7 +226,8 @@ Treat Brood Mother as a **degraded spawn carrier**, not a hard-excluded one.
    - `voluptuous-egg-sac` — two-hop chain drops the property (keep hard
      exclusion; corpus: Assassin × VES, Hemorrhage × VES).
    - `mosquito-king` — spawn-on-hit does not fire from the partner's screen
-     hits (keep hard exclusion; corpus).
+     hits. **Update (2026-11-11):** the companion ticket moved this to the
+     status-only set, not a hard exclusion (`mosquito-king-spawn.md`).
    - `brood-mother` — inheritance is reported but degraded/probabilistic
      (move to a `DEGRADED_SPAWN_IDS` set).
 2. **Wire on-hit statuses.** In `crossWire()`, allow a
