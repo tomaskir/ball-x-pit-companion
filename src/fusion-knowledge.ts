@@ -1,9 +1,10 @@
 // Fusion knowledge: the hand-maintained evidence tables behind the composer.
 // src/fusion.ts owns the composition algorithm; this module owns the
 // classification facts that algorithm reads — the Destroy/cooldown/pierce/
-// kill classes, the status-channel model (text heuristics plus
-// community-evidenced exceptions), the spawn-inheritance classes, and the
-// reported-fact table (caveat prose plus reported exceptions). Keeping the
+// kill classes, the one application-channel classifier (`channelsOf`, which
+// both the property model and the cross-wire model consume), the
+// spawn-inheritance classes, and the reported-fact table (caveat prose plus
+// reported exceptions). Keeping the
 // evidence here makes a research landing a one-table edit and lets every
 // predicate be unit-tested directly (src/fusion-knowledge.test.ts); the
 // corpus's general_rules_notes are the fixture the tables are checked against.
@@ -119,13 +120,118 @@ export const channelOverride = (b: Ball): StatusChannel | undefined => CHANNEL_O
 export const isSpawnBound = (b: Ball): boolean =>
   SPAWN_BOUND_IDS.has(b.id) || SPAWN_BOUND_TEXT.test(componentText(b));
 
+// ---------- one application-channel classification per ball ----------
+
+/** The property model's application-channel vocabulary. Channels are
+ *  set-valued: a ball can apply effects through more than one. */
+export type Channel = 'on-hit' | 'per-second' | 'spawn' | 'field';
+
+/** Explicit per-ball channel evidence — the property model's old hand-maintained
+ *  `channels` column, moved here so one classifier answers for both models.
+ *  The ids mirror BALL_PROPERTIES' keys (fusion-properties.test.ts pins that
+ *  every kit ball has an entry). A listed ball is classified from evidence;
+ *  every other ball falls back to the status-text heuristic. An empty array is
+ *  an explicit "no application channel" (the bonus-damage stat balls), not a
+ *  missing entry. */
+export const CHANNEL_EVIDENCE: Readonly<Record<string, readonly Channel[]>> = {
+  // --- cooldown class (the game-file I2 effect-text dump: exactly the balls
+  // whose text lists a cooldown) ---
+  'black-hole': ['on-hit'],
+  'bomb': ['on-hit'],
+  'dark': ['on-hit'],
+  'egg-sac': ['spawn'],
+  'nuclear-bomb': ['on-hit'],
+  'timestop': ['field'], // a field freeze; the text heuristic's hit default is wrong
+  'voluptuous-egg-sac': ['spawn'],
+
+  // --- burn profiles ---
+  'banished-flame': ['on-hit'],
+  'burn': ['on-hit'],
+  'sun': ['per-second', 'field'],
+  'brimstone': ['per-second', 'field'],
+  'inferno': ['per-second', 'field'],
+  'magma': ['spawn'],
+  'satan': ['per-second', 'field'],
+  'fireworks': ['spawn'],
+
+  // --- bonus-damage stat swaps: no application channel ---
+  'erosion': [],
+  'stone': [],
+  'drill': [],
+  'assassin': [],
+  'steel': [],
+
+  // --- freeze duration ---
+  'freeze-ray': ['on-hit'],
+  'blizzard': ['spawn'],
+  'freeze': ['on-hit'],
+  'wraith': ['on-hit'],
+  'glacier': ['spawn'],
+  'time': ['spawn'],
+
+  // --- poison stack caps ---
+  'poison': ['on-hit'],
+  'noxious': ['on-hit'],
+  'swamp': ['spawn'],
+
+  // --- radiation ---
+  'radiation-beam': ['on-hit'],
+  'x-ray': ['on-hit'],
+
+  // --- mosquito spawn variants ---
+  'mosquito-king': ['spawn'],
+  'mosquito-kingdom': ['spawn'],
+  'mosquito-swarm': ['spawn'],
+
+  // --- bleed stack caps ---
+  'bleed': ['on-hit'],
+  'sacrifice': ['on-hit'],
+  'leech': ['per-second', 'spawn'],
+
+  // --- AOE range ---
+  'overgrowth': ['on-hit'],
+};
+
+/** The status vocabulary's single-channel spelling, used by the text fallback
+ *  for an override. */
+const CHANNEL_FROM_STATUS: Readonly<Record<'hit' | 'spawn' | 'field', Channel>> = {
+  hit: 'on-hit',
+  spawn: 'spawn',
+  field: 'field',
+};
+
+/** The status-text fallback: one channel from the ball's L3 text, or none.
+ *  Only status balls are classified this way; a ball without the status-effect
+ *  tag has no text-derived application channel. */
+function textChannels(b: Ball): readonly Channel[] {
+  if (!b.tags.includes('status-effect')) return [];
+  const override = channelOverride(b);
+  if (override) return [CHANNEL_FROM_STATUS[override]];
+  if (isSpawnBound(b)) return ['spawn'];
+  if (FIELD_AURA_TEXT.test(componentText(b))) return ['field'];
+  return ['on-hit'];
+}
+
+/** The one classification: how a ball applies its effects. Explicit evidence
+ *  wins; otherwise the status-text heuristic classifies status balls. The
+ *  property model (`resolveProperties`) and the cross-wire model
+ *  (`statusChannel`) both consume this, so the two cannot drift. */
+export function channelsOf(b: Ball): readonly Channel[] {
+  return CHANNEL_EVIDENCE[b.id] ?? textChannels(b);
+}
+
+/** The wire-relevant single channel: spawn-bound > field (including
+ *  per-second auras) > on-hit > none. Only status balls have a wire channel —
+ *  a ball without the status-effect tag returns null even when its
+ *  classification has channels (Dark's on-hit cooldown, a spawn carrier's
+ *  spawn channel). */
 export function statusChannel(b: Ball): StatusChannel {
   if (!b.tags.includes('status-effect')) return null;
-  const override = channelOverride(b);
-  if (override) return override;
-  if (isSpawnBound(b)) return 'spawn';
-  if (FIELD_AURA_TEXT.test(componentText(b))) return 'field';
-  return 'hit';
+  const channels = channelsOf(b);
+  if (channels.includes('spawn')) return 'spawn';
+  if (channels.includes('field') || channels.includes('per-second')) return 'field';
+  if (channels.includes('on-hit')) return 'hit';
+  return null;
 }
 
 const hasSpawn = (b: Ball): boolean =>

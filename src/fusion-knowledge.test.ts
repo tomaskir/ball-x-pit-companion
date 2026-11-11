@@ -14,6 +14,7 @@ import {
   BROOD_MOTHER_FLASH_REPORT_FRAGMENT,
   BROOD_MOTHER_INHERITANCE_CAVEAT,
   BROOD_MOTHER_TRIGGER_CAVEAT,
+  CHANNEL_EVIDENCE,
   CHANNEL_OVERRIDES,
   COOLDOWN_CLASS_IDS,
   DARK_MULTIPLIER_CAVEAT,
@@ -35,6 +36,7 @@ import {
   SPAWN_STATUS_ONLY_IDS,
   WARP_PASS_THROUGH_CAVEAT,
   aoeRank,
+  channelsOf,
   factsFor,
   channelOverride,
   isAoeExcluded,
@@ -49,6 +51,8 @@ import {
   spawnable,
   statusChannel,
   type CaveatContext,
+  type Channel,
+  type StatusChannel,
 } from './fusion-knowledge';
 
 const ball = (id: string) => ballMap.get(id)!;
@@ -72,6 +76,7 @@ describe('knowledge tables', () => {
       for (const id of ids) expect(ballMap.has(id), `${name}: ${id}`).toBe(true);
     }
     for (const id of Object.keys(CHANNEL_OVERRIDES)) expect(ballMap.has(id), `CHANNEL_OVERRIDES: ${id}`).toBe(true);
+    for (const id of Object.keys(CHANNEL_EVIDENCE)) expect(ballMap.has(id), `CHANNEL_EVIDENCE: ${id}`).toBe(true);
     for (const key of KILL_DISPUTED_PAIRS) {
       for (const id of key.split('+')) expect(ballMap.has(id), `KILL_DISPUTED_PAIRS: ${id}`).toBe(true);
     }
@@ -121,12 +126,13 @@ describe('knowledge tables', () => {
 });
 
 describe('classification predicates', () => {
-  it('statusChannel applies the id exception, the override, then the text', () => {
-    expect(statusChannel(ball('blizzard'))).toBe('spawn'); // SPAWN_BOUND_IDS
+  it('statusChannel is the wire projection of the one classifier', () => {
+    expect(statusChannel(ball('blizzard'))).toBe('spawn'); // explicit evidence
     expect(statusChannel(ball('glacier'))).toBe('spawn'); // text: spikes
     expect(statusChannel(ball('berserk'))).toBe('hit'); // override beats "every second"
-    expect(statusChannel(ball('sun'))).toBe('field'); // field aura
+    expect(statusChannel(ball('sun'))).toBe('field'); // per-second + field
     expect(statusChannel(ball('flash'))).toBe('hit');
+    expect(statusChannel(ball('timestop'))).toBe('field'); // evidence beats the hit default
     expect(statusChannel(ball('iron'))).toBeNull(); // not a status ball
   });
 
@@ -148,6 +154,71 @@ describe('classification predicates', () => {
     expect(aoeRank(ball('flash'))).toBe(2);
     expect(aoeRank(ball('glacier'))).toBe(1);
     expect(aoeRank(ball('iron'))).toBe(0);
+  });
+});
+
+describe('one application-channel classification per ball', () => {
+  // Golden classification: a future level-3 text edit must not silently
+  // reclassify a ball. Balls absent from this map are expected to have no
+  // application channel (the stat balls and the unmodeled catalog).
+  const GOLDEN_GROUPS: Record<string, readonly string[]> = {
+    'on-hit': [
+      'banished-flame', 'berserk', 'bleed', 'black-hole', 'bomb', 'burn',
+      'charm', 'dark', 'elemental', 'flash', 'freeze', 'freeze-ray',
+      'frozen-flame', 'heart-swallower', 'hemorrhage', 'incubus', 'laser-beam',
+      'light', 'lovestruck', 'maggot', 'noxious', 'nuclear-bomb', 'overgrowth',
+      'phantom', 'poison', 'radiation-beam', 'sacrifice', 'sandstorm',
+      'soul-sucker', 'succubus', 'tumor', 'vampire-lord', 'venom', 'virus',
+      'wind', 'wraith', 'x-ray', 'zombie',
+    ],
+    'spawn': [
+      'blizzard', 'egg-sac', 'fireworks', 'glacier', 'lightning-rod', 'magma',
+      'mosquito-king', 'mosquito-kingdom', 'mosquito-swarm', 'swamp', 'time',
+      'time-bomb', 'voluptuous-egg-sac',
+    ],
+    'field': ['banshee', 'petrify', 'timestop'],
+    'per-second+field': ['brimstone', 'inferno', 'satan', 'sun'],
+    'per-second+spawn': ['leech'],
+  };
+  const GOLDEN: Record<string, readonly Channel[]> = {};
+  for (const [spec, ids] of Object.entries(GOLDEN_GROUPS)) {
+    for (const id of ids) GOLDEN[id] = spec.split('+') as Channel[];
+  }
+
+  it('pins the classification of every catalog ball (golden)', () => {
+    for (const b of BALLS) expect(channelsOf(b), b.id).toEqual(GOLDEN[b.id] ?? []);
+  });
+
+  it('every classification uses the channel vocabulary once', () => {
+    const vocabulary = new Set<Channel>(['on-hit', 'per-second', 'spawn', 'field']);
+    for (const b of BALLS) {
+      const channels = channelsOf(b);
+      expect(new Set(channels).size, `${b.id}: duplicate channel`).toBe(channels.length);
+      for (const c of channels) expect(vocabulary.has(c), `${b.id}: unknown channel ${c}`).toBe(true);
+    }
+  });
+
+  it('explicit evidence wins over the text heuristic (Timestop is a field effect)', () => {
+    expect(channelsOf(ball('timestop'))).toEqual(['field']);
+    expect(statusChannel(ball('timestop'))).toBe('field');
+  });
+
+  it('a non-status ball can have application channels but no wire channel', () => {
+    expect(channelsOf(ball('dark'))).toEqual(['on-hit']);
+    expect(statusChannel(ball('dark'))).toBeNull();
+    expect(channelsOf(ball('egg-sac'))).toEqual(['spawn']);
+    expect(statusChannel(ball('egg-sac'))).toBeNull();
+  });
+
+  it('statusChannel is the wire projection of channelsOf for every status ball', () => {
+    const collapse = (channels: readonly Channel[]): StatusChannel =>
+      channels.includes('spawn') ? 'spawn'
+        : channels.includes('field') || channels.includes('per-second') ? 'field'
+          : channels.includes('on-hit') ? 'hit' : null;
+    for (const b of BALLS) {
+      const expected = b.tags.includes('status-effect') ? collapse(channelsOf(b)) : null;
+      expect(statusChannel(b), b.id).toBe(expected);
+    }
   });
 });
 

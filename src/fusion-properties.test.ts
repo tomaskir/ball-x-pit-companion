@@ -1,6 +1,7 @@
 // Fusion property model tests — the order-mechanics decision (#7).
 import { describe, it, expect } from 'vitest';
 import { BALL_PROPERTIES, resolveProperties } from './fusion-properties';
+import { CHANNEL_EVIDENCE, channelsOf } from './fusion-knowledge';
 import { ballMap } from './catalog';
 
 const ball = (id: string) => ballMap.get(id)!;
@@ -10,13 +11,20 @@ describe('property table', () => {
     for (const id of Object.keys(BALL_PROPERTIES)) expect(ballMap.has(id), id).toBe(true);
   });
 
-  it('every entry has unique scalar keys and known channels', () => {
-    const channels = new Set(['on-hit', 'per-second', 'spawn', 'field']);
+  it('every entry has unique scalar keys', () => {
     for (const [id, props] of Object.entries(BALL_PROPERTIES)) {
       const keys = props.scalars.map((s) => s.key);
       expect(new Set(keys).size, `${id}: duplicate scalar key`).toBe(keys.length);
-      for (const c of props.channels) expect(channels.has(c), `${id}: unknown channel ${c}`).toBe(true);
       for (const s of props.scalars) expect(s.value.length, `${id} ${s.key}: empty value`).toBeGreaterThan(0);
+    }
+  });
+
+  it('the channel column is gone: every kit ball is classified by channelsOf', () => {
+    for (const id of Object.keys(BALL_PROPERTIES)) {
+      expect(ballMap.has(id), id).toBe(true);
+      // Every kit ball has explicit channel evidence — including the stat
+      // balls' explicit "no channel" (an empty array, not a missing entry).
+      expect(Object.prototype.hasOwnProperty.call(CHANNEL_EVIDENCE, id), `${id}: no channel evidence`).toBe(true);
     }
   });
 
@@ -31,7 +39,24 @@ describe('property table', () => {
 describe('resolveProperties', () => {
   it('unions application channels', () => {
     const r = resolveProperties(ball('leech'), ball('sacrifice'));
-    expect(r.channels).toEqual(expect.arrayContaining(['per-second', 'spawn', 'on-hit']));
+    expect(r.channels).toEqual(['per-second', 'spawn', 'on-hit']);
+  });
+
+  it('channels come from the one classifier, scoped to recorded kits', () => {
+    // Flash has a classifier channel (on-hit) but no recorded kit, so the
+    // order model contributes no channels for it; the wire model still sees
+    // its channel through channelsOf.
+    expect(channelsOf(ball('flash'))).toEqual(['on-hit']);
+    expect(resolveProperties(ball('flash'), ball('iron')).channels).toEqual([]);
+    // A kit ball's channels come from the same classifier.
+    expect(resolveProperties(ball('leech'), ball('sacrifice')).channels)
+      .toEqual([...new Set([...channelsOf(ball('leech')), ...channelsOf(ball('sacrifice'))])]);
+  });
+
+  it('every kit ball contributes exactly its channelsOf classification', () => {
+    for (const id of Object.keys(BALL_PROPERTIES)) {
+      expect(resolveProperties(ball(id), ball('iron')).channels, id).toEqual(channelsOf(ball(id)));
+    }
   });
 
   it('unions scalars; different keys do not collide', () => {

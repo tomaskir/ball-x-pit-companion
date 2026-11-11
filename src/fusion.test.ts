@@ -320,6 +320,15 @@ describe('cross-wire exclusions (corpus no-cross-wire evidence)', () => {
     expect(fuse(ball('black-hole'), ball('timestop'))!.crossWire).toBeNull();
   });
 
+  it('Timestop is a field effect, not an on-hit status carrier (one channel classification)', () => {
+    // The property table's `field` classification now wins over the text
+    // heuristic's `hit` default: a field freeze cannot carry an on-hit status,
+    // and a spawn carrier cannot inherit it as one. No corpus pair pins either
+    // direction, so the unified classifier resolves the contradiction.
+    expect(fuse(ball('bleed'), ball('timestop'))!.crossWire).toBeNull();
+    expect(fuse(ball('cell'), ball('timestop'))!.crossWire).toBeNull();
+  });
+
   it('Satan carries Black Hole\'s kill but not Reaper\'s (corpus: both directions tested)', () => {
     // black-hole+satan: 3 cross-wire claims ("Satan's aoe will inflict the
     // instant kill from Black Hole", Steam build guide).
