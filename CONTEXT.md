@@ -41,9 +41,9 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   renderer's plan-entry identity, corpus validation, and the build graph's
   `fusion:` node ids all consume it (`fusionNodeId` / `fusionNodePair` in
   `src/build-graph.ts` build on it). The order-preserving counterpart is
-  `composeKey(a, b)` / `parseComposeKey(key)` ("a>b", first pick first),
-  used where display order must survive while identity stays unordered (the
-  plan's fused-entry content key).
+  `composeKey(a, b)` ("a>b", first pick first), used where display order
+  must survive while identity stays unordered (the plan's fused-entry
+  content key).
 - **Recipe notation** — the compact per-slot rendering of multi-recipe
   entities: "a+(b/c)", "(a/b)+(c/d)", "a+b+c". Faithful only because every
   multi-recipe entity factorizes into per-slot alternates

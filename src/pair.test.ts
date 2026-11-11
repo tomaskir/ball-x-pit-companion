@@ -1,7 +1,7 @@
 // Tests for unordered-pair identity (src/pair.ts) — the one home for the
 // "reverse composition is the same pair" invariant and its key format.
 import { describe, it, expect } from 'vitest';
-import { composeKey, pairKey, pairKeyOf, parseComposeKey, parsePair } from './pair';
+import { composeKey, pairKey, pairKeyOf, parsePair } from './pair';
 
 describe('pairKey', () => {
   it('sorts the two ids and joins them with +', () => {
@@ -50,17 +50,7 @@ describe('composeKey', () => {
     expect(composeKey('glacier', 'flash')).toBe('glacier>flash');
   });
 
-  it('round-trips through parseComposeKey in composition order', () => {
-    expect(parseComposeKey(composeKey('glacier', 'flash'))).toEqual(['glacier', 'flash']);
-  });
-});
-
-describe('parseComposeKey', () => {
-  it('returns null for keys that are not compose keys', () => {
-    expect(parseComposeKey('flash')).toBeNull();
-    expect(parseComposeKey('a>b>c')).toBeNull();
-    expect(parseComposeKey('>glacier')).toBeNull();
-    expect(parseComposeKey('flash>')).toBeNull();
-    expect(parseComposeKey('')).toBeNull();
+  it('is distinct from the unordered pair key for a reversed pair', () => {
+    expect(composeKey('glacier', 'flash')).not.toBe(pairKey('glacier', 'flash'));
   });
 });

@@ -200,11 +200,12 @@ export function paintFusion(vm: ViewModel) {
   };
   // the plan toggle exists only in the composed state — and not at all for
   // evolve-instead pairs (they do not fuse, so there is nothing to plan)
-  p.planBtn.hidden = fp.state !== 'composed' || !!fp.fusion.evolvesInstead;
+  const canPlan = fp.state === 'composed' && !fp.fusion.evolvesInstead;
+  p.planBtn.hidden = !canPlan;
   // the once-built plan button reads its typed compose order from its action
-  // slot (see buildFusionPanel) — set on every composed paint, cleared
+  // slot (see buildFusionPanel) — set on every plan-able paint, cleared
   // otherwise so no stale pair survives a trip through empty/pending
-  if (fp.state === 'composed' && !fp.fusion.evolvesInstead) {
+  if (canPlan) {
     p.planAction.set({ type: 'togglePlanFusion', a: fp.a.id, b: fp.b.id });
   } else {
     p.planAction.clear();

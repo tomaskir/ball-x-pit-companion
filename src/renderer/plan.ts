@@ -73,9 +73,7 @@ function planEntry(inner: string, onRemove: () => void): HTMLElement {
  *  by. It is never parsed back into an action: entry click handlers close
  *  over the typed action they emit. */
 type EntryIdentity =
-  | { kind: 'char'; id: string }
-  | { kind: 'ball'; id: string }
-  | { kind: 'passive'; id: string }
+  | { kind: 'char' | 'ball' | 'passive'; id: string }
   | { kind: 'fused'; pair: string };
 
 const entryKey = (identity: EntryIdentity): string =>
@@ -96,13 +94,14 @@ const ballEntryContentKey = (e: PlanBallEntry): string =>
     ? entryKey(ballEntryIdentity(e))
     : `${entryKey(ballEntryIdentity(e))}:${composeKey(e.a.id, e.b.id)}`;
 
-/** One single-ball/passive entry, stamped with its identity. */
-const itemEntry = (item: Item, identity: EntryIdentity, onRemove: () => void): HTMLElement => {
+/** One single-ball/passive entry, stamped with its identity (derived from the
+ *  item, so the two cannot disagree). */
+const itemEntry = (item: Item, kind: 'ball' | 'passive', onRemove: () => void): HTMLElement => {
   const entry = planEntry(
     `<img src="${icon(item.icon)}" alt="${item.name}" width="48" height="48" loading="lazy"><span class="plan-name">${item.name}</span>`,
     onRemove,
   );
-  entry.dataset.entry = entryKey(identity);
+  entry.dataset.entry = entryKey({ kind, id: item.id });
   return entry;
 };
 
@@ -147,7 +146,7 @@ export function paintPlan(vm: ViewModel) {
       sections.balls.grid.replaceChildren(
         ...plan.balls.map((e) => {
           if (e.kind === 'single') {
-            return itemEntry(e.item, { kind: 'ball', id: e.item.id }, () => emitAction({ type: 'togglePlanItem', id: e.item.id }));
+            return itemEntry(e.item, 'ball', () => emitAction({ type: 'togglePlanItem', id: e.item.id }));
           }
           // fused pairs: both icons side by side (compact, so the composed name
           // fits beside them — same shape as the single-ball entries), name right,
@@ -169,7 +168,7 @@ export function paintPlan(vm: ViewModel) {
     },
   );
   reconcile(sections.passives.grid, plan.passives.map((e) => entryKey({ kind: 'passive', id: e.item.id })).join(','), () => {
-    sections.passives.grid.replaceChildren(...plan.passives.map((e) => itemEntry(e.item, { kind: 'passive', id: e.item.id }, () => emitAction({ type: 'togglePlanItem', id: e.item.id }))));
+    sections.passives.grid.replaceChildren(...plan.passives.map((e) => itemEntry(e.item, 'passive', () => emitAction({ type: 'togglePlanItem', id: e.item.id }))));
   });
 
   // counts and empty hints

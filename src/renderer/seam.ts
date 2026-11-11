@@ -9,12 +9,15 @@ import type { Item } from '../catalog';
 import type { Verdict } from '../synergy';
 import type { ToggleAction } from '../view-state';
 
-let emit: (action: ToggleAction) => void = () => {};
+/** The click→island callback's shape — one home for the emit signature. */
+export type Emit = (action: ToggleAction) => void;
+
+let emit: Emit = () => {};
 let toast: ToastAdapter | null = null;
 
 export interface SeamOptions {
   getVerdict: (item: Item) => Verdict | null;
-  emit: (action: ToggleAction) => void;
+  emit: Emit;
 }
 
 /** Capture the island's callbacks and (re)create the toast adapter. The

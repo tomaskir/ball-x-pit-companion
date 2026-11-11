@@ -8,9 +8,9 @@
 // validation, and the build graph's `fusion:` node ids all consume it, and
 // the build graph parses those ids back through `parsePair`.
 //
-// The order-preserving counterpart is `composeKey`/`parseComposeKey` ("a>b",
-// first pick first): display order survives where identity must stay
-// unordered. Neither separator occurs in a slug.
+// The order-preserving counterpart is `composeKey` ("a>b", first pick first):
+// display order survives where identity must stay unordered. Neither
+// separator occurs in a slug.
 //
 // The knowledge tables (CONFIRMED_PAIRS, FUSION_FACTS, KILL_DISPUTED_PAIRS)
 // and the wildcard form `<id>+*` still carry literal keys; changing the
@@ -48,11 +48,3 @@ export function parsePair(key: string): [string, string] | null {
  *  survive (the plan's fused-entry content key); pair identity stays
  *  unordered. */
 export const composeKey = (a: string, b: string): string => `${a}${COMPOSE_SEPARATOR}${b}`;
-
-/** The two ids of a compose-order key in composition order, or null when
- *  `key` is not one (wrong number of parts, or an empty id). */
-export function parseComposeKey(key: string): [string, string] | null {
-  const parts = key.split(COMPOSE_SEPARATOR);
-  if (parts.length !== 2 || !parts[0] || !parts[1]) return null;
-  return [parts[0], parts[1]];
-}
