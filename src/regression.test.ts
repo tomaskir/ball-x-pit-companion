@@ -11,7 +11,7 @@ import { highlightSet, factorizesIntoSlots } from './graph';
 import { deriveBuildGraph, FUSION_ID_PREFIX } from './build-graph';
 import { verdictFor } from './synergy';
 import { encodePlan, takeShareParam } from './share';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import {
   expectBerserkIsOnHitStatus,
   expectBlackHoleSunOrderIndependent,
@@ -480,6 +480,16 @@ describe('regression: build-graph fusion node ids are namespaced (the fusion row
 // a declared seam, wiring that only exists as an addEventListener call).
 // Kept as greps deliberately, gathered here instead of scattered — do not
 // add behavioral pins here, and do not move behavioral tests in.
+//
+// The renderer is a facade (src/renderer.ts) over internal painters under
+// src/renderer/; the pins scan the whole subsystem, so a construct forbidden
+// in the facade cannot reappear in a split module.
+function rendererSource(): string {
+  const modules = readdirSync('src/renderer')
+    .filter((f) => f.endsWith('.ts') && !f.endsWith('.test.ts'))
+    .sort();
+  return [readFileSync('src/renderer.ts', 'utf8'), ...modules.map((f) => readFileSync(`src/renderer/${f}`, 'utf8'))].join('\n');
+}
 describe('source hygiene (grep pins)', () => {
   // (was nth-of-type nulls) — the behavioral half (every selector resolves)
   // is pinned in renderer.test.ts against the named FUSION_PANEL_SKELETON
@@ -487,7 +497,7 @@ describe('source hygiene (grep pins)', () => {
   // selectors — including the .fusion-body hook that replaced the
   // effA.parentElement reach-through.
   it('fusion panel skeleton uses dedicated hook classes, not positional selectors or reach-throughs', () => {
-    const src = readFileSync('src/renderer.ts', 'utf8');
+    const src = rendererSource();
     expect(src).not.toMatch(/nth-of-type/);
     for (const hook of ['.icon-a', '.name-a', '.icon-b', '.name-b', '.eff-a', '.eff-b', '.fusion-body']) {
       expect(src).toContain(`'${hook}'`);
@@ -501,7 +511,7 @@ describe('source hygiene (grep pins)', () => {
   // (the options object carries both callbacks; buildAll assigns them to
   // module-level slots — the pre-existing toastVerdict pattern).
   it('renderer source carries no CustomEvent bus; the build seam is in buildAll\'s signature', () => {
-    const src = readFileSync('src/renderer.ts', 'utf8');
+    const src = rendererSource();
     expect(src).not.toContain('CustomEvent');
     expect(src).not.toContain('document.dispatchEvent');
     for (const event of ['tile-select', 'char-select', 'fusion-select']) {
@@ -518,7 +528,7 @@ describe('source hygiene (grep pins)', () => {
     const island = readFileSync('src/companion.ts', 'utf8');
     expect(island).toMatch(/getElementById\('planUpgrades'\)\s*!\s*\.addEventListener\('change'/);
     expect(island).toMatch(/update\(\{\s*type:\s*'toggleUpgrades'\s*\}\)/);
-    const renderer = readFileSync('src/renderer.ts', 'utf8');
+    const renderer = rendererSource();
     expect(renderer).not.toContain('planUpgradesSlot');
     expect(renderer).not.toMatch(/addEventListener\('change'/);
   });
