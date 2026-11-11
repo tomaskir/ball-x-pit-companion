@@ -300,7 +300,7 @@ describe('view state: fusion panel order presentation (decision #8)', () => {
 
   it('a shared-property collision makes the pair order-sensitive and names the property', () => {
     const fp = composed(createViewState(), 'egg-sac', 'timestop');
-    expectResultEmptyTextBlankForCollisionPair();
+    expectResultEmptyTextBlankForCollisionPair(fp);
     expect(fp.orderSensitive).toBe(true);
     expect(fp.orderNotice).toContain('Order matters');
     expect(fp.orderNotice).toContain('Cooldown');
@@ -313,7 +313,7 @@ describe('view state: fusion panel order presentation (decision #8)', () => {
     expect(fp.resultEmptyText).toBe('No shared properties — order does not matter.');
   });
 
-  it('an order-dependent reported exception makes the pair order-sensitive without collisions', () => {
+  it('an order-dependent reported exception makes the pair order-sensitive', () => {
     const fp = composed(createViewState(), 'nuclear-bomb', 'wraith');
     expect(fp.orderSensitive).toBe(true);
     expect(fp.orderNotice).toContain('Order matters');
@@ -327,7 +327,7 @@ describe('view state: fusion panel order presentation (decision #8)', () => {
     expect(fp.orderNotice).toBe('');
   });
 
-  it('an evolve-instead pair is never order-sensitive (it does not fuse)', () => {
+  it('an evolve-instead pair is never order-sensitive', () => {
     const fp = composed(createViewState(), 'bleed', 'poison');
     expect(fp.orderSensitive).toBe(false);
     expect(fp.orderNotice).toBe('');
@@ -341,6 +341,9 @@ describe('view state: fusion panel order presentation (decision #8)', () => {
     expect(after.fusionPanel.state).toBe('composed');
     const fp = after.fusionPanel as Extract<typeof after.fusionPanel, { state: 'composed' }>;
     expect(fp.fusion.name).toBe('Timestop × Egg Sac');
+    // the view-layer order presentation recomputed for the reversed pair
+    expect(fp.orderSensitive).toBe(true);
+    expect(fp.orderNotice).toContain('Cooldown');
     // the pair's plan identity is order-insensitive, so the plan mark survives
     expect(fp.planned).toBe(before.planned);
   });

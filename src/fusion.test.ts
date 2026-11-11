@@ -5,6 +5,7 @@ import { ballMap } from './catalog';
 import {
   expectBerserkIsOnHitStatus,
   expectBlackHoleSunOrderIndependent,
+  expectEqualValuesAreNotCollisions,
   expectFirstPickCooldownWins,
   expectFreezeRayFlashWires,
   expectFreezeRaySunFieldAuraDoesNotWire,
@@ -234,8 +235,6 @@ describe('cross-wire exclusions (corpus no-cross-wire evidence)', () => {
     // and Mosquito King inherit the partner's on-hit status; spawn-bound
     // traits stay unwired (see the next test).
     expectStatusOnlyCarriersWireOnHitStatuses();
-    expect(fuse(ball('brood-mother'), ball('flash'))!.crossWire).toContain('Brood Mother');
-    expect(fuse(ball('mosquito-king'), ball('virus'))!.crossWire).toContain('Virus');
   });
 
   it('Brood Mother × Flash carries the degradation and trigger caveats, Flash sentence deduped', () => {
@@ -329,11 +328,12 @@ describe('cross-wire exclusions (corpus no-cross-wire evidence)', () => {
 describe('order resolution (property-set union, first-pick precedence)', () => {
   it('both-cooldown pairs with different values: first-selected cooldown wins (namu.wiki)', () => {
     expectFirstPickCooldownWins();
+    expectEqualValuesAreNotCollisions();
     const r = fuse(ball('black-hole'), ball('timestop'))!;
     // the panel's Fused-result rows carry the resolution — notes must not
     // duplicate it (decision #8)
     expect(r.notes.join(' ')).not.toMatch(/cooldown wins/i);
-    // equal cooldowns are not a functional collision
+    // equal cooldowns still get no cooldown note
     expect(fuse(ball('bomb'), ball('dark'))!.notes.join(' ')).not.toMatch(/cooldown wins/i);
     // non-cooldown pairs get no cooldown note
     expect(fuse(ball('flash'), ball('glacier'))!.notes.join(' ')).not.toMatch(/cooldown wins/i);

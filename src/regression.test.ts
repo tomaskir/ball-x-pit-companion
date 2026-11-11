@@ -15,6 +15,7 @@ import { readFileSync } from 'node:fs';
 import {
   expectBerserkIsOnHitStatus,
   expectBlackHoleSunOrderIndependent,
+  expectEqualValuesAreNotCollisions,
   expectFirstPickCooldownWins,
   expectFreezeRayFlashWires,
   expectFreezeRaySunFieldAuraDoesNotWire,
@@ -386,6 +387,7 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
   // fusion-properties.test.ts and fusion.test.ts (order resolution describe).
   it('order is property-set union with first-pick precedence', () => {
     expectOrderResolutionPropertyUnion();
+    expectEqualValuesAreNotCollisions();
   });
 
   // Bug: slot-2 pick highlight was visually subtle (dim border, no glow) —

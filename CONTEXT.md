@@ -235,7 +235,9 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   `buildAll({ getVerdict, emit })` (builds grids, character cards, the
   fusion pick list, the fusion panel skeleton — the named
   `FUSION_PANEL_SKELETON` export, which the tests pin directly instead of
-  scraping source — and the plan screen skeleton
+  scraping source, plus its `FUSION_PANEL_SELECTORS` hook map, the one source
+  for both the panel's queries and the skeleton test — and the plan screen
+  skeleton
   once, at startup) +
   `paint(viewModel)` (repaints state on the existing DOM; never recreates
   `<img>` elements — that would blink icons; the fusion panel's head icons

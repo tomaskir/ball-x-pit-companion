@@ -73,7 +73,7 @@ const q = <T extends HTMLElement>(s: string) => panel().querySelector<T>(s)!;
 describe('fusion panel behavior (jsdom, through paint())', () => {
   it('empty state: hint visible, everything else hidden', () => {
     expect(q('.fusion-hint').hidden).toBe(false);
-    expect(q('.fusion-hint').textContent).not.toBe('');
+    expect(q('.fusion-hint').textContent).toBe(view.derive().fusionHint);
     expect(q('.fusion-head').hidden).toBe(true);
     expect(q('.fusion-evo').hidden).toBe(true);
     expect(q('.fusion-body').hidden).toBe(true);
@@ -81,7 +81,7 @@ describe('fusion panel behavior (jsdom, through paint())', () => {
   });
 
   it('pending state: head shows the first ball, second icon slot display:none, hint updates', () => {
-    drive({ type: 'toggleFusion', id: 'flash' });
+    const vm = drive({ type: 'toggleFusion', id: 'flash' });
     const iconA = q<HTMLImageElement>('.icon-a');
     const iconB = q<HTMLImageElement>('.icon-b');
     expect(q('.fusion-head').hidden).toBe(false);
@@ -93,7 +93,7 @@ describe('fusion panel behavior (jsdom, through paint())', () => {
     expect(iconB.style.display).toBe('none');
     expect(q('.name-b').textContent).toBe('');
     expect(q('.fusion-hint').hidden).toBe(false);
-    expect(q('.fusion-hint').textContent).not.toBe('');
+    expect(q('.fusion-hint').textContent).toBe(vm.fusionHint);
     expect(q('.fusion-evo').hidden).toBe(true);
     expect(q('.fusion-body').hidden).toBe(true);
     expect(q('.fusion-notes').hidden).toBe(true);
@@ -127,7 +127,7 @@ describe('fusion panel behavior (jsdom, through paint())', () => {
     expect(q('.fusion-notes').hidden).toBe(true);
   });
 
-  it('a fusing pair with a cross-wire line followed by an evolve-instead pair leaves nothing stale', () => {
+  it('paint leaves nothing stale when a composed pair gives way to an evolve pair or to pending/empty', () => {
     // cross-wire pair first (its cross line and notes show)…
     drive({ type: 'toggleFusion', id: 'black-hole' }, { type: 'toggleFusion', id: 'sun' });
     expect(q('.fusion-cross').hidden).toBe(false);
@@ -143,40 +143,36 @@ describe('fusion panel behavior (jsdom, through paint())', () => {
     expect(q('.fusion-body').hidden).toBe(true);
     expect(q('.fusion-cross').hidden).toBe(true);
     expect(q('.fusion-notes').hidden).toBe(true);
-  });
 
-  it('cross-wire pair shows the cross line', () => {
-    drive({ type: 'toggleFusion', id: 'black-hole' }, { type: 'toggleFusion', id: 'sun' });
-    expect(q('.fusion-cross').hidden).toBe(false);
-    expect(q('.fusion-cross').textContent).not.toBe('');
-  });
-
-  it('full sequence empty → pending → composed → back to pending repaints every piece in place', () => {
-    // composed first (so the pending state must actively clear stale content)
-    drive({ type: 'toggleFusion', id: 'flash' }, { type: 'toggleFusion', id: 'glacier' });
-    expect(q('.fusion-body').hidden).toBe(false);
-    expect(q('.fusion-notes').hidden).toBe(false);
-
-    drive({ type: 'toggleFusion', id: 'glacier' }); // deselect → pending
+    // …then back to pending: the composed pieces clear and the first ball stays
+    let vm = drive({ type: 'toggleFusion', id: 'bleed' }); // deselect → pending poison
     expect(q('.fusion-head').hidden).toBe(false);
-    expect(q('.name-a').textContent).toBe(flash().name);
+    expect(q('.name-a').textContent).toBe('Poison');
     expect(q('.fusion-times').textContent).toBe('+ ?');
     expect(q<HTMLImageElement>('.icon-b').style.display).toBe('none');
     expect(q('.name-b').textContent).toBe('');
-    expect(q('.fusion-hint').textContent).not.toBe('');
-    expect(q('.fusion-evo').hidden).toBe(true);
+    expect(q('.fusion-hint').textContent).toBe(vm.fusionHint);
     expect(q('.fusion-body').hidden).toBe(true);
     expect(q('.fusion-notes').hidden).toBe(true);
 
-    drive({ type: 'toggleFusion', id: 'flash' }); // deselect → empty
-    expect(q('.fusion-hint').textContent).not.toBe('');
+    // …then empty: the head goes too
+    vm = drive({ type: 'toggleFusion', id: 'poison' }); // deselect → empty
+    expect(q('.fusion-hint').textContent).toBe(vm.fusionHint);
     expect(q('.fusion-head').hidden).toBe(true);
     expect(q('.fusion-body').hidden).toBe(true);
     expect(q('.fusion-notes').hidden).toBe(true);
 
-    drive({ type: 'toggleFusion', id: 'glacier' }); // new pending
+    // …then a fresh pending pick repaints the head in place
+    drive({ type: 'toggleFusion', id: 'glacier' });
     expect(q('.name-a').textContent).toBe(glacier().name);
     expect(q<HTMLImageElement>('.icon-a').getAttribute('src')).toBe(iconUrl('/', glacier().icon));
+  });
+
+  it('cross-wire pair shows the cross line', () => {
+    const vm = drive({ type: 'toggleFusion', id: 'black-hole' }, { type: 'toggleFusion', id: 'sun' });
+    const fp = vm.fusionPanel as Extract<typeof vm.fusionPanel, { state: 'composed' }>;
+    expect(q('.fusion-cross').hidden).toBe(false);
+    expect(q('.fusion-cross').textContent).toBe(fp.fusion.crossWire);
   });
 
   it('head <img> elements are never recreated across a full sequence', () => {

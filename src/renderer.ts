@@ -14,7 +14,9 @@
 // the named fusionPanel state (empty / pending / composed) and paintFusion
 // switches on it; the plan rides vm.plan and paintPlan paints per section;
 // the renderer holds no domain data of its own. The icon-URL join comes
-// from src/icon-url.ts.
+// from src/icon-url.ts. The fusion panel's skeleton and hook-selector map are
+// exported as pure data (FUSION_PANEL_SKELETON / FUSION_PANEL_SELECTORS) so
+// the tests pin the same values buildFusionPanel paints and queries.
 //
 // The build seam is the options object: { getVerdict, emit }. getVerdict
 // supplies the toast adapter's per-item verdict against the current
@@ -341,7 +343,7 @@ export const FUSION_PANEL_SELECTORS = {
   head: '.fusion-head',
   iconA: '.icon-a',
   nameA: '.name-a',
-  op: '.fusion-times',
+  times: '.fusion-times',
   iconB: '.icon-b',
   nameB: '.name-b',
   evo: '.fusion-evo',
@@ -372,7 +374,7 @@ function buildFusionPanel() {
     head: q(sel.head) as HTMLElement,
     iconA: q(sel.iconA) as HTMLImageElement,
     nameA: q(sel.nameA) as HTMLElement,
-    op: q(sel.op) as HTMLElement,
+    op: q(sel.times) as HTMLElement,
     iconB: q(sel.iconB) as HTMLImageElement,
     nameB: q(sel.nameB) as HTMLElement,
     evo: q(sel.evo) as HTMLElement,

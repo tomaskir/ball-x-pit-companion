@@ -1,13 +1,13 @@
-// Test support: named pins that more than one test file asserts. The module
-// test owns each contract and regression.test.ts aliases it — both call the
-// same named assertion here, so one behaviour change updates one pin, not two
-// assertion copies. Each assertion keeps the bug's name in its failure
-// messages.
+// Test support: named pins that more than one test file asserts. The owning
+// module test and regression.test.ts (and, for view-state pins, the view-state
+// test) call the same named assertion here, so one behaviour change updates
+// one pin, not two assertion copies. Where a bug's name matters, the calling
+// test carries it in its title and failure message.
 import { expect } from 'vitest';
 import { globalCss, rulesFor } from './styles';
 import { ballMap } from '../catalog';
 import { fuse } from '../fusion';
-import { createViewState } from '../view-state';
+import { createViewState, type FusionPanelState } from '../view-state';
 
 const ball = (id: string) => ballMap.get(id)!;
 
@@ -75,10 +75,15 @@ export function expectSatanDebuffOnlyCannotCarryOnHitStatuses(): void {
   expect(fuse(ball('hemorrhage'), ball('satan'))!.crossWire).toBeNull();
 }
 
-/** Issue #20: status-only spawn carriers wire on-hit statuses. */
+/** Issue #20: status-only spawn carriers wire on-hit statuses, and the wire
+ *  line names both balls. */
 export function expectStatusOnlyCarriersWireOnHitStatuses(): void {
-  expect(fuse(ball('brood-mother'), ball('flash'))!.crossWire).not.toBeNull();
-  expect(fuse(ball('mosquito-king'), ball('virus'))!.crossWire).not.toBeNull();
+  const bm = fuse(ball('brood-mother'), ball('flash'))!;
+  expect(bm.crossWire).toContain('Brood Mother');
+  expect(bm.crossWire).toContain('Flash');
+  const mk = fuse(ball('mosquito-king'), ball('virus'))!;
+  expect(mk.crossWire).toContain('Mosquito King');
+  expect(mk.crossWire).toContain('Virus');
 }
 
 /** The status-only carriers attach their reported degradation/trigger
@@ -122,14 +127,19 @@ export function expectBerserkIsOnHitStatus(): void {
 }
 
 /** Order is property-set union with first-pick precedence: Banished Flame ×
- *  Sun collides on three burn keys, Erosion × Stone resolves bonus damage to
- *  the first pick, and equal cooldowns do not collide. */
+ *  Sun collides on three burn keys and Erosion × Stone resolves bonus damage
+ *  to the first pick. */
 export function expectOrderResolutionPropertyUnion(): void {
   expect(fuse(ball('banished-flame'), ball('sun'))!.collisions.map((c) => c.key).sort())
     .toEqual(['burn-duration', 'burn-max-stacks', 'burn-per-stack-damage']);
-  expect(fuse(ball('erosion'), ball('stone'))!.collisions[0]).toMatchObject({
+  expect(fuse(ball('erosion'), ball('stone'))!.collisions).toContainEqual(expect.objectContaining({
     key: 'bonus-damage', winner: 'erosion', value: '5%', loserValue: '400%',
-  });
+  }));
+}
+
+/** Equal values are not a functional collision (Bomb and Dark both list a
+ *  3 second cooldown). */
+export function expectEqualValuesAreNotCollisions(): void {
   expect(fuse(ball('bomb'), ball('dark'))!.collisions).toEqual([]);
 }
 
@@ -146,9 +156,9 @@ export function expectSpawnCarriersCarrySpawnBoundStatuses(): void {
 
 /** Both-cooldown pairs resolve to the first pick's value (namu rule). */
 export function expectFirstPickCooldownWins(): void {
-  expect(fuse(ball('black-hole'), ball('timestop'))!.collisions[0]).toMatchObject({
+  expect(fuse(ball('black-hole'), ball('timestop'))!.collisions).toContainEqual(expect.objectContaining({
     key: 'cooldown', winner: 'black-hole', value: '5 second', loser: 'timestop', loserValue: '20 second',
-  });
+  }));
 }
 
 /** #21 resolved Black Hole × Sun to order-independent: no reported
@@ -157,13 +167,21 @@ export function expectBlackHoleSunOrderIndependent(): void {
   expect(fuse(ball('black-hole'), ball('sun'))!.exceptions).toEqual([]);
 }
 
+// ---------- view-state pins ----------
+
 /** resultEmptyText must be blank when the pair has collision rows — the
- *  empty copy is only for pairs with no shared properties. */
-export function expectResultEmptyTextBlankForCollisionPair(): void {
-  const view = createViewState();
-  view.dispatch({ type: 'toggleFusion', id: 'egg-sac' });
-  const vm = view.dispatch({ type: 'toggleFusion', id: 'timestop' });
-  const fp = vm.fusionPanel as Extract<typeof vm.fusionPanel, { state: 'composed' }>;
+ *  empty copy is only for pairs with no shared properties. Callers that
+ *  already hold the composed panel pass it in; otherwise the canonical
+ *  collision pair (Egg Sac × Timestop) is built. */
+export function expectResultEmptyTextBlankForCollisionPair(
+  fp?: Extract<FusionPanelState, { state: 'composed' }>,
+): void {
+  if (!fp) {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleFusion', id: 'egg-sac' });
+    const vm = view.dispatch({ type: 'toggleFusion', id: 'timestop' });
+    fp = vm.fusionPanel as Extract<FusionPanelState, { state: 'composed' }>;
+  }
   expect(fp.collisions.length).toBeGreaterThan(0);
   expect(fp.resultEmptyText).toBe('');
 }
