@@ -10,6 +10,13 @@ conflict. No playtest capability. Raw corpus (`*.jsonl`) untouched.
 **Companion documents:** `CONTRADICTIONS.md` (the conflict register),
 `../fusion-mechanics.md` (the distilled model), `README.md` (harvest contract).
 
+> **Status — applied (2026-11-11).** This is the dated resolution record. The
+> curated-layer changes it recommends were applied to `fusion-pairs.json`
+> (commit `4eeceb7`); the pre-pass counts in this file (25 contradicted / 26
+> order-disputed) are the starting state, not current counts. Current:
+> 6 contradicted / 4 order-disputed. `CONTRADICTIONS.md` §13 is the applied
+> record.
+
 ## Verdict legend
 
 | Verdict | Meaning |
@@ -35,14 +42,14 @@ claim about this pair).
 
 - **`v1.301`** — game v1.301, wiki.gg snapshot 2026-09-13/19, corpus access
   2026-10-04. This is the baseline the corpus was built on.
-- **`v1.3xx+3FD`** — v1.301 plus the three **free** updates: Regal
-  (2026-01-26), Shadow (2026-04), Naturalist (2026-08-06). The 2026-11-09
-  Reddit synthesis and the 2026-08/09 reports are in this band.
+- **`v1.3xx+3FD`** — the v1.3xx build band after the three **free** updates:
+  Regal (2026-01-26), Shadow (2026-04), Naturalist (2026-08-06; build v1.301).
+  The 2026-11-09 Reddit synthesis and the 2026-08/09 reports are in this band.
 - **`pre-RB`** — before *Risen Ballbylon*, the paid expansion. It is announced
   for **2026-11-12** (Nintendo Life / GoNintendo; one Gematsu announcement
   said Nov 6). As of this research date it is **not live**, so there are no
-  post-Risen-Ballbylon observations. The "Nov 2026 DLC-era" reports below are
-  about the three **free** updates, not the paid expansion.
+  post-Risen-Ballbylon observations. The "Nov 2026 free-update-era" reports
+  below are about the three **free** updates, not the paid expansion.
 - **`demo-era`** — 2025-06 demo / early access.
 - **`unknown`** — community report without a version.
 
@@ -174,11 +181,12 @@ keep-both-claims treatment remains correct for them.
 
 ---
 
-## Recommended curated-layer update
+## Curated-layer update (applied 2026-11-11)
 
-These are recommendations only — the raw corpus is append-only and the curated
-layer was not edited in this pass. The exact field changes below are ready to
-apply to `fusion-pairs.json`.
+These were recommendations at research time; the curated-layer changes below
+were applied to `fusion-pairs.json` in the 2026-11-11 pass (commit `4eeceb7`).
+The raw corpus stays append-only and was not edited. The field changes are
+retained here as the applied record.
 
 ### 1. `general_rules_notes` updates
 

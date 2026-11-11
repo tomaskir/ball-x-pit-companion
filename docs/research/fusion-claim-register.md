@@ -15,6 +15,18 @@ file was changed. Pair-level curated data is audited at the aggregate level and
 for every pair referenced by `src/fusion.ts` or the tests; the remaining 370-pair
 entries are data rows, not claims to re-litigate one by one.
 
+> **Status — historical snapshot (2026-11-11).** This audit predates the
+> 2026-11-11 resolution pass (issue #19) and spawn-channel pass (issue #20).
+> Its counts, line references, and "current/stale" verdicts describe the files
+> as of the audit date; the line numbers have since shifted. The counts quoted
+> in the tables below (31/96/218/25 etc.) are the pre-resolution-wave values
+> and were already superseded when this audit was committed — do not use them.
+> Current curated counts: 49 verified / 97 inferred / 218 unverified /
+> 6 contradicted over 370 pairs, with 4 order-disputed. The applied outcomes
+> are recorded in `fusion-observations/CONTRADICTIONS.md` §13–§14 and
+> `fusion-observations/fusion-pairs.json`. Read this file as the audit trail,
+> not as current state.
+
 ## Evidence hierarchy used
 
 1. Current-version game files / in-game tooltip screenshots / controlled tests.
@@ -334,7 +346,7 @@ what the audit recommends the repo do with them.
 - `docs/research/fusion-observations/CONTRADICTIONS.md` (access date 2026-10-04).
 - `docs/research/fusion-observations/*.jsonl` (1,035 rows; validator OK).
 - `docs/research/fusion-observations/images.jsonl` (fused tooltip screenshots,
-  2025-10-22..2026-06-21).
+  23 rows, source dates 2025-10-15..2026-09-13).
 - `docs/research/fusion-observations/game-files.jsonl` (builds 1.288 and 1.301).
 - `docs/research/fusion-observations/playtest.jsonl` (2026-10-01).
 - `src/fusion.ts`, `src/fusion.test.ts`, `src/corpus.test.ts`, `src/data.test.ts`.

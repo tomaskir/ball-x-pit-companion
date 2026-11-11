@@ -48,8 +48,10 @@ append-only, so supersession is recorded in the curated layer: each pair in
 ```
 
 where `superseded_by` is the wave date that replaced the claim. The array is
-empty for the 2026-10-04 wave and for the 2026-11-11 resolution pass (that pass
-re-graded existing claims; it dropped none).
+empty for the 2026-10-04 wave. The 2026-11-11 resolution pass (issue #19)
+re-graded existing claims without dropping any; the 2026-11-11 spawn-channel
+pass (issue #20) dropped two no-cross-wire claims (`brood-mother+flash`,
+`flash+mosquito-king`) and recorded them in the array.
 
 ---
 
@@ -126,7 +128,9 @@ guide** > **single anecdote** > **second-hand report**.
 
 ### Evidence weight
 The only **controlled both-orders test** in the public record is PSA #1 (Claim
-A). Every Claim-B item is either (a) a folk rule with no mechanism and no test
+A). **Update (2026-11-11):** the 2026-11-09 post (`1xrhisk`) adds a newer
+community re-test of several pairs; it is reported, not controlled (§13a).
+Every Claim-B item is either (a) a folk rule with no mechanism and no test
 (al-gest/mmemo, beastlike, Creative Game Life, Tappin, Dexile), (b) a
 self-hedged anecdote (Lexifer452), or (c) one of the two narrow exceptions that
 PSA #2 and namu identify *and that PSA #1's own scope did not cover*
@@ -135,7 +139,7 @@ not base-ball pool recursion and not same-property resolution.
 
 ### Current best reading
 Function is commutative for the overwhelming majority of pairs. Three genuine
-order effects exist:
+fusion order effects exist, plus a separate pool effect (item 4):
 
 1. **Presentation, always** — name, icon, colour, damage-number colour,
    description paragraph order. (This is almost certainly what al-gest's 8
@@ -217,7 +221,7 @@ polarity:
 **There is no polarity contradiction in the source texts.** All three verbatim
 quotes say the same thing: *the first-selected base ball is consumed and does
 not return*. The "contradiction" is an artifact of the harvest annotations
-(`reddit.jsonl` rows 254/256/257 label SpaceCatNL's statement as "the OPPOSITE
+(`reddit.jsonl` row 256 labels SpaceCatNL's statement as "the OPPOSITE
 polarity of Abject_Nerve_1052"), which misread "put egg sac second" as naming
 the consumed slot rather than the surviving slot.
 
@@ -476,6 +480,10 @@ NG+ layers.
 understates builds that hit harder. Do not use on-screen 9999 pop-ups as an
 upper bound on a fusion's damage.
 
+**Superseded (2026-11-11):** §13 reopens this. A newer 2026-09 thread argues
+9999 is a real per-hit cap; the display-vs-real dispute is still live. Do not
+treat the display-cap reading as settled.
+
 ---
 
 ## 9. Fusion offer missing with only 2 level-3 balls
@@ -559,6 +567,9 @@ Reaper's kill is an *on-impact* kill, which is a different channel from an
 on-hit status. Genuinely open. Site author's flash+reaper / flicker+reaper
 rows show both polarities.**
 
+**Superseded (2026-11-11):** §13 resolves this to cross-wire — a 2026-08-07
+direct re-test plus 2026-05/08 reports outweigh the single negative.
+
 ### 10f. Earthquake X Flash — partial cross-wire
 - **Positive:** "it simply does both AOE attacks wherever a ball hits".
 - **Negative:** "EQ's 3x3 does NOT become board-wide from Flash, and Flash's
@@ -580,11 +591,13 @@ scale/performance bug at high spawn rates (same family as Nosferatu X VolEgg
 screen degradation). Both can be true.**
 
 ### 10h. Attribution splice in english.jsonl
-`english.jsonl` row 86 attributes the Flash × Overgrowth *order-matters* claim
-to u/FemurFiend. The Arctic Shift record shows it is **u/beastlike**, with
-FemurFiend replying that order does **not** matter. Correct records live in
-`ordering.jsonl`. **Do not cite `english.jsonl:86` for either side.** See
-`../fusion-mechanics.md` §3 and its Uncertainty summary.
+`english.jsonl` row 86 originally attributed the Flash × Overgrowth
+*order-matters* claim to u/FemurFiend. The Arctic Shift record shows it is
+**u/beastlike**, with FemurFiend replying that order does **not** matter. The
+row was corrected in place on 2026-10-04 (its `claims[].detail` records the
+correction); correct records also live in `ordering.jsonl`. Cite the corrected
+row only with that history in mind. See `../fusion-mechanics.md` §3 and its
+Uncertainty summary.
 
 ### 10i. Magma X Blizzard freeze radius (demo-era, possible build change)
 Frankie (Steam, 2025-06-18) + Heidi Bumm (2025-06-21) report a real order
@@ -602,23 +615,31 @@ sun" — i.e. the prescribed order is the *bad* one. The anecdote is self-hedged
 **Unresolved.** Note the pair is also in mmemo's 3 extras (all involve a
 cooldown-class ball), where namu's real rule may be what was actually observed.
 
+**Superseded (2026-11-11):** §13 resolves `black-hole+sun` to order `no`
+(PSA #1 both-orders test); the cross-wire is real and non-boss-only.
+
 ---
 
 ## 11. Index of contradicted pairs (curated layer)
 
-The 25 pairs whose `status` is `"contradicted"` in `fusion-pairs.json`. A pair
-is marked contradicted when (a) the harvest filed at least one observation with
-`confidence: "contradicted"` on that pair (pair-specific rows only), or (b) the
-curated layer finds both a `cross-wire` and a `no-cross-wire` claim for the
-same pair. Sections above cover the major ones; the rest are listed here so a
-reader knows they exist.
+**Superseded (2026-11-11):** §13 re-graded these pairs; the current
+`contradicted` set is 6 pairs (`black-hole+maggot`, `egg-sac+holy-laser`,
+`holy-laser+shotgun`, `nosferatu+reaper`, `nosferatu+satan`,
+`vampire+vampire-lord`). The 25-pair list below is the 2026-10-04 record.
+
+At the 2026-10-04 wave, the 25 pairs whose `status` was `"contradicted"` in
+`fusion-pairs.json`. A pair was marked contradicted when (a) the harvest filed
+at least one observation with `confidence: "contradicted"` on that pair
+(pair-specific rows only), or (b) the curated layer found both a `cross-wire`
+and a `no-cross-wire` claim for the same pair. Sections above cover the major
+ones; the rest are listed here so a reader knows they existed.
 
 | Pair | obs | What conflicts | Section |
 |---|---|---|---|
 | `black-hole+maggot` | 9 | babies carry instant-kill vs spawn-bound channel says no | §10d |
 | `black-hole+nuclear-bomb` | 11 | self-destruct-ball order claim vs PSA #1 rebuttal | §1 |
 | `black-hole+satan` | 7 | peak AFK mob-clear vs run-breaking spawn/freeze bug | §10g |
-| `black-hole+sun` | 50 | screen-wide insta-kill praise vs "breaks the game" / fusion-offer bug | §9, §10g |
+| `black-hole+sun` | 50 | screen-wide insta-kill praise vs "breaks the game" / fusion-offer bug | §9, §13b |
 | `earthquake+flash` | 5 | "both AOE wherever a ball hits" vs "EQ's 3x3 does not go board-wide" | §10f |
 | `egg-sac+ghost` | 5 | base-ball pool recursion polarity annotations | §2 |
 | `egg-sac+holy-laser` | 1 | single flagged disagreement in the harvest | — |
@@ -626,7 +647,7 @@ reader knows they exist.
 | `flash+overgrowth` | 59 | order matters (al-gest/beastlike) vs order does not (PSA #1) | §1 |
 | `flicker+overgrowth` | 13 | Flicker carries partner's status vs "cannot apply dizzy" | §3 |
 | `flicker+reaper` | 10 | Flicker ticks fire Reaper kill vs "only direct hits" | §10e |
-| `freeze-ray+sun` | 2 | Sun's AOE applies Freeze Ray freeze vs positional-only | §7 |
+| `freeze-ray+sun` | 2 | Sun's AOE applies Freeze Ray freeze vs positional-only | §13b |
 | `hemorrhage+satan` | 6 | tooltip/14k DPS vs no %HP cross-wire | §4 |
 | `hemorrhage+voluptuous-egg-sac` | 9 | babies carry Hemorrhage vs "100% confirmed they do not" | §3 |
 | `holy-laser+maggot` | 28 | self-sustaining loop praised vs order/behaviour disputes | §1, §3 |
@@ -916,13 +937,15 @@ does not mistake them for a Bleed X Freeze tooltip. The real Bleed X Freeze
 tooltip lives in `images.jsonl` (and is `complete: false` — the panel is
 scrolled).
 
-## C. `english.jsonl:86` attribution splice (do not cite)
+## C. `english.jsonl:86` attribution splice (corrected 2026-10-04)
 
-The Flash × Overgrowth order-matters quote in `english.jsonl` is filed under
-u/FemurFiend's praise sentence. The Arctic Shift record shows the claim is
-**u/beastlike's**, and FemurFiend is on the *order-does-not-matter* side. Both
-correct records are in `ordering.jsonl`. The raw row is kept as-is (raw layer
-is append-only); the curated layer draws from `ordering.jsonl` for this dispute.
+The Flash × Overgrowth order-matters quote in `english.jsonl` was originally
+filed under u/FemurFiend's praise sentence. The Arctic Shift record shows the
+claim is **u/beastlike's**, and FemurFiend is on the *order-does-not-matter*
+side. The row was corrected in place on 2026-10-04 (its `claims[].detail`
+records the correction), so it now names u/beastlike and notes FemurFiend's
+rebuttal; both correct records are also in `ordering.jsonl`. The curated layer
+draws from `ordering.jsonl` for this dispute.
 
 ## D. Effect-text completeness
 
@@ -964,9 +987,10 @@ tend to be the pairs with the most anchor noise (`flash+overgrowth` 59 obs →
 
 ## G. Unresolved items a future session could close
 
-1. **One playtest** each would upgrade the two order exceptions from "reported"
-   to "observed": Mosquito Swarm × Mosquito King (same-property) and
-   Black Hole × Timestop (both-cooldown).
+1. **One playtest** each would upgrade two named instances of the
+   property-collision rule from "reported" to "observed": Mosquito Swarm ×
+   Mosquito King (shared spawn variant) and Black Hole × Timestop (shared
+   cooldown).
 2. **One playtest** of Satan × Hemorrhage on a boss settles §4.
 3. **One playtest** settles fused-ball level on creation (§10b).
 4. **One current-build playtest** of Magma × Blizzard in both orders settles
