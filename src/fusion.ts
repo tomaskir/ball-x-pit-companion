@@ -6,10 +6,12 @@
 //     is "A X B" and the separator is localized)
 //   - effect paragraphs concatenate per component, in selection order
 //   - a cross-wire line is emitted when one component's channel can carry the
-//     other's effect; crossWire() returns { line, disputed, spawnerId }:
-//     disputed marks a corpus-contradicted kill wire (flicker × reaper);
-//     spawnerId names the carrier whose spawn channel produced the line. Both
-//     feed the caveat rules in fusion-knowledge.ts
+//     other's effect. The branch priority and the class evidence live in
+//     fusion-knowledge.ts (`wireFor(a, b) → Wire | null`); this module owns
+//     only the line templates. crossWire() returns { line, disputed,
+//     spawnerId }: disputed marks a corpus-contradicted kill wire (flicker ×
+//     reaper); spawnerId names the carrier whose spawn channel produced the
+//     line. Both feed the caveat rules in fusion-knowledge.ts
 //   - order is property-set union with first-pick scalar precedence: the
 //     resolver in fusion-properties.ts returns the union and the shared-key
 //     collisions (first pick wins). The collisions and reported exceptions
@@ -20,10 +22,10 @@
 //     falling back to the level-1 catalog text
 //   - damage rolls are abstracted to "X" (fused numbers are not derivable)
 // The classification evidence behind these rules (status channels,
-// Destroy/cooldown/pierce/kill classes, spawn inheritance) and the one
-// reported-fact table (caveat prose plus reported exceptions) live in
-// fusion-knowledge.ts; this module owns only the composition algorithm and
-// names no pair.
+// Destroy/cooldown/pierce/kill classes, spawn inheritance), the cross-wire
+// branch priority, and the one reported-fact table (caveat prose plus
+// reported exceptions) live in fusion-knowledge.ts; this module owns the
+// composition algorithm, the cross-wire line templates, and names no pair.
 // Canonical statement of the composition rules and order model:
 // docs/research/fusion-mechanics.md §2-§3; evidence corpus:
 // docs/research/fusion-observations/ (counts derive from fusion-pairs.json).
@@ -31,18 +33,11 @@
 import { BALLS, type Ball } from './data/balls';
 import { resolveProperties, type ResolvedProperties } from './fusion-properties';
 import {
-  aoeRank,
-  factsFor,
   componentText,
-  dealsDamage,
-  isAoeExcluded,
-  isDamageRidingStatus,
-  isDisputedKillPair,
-  isKillEffect,
-  isStatusOnlySpawner,
-  spawnable,
-  statusChannel,
+  factsFor,
+  wireFor,
   type FusionException,
+  type Wire,
 } from './fusion-knowledge';
 
 /** Balls offered by the fusion pick list: every ball except Baby Ball, which
@@ -79,12 +74,6 @@ export function abstractDamage(text: string): string {
     );
 }
 
-/** Cross-wire line when one component's channel can carry the other's effect.
- *  Role-named like the game's tooltip ("Spawned balls from X … as Y"), not
- *  order-named. Conservative: only patterns with tooltip or corpus evidence —
- *  spawn-carrier × on-hit status, AOE-carrier × on-hit status, AOE-carrier ×
- *  kill-on-hit (Black Hole × Sun), and spawn-carrier × spawn-bound status
- *  (Glacier × Maggot: babies inherit the whole kit including its spikes). */
 /** Cross-wire result: the emitted line (or null) plus whether the emitted kill
  *  cross-wire is corpus-disputed (both polarities reported; fuse() turns the
  *  bit into a caveat note). The disputed bit travels with the line instead of
@@ -98,67 +87,28 @@ export interface CrossWireResult {
   spawnerId: string | null;
 }
 
+/** Render the wire the oracle found, or the no-wire result. Role-named like
+ *  the game's tooltip ("Spawned balls from X … as Y"), not order-named. The
+ *  four branches and their priority live in fusion-knowledge.ts. */
 export function crossWire(a: Ball, b: Ball): CrossWireResult {
-  const NO_WIRE: CrossWireResult = { line: null, disputed: false, spawnerId: null };
-  const isStatus = (b: Ball) => statusChannel(b) === 'hit';
+  const wire = wireFor(a, b);
+  if (!wire) return { line: null, disputed: false, spawnerId: null };
+  return { line: wireLine(wire), disputed: wire.disputed, spawnerId: wire.spawnerId };
+}
 
-  // spawn carrier + partner's on-hit status (tooltip: Overgrowth × Maggot).
-  // Status-only carriers (Brood Mother, Mosquito King) wire here; their
-  // reported inheritance is degraded/probabilistic (fuse() caveats it).
-  const [spawner, st] = spawnable(a) && isStatus(b) ? [a, b]
-    : spawnable(b) && isStatus(a) ? [b, a] : [null, null];
-  if (spawner && st) return { line: `Spawned balls from ${spawner.name} have the same properties as ${st.name}.`, disputed: false, spawnerId: spawner.id };
-
-  // AOE carrier + partner's on-hit status (tooltip: Overgrowth × Flash)
-  const aoeCarrier = (b: Ball) => aoeRank(b) > 0 && !isAoeExcluded(b);
-  /** An on-timer/field-aura carrier cannot trigger a status applied on the
-   *  hit event (trigger matrix: AOE = On-Hit NO / On-Damage YES / On-Timer
-   *  NO). It can carry the corpus-evidenced damage-riding statuses; Freeze
-   *  Ray × Sun is the evidenced negative (the beam carries Sun's burn
-   *  instead). */
-  const canCarryStatus = (carrier: Ball, st: Ball) =>
-    !(statusChannel(carrier) === 'field' && statusChannel(st) === 'hit' && !isDamageRidingStatus(st));
-  const [carrier, st2] = aoeCarrier(a) && aoeRank(a) > aoeRank(b) && isStatus(b) && canCarryStatus(a, b) ? [a, b]
-    : aoeCarrier(b) && aoeRank(b) > aoeRank(a) && isStatus(a) && canCarryStatus(b, a) ? [b, a] : [null, null];
-  if (carrier && st2) return { line: `Area-of-effect damage from ${carrier.name} inflicts the status effect of ${st2.name}.`, disputed: false, spawnerId: null };
-
-  // AOE carrier + partner's kill-on-hit (Black Hole × Sun — the corpus meta
-  // pair; kamigame: "Black Hole's effect rides on Flash's screen-wide
-  // attack"). The carrier must be a real AOE carrier (rank > 0, not
-  // excluded) that deals damage — Timestop freezes but deals none, and its
-  // pairs don't wire (corpus). The kill ball is often itself screen-clear
-  // (Black Hole, Reaper), so no rank comparison. Satan is allowed as
-  // carrier only for Black Hole's kill: its judgment is debuff-only, and
-  // applying an instant-kill is a debuff, while Reaper's kill is a
-  // damage-channel proc it cannot fire (corpus, both directions).
-  const killCarrierOk = (carrier: Ball, killer: Ball) =>
-    dealsDamage(carrier) && (
-      // Satan is excluded as an AOE carrier for statuses, but its debuff-only
-      // judgment does apply Black Hole's instant kill (corpus: 3 claims).
-      killer.id === 'black-hole' && carrier.id === 'satan' ||
-      aoeCarrier(carrier)
-    );
-  const [kCarrier, killer] = isKillEffect(b) && !isKillEffect(a) && killCarrierOk(a, b) ? [a, b]
-    : isKillEffect(a) && !isKillEffect(b) && killCarrierOk(b, a) ? [b, a] : [null, null];
-  if (kCarrier && killer) {
-    return {
-      line: `Area-of-effect damage from ${kCarrier.name} triggers the instant kill of ${killer.name}.`,
-      disputed: isDisputedKillPair(a, b),
-      spawnerId: null,
-    };
+/** The four cross-wire line templates. Which branch fires — and in what
+ *  priority — is fusion-knowledge.ts's call; this module only renders it. */
+function wireLine(wire: Wire): string {
+  switch (wire.kind) {
+    case 'spawn-carries-status':
+      return `Spawned balls from ${wire.carrier.name} have the same properties as ${wire.status.name}.`;
+    case 'aoe-carries-status':
+      return `Area-of-effect damage from ${wire.carrier.name} inflicts the status effect of ${wire.status.name}.`;
+    case 'aoe-carries-kill':
+      return `Area-of-effect damage from ${wire.carrier.name} triggers the instant kill of ${wire.status.name}.`;
+    case 'spawn-carries-spawn-status':
+      return `Spawned balls from ${wire.carrier.name} have the same properties as ${wire.status.name}, including its spawned effects.`;
   }
-
-  // spawn carrier + partner's spawn-bound status (Glacier × Maggot — the
-  // babies inherit the fused kit, spikes included; namu rule 6, corpus
-  // glacier+maggot / cell+glacier / blizzard+spider-queen). Status-only
-  // carriers (Brood Mother, Mosquito King) inherit on-hit statuses but not
-  // spawn-bound traits, so they are filtered here (issue #20).
-  const spawnStatus = (b: Ball) => statusChannel(b) === 'spawn';
-  const spawnBoundCarrier = (b: Ball) => spawnable(b) && !isStatusOnlySpawner(b);
-  const [sp2, sst] = spawnBoundCarrier(a) && spawnStatus(b) ? [a, b]
-    : spawnBoundCarrier(b) && spawnStatus(a) ? [b, a] : [null, null];
-  if (sp2 && sst) return { line: `Spawned balls from ${sp2.name} have the same properties as ${sst.name}, including its spawned effects.`, disputed: false, spawnerId: sp2.id };
-  return NO_WIRE;
 }
 
 /** If the pair is a 2-component evolution recipe the pair Evolves instead of

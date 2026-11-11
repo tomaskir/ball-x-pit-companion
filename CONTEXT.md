@@ -404,16 +404,19 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   §2-§3, with §3 implemented by `src/fusion-properties.ts`, which resolves
   the per-ball kits in `src/ball-kit.ts` (level-3 scalars and application
   channels in one hand-maintained table). The evidence behind the composer's
-  classifications lives in `src/fusion-knowledge.ts` (Destroy/cooldown/pierce/
-  kill classes, spawn-inheritance classes, and the one application-channel
-  classifier `channelsOf`, which reads the kit table and falls back to the
+  classifications lives in `src/fusion-knowledge.ts`, exposed as questions:
+  `wireFor(a, b) → Wire | null` returns the structured cross-wire (branch,
+  carrier, carried effect, disputed bit, spawner id) with the four branches
+  and their priority kept private, alongside the capability queries
+  `canCarry` / `canInheritSpawn` / `canCarryKill`, the one application-channel
+  classifier `channelsOf` (reads the kit table and falls back to the
   status-text heuristic for unrecorded balls; the property model and the
   cross-wire model consume the same table, and it resolves Timestop to
-  `field`, so a field freeze never carries an on-hit status) along
-  with the one reported-fact table (`FUSION_FACTS`: caveat prose plus the
-  reported exceptions, each with source and confidence, resolved by
-  `factsFor()`); `fusion.ts` composes, the knowledge module classifies and
-  carries the reported facts, and `fuse()` names no pair. This is the
+  `field`, so a field freeze never carries an on-hit status), and the one
+  reported-fact table (`FUSION_FACTS`: caveat prose plus the reported
+  exceptions, each with source and confidence, resolved by `factsFor()`).
+  `fusion.ts` composes and renders the wire line; the knowledge module
+  classifies and carries the reported facts, and `fuse()` names no pair. This is the
   site's editorial model of fusion,
   not game data; the evidence and the observation
   corpus live in `docs/research/fusion-observations/` (counts derive from
@@ -430,7 +433,7 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   kit and falls back to the status-text heuristic.
 - **Spawn carrier** — a ball whose tags include a spawn tag
   (`spawns-baby-balls`, `spawns-allies`, `clone`). Its spawn channel can carry
-  a partner's on-hit status across a fusion (`spawnable()` in
+  a partner's on-hit status across a fusion (`canInheritSpawn()` in
   `src/fusion-knowledge.ts`). Voluptuous Egg Sac is the only hard exclusion: its two-hop
   chain drops the partner property.
 - **Status-only spawn carrier** — a spawn carrier whose babies inherit only

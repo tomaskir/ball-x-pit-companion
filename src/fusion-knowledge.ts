@@ -1,18 +1,20 @@
-// Fusion knowledge: the hand-maintained evidence tables behind the composer.
-// src/fusion.ts owns the composition algorithm; this module owns the
-// classification facts that algorithm reads — the Destroy/cooldown/pierce/
-// kill classes, the one application-channel classifier (`channelsOf`, which
-// reads the per-ball kit table in ball-kit.ts and falls back to the status-text
-// heuristic for balls the kit does not record), the spawn-inheritance classes,
-// and the reported-fact table (caveat prose plus reported exceptions). Keeping
-// the evidence here makes a research landing a one-table edit and lets every
-// predicate be unit-tested directly (src/fusion-knowledge.test.ts); the
-// corpus's general_rules_notes are the fixture the tables are checked against.
+// Fusion knowledge: the hand-maintained evidence behind the composer, exposed
+// as questions. src/fusion.ts owns the composition algorithm and the
+// cross-wire line templates; this module answers "does one component's
+// channel carry the other's effect?" (`wireFor`), "how does this ball apply
+// its effects?" (`channelsOf` / `statusChannel`), and "which reported facts
+// does this pair trigger?" (`factsFor`). The evidence itself — the
+// Destroy/cooldown/pierce/kill class sets, the spawn-inheritance classes, the
+// status-text regexes, the branch priority, and the caveat prose — stays
+// private here, so a research landing is a one-table edit and callers cannot
+// reassemble the rules themselves.
 //
-// Every id is a ball id in src/data/balls.ts. Nothing here composes: the
-// predicates answer "what class is this ball in?", and `FUSION_FACTS` /
-// `factsFor()` are the reported copy and anomalies `fuse()` emits beside
-// the composed result. `fuse()` applies the table; it never names a pair.
+// Every id is a ball id in src/data/balls.ts. Nothing here composes a line:
+// `wireFor()` returns the structured wire (which branch, which carrier, which
+// effect, the disputed bit, the spawner id) and `fuse()` renders it.
+// `FUSION_FACTS` / `factsFor()` are the reported copy and anomalies `fuse()`
+// emits beside the composed result. `fuse()` applies the table; it never
+// names a pair.
 import { BALL_KIT, type Channel } from './ball-kit';
 import { BALLS, type Ball } from './data/balls';
 import { LEVEL_3_EFFECTS } from './data/level-3';
@@ -43,12 +45,12 @@ const FIELD_AURA_TEXT = /\b(while on the field|when launched|while active|every 
  *  community test + wiki taxonomy, pre-DLC v1.301). Sun's field aura still
  *  does not apply it (corpus freeze-ray+sun — the beam carries Sun's burn,
  *  not the reverse). */
-export const SPAWN_BOUND_IDS: ReadonlySet<string> = new Set(['blizzard']);
+const SPAWN_BOUND_IDS: ReadonlySet<string> = new Set(['blizzard']);
 
 /** Text-derived channel exceptions. Berserk is applied on hit (40% at L3),
  *  not a field aura — the "every second" phrase describes the berserk
  *  debuff's tick. */
-export const CHANNEL_OVERRIDES: Readonly<Record<string, StatusChannel>> = { berserk: 'hit' };
+const CHANNEL_OVERRIDES: Readonly<Record<string, StatusChannel>> = { berserk: 'hit' };
 
 /** Statuses the corpus shows a field-aura carrier applying. The trigger
  *  matrix says AOE applies statuses on the damage event, not the hit event,
@@ -57,26 +59,26 @@ export const CHANNEL_OVERRIDES: Readonly<Record<string, StatusChannel>> = { bers
  *  damage-riding set (Sun × Overgrowth/Virus/Hemorrhage/Succubus). Every
  *  other on-hit status is blocked for a field-aura carrier — Freeze Ray's
  *  freeze is the evidenced negative (Sun × Freeze Ray). */
-export const ON_DAMAGE_STATUS_IDS: ReadonlySet<string> = new Set(['overgrowth', 'virus', 'hemorrhage', 'succubus']);
+const ON_DAMAGE_STATUS_IDS: ReadonlySet<string> = new Set(['overgrowth', 'virus', 'hemorrhage', 'succubus']);
 
 /** Spawn carriers whose spawned balls do NOT inherit the partner's property at
  *  all (corpus): Voluptuous Egg Sac spawns Egg Sacs that spawn balls — the
  *  property drops at the second hop (Steam, playtest-confirmed by posters).
  *  The only hard spawn-inheritance exclusion (issue #20). */
-export const SPAWN_NO_INHERITANCE_IDS: ReadonlySet<string> = new Set(['voluptuous-egg-sac']);
+const SPAWN_NO_INHERITANCE_IDS: ReadonlySet<string> = new Set(['voluptuous-egg-sac']);
 
 /** Spawn carriers whose reported inheritance is status-only: their babies
  *  carry the partner's on-hit status, but not spawn-bound traits (Glacier /
  *  Blizzard stay unwired for both). Brood Mother's inheritance is degraded and
  *  probabilistic; Mosquito King's spawn is an on-hit effect (issue #20). */
-export const SPAWN_STATUS_ONLY_IDS: ReadonlySet<string> = new Set(['brood-mother', 'mosquito-king']);
+const SPAWN_STATUS_ONLY_IDS: ReadonlySet<string> = new Set(['brood-mother', 'mosquito-king']);
 
 /** AOE carriers with no damage hits to carry a status: Satan's screen
  *  judgment is debuff-only (Bilibili) — it cannot trigger on-hit statuses
  *  like Hemorrhage's %-damage, nor Reaper's on-impact kill (corpus:
  *  reaper+satan no-cross-wire). It DOES carry Black Hole's instant kill
  *  (corpus: black-hole+satan, 3 claims). */
-export const AOE_EXCLUDED_IDS: ReadonlySet<string> = new Set(['satan']);
+const AOE_EXCLUDED_IDS: ReadonlySet<string> = new Set(['satan']);
 
 /** Kill-on-hit effects that ride damage-dealing AOE carriers (the corpus's
  *  biggest documented cross-wire class: Black Hole × Sun is its single
@@ -84,43 +86,42 @@ export const AOE_EXCLUDED_IDS: ReadonlySet<string> = new Set(['satan']);
  *  instant-kill to every non-boss enemy"; Reaper's on-impact kill works with
  *  Flash/Flicker/Armageddon). Timestop is deliberately absent: it deals no
  *  damage, and the corpus shows its pairs don't wire. */
-export const KILL_EFFECT_IDS: ReadonlySet<string> = new Set(['black-hole', 'reaper']);
+const KILL_EFFECT_IDS: ReadonlySet<string> = new Set(['black-hole', 'reaper']);
 
 /** The hit-once class (game-file I2 effect-text dump: exactly the balls whose
  *  text lists a cooldown). Order resolution itself lives in the property
  *  resolver (fusion-properties.ts); this set remains for the fixed
  *  hit-once-dominates-pass-through caveat. */
-export const COOLDOWN_CLASS_IDS: ReadonlySet<string> = new Set(['black-hole', 'bomb', 'dark', 'egg-sac', 'nuclear-bomb', 'timestop', 'voluptuous-egg-sac']);
+const COOLDOWN_CLASS_IDS: ReadonlySet<string> = new Set(['black-hole', 'bomb', 'dark', 'egg-sac', 'nuclear-bomb', 'timestop', 'voluptuous-egg-sac']);
 
 /** Fixed composition caveats from the corpus (general_rules_notes): reported
  *  interactions beyond naive text concatenation. */
-export const DESTROY_CLASS_IDS: ReadonlySet<string> = new Set(['dark', 'egg-sac', 'time', 'armageddon', 'black-hole', 'bomb', 'fireworks', 'landslide', 'mosquito-swarm', 'nuclear-bomb', 'timestop', 'voluptuous-egg-sac']);
+const DESTROY_CLASS_IDS: ReadonlySet<string> = new Set(['dark', 'egg-sac', 'time', 'armageddon', 'black-hole', 'bomb', 'fireworks', 'landslide', 'mosquito-swarm', 'nuclear-bomb', 'timestop', 'voluptuous-egg-sac']);
 
-export const PIERCE_IDS: ReadonlySet<string> = new Set(['ghost', 'wind', 'assassin', 'drill', 'erosion', 'noxious', 'sandstorm', 'sniper', 'soul-sucker', 'wraith']);
+const PIERCE_IDS: ReadonlySet<string> = new Set(['ghost', 'wind', 'assassin', 'drill', 'erosion', 'noxious', 'sandstorm', 'sniper', 'soul-sucker', 'wraith']);
 
 /** Pairs whose kill cross-wire is corpus-contradicted (both polarities
  *  reported, unresolved — CONTRADICTIONS.md §10e). Keys are canonical
  *  (pairKey sorts the ids), so the predicate is unordered. */
-export const KILL_DISPUTED_PAIRS: ReadonlySet<string> = new Set(['flicker+reaper']);
+const KILL_DISPUTED_PAIRS: ReadonlySet<string> = new Set(['flicker+reaper']);
 
 /** Base balls (depth 0), computed once. Pool recursion (CONTRADICTIONS.md §2):
  *  the first-selected base ball is consumed from the level-up/fusion pool. */
-export const BASE_BALL_IDS: ReadonlySet<string> = new Set(BALLS.filter((b) => b.depth === 0).map((b) => b.id));
+const BASE_BALL_IDS: ReadonlySet<string> = new Set(BALLS.filter((b) => b.depth === 0).map((b) => b.id));
 
-export const isDestroyClass = (b: Ball): boolean => DESTROY_CLASS_IDS.has(b.id);
-export const isCooldownClass = (b: Ball): boolean => COOLDOWN_CLASS_IDS.has(b.id);
-export const isPierce = (b: Ball): boolean => PIERCE_IDS.has(b.id);
-export const isKillEffect = (b: Ball): boolean => KILL_EFFECT_IDS.has(b.id);
-export const isStatusOnlySpawner = (b: Ball): boolean => SPAWN_STATUS_ONLY_IDS.has(b.id);
-export const isAoeExcluded = (b: Ball): boolean => AOE_EXCLUDED_IDS.has(b.id);
-export const isDamageRidingStatus = (b: Ball): boolean => ON_DAMAGE_STATUS_IDS.has(b.id);
-export const isDisputedKillPair = (a: Ball, b: Ball): boolean => KILL_DISPUTED_PAIRS.has(pairKey(a.id, b.id));
+const isDestroyClass = (b: Ball): boolean => DESTROY_CLASS_IDS.has(b.id);
+const isCooldownClass = (b: Ball): boolean => COOLDOWN_CLASS_IDS.has(b.id);
+const isPierce = (b: Ball): boolean => PIERCE_IDS.has(b.id);
+const isKillEffect = (b: Ball): boolean => KILL_EFFECT_IDS.has(b.id);
+const isStatusOnlySpawner = (b: Ball): boolean => SPAWN_STATUS_ONLY_IDS.has(b.id);
+const isDamageRidingStatus = (b: Ball): boolean => ON_DAMAGE_STATUS_IDS.has(b.id);
+const isDisputedKillPair = (a: Ball, b: Ball): boolean => KILL_DISPUTED_PAIRS.has(pairKey(a.id, b.id));
 
 /** The ball's channel override, if the text heuristic is known to be wrong. */
-export const channelOverride = (b: Ball): StatusChannel | undefined => CHANNEL_OVERRIDES[b.id];
+const channelOverride = (b: Ball): StatusChannel | undefined => CHANNEL_OVERRIDES[b.id];
 
 /** Status lives on spawned sub-entities (id exception or text heuristic). */
-export const isSpawnBound = (b: Ball): boolean =>
+const isSpawnBound = (b: Ball): boolean =>
   SPAWN_BOUND_IDS.has(b.id) || SPAWN_BOUND_TEXT.test(componentText(b));
 
 // ---------- one application-channel classification per ball ----------
@@ -174,50 +175,155 @@ const hasSpawn = (b: Ball): boolean =>
 /** A spawn carrier whose spawn channel can inherit the partner's effects.
  *  VES is the hard exclusion (two-hop drop); status-only carriers pass here
  *  and are filtered per branch instead. */
-export const spawnable = (b: Ball): boolean => hasSpawn(b) && !SPAWN_NO_INHERITANCE_IDS.has(b.id);
+const spawnable = (b: Ball): boolean => hasSpawn(b) && !SPAWN_NO_INHERITANCE_IDS.has(b.id);
 
 /** AOE carrier rank: screen-clear > aoe > none. */
-export const aoeRank = (b: Ball): number => (b.tags.includes('screen-clear') ? 2 : b.tags.includes('aoe') ? 1 : 0);
+const aoeRank = (b: Ball): number => (b.tags.includes('screen-clear') ? 2 : b.tags.includes('aoe') ? 1 : 0);
+
+/** An AOE carrier that can carry a partner's effect: rank > 0 and not the
+ *  debuff-only exclusion (Satan). */
+const aoeCarrier = (b: Ball): boolean => aoeRank(b) > 0 && !AOE_EXCLUDED_IDS.has(b.id);
 
 /** AOE carriers with no damage rolls cannot carry a kill-on-hit effect.
  *  Timestop freezes but deals no damage; its pairs don't wire (corpus). */
-export const dealsDamage = (b: Ball): boolean =>
+const dealsDamage = (b: Ball): boolean =>
   /\b\d+(?:\.\d+)?(?:[–-]\d+(?:\.\d+)?)?(?:x|%)?(?= damage)|\bdeals?\b/i.test(componentText(b));
+
+// ---------- the wire oracle ----------
+
+/** Which cross-wire rule produced a wire. The order of the checks in
+ *  `wireFor` is the branch priority: spawn × on-hit status, AOE × on-hit
+ *  status, AOE × kill-on-hit, spawn × spawn-bound status. */
+export type WireKind =
+  | 'spawn-carries-status'
+  | 'aoe-carries-status'
+  | 'aoe-carries-kill'
+  | 'spawn-carries-spawn-status';
+
+/** A cross-wire: one component's channel carries the other's effect.
+ *  `fusion.ts` renders the line from this structure; the branch priority and
+ *  the class evidence that produced it stay in this module. */
+export interface Wire {
+  kind: WireKind;
+  /** The ball whose channel carries the partner's effect (a spawn carrier or
+   *  an AOE carrier). */
+  carrier: Ball;
+  /** The partner ball whose effect the carrier applies. In the kill branch
+   *  this is the kill-on-hit ball. */
+  status: Ball;
+  /** True when the emitted kill wire is corpus-contradicted (both polarities
+   *  reported; CONTRADICTIONS.md §10e). */
+  disputed: boolean;
+  /** The spawn carrier whose spawn channel produced the wire, or null when
+   *  the wire came from another channel (AOE / kill). `fuse()` uses it to
+   *  attach the spawn-inheritance caveats. */
+  spawnerId: string | null;
+}
+
+/** Can an AOE carrier apply the partner's on-hit status? A field-aura carrier
+ *  cannot trigger a hit-bound status (trigger matrix: AOE = On-Hit NO /
+ *  On-Damage YES / On-Timer NO); it can carry the corpus-evidenced
+ *  damage-riding statuses. Freeze Ray × Sun is the evidenced negative. */
+export function canCarry(carrier: Ball, status: Ball): boolean {
+  if (!aoeCarrier(carrier) || statusChannel(status) !== 'hit') return false;
+  return !(statusChannel(carrier) === 'field' && !isDamageRidingStatus(status));
+}
+
+/** Can a spawn carrier's babies inherit the partner's status? VES's two-hop
+ *  chain drops the property; status-only carriers inherit on-hit statuses but
+ *  not spawn-bound traits. A partner with no status has nothing to inherit. */
+export function canInheritSpawn(carrier: Ball, status: Ball): boolean {
+  if (!spawnable(carrier)) return false;
+  const channel = statusChannel(status);
+  if (channel === null) return false;
+  return channel !== 'spawn' || !isStatusOnlySpawner(carrier);
+}
+
+/** Can an AOE carrier trigger the partner's kill-on-hit effect? The carrier
+ *  must deal damage. Satan's debuff-only judgment carries Black Hole's instant
+ *  kill but not Reaper's damage-channel proc (corpus, both directions). */
+export function canCarryKill(carrier: Ball, killer: Ball): boolean {
+  if (!isKillEffect(killer) || !dealsDamage(carrier)) return false;
+  return (killer.id === 'black-hole' && carrier.id === 'satan') || aoeCarrier(carrier);
+}
+
+/** The cross-wire for a pair, or null when no channel carries the partner's
+ *  effect. The first matching branch wins; that order is the priority. */
+export function wireFor(a: Ball, b: Ball): Wire | null {
+  // 1. spawn carrier + partner's on-hit status (tooltip: Overgrowth × Maggot).
+  //    Status-only carriers (Brood Mother, Mosquito King) wire here; their
+  //    reported inheritance is degraded/probabilistic (factsFor() caveats it).
+  if (statusChannel(b) === 'hit' && canInheritSpawn(a, b)) return wire('spawn-carries-status', a, b);
+  if (statusChannel(a) === 'hit' && canInheritSpawn(b, a)) return wire('spawn-carries-status', b, a);
+
+  // 2. AOE carrier + partner's on-hit status (tooltip: Overgrowth × Flash).
+  //    Only the higher-ranked carrier may carry.
+  if (aoeRank(a) > aoeRank(b) && canCarry(a, b)) return wire('aoe-carries-status', a, b);
+  if (aoeRank(b) > aoeRank(a) && canCarry(b, a)) return wire('aoe-carries-status', b, a);
+
+  // 3. AOE carrier + partner's kill-on-hit (Black Hole × Sun — the corpus meta
+  //    pair; kamigame: "Black Hole's effect rides on Flash's screen-wide
+  //    attack"). The kill ball is often itself screen-clear (Black Hole,
+  //    Reaper), so no rank comparison.
+  if (!isKillEffect(a) && canCarryKill(a, b)) return wire('aoe-carries-kill', a, b);
+  if (!isKillEffect(b) && canCarryKill(b, a)) return wire('aoe-carries-kill', b, a);
+
+  // 4. spawn carrier + partner's spawn-bound status (Glacier × Maggot — the
+  //    babies inherit the fused kit, spikes included; namu rule 6, corpus
+  //    glacier+maggot / cell+glacier / blizzard+spider-queen). Status-only
+  //    carriers inherit on-hit statuses but not spawn-bound traits (issue #20).
+  if (statusChannel(b) === 'spawn' && canInheritSpawn(a, b)) return wire('spawn-carries-spawn-status', a, b);
+  if (statusChannel(a) === 'spawn' && canInheritSpawn(b, a)) return wire('spawn-carries-spawn-status', b, a);
+
+  return null;
+}
+
+/** Assemble the wire structure; the branch supplies the kind and carrier. */
+function wire(kind: WireKind, carrier: Ball, status: Ball): Wire {
+  const spawn = kind === 'spawn-carries-status' || kind === 'spawn-carries-spawn-status';
+  return {
+    kind,
+    carrier,
+    status,
+    disputed: kind === 'aoe-carries-kill' && isDisputedKillPair(carrier, status),
+    spawnerId: spawn ? carrier.id : null,
+  };
+}
 
 // ---------- reported-fact prose (the caveats fuse() emits) ----------
 
 /** Pool recursion (CONTRADICTIONS.md §2): not a fusion effect, but the
  *  first-selected base ball is consumed from the level-up/fusion pool. */
-export const BASE_BALL_POOL_CAVEAT =
+const BASE_BALL_POOL_CAVEAT =
   'Pool note — the first-selected base ball is consumed and does not reappear in the level-up/fusion pool this run (reported).';
 
 /** Dark's multiplier carries into any fusion (namu.wiki). */
-export const DARK_MULTIPLIER_CAVEAT =
+const DARK_MULTIPLIER_CAVEAT =
   `Dark's damage multiplier carries into the fusion — Dark is prized as fusion material for exactly this (reported).`;
 
 /** Two self-destruct balls may lose one effect. */
-export const DESTROY_PAIR_CAVEAT =
+const DESTROY_PAIR_CAVEAT =
   'Both balls self-destruct — fusing two Destroy-class balls may lose one of the two effects (reported).';
 
 /** Hit-once (cooldown) dominates pass-through. */
-export const HIT_ONCE_CAVEAT =
+const HIT_ONCE_CAVEAT =
   `Hit-once + cooldown is dominant: the fused ball keeps it and loses the partner's pass-through (reported).`;
 
 /** Spawned clones/babies keep the fused ball alive (Cell × Bomb). */
-export const SPAWN_COMPENSATES_DESTROY_CAVEAT =
+const SPAWN_COMPENSATES_DESTROY_CAVEAT =
   'Spawn can compensate Destroy — spawned clones/babies keep the fused ball alive (reported; Cell × Bomb is the known example).';
 
 /** Assassin's back-armor rule beats the partner's pass-through. */
-export const ASSASSIN_BACK_ARMOR_CAVEAT =
+const ASSASSIN_BACK_ARMOR_CAVEAT =
   `Assassin's back-armor rule wins over the partner's pass-through — the fused ball cannot pierce the back (reported; commutative, not an order effect).`;
 
 /** Warp is cast before the partner's pass-through. */
-export const WARP_PASS_THROUGH_CAVEAT =
+const WARP_PASS_THROUGH_CAVEAT =
   `Warp is cast before the partner's pass-through (reported; commutative, not an order effect).`;
 
 /** Freeze Ray × Sun: the corpus resolves the direction — the beam applies
  *  Sun's burn, not the reverse (the AOE branch correctly emits no wire). */
-export const FREEZE_RAY_SUN_CAVEAT =
+const FREEZE_RAY_SUN_CAVEAT =
   `Reported direction — Freeze Ray's beam applies Sun's burn; Sun's field aura does not apply Freeze Ray's freeze.`;
 
 /** Reported spawn-inheritance caveats (issue #20). The inheritance caveats
@@ -225,22 +331,22 @@ export const FREEZE_RAY_SUN_CAVEAT =
  *  trigger limits describe the carrier + AOE partner, wire or not. The Flash
  *  sentence is shared so it can be deduped when both Brood Mother caveats
  *  fire for the same pair. */
-export const BROOD_MOTHER_FLASH_REPORT_FRAGMENT =
+const BROOD_MOTHER_FLASH_REPORT_FRAGMENT =
   'one launch-week report claims Flash × Brood Mother produced none (unverified).';
 const BROOD_MOTHER_FLASH_REPORT_SENTENCE =
   BROOD_MOTHER_FLASH_REPORT_FRAGMENT.charAt(0).toUpperCase() + BROOD_MOTHER_FLASH_REPORT_FRAGMENT.slice(1);
-export const BROOD_MOTHER_INHERITANCE_CAVEAT =
+const BROOD_MOTHER_INHERITANCE_CAVEAT =
   `Reported - Brood Mother's babies inherit the partner's properties, but the inherited effect is weaker and the spawn is probabilistic (25/35/45% per hit). ${BROOD_MOTHER_FLASH_REPORT_SENTENCE}`;
-export const EGG_SAC_INHERITANCE_CAVEAT =
+const EGG_SAC_INHERITANCE_CAVEAT =
   'Reported - Egg Sac\'s babies inherit the partner\'s properties, but the inherited effect is weaker than a full clone (namu.wiki).';
-export const BROOD_MOTHER_TRIGGER_CAVEAT =
+const BROOD_MOTHER_TRIGGER_CAVEAT =
   'Reported - Brood Mother\'s spawn fires on hit, so a screen-wide/AOE partner produces fewer babies';
-export const MOSQUITO_KING_TRIGGER_CAVEAT =
+const MOSQUITO_KING_TRIGGER_CAVEAT =
   'Reported - Mosquito King\'s spawn is an on-hit effect: the partner\'s screen-wide/AOE damage does not trigger it, so the fused ball spawns mosquitoes only from its own direct hits, not per AOE tick.';
 
 /** Corpus contradiction note for a disputed kill cross-wire (CONTRADICTIONS.md
  *  §10e). */
-export const DISPUTED_KILL_CAVEAT =
+const DISPUTED_KILL_CAVEAT =
   'Corpus contradiction — reports disagree on whether the instant kill fires from the partner\'s hits here (see docs/research/fusion-observations/CONTRADICTIONS.md).';
 
 // ---------- the reported-fact table ----------

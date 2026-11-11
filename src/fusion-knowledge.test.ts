@@ -1,6 +1,8 @@
-// Fusion-knowledge invariants — the evidence tables behind the composer.
-// The corpus's general_rules_notes are the fixture: every class a note
-// describes is either encoded by a table/predicate here or explicitly listed
+// Fusion-knowledge invariants — the evidence behind the composer, tested at
+// the questions callers ask: how a ball applies its effects, whether one
+// component's channel carries the other's, and which reported facts a pair
+// triggers. The corpus's general_rules_notes are the fixture: every class a
+// note describes is either encoded behind this interface or explicitly listed
 // as out of scope, so a new note forces a decision.
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -8,154 +10,31 @@ import { BALLS } from './data/balls';
 import { ballMap } from './catalog';
 import { BALL_KIT } from './ball-kit';
 import {
-  AOE_EXCLUDED_IDS,
-  ASSASSIN_BACK_ARMOR_CAVEAT,
-  BASE_BALL_IDS,
-  BASE_BALL_POOL_CAVEAT,
-  BROOD_MOTHER_FLASH_REPORT_FRAGMENT,
-  BROOD_MOTHER_INHERITANCE_CAVEAT,
-  BROOD_MOTHER_TRIGGER_CAVEAT,
-  CHANNEL_OVERRIDES,
-  COOLDOWN_CLASS_IDS,
-  DARK_MULTIPLIER_CAVEAT,
-  DESTROY_CLASS_IDS,
-  DESTROY_PAIR_CAVEAT,
-  DISPUTED_KILL_CAVEAT,
-  EGG_SAC_INHERITANCE_CAVEAT,
-  FREEZE_RAY_SUN_CAVEAT,
   FUSION_FACTS,
-  HIT_ONCE_CAVEAT,
-  KILL_DISPUTED_PAIRS,
-  KILL_EFFECT_IDS,
-  MOSQUITO_KING_TRIGGER_CAVEAT,
-  ON_DAMAGE_STATUS_IDS,
-  PIERCE_IDS,
-  SPAWN_BOUND_IDS,
-  SPAWN_COMPENSATES_DESTROY_CAVEAT,
-  SPAWN_NO_INHERITANCE_IDS,
-  SPAWN_STATUS_ONLY_IDS,
-  WARP_PASS_THROUGH_CAVEAT,
-  aoeRank,
+  canCarry,
+  canCarryKill,
+  canInheritSpawn,
   channelsOf,
   factsFor,
-  channelOverride,
-  isAoeExcluded,
-  isCooldownClass,
-  isDamageRidingStatus,
-  isDestroyClass,
-  isDisputedKillPair,
-  isKillEffect,
-  isPierce,
-  isSpawnBound,
-  isStatusOnlySpawner,
-  spawnable,
   statusChannel,
+  wireFor,
   type CaveatContext,
   type Channel,
   type StatusChannel,
 } from './fusion-knowledge';
 
 const ball = (id: string) => ballMap.get(id)!;
+const ctx = (over: Partial<CaveatContext> = {}): CaveatContext =>
+  ({ spawnerId: null, disputed: false, ...over });
 
-const TABLES: Record<string, ReadonlySet<string>> = {
-  DESTROY_CLASS_IDS,
-  COOLDOWN_CLASS_IDS,
-  PIERCE_IDS,
-  KILL_EFFECT_IDS,
-  SPAWN_BOUND_IDS,
-  ON_DAMAGE_STATUS_IDS,
-  SPAWN_NO_INHERITANCE_IDS,
-  SPAWN_STATUS_ONLY_IDS,
-  AOE_EXCLUDED_IDS,
-  BASE_BALL_IDS,
+/** The table's note text for a fact id, evaluated with the same context the
+ *  composer passes. Tests assert which facts fire and in what order; the copy
+ *  itself stays in the one table. */
+const noteOf = (id: string, a: string, b: string, c = ctx()): string => {
+  const fact = FUSION_FACTS.find((f) => f.id === id);
+  if (!fact || fact.kind !== 'note') throw new Error(`missing note fact: ${id}`);
+  return typeof fact.note === 'function' ? fact.note(ball(a), ball(b), c) : fact.note;
 };
-
-describe('knowledge tables', () => {
-  it('every id resolves in the ball catalog', () => {
-    for (const [name, ids] of Object.entries(TABLES)) {
-      for (const id of ids) expect(ballMap.has(id), `${name}: ${id}`).toBe(true);
-    }
-    for (const id of Object.keys(CHANNEL_OVERRIDES)) expect(ballMap.has(id), `CHANNEL_OVERRIDES: ${id}`).toBe(true);
-    for (const id of Object.keys(BALL_KIT)) expect(ballMap.has(id), `BALL_KIT: ${id}`).toBe(true);
-    for (const key of KILL_DISPUTED_PAIRS) {
-      for (const id of key.split('+')) expect(ballMap.has(id), `KILL_DISPUTED_PAIRS: ${id}`).toBe(true);
-    }
-  });
-
-  it('tables are Sets (duplicates collapse at construction) and the spawn classes stay disjoint', () => {
-    for (const [name, ids] of Object.entries(TABLES)) {
-      // A duplicate id cannot survive a Set literal; asserting the container
-      // type documents the invariant the exported tables rely on.
-      expect(ids, `${name} must be a Set`).toBeInstanceOf(Set);
-      expect([...ids], `${name} yielded duplicate ids`).toHaveLength(ids.size);
-    }
-    // A carrier cannot be both hard-excluded from inheritance and status-only.
-    for (const id of SPAWN_NO_INHERITANCE_IDS) expect(SPAWN_STATUS_ONLY_IDS.has(id)).toBe(false);
-  });
-
-  it('BASE_BALL_IDS is exactly the depth-0 set', () => {
-    const depthZero = BALLS.filter((b) => b.depth === 0).map((b) => b.id).sort();
-    expect([...BASE_BALL_IDS].sort()).toEqual(depthZero);
-    // The corpus note names these base balls explicitly.
-    for (const id of ['wind', 'egg-sac', 'brood-mother', 'burn', 'cell']) expect(BASE_BALL_IDS.has(id)).toBe(true);
-  });
-
-  it('predicates match their tables for every catalog ball', () => {
-    for (const b of BALLS) {
-      expect(isDestroyClass(b)).toBe(DESTROY_CLASS_IDS.has(b.id));
-      expect(isCooldownClass(b)).toBe(COOLDOWN_CLASS_IDS.has(b.id));
-      expect(isPierce(b)).toBe(PIERCE_IDS.has(b.id));
-      expect(isKillEffect(b)).toBe(KILL_EFFECT_IDS.has(b.id));
-      expect(isStatusOnlySpawner(b)).toBe(SPAWN_STATUS_ONLY_IDS.has(b.id));
-      expect(isAoeExcluded(b)).toBe(AOE_EXCLUDED_IDS.has(b.id));
-      expect(isDamageRidingStatus(b)).toBe(ON_DAMAGE_STATUS_IDS.has(b.id));
-      expect(channelOverride(b)).toBe(CHANNEL_OVERRIDES[b.id]);
-    }
-  });
-
-  it('KILL_DISPUTED_PAIRS is unordered', () => {
-    for (const key of KILL_DISPUTED_PAIRS) {
-      const [x, y] = key.split('+');
-      expect(isDisputedKillPair(ball(x), ball(y))).toBe(true);
-      expect(isDisputedKillPair(ball(y), ball(x))).toBe(true);
-    }
-    expect(isDisputedKillPair(ball('flicker'), ball('reaper'))).toBe(true);
-    expect(isDisputedKillPair(ball('reaper'), ball('flicker'))).toBe(true);
-    expect(isDisputedKillPair(ball('flash'), ball('reaper'))).toBe(false);
-  });
-});
-
-describe('classification predicates', () => {
-  it('statusChannel is the wire projection of the one classifier', () => {
-    expect(statusChannel(ball('blizzard'))).toBe('spawn'); // explicit evidence
-    expect(statusChannel(ball('glacier'))).toBe('spawn'); // text: spikes
-    expect(statusChannel(ball('berserk'))).toBe('hit'); // override beats "every second"
-    expect(statusChannel(ball('sun'))).toBe('field'); // per-second + field
-    expect(statusChannel(ball('flash'))).toBe('hit');
-    expect(statusChannel(ball('timestop'))).toBe('field'); // evidence beats the hit default
-    expect(statusChannel(ball('iron'))).toBeNull(); // not a status ball
-  });
-
-  it('isSpawnBound covers the id exception and the text heuristic', () => {
-    expect(isSpawnBound(ball('blizzard'))).toBe(true); // SPAWN_BOUND_IDS
-    expect(isSpawnBound(ball('glacier'))).toBe(true); // text: spikes
-    expect(isSpawnBound(ball('flash'))).toBe(false);
-    expect(isSpawnBound(ball('sun'))).toBe(false);
-  });
-
-  it('spawnable admits status-only carriers but not the two-hop exclusion', () => {
-    expect(spawnable(ball('cell'))).toBe(true);
-    expect(spawnable(ball('brood-mother'))).toBe(true);
-    expect(spawnable(ball('voluptuous-egg-sac'))).toBe(false);
-    expect(spawnable(ball('flash'))).toBe(false);
-  });
-
-  it('aoeRank orders screen-clear above aoe above none', () => {
-    expect(aoeRank(ball('flash'))).toBe(2);
-    expect(aoeRank(ball('glacier'))).toBe(1);
-    expect(aoeRank(ball('iron'))).toBe(0);
-  });
-});
 
 describe('one application-channel classification per ball', () => {
   // Golden classification: a future level-3 text edit must not silently
@@ -230,12 +109,168 @@ describe('one application-channel classification per ball', () => {
       expect(statusChannel(b), b.id).toBe(expected);
     }
   });
+
+  it('classifies the representative balls the wire model depends on', () => {
+    expect(statusChannel(ball('blizzard'))).toBe('spawn'); // explicit evidence
+    expect(statusChannel(ball('glacier'))).toBe('spawn'); // text: spikes
+    expect(statusChannel(ball('berserk'))).toBe('hit'); // override beats "every second"
+    expect(statusChannel(ball('sun'))).toBe('field'); // per-second + field
+    expect(statusChannel(ball('flash'))).toBe('hit');
+    expect(statusChannel(ball('timestop'))).toBe('field'); // evidence beats the hit default
+    expect(statusChannel(ball('iron'))).toBeNull(); // not a status ball
+  });
+});
+
+describe('capability queries', () => {
+  it('canCarry: an AOE carrier applies on-hit statuses, with the field-aura limit', () => {
+    expect(canCarry(ball('flash'), ball('overgrowth'))).toBe(true);
+    // Sun's field aura carries the corpus-evidenced damage-riding statuses…
+    expect(canCarry(ball('sun'), ball('overgrowth'))).toBe(true);
+    // …but not a status bound to the hit event (Freeze Ray × Sun).
+    expect(canCarry(ball('sun'), ball('poison'))).toBe(false);
+    // Satan is excluded as a status carrier; Iron is not AOE.
+    expect(canCarry(ball('satan'), ball('hemorrhage'))).toBe(false);
+    expect(canCarry(ball('iron'), ball('poison'))).toBe(false);
+  });
+
+  it('canInheritSpawn: VES drops the property; status-only carriers skip spawn-bound traits', () => {
+    expect(canInheritSpawn(ball('maggot'), ball('overgrowth'))).toBe(true);
+    expect(canInheritSpawn(ball('brood-mother'), ball('flash'))).toBe(true);
+    expect(canInheritSpawn(ball('brood-mother'), ball('glacier'))).toBe(false);
+    expect(canInheritSpawn(ball('voluptuous-egg-sac'), ball('overgrowth'))).toBe(false);
+    expect(canInheritSpawn(ball('cell'), ball('glacier'))).toBe(true);
+    // A partner with no status has nothing to inherit.
+    expect(canInheritSpawn(ball('cell'), ball('iron'))).toBe(false);
+  });
+
+  it('canCarryKill: a damage-dealing AOE carrier, with Satan allowed only for Black Hole', () => {
+    expect(canCarryKill(ball('sun'), ball('black-hole'))).toBe(true);
+    expect(canCarryKill(ball('satan'), ball('black-hole'))).toBe(true);
+    expect(canCarryKill(ball('satan'), ball('reaper'))).toBe(false);
+    expect(canCarryKill(ball('timestop'), ball('black-hole'))).toBe(false);
+    expect(canCarryKill(ball('iron'), ball('black-hole'))).toBe(false);
+  });
+});
+
+describe('wireFor (the cross-wire oracle)', () => {
+  it('spawn carrier + on-hit status: the spawned balls inherit the status (Overgrowth × Maggot)', () => {
+    const w = wireFor(ball('overgrowth'), ball('maggot'))!;
+    expect(w.kind).toBe('spawn-carries-status');
+    expect(w.carrier.id).toBe('maggot');
+    expect(w.status.id).toBe('overgrowth');
+    expect(w.spawnerId).toBe('maggot');
+    expect(w.disputed).toBe(false);
+  });
+
+  it('AOE carrier + on-hit status: the AOE hits apply the status (Overgrowth × Flash)', () => {
+    const w = wireFor(ball('flash'), ball('overgrowth'))!;
+    expect(w.kind).toBe('aoe-carries-status');
+    expect(w.carrier.id).toBe('flash');
+    expect(w.status.id).toBe('overgrowth');
+    expect(w.spawnerId).toBeNull();
+  });
+
+  it('AOE carrier + kill-on-hit: the AOE triggers the kill (Black Hole × Sun)', () => {
+    for (const w of [wireFor(ball('black-hole'), ball('sun')), wireFor(ball('sun'), ball('black-hole'))]) {
+      expect(w!.kind).toBe('aoe-carries-kill');
+      expect(w!.carrier.id).toBe('sun');
+      expect(w!.status.id).toBe('black-hole');
+      expect(w!.disputed).toBe(false);
+      expect(w!.spawnerId).toBeNull();
+    }
+  });
+
+  it('a corpus-disputed kill pair keeps the wire and flags disputed (Flicker × Reaper)', () => {
+    const w = wireFor(ball('flicker'), ball('reaper'))!;
+    expect(w.kind).toBe('aoe-carries-kill');
+    expect(w.disputed).toBe(true);
+  });
+
+  it('spawn carrier + spawn-bound status: the babies inherit the spawned effects (Cell × Glacier)', () => {
+    const w = wireFor(ball('cell'), ball('glacier'))!;
+    expect(w.kind).toBe('spawn-carries-spawn-status');
+    expect(w.carrier.id).toBe('cell');
+    expect(w.status.id).toBe('glacier');
+    expect(w.spawnerId).toBe('cell');
+  });
+
+  it('no wire when neither channel carries (Flash × Glacier, status × status)', () => {
+    expect(wireFor(ball('flash'), ball('glacier'))).toBeNull();
+    expect(wireFor(ball('freeze'), ball('poison'))).toBeNull();
+  });
+
+  it('the spawn branch outranks the AOE branch (Maggot × Flash wires as a spawn carrier)', () => {
+    // Both branches could fire: Maggot is a spawn carrier and Flash is an AOE
+    // carrier. Branch priority makes the spawn carrier win.
+    const w = wireFor(ball('maggot'), ball('flash'))!;
+    expect(w.kind).toBe('spawn-carries-status');
+    expect(w.carrier.id).toBe('maggot');
+  });
+
+  it('the AOE branch outranks the spawn-bound branch (Glacier × Maggot)', () => {
+    // Glacier is an AOE carrier and Maggot is an on-hit status ball, so the
+    // AOE branch fires before the spawn-bound branch can consider Maggot.
+    const w = wireFor(ball('glacier'), ball('maggot'))!;
+    expect(w.kind).toBe('aoe-carries-status');
+    expect(w.carrier.id).toBe('glacier');
+  });
+
+  it('is unordered: reversing the picks yields the same wire', () => {
+    for (const [a, b] of [
+      ['overgrowth', 'maggot'],
+      ['flash', 'overgrowth'],
+      ['black-hole', 'sun'],
+      ['flicker', 'reaper'],
+      ['cell', 'glacier'],
+    ]) {
+      const ab = wireFor(ball(a), ball(b));
+      const ba = wireFor(ball(b), ball(a));
+      expect(ab!.kind, `${a}+${b}`).toBe(ba!.kind);
+      expect(ab!.carrier.id, `${a}+${b}`).toBe(ba!.carrier.id);
+      expect(ab!.status.id, `${a}+${b}`).toBe(ba!.status.id);
+      expect(ab!.disputed, `${a}+${b}`).toBe(ba!.disputed);
+      expect(ab!.spawnerId, `${a}+${b}`).toBe(ba!.spawnerId);
+    }
+  });
+
+  it('corpus exclusions stay unwired', () => {
+    // VES's two-hop spawn chain drops the property.
+    expect(wireFor(ball('hemorrhage'), ball('voluptuous-egg-sac'))).toBeNull();
+    expect(wireFor(ball('nuclear-bomb'), ball('voluptuous-egg-sac'))).toBeNull();
+    // Sun's field aura does not apply Freeze Ray's freeze.
+    expect(wireFor(ball('freeze-ray'), ball('sun'))).toBeNull();
+    // A field-aura carrier cannot trigger an on-hit status (Sun × Poison).
+    expect(wireFor(ball('sun'), ball('poison'))).toBeNull();
+    // Status-only carriers do not inherit spawn-bound traits.
+    expect(wireFor(ball('brood-mother'), ball('glacier'))).toBeNull();
+    expect(wireFor(ball('mosquito-king'), ball('glacier'))).toBeNull();
+    // Timestop is a field effect, not an on-hit status carrier.
+    expect(wireFor(ball('bleed'), ball('timestop'))).toBeNull();
+    expect(wireFor(ball('cell'), ball('timestop'))).toBeNull();
+    // Blizzard's freeze stays icicle-bound.
+    expect(wireFor(ball('blizzard'), ball('flash'))).toBeNull();
+  });
+
+  it('positive controls keep wiring', () => {
+    expect(wireFor(ball('flash'), ball('freeze-ray'))).not.toBeNull();
+    expect(wireFor(ball('flash'), ball('berserk'))).not.toBeNull();
+    expect(wireFor(ball('brood-mother'), ball('flash'))).not.toBeNull();
+    expect(wireFor(ball('mosquito-king'), ball('virus'))).not.toBeNull();
+    expect(wireFor(ball('blizzard'), ball('spider-queen'))).not.toBeNull();
+    expect(wireFor(ball('black-hole'), ball('flash'))).not.toBeNull();
+    expect(wireFor(ball('reaper'), ball('flash'))).not.toBeNull();
+    expect(wireFor(ball('armageddon'), ball('reaper'))).not.toBeNull();
+    expect(wireFor(ball('black-hole'), ball('satan'))).not.toBeNull();
+  });
+
+  it('the kill branch requires a real damage-dealing AOE carrier', () => {
+    expect(wireFor(ball('iron'), ball('reaper'))).toBeNull();
+    expect(wireFor(ball('timestop'), ball('reaper'))).toBeNull();
+    expect(wireFor(ball('reaper'), ball('satan'))).toBeNull();
+  });
 });
 
 describe('reported-fact table (one home for caveats and exceptions)', () => {
-  const ctx = (over: Partial<CaveatContext> = {}): CaveatContext =>
-    ({ spawnerId: null, disputed: false, ...over });
-
   it('fact ids are unique and every exception carries source and confidence', () => {
     const ids = FUSION_FACTS.map((f) => f.id);
     expect(new Set(ids).size, 'duplicate fact id').toBe(ids.length);
@@ -249,49 +284,67 @@ describe('reported-fact table (one home for caveats and exceptions)', () => {
   it('class caveats fire from predicates, not pair names', () => {
     // A base ball adds the pool note first (table order).
     expect(factsFor(ball('dark'), ball('flash'), ctx()).notes)
-      .toEqual([BASE_BALL_POOL_CAVEAT, DARK_MULTIPLIER_CAVEAT]);
+      .toEqual([noteOf('base-ball-pool-recursion', 'dark', 'flash'), noteOf('dark-multiplier', 'dark', 'flash')]);
     expect(factsFor(ball('assassin'), ball('ghost'), ctx()).notes)
-      .toEqual([BASE_BALL_POOL_CAVEAT, ASSASSIN_BACK_ARMOR_CAVEAT]);
+      .toEqual([noteOf('base-ball-pool-recursion', 'assassin', 'ghost'), noteOf('assassin-back-armor-wins', 'assassin', 'ghost')]);
     expect(factsFor(ball('warp'), ball('ghost'), ctx()).notes)
-      .toEqual([BASE_BALL_POOL_CAVEAT, WARP_PASS_THROUGH_CAVEAT]);
+      .toEqual([noteOf('base-ball-pool-recursion', 'warp', 'ghost'), noteOf('warp-cast-before-pass-through', 'warp', 'ghost')]);
     expect(factsFor(ball('bomb'), ball('dark'), ctx()).notes)
-      .toEqual([BASE_BALL_POOL_CAVEAT, DARK_MULTIPLIER_CAVEAT, DESTROY_PAIR_CAVEAT]);
+      .toEqual([
+        noteOf('base-ball-pool-recursion', 'bomb', 'dark'),
+        noteOf('dark-multiplier', 'bomb', 'dark'),
+        noteOf('destroy-pair-may-lose-one-effect', 'bomb', 'dark'),
+      ]);
     expect(factsFor(ball('black-hole'), ball('ghost'), ctx()).notes)
-      .toEqual([BASE_BALL_POOL_CAVEAT, HIT_ONCE_CAVEAT]);
+      .toEqual([noteOf('base-ball-pool-recursion', 'black-hole', 'ghost'), noteOf('hit-once-dominates-pass-through', 'black-hole', 'ghost')]);
     expect(factsFor(ball('bomb'), ball('cell'), ctx()).notes)
-      .toEqual([BASE_BALL_POOL_CAVEAT, SPAWN_COMPENSATES_DESTROY_CAVEAT]);
+      .toEqual([noteOf('base-ball-pool-recursion', 'bomb', 'cell'), noteOf('spawn-compensates-destroy', 'bomb', 'cell')]);
   });
 
   it('the base-ball pool note is class-driven and order-independent', () => {
-    expect(factsFor(ball('wraith'), ball('burn'), ctx()).notes).toEqual([BASE_BALL_POOL_CAVEAT]);
-    expect(factsFor(ball('burn'), ball('wraith'), ctx()).notes).toEqual([BASE_BALL_POOL_CAVEAT]);
+    expect(factsFor(ball('wraith'), ball('burn'), ctx()).notes)
+      .toEqual([noteOf('base-ball-pool-recursion', 'wraith', 'burn')]);
+    expect(factsFor(ball('burn'), ball('wraith'), ctx()).notes)
+      .toEqual([noteOf('base-ball-pool-recursion', 'burn', 'wraith')]);
     // Egg Sac is also a cooldown ball and Wraith is pass-through: table order
     // puts the pool note first, the hit-once caveat second.
     expect(factsFor(ball('wraith'), ball('egg-sac'), ctx()).notes)
-      .toEqual([BASE_BALL_POOL_CAVEAT, HIT_ONCE_CAVEAT]);
+      .toEqual([noteOf('base-ball-pool-recursion', 'wraith', 'egg-sac'), noteOf('hit-once-dominates-pass-through', 'wraith', 'egg-sac')]);
     expect(factsFor(ball('flash'), ball('glacier'), ctx()).notes).toEqual([]);
   });
 
   it('the Freeze Ray × Sun direction is a table row', () => {
-    expect(factsFor(ball('freeze-ray'), ball('sun'), ctx()).notes).toEqual([FREEZE_RAY_SUN_CAVEAT]);
-    expect(factsFor(ball('sun'), ball('freeze-ray'), ctx()).notes).toEqual([FREEZE_RAY_SUN_CAVEAT]);
+    expect(factsFor(ball('freeze-ray'), ball('sun'), ctx()).notes)
+      .toEqual([noteOf('freeze-ray-sun-direction', 'freeze-ray', 'sun')]);
+    expect(factsFor(ball('sun'), ball('freeze-ray'), ctx()).notes)
+      .toEqual([noteOf('freeze-ray-sun-direction', 'sun', 'freeze-ray')]);
   });
 
   it('spawn-inheritance caveats read the wire context', () => {
     expect(factsFor(ball('brood-mother'), ball('flash'), ctx({ spawnerId: 'brood-mother' })).notes)
-      .toEqual([BASE_BALL_POOL_CAVEAT, BROOD_MOTHER_INHERITANCE_CAVEAT, `${BROOD_MOTHER_TRIGGER_CAVEAT}.`]);
+      .toEqual([
+        noteOf('base-ball-pool-recursion', 'brood-mother', 'flash'),
+        noteOf('brood-mother-inheritance', 'brood-mother', 'flash', ctx({ spawnerId: 'brood-mother' })),
+        noteOf('brood-mother-trigger-limit', 'brood-mother', 'flash', ctx({ spawnerId: 'brood-mother' })),
+      ]);
     // No inheritance wire: the trigger caveat carries the Flash sentence.
     expect(factsFor(ball('brood-mother'), ball('sun'), ctx()).notes)
-      .toEqual([BASE_BALL_POOL_CAVEAT, `${BROOD_MOTHER_TRIGGER_CAVEAT}; ${BROOD_MOTHER_FLASH_REPORT_FRAGMENT}`]);
+      .toEqual([
+        noteOf('base-ball-pool-recursion', 'brood-mother', 'sun'),
+        noteOf('brood-mother-trigger-limit', 'brood-mother', 'sun'),
+      ]);
     expect(factsFor(ball('egg-sac'), ball('glacier'), ctx({ spawnerId: 'egg-sac' })).notes)
-      .toEqual([BASE_BALL_POOL_CAVEAT, EGG_SAC_INHERITANCE_CAVEAT]);
+      .toEqual([
+        noteOf('base-ball-pool-recursion', 'egg-sac', 'glacier'),
+        noteOf('egg-sac-inheritance', 'egg-sac', 'glacier', ctx({ spawnerId: 'egg-sac' })),
+      ]);
     expect(factsFor(ball('mosquito-king'), ball('glacier'), ctx()).notes)
-      .toEqual([MOSQUITO_KING_TRIGGER_CAVEAT]);
+      .toEqual([noteOf('mosquito-king-trigger-limit', 'mosquito-king', 'glacier')]);
   });
 
   it('the disputed kill note reads the wire context', () => {
     expect(factsFor(ball('flicker'), ball('reaper'), ctx({ disputed: true })).notes)
-      .toEqual([DISPUTED_KILL_CAVEAT]);
+      .toEqual([noteOf('disputed-kill-wire', 'flicker', 'reaper', ctx({ disputed: true }))]);
     expect(factsFor(ball('flicker'), ball('reaper'), ctx()).notes).toEqual([]);
   });
 
@@ -321,27 +374,34 @@ describe('corpus general_rules_notes coverage', () => {
     readFileSync(new URL('../docs/research/fusion-observations/fusion-pairs.json', import.meta.url), 'utf8'),
   ) as { general_rules_notes: Record<string, unknown> };
 
-  /** Notes whose class a knowledge table, fact row, or predicate encodes.
-   *  Each check names the ids the note calls out, so a table that drifted
-   *  would fail. */
+  /** Notes whose class a knowledge table, fact row, or wire branch encodes.
+   *  Each check exercises the public behavior the note calls out, so a table
+   *  that drifted would fail. */
   const FACT_IDS = new Set(FUSION_FACTS.map((f) => f.id));
   const ENCODED_CLASSES: Record<string, () => boolean> = {
     // "If one component is a BASE ball (Wind, Egg Sac, Brood Mother, Burn,
     // Cell, etc.)…"
     'base-ball-pool-recursion': () =>
       FACT_IDS.has('base-ball-pool-recursion') &&
-      ['wind', 'egg-sac', 'brood-mother', 'burn', 'cell'].every((id) => BASE_BALL_IDS.has(id)),
+      ['wind', 'egg-sac', 'brood-mother', 'burn', 'cell'].every((id) =>
+        factsFor(ball(id), ball('flash'), ctx()).notes
+          .includes(noteOf('base-ball-pool-recursion', id, 'flash'))),
     // "the composer's PIERCE_IDS follows the fact base plus Sandstorm."
     'pass-through-catalog': () =>
       ['ghost', 'wind', 'drill', 'erosion', 'noxious', 'sandstorm', 'sniper', 'soul-sucker', 'wraith', 'assassin']
-        .every((id) => PIERCE_IDS.has(id)),
+        .every((id) => factsFor(ball('black-hole'), ball(id), ctx()).notes
+          .includes(noteOf('hit-once-dominates-pass-through', 'black-hole', id))),
     // "When two self-destruct balls are fused, one of their explosion/
     // self-destruct effects may be lost."
     'destroy-pair-may-lose-one-effect': () =>
-      FACT_IDS.has('destroy-pair-may-lose-one-effect') && isDestroyClass(ball('bomb')) && isDestroyClass(ball('dark')),
+      FACT_IDS.has('destroy-pair-may-lose-one-effect') &&
+      factsFor(ball('bomb'), ball('dark'), ctx()).notes
+        .includes(noteOf('destroy-pair-may-lose-one-effect', 'bomb', 'dark')),
     // "Cell(Clone) x Bomb(Destroy) is an indestructible bomb…"
     'spawn-compensates-destroy': () =>
-      FACT_IDS.has('spawn-compensates-destroy') && isDestroyClass(ball('bomb')) && spawnable(ball('cell')),
+      FACT_IDS.has('spawn-compensates-destroy') &&
+      factsFor(ball('bomb'), ball('cell'), ctx()).notes
+        .includes(noteOf('spawn-compensates-destroy', 'bomb', 'cell')),
   };
 
   /** Notes about the corpus's limits or the order model, not a ball class. */

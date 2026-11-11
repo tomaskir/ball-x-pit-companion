@@ -2,22 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { fusionName, abstractDamage, crossWire, evolvesInstead, fuse } from './fusion';
 import { ballMap } from './catalog';
-import {
-  ASSASSIN_BACK_ARMOR_CAVEAT,
-  BASE_BALL_POOL_CAVEAT,
-  BROOD_MOTHER_FLASH_REPORT_FRAGMENT,
-  BROOD_MOTHER_INHERITANCE_CAVEAT,
-  BROOD_MOTHER_TRIGGER_CAVEAT,
-  DARK_MULTIPLIER_CAVEAT,
-  DESTROY_PAIR_CAVEAT,
-  DISPUTED_KILL_CAVEAT,
-  EGG_SAC_INHERITANCE_CAVEAT,
-  FREEZE_RAY_SUN_CAVEAT,
-  HIT_ONCE_CAVEAT,
-  MOSQUITO_KING_TRIGGER_CAVEAT,
-  SPAWN_COMPENSATES_DESTROY_CAVEAT,
-  WARP_PASS_THROUGH_CAVEAT,
-} from './fusion-knowledge';
+import { FUSION_FACTS, type CaveatContext } from './fusion-knowledge';
 import {
   expectBerserkIsOnHitStatus,
   expectBlackHoleSunOrderIndependent,
@@ -38,6 +23,15 @@ import {
 } from './test-support/pins';
 
 const ball = (id: string) => ballMap.get(id)!;
+const ctx = (over: Partial<CaveatContext> = {}): CaveatContext =>
+  ({ spawnerId: null, disputed: false, ...over });
+/** The table's note text for a fact id, evaluated with the composer's context.
+ *  Tests pin which facts fire and their order; the copy stays in the table. */
+const noteOf = (id: string, a: string, b: string, c = ctx()): string => {
+  const fact = FUSION_FACTS.find((f) => f.id === id);
+  if (!fact || fact.kind !== 'note') throw new Error(`missing note fact: ${id}`);
+  return typeof fact.note === 'function' ? fact.note(ball(a), ball(b), c) : fact.note;
+};
 
 describe('fusionName', () => {
   it('is "A × B" with the first-selected ball first (site display; English game name is "A X B")', () => {
@@ -498,46 +492,85 @@ describe('reported facts live in one evidence table (C1)', () => {
 
   it('pins each moved fact and its position in the note order', () => {
     // Dark's multiplier
-    expect(notes('dark', 'flash')).toEqual([DISCLAIMER, BASE_BALL_POOL_CAVEAT, DARK_MULTIPLIER_CAVEAT]);
+    expect(notes('dark', 'flash')).toEqual([
+      DISCLAIMER,
+      noteOf('base-ball-pool-recursion', 'dark', 'flash'),
+      noteOf('dark-multiplier', 'dark', 'flash'),
+    ]);
     // Assassin's back-armor priority
-    expect(notes('assassin', 'ghost')).toEqual([DISCLAIMER, BASE_BALL_POOL_CAVEAT, ASSASSIN_BACK_ARMOR_CAVEAT]);
+    expect(notes('assassin', 'ghost')).toEqual([
+      DISCLAIMER,
+      noteOf('base-ball-pool-recursion', 'assassin', 'ghost'),
+      noteOf('assassin-back-armor-wins', 'assassin', 'ghost'),
+    ]);
     // Warp's cast order
-    expect(notes('warp', 'ghost')).toEqual([DISCLAIMER, BASE_BALL_POOL_CAVEAT, WARP_PASS_THROUGH_CAVEAT]);
+    expect(notes('warp', 'ghost')).toEqual([
+      DISCLAIMER,
+      noteOf('base-ball-pool-recursion', 'warp', 'ghost'),
+      noteOf('warp-cast-before-pass-through', 'warp', 'ghost'),
+    ]);
     // Freeze Ray × Sun direction
-    expect(notes('freeze-ray', 'sun')).toEqual([DISCLAIMER, FREEZE_RAY_SUN_CAVEAT]);
+    expect(notes('freeze-ray', 'sun')).toEqual([
+      DISCLAIMER,
+      noteOf('freeze-ray-sun-direction', 'freeze-ray', 'sun'),
+    ]);
     // Destroy pair, with Dark's multiplier first (table order)
-    expect(notes('bomb', 'dark')).toEqual([DISCLAIMER, BASE_BALL_POOL_CAVEAT, DARK_MULTIPLIER_CAVEAT, DESTROY_PAIR_CAVEAT]);
+    expect(notes('bomb', 'dark')).toEqual([
+      DISCLAIMER,
+      noteOf('base-ball-pool-recursion', 'bomb', 'dark'),
+      noteOf('dark-multiplier', 'bomb', 'dark'),
+      noteOf('destroy-pair-may-lose-one-effect', 'bomb', 'dark'),
+    ]);
     // Hit-once dominates pass-through
-    expect(notes('black-hole', 'ghost')).toEqual([DISCLAIMER, BASE_BALL_POOL_CAVEAT, HIT_ONCE_CAVEAT]);
+    expect(notes('black-hole', 'ghost')).toEqual([
+      DISCLAIMER,
+      noteOf('base-ball-pool-recursion', 'black-hole', 'ghost'),
+      noteOf('hit-once-dominates-pass-through', 'black-hole', 'ghost'),
+    ]);
     // Spawn compensates Destroy
-    expect(notes('bomb', 'cell')).toEqual([DISCLAIMER, BASE_BALL_POOL_CAVEAT, SPAWN_COMPENSATES_DESTROY_CAVEAT]);
+    expect(notes('bomb', 'cell')).toEqual([
+      DISCLAIMER,
+      noteOf('base-ball-pool-recursion', 'bomb', 'cell'),
+      noteOf('spawn-compensates-destroy', 'bomb', 'cell'),
+    ]);
     // Base-ball pool recursion
-    expect(notes('wraith', 'burn')).toEqual([DISCLAIMER, BASE_BALL_POOL_CAVEAT]);
+    expect(notes('wraith', 'burn')).toEqual([
+      DISCLAIMER,
+      noteOf('base-ball-pool-recursion', 'wraith', 'burn'),
+    ]);
   });
 
   it('pins the spawn-inheritance facts (Brood Mother, Egg Sac, Mosquito King)', () => {
+    const bm = ctx({ spawnerId: 'brood-mother' });
     expect(notes('brood-mother', 'flash')).toEqual([
       DISCLAIMER,
-      BASE_BALL_POOL_CAVEAT,
-      BROOD_MOTHER_INHERITANCE_CAVEAT,
-      `${BROOD_MOTHER_TRIGGER_CAVEAT}.`,
+      noteOf('base-ball-pool-recursion', 'brood-mother', 'flash'),
+      noteOf('brood-mother-inheritance', 'brood-mother', 'flash', bm),
+      noteOf('brood-mother-trigger-limit', 'brood-mother', 'flash', bm),
     ]);
     // No inheritance wire: the trigger caveat carries the Flash sentence.
     expect(notes('brood-mother', 'sun')).toEqual([
       DISCLAIMER,
-      BASE_BALL_POOL_CAVEAT,
-      `${BROOD_MOTHER_TRIGGER_CAVEAT}; ${BROOD_MOTHER_FLASH_REPORT_FRAGMENT}`,
+      noteOf('base-ball-pool-recursion', 'brood-mother', 'sun'),
+      noteOf('brood-mother-trigger-limit', 'brood-mother', 'sun'),
     ]);
+    const es = ctx({ spawnerId: 'egg-sac' });
     expect(notes('egg-sac', 'hemorrhage')).toEqual([
       DISCLAIMER,
-      BASE_BALL_POOL_CAVEAT,
-      EGG_SAC_INHERITANCE_CAVEAT,
+      noteOf('base-ball-pool-recursion', 'egg-sac', 'hemorrhage'),
+      noteOf('egg-sac-inheritance', 'egg-sac', 'hemorrhage', es),
     ]);
-    expect(notes('mosquito-king', 'glacier')).toEqual([DISCLAIMER, MOSQUITO_KING_TRIGGER_CAVEAT]);
+    expect(notes('mosquito-king', 'glacier')).toEqual([
+      DISCLAIMER,
+      noteOf('mosquito-king-trigger-limit', 'mosquito-king', 'glacier'),
+    ]);
   });
 
   it('pins the disputed kill note', () => {
-    expect(notes('flicker', 'reaper')).toEqual([DISCLAIMER, DISPUTED_KILL_CAVEAT]);
+    expect(notes('flicker', 'reaper')).toEqual([
+      DISCLAIMER,
+      noteOf('disputed-kill-wire', 'flicker', 'reaper', ctx({ disputed: true })),
+    ]);
   });
 
   it('pins the reported exceptions', () => {
