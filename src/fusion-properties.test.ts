@@ -46,6 +46,25 @@ describe('resolveProperties', () => {
     expect(r.collisions).toEqual([]);
   });
 
+  it('table-driven: shared scalar keys resolve to the first pick', () => {
+    const cases = [
+      { a: 'egg-sac', b: 'timestop', key: 'cooldown', winner: 'egg-sac', value: '3 second', loser: 'timestop', loserValue: '20 second' },
+      { a: 'banished-flame', b: 'sun', key: 'burn-max-stacks', winner: 'banished-flame', value: 'max 8 stacks', loser: 'sun', loserValue: 'max 5 stacks' },
+      { a: 'erosion', b: 'stone', key: 'bonus-damage', winner: 'erosion', value: '5%', loser: 'stone', loserValue: '400%' },
+      { a: 'mosquito-swarm', b: 'mosquito-king', key: 'mosquito-spawn', winner: 'mosquito-swarm', value: '4–8 mosquitos', loser: 'mosquito-king', loserValue: 'a mosquito' },
+      { a: 'radiation-beam', b: 'nuclear-bomb', key: 'radiation-duration', winner: 'radiation-beam', value: '15 seconds', loser: 'nuclear-bomb', loserValue: 'indefinitely' },
+      { a: 'noxious', b: 'poison', key: 'poison-max-stacks', winner: 'noxious', value: '3 stacks', loser: 'poison', loserValue: 'max 8 stacks' },
+      { a: 'leech', b: 'sacrifice', key: 'bleed-max-stacks', winner: 'leech', value: 'max 48 stacks', loser: 'sacrifice', loserValue: 'max 20 stacks' },
+    ];
+    for (const c of cases) {
+      expect(resolveProperties(ball(c.a), ball(c.b)).collisions, `${c.a} × ${c.b}`).toContainEqual(
+        expect.objectContaining({
+          key: c.key, winner: c.winner, value: c.value, loser: c.loser, loserValue: c.loserValue,
+        }),
+      );
+    }
+  });
+
   it('a shared scalar key resolves to the first pick', () => {
     const ab = resolveProperties(ball('egg-sac'), ball('timestop'));
     expect(ab.collisions).toEqual([{

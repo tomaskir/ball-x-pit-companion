@@ -1,16 +1,18 @@
 #!/usr/bin/env node
 /**
- * Parses docs/research/game-mechanics.md (research fact base) into
- * src/data/{balls,passives,characters}.ts. Run: node scripts/parse-wiki.ts
+ * Parses the hand-maintained fact bases into src/data/parsed.json, which
+ * emit-data.ts turns into the generated data files. Run:
+ *   node --experimental-strip-types scripts/parse-wiki.ts
  *
- * Effect text is taken verbatim from the wiki tables. Tags are assigned
- * from the proposed synergy vocabulary (section 4 of the fact base),
- * derived from each entity's on-hit/status/effect columns.
- *
- * Also parses docs/research/character-pairings.md (Matchmaker pairing
- * restrictions — game data, see that file for sources) into each
- * character's `cannotPair` (list of character names; `*all*` expands to
- * every other character).
+ * Inputs:
+ * - docs/research/game-mechanics.md — balls, passives, characters. Effect
+ *   text is taken verbatim from the wiki tables.
+ * - docs/research/character-pairings.md — the Matchmaker pairing
+ *   restrictions (game data, see that file for sources) into each
+ *   character's `cannotPair` (list of character names; `*all*` expands to
+ *   every other character).
+ * - docs/research/level-3-effects.md — level-3 effect text for the fusion
+ *   composer (`level3`; Baby Ball has no per-level table and is omitted).
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { slug } from './slug.ts';

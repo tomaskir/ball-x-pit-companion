@@ -82,11 +82,14 @@ const SPAWN_BOUND_IDS = new Set(['blizzard']);
  *  not a field aura — the "every second" phrase describes the berserk
  *  debuff's tick. */
 const CHANNEL_OVERRIDES: Record<string, StatusChannel> = { berserk: 'hit' };
-/** Statuses applied on the hit event only. An on-timer/field-aura carrier
- *  cannot trigger them (trigger matrix: AOE = On-Hit NO / On-Damage YES /
- *  On-Timer NO). Freeze Ray's freeze is the evidenced case: Flash's on-hit
- *  AOE applies it; Sun's field aura does not (corpus freeze-ray+sun). */
-const ON_HIT_ONLY_STATUS_IDS = new Set(['freeze-ray']);
+/** Statuses the corpus shows a field-aura carrier applying. The trigger
+ *  matrix says AOE applies statuses on the damage event, not the hit event,
+ *  so a field aura (on-timer) can carry damage-riding statuses but not
+ *  statuses bound to a hit. These four are the corpus-evidenced
+ *  damage-riding set (Sun × Overgrowth/Virus/Hemorrhage/Succubus). Every
+ *  other on-hit status is blocked for a field-aura carrier — Freeze Ray's
+ *  freeze is the evidenced negative (Sun × Freeze Ray). */
+const ON_DAMAGE_STATUS_IDS = new Set(['overgrowth', 'virus', 'hemorrhage', 'succubus']);
 /** Spawn carriers whose spawned balls do NOT inherit the partner's property
  *  (corpus): Voluptuous Egg Sac spawns Egg Sacs that spawn balls — the
  *  property drops at the second hop (Steam, playtest-confirmed by posters).
@@ -173,10 +176,11 @@ export function crossWire(a: Ball, b: Ball): CrossWireResult {
   const aoeCarrier = (b: Ball) => rank(b) > 0 && !AOE_EXCLUDED_IDS.has(b.id);
   /** An on-timer/field-aura carrier cannot trigger a status applied on the
    *  hit event (trigger matrix: AOE = On-Hit NO / On-Damage YES / On-Timer
-   *  NO). Freeze Ray × Sun is the evidenced case; the beam carries Sun's
-   *  burn instead (corpus freeze-ray+sun). */
+   *  NO). It can carry the corpus-evidenced damage-riding statuses; Freeze
+   *  Ray × Sun is the evidenced negative (the beam carries Sun's burn
+   *  instead). */
   const canCarryStatus = (carrier: Ball, st: Ball) =>
-    !(statusChannel(carrier) === 'field' && ON_HIT_ONLY_STATUS_IDS.has(st.id));
+    !(statusChannel(carrier) === 'field' && statusChannel(st) === 'hit' && !ON_DAMAGE_STATUS_IDS.has(st.id));
   const [carrier, st2] = aoeCarrier(a) && rank(a) > rank(b) && isStatus(b) && canCarryStatus(a, b) ? [a, b]
     : aoeCarrier(b) && rank(b) > rank(a) && isStatus(a) && canCarryStatus(b, a) ? [b, a] : [null, null];
   if (carrier && st2) return { line: `Area-of-effect damage from ${carrier.name} inflicts the status effect of ${st2.name}.`, disputed: false };
@@ -318,7 +322,8 @@ export function fuse(a: Ball, b: Ball): FusionResult | null {
   // notes so the current panel does not hide them.
   const exceptions = exceptionsFor(a, b);
   for (const e of exceptions) {
-    notes.push(`Reported exception — ${e.title}: ${e.detail} (${e.confidence}).`);
+    const marker = e.confidence === 'unverified' ? 'reported/unverified' : e.confidence;
+    notes.push(`Reported exception — ${e.title}: ${e.detail} (${marker}).`);
   }
 
   return {

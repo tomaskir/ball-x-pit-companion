@@ -199,6 +199,15 @@ describe('cross-wire exclusions (corpus no-cross-wire evidence)', () => {
     expect(r.crossWire).toContain('Freeze Ray');
   });
 
+  it('a field-aura carrier cannot trigger an on-hit status (Sun × Poison)', () => {
+    // General rule: Sun's on-timer field aura cannot fire a hit-bound status.
+    // The corpus-evidenced damage-riding statuses still wire (Sun ×
+    // Overgrowth/Virus/Hemorrhage/Succubus); Poison is not one of them.
+    expect(fuse(ball('sun'), ball('poison'))!.crossWire).toBeNull();
+    expect(fuse(ball('poison'), ball('sun'))!.crossWire).toBeNull();
+    expect(fuse(ball('sun'), ball('overgrowth'))!.crossWire).not.toBeNull();
+  });
+
   it('Berserk is an on-hit status, not a field aura (channel override)', () => {
     // Berserk's "every second" phrase describes the debuff's tick; the ball
     // itself applies berserk on hit, so an AOE carrier can spread it.

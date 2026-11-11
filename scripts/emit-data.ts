@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Emits src/data/{tags,balls,passives,characters}.ts from parsed.json
- * (produced by parse-wiki.ts) + the tag/verdict assignments below,
- * which come from section 4 of docs/research/game-mechanics.md
+ * Emits src/data/{tags,balls,passives,characters,level-3}.ts from
+ * parsed.json (produced by parse-wiki.ts) + the tag/verdict assignments
+ * below, which come from section 4 of docs/research/game-mechanics.md
  * (editorial model — see ticket 02/03 answers).
  * Run: node --experimental-strip-types scripts/emit-data.ts
  */

@@ -6,10 +6,22 @@
 // editorial model, not game data: the game files expose no property-merge
 // code (docs/research/fusion-mechanics.md §4).
 //
+// The module has two public contracts:
+// - `resolveProperties(a, b)` — the general rule: union the kits, resolve
+//   shared scalar keys to the first pick, and report the collisions.
+// - `FUSION_EXCEPTIONS` / `exceptionsFor(a, b)` — the reported anomalies the
+//   general rule deliberately does not encode (Nuke × Wraith, Black Hole ×
+//   Sun direction, Time bubble, Banshee). Each carries its source and
+//   confidence for the presentation's "Reported exceptions" section (#8).
+//
 // Values are level-3 (v1.301, pre-DLC) and are hand-maintained here so the
 // model is testable and independent of the catalog's level-1 text. Every
 // value not marked `source: 'reported'` must appear verbatim in the generated
 // level-3 overlay (src/data/level-3.ts); data.test.ts enforces that.
+//
+// `Channel` here is the property-model application channel. It is related to,
+// but not the same as, `fusion.ts`'s cross-wire `StatusChannel` (which also
+// models the spawn-bound/field split for wire emission).
 //
 // Evidence bar (decision #7): a pair or rule enters the model with tier 1–2
 // evidence — game files, in-game tooltips, controlled tests, or multiple
@@ -68,22 +80,22 @@ export interface ResolvedProperties {
 
 const EMPTY: BallProperties = { channels: [], scalars: [] };
 
-const p = (key: string, label: string, value: string, source?: 'reported'): ScalarProperty =>
+const scalar = (key: string, label: string, value: string, source?: 'reported'): ScalarProperty =>
   source ? { key, label, value, source } : { key, label, value };
 
-const cooldown = (value: string) => p('cooldown', 'Cooldown', value);
-const burnMax = (value: string) => p('burn-max-stacks', 'Burn max stacks', value);
-const burnDuration = (value: string) => p('burn-duration', 'Burn duration', value);
-const burnDamage = (value: string) => p('burn-per-stack-damage', 'Burn damage per stack', value);
-const bonusDamage = (value: string) => p('bonus-damage', 'Bonus damage', value);
-const freezeDuration = (value: string) => p('freeze-duration', 'Freeze duration', value);
-const poisonMax = (value: string) => p('poison-max-stacks', 'Poison max stacks', value);
-const poisonDamage = (value: string) => p('poison-per-stack-damage', 'Poison damage per stack', value);
-const radiationDuration = (value: string) => p('radiation-duration', 'Radiation duration', value);
-const radiationMax = (value: string) => p('radiation-max-stacks', 'Radiation max stacks', value);
-const mosquitoSpawn = (value: string) => p('mosquito-spawn', 'Mosquito spawn', value);
-const bleedMax = (value: string) => p('bleed-max-stacks', 'Bleed max stacks', value);
-const range = (value: string, source?: 'reported') => p('range', 'Range', value, source);
+const cooldown = (value: string) => scalar('cooldown', 'Cooldown', value);
+const burnMax = (value: string) => scalar('burn-max-stacks', 'Burn max stacks', value);
+const burnDuration = (value: string) => scalar('burn-duration', 'Burn duration', value);
+const burnDamage = (value: string) => scalar('burn-per-stack-damage', 'Burn damage per stack', value);
+const bonusDamage = (value: string) => scalar('bonus-damage', 'Bonus damage', value);
+const freezeDuration = (value: string) => scalar('freeze-duration', 'Freeze duration', value);
+const poisonMax = (value: string) => scalar('poison-max-stacks', 'Poison max stacks', value);
+const poisonDamage = (value: string) => scalar('poison-per-stack-damage', 'Poison damage per stack', value);
+const radiationDuration = (value: string) => scalar('radiation-duration', 'Radiation duration', value);
+const radiationMax = (value: string) => scalar('radiation-max-stacks', 'Radiation max stacks', value);
+const mosquitoSpawn = (value: string) => scalar('mosquito-spawn', 'Mosquito spawn', value);
+const bleedMax = (value: string) => scalar('bleed-max-stacks', 'Bleed max stacks', value);
+const range = (value: string, source?: 'reported') => scalar('range', 'Range', value, source);
 
 /**
  * Hand-maintained level-3 property table. Only properties that participate in
@@ -135,6 +147,8 @@ export const BALL_PROPERTIES: Record<string, BallProperties> = {
 
   // --- poison stack caps (Noxious × Poison / × Brimstone) ---
   'poison': { channels: ['on-hit'], scalars: [poisonMax('max 8 stacks')] },
+  // Noxious's L3 text states the applied count ("applies 3 stacks"), not a
+  // cap; the Nov 2026 report treats it as the cap against Brimstone's max 4.
   'noxious': { channels: ['on-hit'], scalars: [poisonMax('3 stacks')] },
   'swamp': { channels: ['spawn'], scalars: [poisonMax('max 8 stacks')] },
 
@@ -158,7 +172,10 @@ export const BALL_PROPERTIES: Record<string, BallProperties> = {
 };
 
 /** Pairs whose collision is backed by direct tier 1–2 evidence. Every other
- *  collision is a prediction of the general rule and is marked `reported`. */
+ *  collision is a prediction of the general rule and is marked `reported`.
+ *  Stone is confirmed by the wiki's own Erosion strategy note ("Stone x
+ *  Erosion (select Stone first) … 400%"); Erosion × Drill/Assassin/Steel rest
+ *  on the Nov 2026 report alone and stay `reported`. */
 const CONFIRMED_PAIRS = new Set([
   'egg-sac+timestop',
   'banished-flame+sun',

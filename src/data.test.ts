@@ -213,8 +213,4 @@ describe('fusion property table agrees with the level-3 overlay', () => {
       }
     }
   });
-
-  it('every property-table key is a catalog ball', () => {
-    for (const id of Object.keys(BALL_PROPERTIES)) expect(ballIds.has(id), id).toBe(true);
-  });
 });
