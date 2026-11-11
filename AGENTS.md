@@ -16,10 +16,11 @@ Not an npm package (`"private": true`). Code is MIT-licensed; game art in
 ## Repo map
 
 - `src/pages/index.astro` — static page shell (header, tabs, per-screen search, footer disclaimer).
-- `src/companion.ts` — the **island**: event listening, theme, hash routing only.
+- `src/companion.ts` — the **island**: event listening, theme, hash routing, and persistence transport only.
 - `src/clear-exempt.ts` — the clear-exemption marker/predicate (`markClearExempt(el)` at each interactive region's creation site, `isClearExempt(target)` for the island); the empty-space clear rule sits with the markup that creates it, not in a selector list.
 - `src/view-state.ts` — all state + derivations; `dispatch(action) → ViewModel`. The test surface.
 - `src/plan-codec.ts` — the plan persistence codec: `PlanSnapshot ⇄ v1 wire ⇄ SharedSnapshot { plan, chars }`, with the plan's field list declared once (compiler-checked against `keyof PlanSnapshot`). `encodeShared`/`decodeShared`/`normalizeShared`; shape only, deeper id validation stays in `plan-state`'s `hydrate`. `src/share.ts` keeps the URL transport (`planLink`, `takeShareParam`).
+- `src/plan-session.ts` — the persistence lifecycle over injected ports: `restore({ storage, hash }) → { shared, stripUrl }` owns share-beats-stored precedence, the one-shot strip, and corrupt-storage tolerance; `save(storage, shared)` owns serialization and skips unchanged plans. The island keeps the transport.
 - `src/renderer.ts` — all DOM painting; `buildAll({ emit })` once, then `paint(vm)` in place (paint captures the latest view model in the seam — the toast's verdict source).
 - `src/renderer/` — internal painters behind that facade (grids, characters, chips, fusion screen, plan, build graphs, selection box) sharing `reconcile.ts` (the content-diff cache), `action-slot.ts` (the once-built click channel: a typed `ToggleAction` refreshed by every repaint), `seam.ts` (the emit callback and toast adapter), and `dom.ts`/`labels.ts` (icon, verdict badge, and display-text helpers).
 - `src/fusion.ts` — pure fusion composer (`fuse(a, b)`); the site's editorial model of fusion, not game data.

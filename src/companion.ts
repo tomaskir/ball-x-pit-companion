@@ -1,9 +1,11 @@
 // Interactive island: event listening, theme, hash routing, and plan
-// persistence only — the decisions behind those are pure functions in
-// src/companion-core.ts (routing, clear policy, theme resolution),
-// src/share.ts (share-link URL transport), and src/plan-codec.ts (the
-// persistence codec); this module is the transport
-// that reads real events/storage and applies their results to the DOM. All
+// persistence transport only — the decisions behind those are pure functions
+// in src/companion-core.ts (routing, clear policy, theme resolution),
+// src/share.ts (share-link URL transport), src/plan-codec.ts (the persistence
+// codec), and src/plan-session.ts (the save/load/share lifecycle: precedence,
+// the one-shot strip, corrupt tolerance, and the skip-unchanged save); this
+// module is the transport that reads real events/storage and applies their
+// results to the DOM. All
 // DOM painting lives in src/renderer.ts behind one buildAll() + paint(vm)
 // interface; all state and derivations live in src/view-state.ts behind one
 // dispatch(action) → ViewModel interface. See CONTEXT.md for the domain
@@ -19,8 +21,8 @@
 // src/companion.test.ts).
 import { createViewState, type Action, type Section } from './view-state';
 import { buildAll, paint } from './renderer';
-import { normalizeShared, type SharedSnapshot } from './plan-codec';
-import { planLink, takeShareParam } from './share';
+import { restore, save } from './plan-session';
+import { planLink } from './share';
 import { isClearExempt } from './clear-exempt';
 import {
   ESC_EXEMPT_SELECTOR,
@@ -28,10 +30,6 @@ import {
   shouldClear,
   themeFromStorage,
 } from './companion-core';
-
-/** The localStorage key the plan persists under — exported so tests pin the
- *  key name behaviorally instead of hard-coding it. */
-export const PLAN_KEY = 'ball-x-pit-plan';
 
 /** The environment touchpoints the island needs, injected so the startup
  *  sequence is callable outside a browser. The real implementations live in
@@ -63,33 +61,6 @@ export interface IslandPorts {
 export function startIsland(ports: IslandPorts): () => void {
   const view = createViewState();
   const { storage, location: loc } = ports;
-
-  // ---------- plan persistence ----------
-
-  // The plan (characters, balls, passives, upgrade toggle) survives reloads
-  // via localStorage — same treatment as the theme. The view state stays
-  // environment-free: the island reads storage at startup and dispatches a
-  // hydrate action, and saves the view state's sharedSnapshot after every
-  // dispatch. Fusion picks and search queries are transient and not persisted.
-  function loadPlan(): SharedSnapshot | null {
-    try {
-      const raw = storage.getItem(PLAN_KEY);
-      if (!raw) return null;
-      // shape normalization lives in plan-codec's normalizeShared — the same
-      // codec the share-link decoder uses; it also reads legacy flat snapshots
-      return normalizeShared(JSON.parse(raw));
-    } catch {
-      return null; // corrupt storage must never break startup
-    }
-  }
-
-  function savePlan() {
-    try {
-      storage.setItem(PLAN_KEY, JSON.stringify(view.sharedSnapshot()));
-    } catch {
-      // storage full/unavailable — the plan still works, it just won't persist
-    }
-  }
 
   // ---------- theming ----------
 
@@ -132,11 +103,13 @@ export function startIsland(ports: IslandPorts): () => void {
 
   // ---------- dispatch pipeline ----------
 
-  // Every dispatch goes through update(): dispatch + persist + paint — the
-  // plan is saved on every state change, wherever it comes from.
+  // Every dispatch goes through update(): dispatch + persist + paint.
+  // plan-session skips the write when the plan is unchanged, so dispatches
+  // that only touch transient state (search keystrokes, Esc clears) do not
+  // rewrite storage.
   const update = (action: Action) => {
     const vm = view.dispatch(action);
-    savePlan();
+    save(storage, view.sharedSnapshot());
     paint(vm);
   };
 
@@ -213,20 +186,15 @@ export function startIsland(ports: IslandPorts): () => void {
   buildAll({
     emit: (action) => update(action),
   });
-  // restore the plan before the initial paint: a share link's ?p= parameter
-  // wins over the stored plan (the link IS the plan — opening it replicates
-  // the sender's build and replaces what was stored here). The parameter is
-  // then stripped from the URL: the link is one-shot, so a recipient who
-  // Clear-plans and reloads is not handed the sender's build back. The strip
-  // happens only when the parameter actually decoded (share.ts's one-shot
-  // rule) — the island supplies the transport.
-  const share = takeShareParam(loc.hash());
-  if (share?.shared) {
-    loc.replaceState(`${loc.pathname()}${share.strippedHash}`);
-  }
-  const sharePlan = share?.shared ?? null;
-  const stored = sharePlan ? null : loadPlan();
-  const restored = sharePlan ?? stored;
+  // Restore the plan before the initial paint. plan-session owns the policy:
+  // a decodable share parameter wins over the stored plan (the link IS the
+  // plan), the parameter is stripped from the URL only when it decoded (the
+  // link is one-shot), and corrupt storage reads as "no stored plan". The
+  // island supplies the transport: it hands in the hash and applies the
+  // strip through history.replaceState.
+  const { shared: restored, stripUrl } = restore({ storage, hash: loc.hash() });
+  // null means "leave the URL alone"; an empty string is a real strip target
+  if (stripUrl !== null) loc.replaceState(`${loc.pathname()}${stripUrl}`);
   if (restored) update({ type: 'hydrate', shared: restored });
   // initial paint: derive the view model once everything is built
   paint(view.derive());

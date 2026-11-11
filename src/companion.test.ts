@@ -7,7 +7,8 @@
 // so matchMedia (absent in jsdom) is a stub like everything else.
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { startIsland, PLAN_KEY, type IslandPorts } from './companion';
+import { startIsland, type IslandPorts } from './companion';
+import { PLAN_KEY } from './plan-session';
 import { encodeShared, type SharedSnapshot } from './plan-codec';
 import { isClearExempt } from './clear-exempt';
 import { shellDoc } from './test-support/styles';
@@ -40,10 +41,11 @@ function stubPorts(init: {
   const replaceState = vi.fn();
   const setHash = vi.fn((h: string) => { hash = h; });
   const promptCopy = vi.fn();
+  const setItem = vi.fn((k: string, v: string) => { store.set(k, String(v)); });
   const ports: IslandPorts = {
     storage: {
       getItem: (k) => store.get(k) ?? null,
-      setItem: (k, v) => { store.set(k, String(v)); },
+      setItem,
     },
     location: {
       hash: () => hash,
@@ -67,6 +69,8 @@ function stubPorts(init: {
       const raw = store.get(PLAN_KEY);
       return raw ? (JSON.parse(raw) as SharedSnapshot) : null;
     },
+    /** How many times the plan key was written — the skip-unchanged pin. */
+    planWrites: () => setItem.mock.calls.filter(([key]) => key === PLAN_KEY).length,
   };
 }
 
@@ -218,6 +222,51 @@ describe('save-on-every-dispatch', () => {
 
     document.getElementById('planClear')!.click();
     expect(t.savedPlan()).toEqual(emptyShared);
+  });
+});
+
+// ---------- unchanged plans are not rewritten ----------
+
+describe('skip-unchanged saves', () => {
+  const typeSearch = (value: string) => {
+    const input = document.getElementById('search-balls') as HTMLInputElement;
+    input.value = value;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+  const pressEscape = () =>
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+
+  it('search keystrokes and Esc clears do not rewrite a stored plan', () => {
+    const stored: SharedSnapshot = { ...emptyShared, plan: { ...emptyShared.plan, balls: ['flash'] } };
+    const t = stubPorts({ stored: { [PLAN_KEY]: JSON.stringify(stored) } });
+    start(t.ports);
+    const writes = t.planWrites();
+
+    typeSearch('fl');
+    typeSearch('flash');
+    pressEscape();
+
+    expect(t.planWrites()).toBe(writes);
+  });
+
+  it('a fresh browser does not create a storage entry on a search keystroke', () => {
+    const t = stubPorts();
+    start(t.ports);
+
+    typeSearch('fl');
+    pressEscape();
+
+    expect(t.planWrites()).toBe(0);
+  });
+
+  it('a real plan change still writes', () => {
+    const t = stubPorts();
+    start(t.ports);
+    const writes = t.planWrites();
+
+    addFlashToPlan();
+
+    expect(t.planWrites()).toBe(writes + 1);
   });
 });
 

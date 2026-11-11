@@ -156,8 +156,9 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   only transport (clipboard, `history.replaceState`, location reads) — the
   link's URL half is `src/share.ts`, the codec is `src/plan-codec.ts`.
   Over-limit selections are kept and marked (red), never trimmed. The plan
-  persists to localStorage (island's job: `hydrate` action on startup, save
-  on every dispatch) and is wiped only by the toolbar's Clear button —
+  persists to localStorage through **`src/plan-session.ts`** (`restore` at
+  startup → `hydrate` action; `save` after every dispatch, skipping the write
+  when the plan is unchanged) and is wiped only by the toolbar's Clear button —
   Esc/empty-space never touch it. The persistence currency is
   **`SharedSnapshot { plan, chars }`**: `plan` is the plan's own fields
   (`PlanSnapshot`, owned by `src/plan-state.ts`), `chars` is the shared
@@ -254,9 +255,19 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   the emit wiring behaviorally in `src/renderer.test.ts`).
 - **Island** — the single interactive script `src/companion.ts` mounted by
   the Astro page. Owns event listening, theme, hash routing, and plan
-  persistence (localStorage read→`hydrate` at startup, save on every
-  dispatch) only; painting, verdict logic, graph math, and data live in
-  their own modules.
+  persistence transport only; painting, verdict logic, graph math, and data
+  live in their own modules. The save/load/share lifecycle is
+  **`src/plan-session.ts`**: `restore({ storage, hash }) → { shared,
+  stripUrl }` owns the startup precedence (a decodable share parameter beats
+  the stored plan), the one-shot strip (only a decoded parameter earns it),
+  and corrupt-storage tolerance (garbage reads as "no stored plan", never an
+  exception); `save(storage, shared)` owns serialization and skips the write
+  when storage already holds that exact serialization — and when nothing is
+  stored and the snapshot is the codec's default, so a fresh browser's no-op
+  dispatch creates no entry and search keystrokes and Esc clears do not
+  rewrite the plan. The island hands in the real
+  storage and hash, applies `stripUrl` through `history.replaceState`, and
+  dispatches `hydrate` when `restore` returns a plan.
   (The renderer attaches hover/tap listeners for toasts; tile/card/row
   clicks come back through the build seam's `emit`, which the island wires
   to dispatch + paint. Esc and empty-space clicks clear the active
