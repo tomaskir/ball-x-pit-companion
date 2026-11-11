@@ -102,7 +102,6 @@ describe('resolveProperties', () => {
     expect(r.scalars).toEqual([]);
     expect(r.collisions).toEqual([]);
   });
-
 });
 
 describe('exception table (decision #7 anomalies)', () => {

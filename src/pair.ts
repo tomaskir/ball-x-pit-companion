@@ -1,12 +1,13 @@
 // Pair module: unordered-pair identity — "the reverse composition is the
 // same pair". A pair's key is its two ids sorted and joined with '+', so
-// `pairKey(a, b) === pairKey(b, a)`. The key format lives here and nowhere
-// else: the fusion property model's confirmed/exception lookups, the plan's
-// fused-pair identity, and the build graph's `fusion:` node ids all consume
-// it, and the build graph parses those ids back through `parsePair`.
+// `pairKey(a, b) === pairKey(b, a)`. Pair keys are constructed here and
+// nowhere else: the fusion property model's confirmed/exception lookups, the
+// plan's fused-pair identity, and the build graph's `fusion:` node ids all
+// consume it, and the build graph parses those ids back through `parsePair`.
 //
-// The separator is an implementation detail of the key, not of any caller:
-// changing it is one edit in this module.
+// The knowledge tables (CONFIRMED_PAIRS, FUSION_EXCEPTIONS,
+// KILL_DISPUTED_PAIRS) and the wildcard form `<id>+*` still carry literal
+// keys; changing the separator would need those data entries updated too.
 
 /** Separator between the two ids in a pair key. */
 const SEPARATOR = '+';
