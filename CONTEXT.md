@@ -274,8 +274,9 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   seam. The facade composes internal painters under `src/renderer/`
   (grids, characters, chips, fusion-screen, plan, build-graphs,
   selection-box) that share the reconcile seam (`reconcile.ts` — the
-  painted-key map) and the build seam (`seam.ts` — the emit callback and
-  toast adapter); the public interface stays `buildAll`/`paint`.
+  painted-key map), the build seam (`seam.ts` — the emit callback and
+  toast adapter), and the DOM/label helpers (`dom.ts`, `labels.ts`); the
+  public interface stays `buildAll`/`paint`.
 - **Plan state** — the plan screen's state and derivation as their own
   module: the End game upgrades toggle, the planned balls/passives/fused
   pairs, and the resolved `PlanState` the renderer paints. Module:

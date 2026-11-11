@@ -5,7 +5,7 @@
 // renderer facade.
 import { emitAction } from './seam';
 import { clearPaintedKey, paintedKey, setPaintedKey } from './reconcile';
-import { PLAN_LIMIT_TITLE } from './shared';
+import { PLAN_LIMIT_TITLE, PLAN_TOGGLE_LABELS } from './labels';
 import type { SelectionBoxState, ViewModel } from '../view-state';
 
 interface SelectionBoxEls {
@@ -20,9 +20,9 @@ interface SelectionBoxEls {
 const selectionBoxes: Record<'balls' | 'passives', SelectionBoxEls | null> = { balls: null, passives: null };
 
 const PLAN_BTN_LABELS: Record<SelectionBoxState['plan'], string> = {
-  add: 'Add to plan',
-  remove: 'Remove from plan',
-  disabled: 'Add to plan',
+  add: PLAN_TOGGLE_LABELS.add,
+  remove: PLAN_TOGGLE_LABELS.remove,
+  disabled: PLAN_TOGGLE_LABELS.add,
 };
 const FUSION_BTN_LABELS: Record<Exclude<SelectionBoxState['fusion'], null>, string> = {
   add: 'Add to fusion',

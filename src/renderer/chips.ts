@@ -4,7 +4,7 @@
 // facade.
 import { emitAction } from './seam';
 import { reconcile } from './reconcile';
-import { icon } from './shared';
+import { icon } from './dom';
 import type { ViewModel } from '../view-state';
 
 export function paintCharChips(vm: ViewModel) {

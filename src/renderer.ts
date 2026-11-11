@@ -7,9 +7,10 @@
 // seam). The painters themselves live in internal modules under
 // src/renderer/: grids.ts, characters.ts, chips.ts, fusion-screen.ts,
 // plan.ts, build-graphs.ts, and selection-box.ts, sharing the reconcile
-// seam (reconcile.ts) and the build seam (seam.ts — the emit callback and
-// the toast adapter from src/toast.ts). This facade composes them; only
-// buildAll, paint, FUSION_PANEL_SKELETON, and FUSION_PANEL_SELECTORS are
+// seam (reconcile.ts), the build seam (seam.ts — the emit callback and the
+// toast adapter from src/toast.ts), and the DOM/label helpers (dom.ts,
+// labels.ts). This facade composes them; only buildAll, paint,
+// BuildOptions, FUSION_PANEL_SKELETON, and FUSION_PANEL_SELECTORS are
 // public.
 //
 // The island (src/companion.ts) is transport only — event
@@ -33,10 +34,8 @@
 // a callback the island supplies (it dispatches and paints); hover/tap
 // toast listeners stay internal to the renderer (binding anchors to the
 // toast adapter).
-import type { Item } from './catalog';
-import type { Verdict } from './synergy';
-import type { ToggleAction, ViewModel } from './view-state';
-import { initSeam } from './renderer/seam';
+import type { ViewModel } from './view-state';
+import { initSeam, type SeamOptions } from './renderer/seam';
 import { buildGrids, paintTiles } from './renderer/grids';
 import { buildCharacters, paintCharCards } from './renderer/characters';
 import { paintCharChips } from './renderer/chips';
@@ -54,11 +53,9 @@ export { FUSION_PANEL_SKELETON, FUSION_PANEL_SELECTORS } from './renderer/fusion
  *  current character selection; `emit` is how the built-in click handlers
  *  report actions back (selection toggles and the fusion order swap) — the
  *  island dispatches the whole ToggleAction and paints. The renderer stays
- *  paint-only: it never dispatches DOM events and never touches view state. */
-export interface BuildOptions {
-  getVerdict: (item: Item) => Verdict | null;
-  emit: (action: ToggleAction) => void;
-}
+ *  paint-only: it never dispatches DOM events and never touches view state.
+ *  The shape is defined once, in the seam module the facade hands it to. */
+export type BuildOptions = SeamOptions;
 
 /** Build all static DOM once: balls grid, passives grid, character cards,
  *  fusion pick list, plan screen skeleton — and the toast adapter (from

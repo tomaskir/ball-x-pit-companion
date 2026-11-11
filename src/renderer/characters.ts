@@ -3,7 +3,7 @@
 import { CHARACTERS, type Character } from '../data/characters';
 import { ballMap } from '../catalog';
 import { attachToast, emitAction } from './seam';
-import { icon } from './shared';
+import { icon } from './dom';
 import type { ViewModel } from '../view-state';
 
 let charCards: { ch: Character; card: HTMLElement }[] = [];

@@ -19,7 +19,7 @@ Not an npm package (`"private": true`). Code is MIT-licensed; game art in
 - `src/companion.ts` — the **island**: event listening, theme, hash routing only.
 - `src/view-state.ts` — all state + derivations; `dispatch(action) → ViewModel`. The test surface.
 - `src/renderer.ts` — all DOM painting; `buildAll({ getVerdict, emit })` once, then `paint(vm)` in place.
-- `src/renderer/` — internal painters behind that facade (grids, characters, chips, fusion screen, plan, build graphs, selection box) sharing `reconcile.ts` (the painted-key seam) and `seam.ts` (the emit callback and toast adapter).
+- `src/renderer/` — internal painters behind that facade (grids, characters, chips, fusion screen, plan, build graphs, selection box) sharing `reconcile.ts` (the painted-key seam), `seam.ts` (the emit callback and toast adapter), and `dom.ts`/`labels.ts` (icon, verdict badge, and display-text helpers).
 - `src/fusion.ts` — pure fusion composer (`fuse(a, b)`); the site's editorial model of fusion, not game data.
 - `src/fusion-properties.ts` — pure order model: hand-maintained level-3 scalar property table and `resolveProperties(a, b)` (property-set union, first-pick scalar precedence); application channels come from `channelsOf` in `fusion-knowledge.ts`.
 - `src/fusion-knowledge.ts` — the hand-maintained fusion evidence: classification tables (Destroy/cooldown/pierce/kill classes, spawn inheritance, the one application-channel classifier `channelsOf`), predicates, and the one reported-fact table (`FUSION_FACTS`: caveat prose plus reported exceptions); `fusion.ts` composes, this module answers "what class is this ball in?" and carries the reported facts.

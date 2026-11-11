@@ -9,7 +9,8 @@
 import { BUILD_GRAPH_METRICS } from '../build-graph';
 import { emitAction } from './seam';
 import { reconcile } from './reconcile';
-import { DEPTH_LABELS, icon } from './shared';
+import { DEPTH_LABELS } from './labels';
+import { icon } from './dom';
 import type { ViewModel } from '../view-state';
 
 interface GraphSectionEls {

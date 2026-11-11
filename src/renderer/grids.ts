@@ -7,7 +7,8 @@ import { PASSIVES } from '../data/passives';
 import { itemFor, type Item } from '../catalog';
 import { recipeHtml } from '../graph';
 import { attachToast, emitAction } from './seam';
-import { DEPTH_LABELS, icon } from './shared';
+import { DEPTH_LABELS } from './labels';
+import { icon, verdictBadge } from './dom';
 import type { ViewModel } from '../view-state';
 
 const tiles = new Map<string, { tile: HTMLElement; item: Item }>();
@@ -74,12 +75,6 @@ export function paintTiles(vm: ViewModel) {
 
     // verdict badge: replace in place (cheap, no img recreation)
     tile.querySelector('.ind')?.remove();
-    if (t.verdict) {
-      const badge = document.createElement('span');
-      badge.className = `ind ${t.verdict.verdict}`;
-      badge.textContent = '!';
-      badge.title = t.verdict.note ?? t.verdict.verdict;
-      tile.appendChild(badge);
-    }
+    if (t.verdict) tile.appendChild(verdictBadge(t.verdict));
   }
 }

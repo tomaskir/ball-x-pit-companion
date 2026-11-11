@@ -9,7 +9,8 @@
 import { fusionBalls } from '../fusion';
 import { emitAction } from './seam';
 import { clearPaintedKey, paintedKey, reconcile, setPaintedKey } from './reconcile';
-import { DEPTH_LABELS, icon, PLAN_LIMIT_TITLE } from './shared';
+import { DEPTH_LABELS, PLAN_LIMIT_TITLE, PLAN_TOGGLE_LABELS } from './labels';
+import { icon } from './dom';
 import type { ViewModel } from '../view-state';
 
 const fusionRowEls = new Map<string, HTMLElement>();
@@ -261,7 +262,7 @@ export function paintFusion(vm: ViewModel) {
   reconcile(p.iconB, srcB, () => { p.iconB.src = srcB; });
   p.iconB.alt = b.name;
   p.nameB.textContent = b.name;
-  p.planBtn.textContent = fp.planned ? 'Remove from plan' : 'Add to plan';
+  p.planBtn.textContent = fp.planned ? PLAN_TOGGLE_LABELS.remove : PLAN_TOGGLE_LABELS.add;
   const planAtLimit = !fp.planned && fp.planFull;
   p.planBtn.disabled = planAtLimit;
   // the title rides the row — a title on the disabled button never shows

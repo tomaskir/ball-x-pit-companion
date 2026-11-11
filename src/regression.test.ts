@@ -505,6 +505,15 @@ describe('source hygiene (grep pins)', () => {
     expect(src).not.toContain('parentElement');
   });
 
+  // the paint-only rule's other half: the renderer never depends on view
+  // state at runtime, so every view-state import in the subsystem is a type
+  // import (AGENTS.md invariant 3).
+  it('renderer imports view state as types only (paint-only rule)', () => {
+    const imports = rendererSource().split('\n').filter((line) => /from '[^']*view-state'/.test(line));
+    expect(imports.length, 'the renderer does import view-state types').toBeGreaterThan(0);
+    for (const line of imports) expect(line.trimStart().startsWith('import type ')).toBe(true);
+  });
+
   // renderer reports clicks through the build seam, not a CustomEvent bus —
   // the behavioral half is renderer.test.ts ("build seam: clicks call emit");
   // here the dead interface stays dead and the seam stays in the signature

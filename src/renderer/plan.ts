@@ -9,7 +9,7 @@
 import { ballMap, type Item } from '../catalog';
 import { emitAction } from './seam';
 import { reconcile } from './reconcile';
-import { icon } from './shared';
+import { icon, verdictBadge } from './dom';
 import type { Verdict } from '../synergy';
 import type { PlanBallEntry, ViewModel } from '../view-state';
 
@@ -162,13 +162,6 @@ export function paintPlan(vm: ViewModel) {
   // however the grid orders them). Characters and fused pairs carry no
   // entry-level verdict — the null verdict paints no badge; fused pairs get
   // their per-component badges below.
-  const makeBadge = (v: Verdict) => {
-    const badge = document.createElement('span');
-    badge.className = `ind ${v.verdict}`;
-    badge.textContent = '!';
-    badge.title = v.note ?? v.verdict;
-    return badge;
-  };
   const entryIndex = (grid: HTMLElement) =>
     new Map([...grid.querySelectorAll<HTMLElement>('.plan-entry')].map((el) => [el.dataset.entry ?? '', el]));
   const repaintEntry = (entry: HTMLElement | undefined, e: { overLimit: boolean; pairInvalid?: boolean; verdict?: Verdict | null }) => {
@@ -179,7 +172,7 @@ export function paintPlan(vm: ViewModel) {
     entry.classList.toggle('invalid-pair', !!e.pairInvalid);
     entry.title = e.pairInvalid ? "these two can't team up in a run" : '';
     entry.querySelectorAll('.ind').forEach((b) => b.remove());
-    if (e.verdict) entry.appendChild(makeBadge(e.verdict));
+    if (e.verdict) entry.appendChild(verdictBadge(e.verdict));
   };
   const charEntries = entryIndex(sections.characters.grid);
   plan.characters.forEach((e) => repaintEntry(charEntries.get(entryKey('char', e.character.id)), e));
@@ -198,7 +191,7 @@ export function paintPlan(vm: ViewModel) {
       if (!v) return;
       const wrap = entry.querySelectorAll<HTMLElement>('.plan-icon')[j];
       if (!wrap) return;
-      wrap.appendChild(makeBadge(v));
+      wrap.appendChild(verdictBadge(v));
     });
   });
   const passiveEntries = entryIndex(sections.passives.grid);
