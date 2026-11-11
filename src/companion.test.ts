@@ -8,10 +8,9 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { startIsland, PLAN_KEY, type IslandPorts } from './companion';
-import { encodePlan } from './share';
+import { encodeShared, type SharedSnapshot } from './plan-codec';
 import { isClearExempt } from './clear-exempt';
 import { shellDoc } from './test-support/styles';
-import type { PlanSnapshot } from './view-state';
 
 // ---------- jsdom shell: the real index.astro markup ----------
 
@@ -26,7 +25,7 @@ function mountIslandShell() {
 
 // ---------- stub ports ----------
 
-const emptyPlan: PlanSnapshot = { upgradesOn: true, chars: [], balls: [], passives: [], fused: [] };
+const emptyShared: SharedSnapshot = { plan: { upgradesOn: true, balls: [], passives: [], fused: [] }, chars: [] };
 
 /** Stub ports over an in-memory store + fake URL. `replaceState` is a mock so
  *  tests can pin the one-shot strip; `setHash` updates the fake hash the way
@@ -64,9 +63,9 @@ function stubPorts(init: {
     setHash,
     promptCopy,
     setHashValue: (h: string) => { hash = h; },
-    savedPlan: (): PlanSnapshot | null => {
+    savedPlan: (): SharedSnapshot | null => {
       const raw = store.get(PLAN_KEY);
-      return raw ? (JSON.parse(raw) as PlanSnapshot) : null;
+      return raw ? (JSON.parse(raw) as SharedSnapshot) : null;
     },
   };
 }
@@ -101,9 +100,12 @@ const addFlashToPlan = () => {
 
 describe('startup precedence (share param vs stored plan)', () => {
   it('a decodable share param wins: it replaces the stored plan and the URL is stripped (one-shot)', () => {
-    const stored: PlanSnapshot = { ...emptyPlan, balls: ['wagon-wheel'] };
-    const shared: PlanSnapshot = { upgradesOn: false, chars: ['the-warrior'], balls: ['flash'], passives: [], fused: [] };
-    const t = stubPorts({ stored: { [PLAN_KEY]: JSON.stringify(stored) }, hash: `#/plan?p=${encodePlan(shared)}` });
+    const stored: SharedSnapshot = { ...emptyShared, plan: { ...emptyShared.plan, balls: ['wagon-wheel'] } };
+    const shared: SharedSnapshot = {
+      plan: { upgradesOn: false, balls: ['flash'], passives: [], fused: [] },
+      chars: ['the-warrior'],
+    };
+    const t = stubPorts({ stored: { [PLAN_KEY]: JSON.stringify(stored) }, hash: `#/plan?p=${encodeShared(shared)}` });
 
     start(t.ports);
 
@@ -117,19 +119,20 @@ describe('startup precedence (share param vs stored plan)', () => {
   });
 
   it('a present-but-undecodable param leaves the URL alone and uses the stored plan', () => {
-    // wagon-wheel is a passive id — the plan's passive count shows it
-    const stored: PlanSnapshot = { ...emptyPlan, passives: ['wagon-wheel'] };
+    // legacy flat localStorage shape (pre-codec) still loads; wagon-wheel is
+    // a passive id — the plan's passive count shows it
+    const stored = { upgradesOn: true, chars: [], balls: [], passives: ['wagon-wheel'], fused: [] };
     const t = stubPorts({ stored: { [PLAN_KEY]: JSON.stringify(stored) }, hash: '#/plan?p=not-a-real-code' });
 
     start(t.ports);
 
     expect(t.replaceState).not.toHaveBeenCalled();
-    expect(t.savedPlan()).toEqual(stored);
+    expect(t.savedPlan()).toEqual({ plan: { upgradesOn: true, balls: [], passives: ['wagon-wheel'], fused: [] }, chars: [] });
     expect(planCounts()).toEqual(['0 / 2', '0 / 5', '1 / 5']);
   });
 
   it('no param at all: stored plan used, URL untouched', () => {
-    const stored: PlanSnapshot = { ...emptyPlan, passives: ['wagon-wheel'] };
+    const stored: SharedSnapshot = { ...emptyShared, plan: { ...emptyShared.plan, passives: ['wagon-wheel'] } };
     const t = stubPorts({ stored: { [PLAN_KEY]: JSON.stringify(stored) }, hash: '#/plan' });
 
     start(t.ports);
@@ -147,7 +150,10 @@ describe('hydrate-before-first-paint ordering', () => {
     // The ordering's observable consequence: the very first paint already
     // reflects the hydrated plan. If the island painted before hydrating,
     // the plan would show empty here until some later dispatch.
-    const stored: PlanSnapshot = { ...emptyPlan, balls: ['flash'], passives: ['wagon-wheel'] };
+    const stored: SharedSnapshot = {
+      plan: { upgradesOn: true, balls: ['flash'], passives: ['wagon-wheel'], fused: [] },
+      chars: [],
+    };
     const t = stubPorts({ stored: { [PLAN_KEY]: JSON.stringify(stored) }, hash: '' });
 
     start(t.ports);
@@ -168,10 +174,10 @@ describe('corrupt localStorage (startup survival)', () => {
 
     // the island is alive: dispatching a plan change persists a valid snapshot
     addFlashToPlan();
-    expect(t.savedPlan()).toEqual({ ...emptyPlan, balls: ['flash'] });
+    expect(t.savedPlan()).toEqual({ ...emptyShared, plan: { ...emptyShared.plan, balls: ['flash'] } });
   });
 
-  it('parseable JSON of the wrong shape: same survival (parsePlanSnapshot rejects it)', () => {
+  it('parseable JSON of the wrong shape: same survival (normalizeShared rejects it)', () => {
     const t = stubPorts({ stored: { [PLAN_KEY]: '"just a string"' } });
 
     expect(() => start(t.ports)).not.toThrow();
@@ -187,12 +193,12 @@ describe('save-on-every-dispatch', () => {
     start(t.ports);
 
     addFlashToPlan();
-    expect(t.savedPlan()!.balls).toEqual(['flash']);
+    expect(t.savedPlan()!.plan.balls).toEqual(['flash']);
 
     // the selection survives adding, so the same box still acts on Flash —
     // the button is now "Remove from plan". Toggling it off saves too.
     document.querySelector<HTMLElement>('#selection-balls .selection-btn[data-kind="plan"]')!.click();
-    expect(t.savedPlan()!.balls).toEqual([]);
+    expect(t.savedPlan()!.plan.balls).toEqual([]);
   });
 
   it('a char card click persists too (toggleChar feeds the plan\'s characters)', () => {
@@ -206,12 +212,12 @@ describe('save-on-every-dispatch', () => {
   });
 
   it('the Clear button wipes the stored plan (the only thing that does)', () => {
-    const stored: PlanSnapshot = { ...emptyPlan, balls: ['flash'] };
+    const stored: SharedSnapshot = { ...emptyShared, plan: { ...emptyShared.plan, balls: ['flash'] } };
     const t = stubPorts({ stored: { [PLAN_KEY]: JSON.stringify(stored) } });
     start(t.ports);
 
     document.getElementById('planClear')!.click();
-    expect(t.savedPlan()).toEqual(emptyPlan);
+    expect(t.savedPlan()).toEqual(emptyShared);
   });
 });
 

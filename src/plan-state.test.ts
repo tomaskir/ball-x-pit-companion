@@ -179,7 +179,7 @@ describe('plan state: complexity order (most complex first)', () => {
     const state = createPlanState();
     state.dispatch({
       type: 'hydrate',
-      plan: { upgradesOn: false, chars: [], balls: ['burn', 'flash', 'glacier', 'maggot', 'flicker'], passives: [], fused: [] },
+      plan: { upgradesOn: false, balls: ['burn', 'flash', 'glacier', 'maggot', 'flicker'], passives: [], fused: [] },
     });
     const plan = state.derive([]);
     const tail = plan.balls[4];
@@ -218,7 +218,7 @@ describe('plan state: hydrate (plan side)', () => {
     const state = createPlanState();
     state.dispatch({
       type: 'hydrate',
-      plan: { upgradesOn: false, chars: [], balls: ['flash', 'glacier'], passives: ['wagon-wheel'], fused: [] },
+      plan: { upgradesOn: false, balls: ['flash', 'glacier'], passives: ['wagon-wheel'], fused: [] },
     });
     const plan = state.derive([]);
     expect(plan.upgradesOn).toBe(false);
@@ -232,7 +232,6 @@ describe('plan state: hydrate (plan side)', () => {
       type: 'hydrate',
       plan: {
         upgradesOn: true,
-        chars: [],
         balls: ['flash', 'not-a-ball', 'flash'],
         passives: ['wagon-wheel', 'not-a-passive'],
         fused: [],
@@ -249,7 +248,6 @@ describe('plan state: hydrate (plan side)', () => {
       type: 'hydrate',
       plan: {
         upgradesOn: false,
-        chars: [],
         balls: ['flash', 'glacier', 'maggot', 'flicker', 'burn'],
         passives: [],
         fused: [],
@@ -260,16 +258,11 @@ describe('plan state: hydrate (plan side)', () => {
     expect(plan.overLimit).toBe(true);
   });
 
-  it('ignores the snapshot\'s chars — the shared selection is restored by view-state', () => {
+  it('snapshot() carries only the plan\'s own fields — chars are view-state\'s half', () => {
     const state = createPlanState();
-    state.dispatch({
-      type: 'hydrate',
-      plan: { upgradesOn: true, chars: ['the-warrior'], balls: ['flash'], passives: [], fused: [] },
-    });
-    const plan = state.derive([]);
-    expect(singleIds(plan.balls)).toEqual(['flash']);
-    expect(plan.counts.chars).toBe(0); // derive only counts what it is handed
-    expect(state.snapshot([]).chars).toEqual([]);
+    state.dispatch({ type: 'togglePlanItem', id: 'flash' });
+    expect(state.snapshot()).toEqual({ upgradesOn: true, balls: ['flash'], passives: [], fused: [] });
+    expect('chars' in state.snapshot()).toBe(false);
   });
 
   it('drops fused pairs whose components are not fusable (Baby Ball is not an upgrade entity)', () => {
@@ -278,7 +271,6 @@ describe('plan state: hydrate (plan side)', () => {
       type: 'hydrate',
       plan: {
         upgradesOn: true,
-        chars: [],
         balls: [],
         passives: [],
         fused: [{ a: 'baby-ball', b: 'flash' }],
@@ -293,7 +285,6 @@ describe('plan state: hydrate (plan side)', () => {
       type: 'hydrate',
       plan: {
         upgradesOn: true,
-        chars: [],
         balls: [],
         passives: [],
         fused: [
@@ -311,28 +302,15 @@ describe('plan state: hydrate (plan side)', () => {
     expect(fusedOf(plan)[0].b.id).toBe('glacier');
   });
 
-  it('snapshot round-trips through hydrate (empty chars — the shared selection rides through view-state)', () => {
+  it('snapshot round-trips through hydrate', () => {
     const state = createPlanState();
     state.dispatch({ type: 'togglePlanItem', id: 'flash' });
     state.dispatch({ type: 'togglePlanFusion', a: 'glacier', b: 'maggot' });
     state.dispatch({ type: 'toggleUpgrades' });
-    const snapshot = state.snapshot([]);
-    expect(snapshot.chars).toEqual([]);
+    const snapshot = state.snapshot();
     const restored = createPlanState();
     restored.dispatch({ type: 'hydrate', plan: snapshot });
-    expect(restored.snapshot([])).toEqual(snapshot);
-  });
-
-  it('snapshot(selectedChars) serializes the handed-in selection as the plan\'s characters', () => {
-    const state = createPlanState();
-    state.dispatch({ type: 'togglePlanItem', id: 'flash' });
-    expect(state.snapshot(chars('the-warrior', 'the-shade'))).toEqual({
-      upgradesOn: true,
-      chars: ['the-warrior', 'the-shade'],
-      balls: ['flash'],
-      passives: [],
-      fused: [],
-    });
+    expect(restored.snapshot()).toEqual(snapshot);
   });
 });
 

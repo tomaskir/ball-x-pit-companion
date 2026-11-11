@@ -16,9 +16,10 @@
 // mount point exists: the browser path is unchanged, and jsdom can import
 // the module and drive the island through startIsland with stub ports (see
 // src/companion.test.ts).
-import { createViewState, type Action, type PlanSnapshot, type Section } from './view-state';
+import { createViewState, type Action, type Section } from './view-state';
 import { buildAll, paint } from './renderer';
-import { parsePlanSnapshot, planLink, takeShareParam } from './share';
+import { normalizeShared, type SharedSnapshot } from './plan-codec';
+import { planLink, takeShareParam } from './share';
 import { isClearExempt } from './clear-exempt';
 import {
   ESC_EXEMPT_SELECTOR,
@@ -67,15 +68,15 @@ export function startIsland(ports: IslandPorts): () => void {
   // The plan (characters, balls, passives, upgrade toggle) survives reloads
   // via localStorage — same treatment as the theme. The view state stays
   // environment-free: the island reads storage at startup and dispatches a
-  // hydrate action, and saves the view state's planSnapshot after every
+  // hydrate action, and saves the view state's sharedSnapshot after every
   // dispatch. Fusion picks and search queries are transient and not persisted.
-  function loadPlan(): PlanSnapshot | null {
+  function loadPlan(): SharedSnapshot | null {
     try {
       const raw = storage.getItem(PLAN_KEY);
       if (!raw) return null;
-      // field validation lives in share.ts's parsePlanSnapshot — the same
-      // normalizer the share-link decoder uses
-      return parsePlanSnapshot(JSON.parse(raw));
+      // shape normalization lives in plan-codec's normalizeShared — the same
+      // codec the share-link decoder uses; it also reads legacy flat snapshots
+      return normalizeShared(JSON.parse(raw));
     } catch {
       return null; // corrupt storage must never break startup
     }
@@ -83,7 +84,7 @@ export function startIsland(ports: IslandPorts): () => void {
 
   function savePlan() {
     try {
-      storage.setItem(PLAN_KEY, JSON.stringify(view.planSnapshot()));
+      storage.setItem(PLAN_KEY, JSON.stringify(view.sharedSnapshot()));
     } catch {
       // storage full/unavailable — the plan still works, it just won't persist
     }
@@ -168,7 +169,7 @@ export function startIsland(ports: IslandPorts): () => void {
   // link IS the plan).
   const shareBtn = document.getElementById('planShare')!;
   shareBtn.addEventListener('click', () => {
-    const url = planLink(loc.origin(), loc.pathname(), view.planSnapshot());
+    const url = planLink(loc.origin(), loc.pathname(), view.sharedSnapshot());
     const idleLabel = shareBtn.textContent;
     const flash = () => {
       shareBtn.textContent = 'Copied!';
@@ -220,13 +221,13 @@ export function startIsland(ports: IslandPorts): () => void {
   // happens only when the parameter actually decoded (share.ts's one-shot
   // rule) — the island supplies the transport.
   const share = takeShareParam(loc.hash());
-  if (share?.snapshot) {
+  if (share?.shared) {
     loc.replaceState(`${loc.pathname()}${share.strippedHash}`);
   }
-  const sharePlan = share?.snapshot ?? null;
+  const sharePlan = share?.shared ?? null;
   const stored = sharePlan ? null : loadPlan();
   const restored = sharePlan ?? stored;
-  if (restored) update({ type: 'hydrate', plan: restored });
+  if (restored) update({ type: 'hydrate', shared: restored });
   // initial paint: derive the view model once everything is built
   paint(view.derive());
 

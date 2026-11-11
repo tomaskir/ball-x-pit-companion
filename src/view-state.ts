@@ -19,8 +19,9 @@
 // src/plan-state.ts (PlanState: resolved
 // entries, verdicts, limits, over-limit marks); this module forwards the
 // plan actions to it and embeds the result in the ViewModel, handing the
-// shared selectedChars in on every derive/snapshot. The plan types are
-// re-exported here so companion.ts and share.ts keep their import paths.
+// shared selectedChars in on every derive. The persistence currency is
+// src/plan-codec.ts's SharedSnapshot: this module owns the chars half and
+// restores it on hydrate; plan-state owns the plan half.
 import { BALLS } from './data/balls';
 import { PASSIVES } from './data/passives';
 import { CHARACTERS, type Character } from './data/characters';
@@ -32,12 +33,8 @@ import { deriveFusionPanel, type FusionPanelState } from './fusion-panel';
 import { createPickList } from './pick-list';
 import { verdictFor, type Item, type Verdict } from './synergy';
 import { createPlanState } from './plan-state';
-import type { PlanAction, PlanLimits, PlanState, PlanSnapshot } from './plan-state';
-
-// The plan's types are plan-state's — re-exported so existing import paths
-// (companion.ts, share.ts) keep working. Types only: plan-state must never
-// be imported *by* view-state's consumers at runtime through here.
-export type { PlanAction, PlanBallEntry, PlanCharState, PlanEntryState, PlanFused, PlanFusedState, PlanLimits, PlanSnapshot, PlanState } from './plan-state';
+import type { PlanAction, PlanLimits, PlanState } from './plan-state';
+import type { SharedSnapshot } from './plan-codec';
 
 export interface TileState { selected: boolean; related: boolean; dimmed: boolean; filtered: boolean; verdict: Verdict | null; }
 /** One character card. `blocked` is a Matchmaker pairing restriction (game
@@ -110,7 +107,11 @@ export type Action =
   // The plan's actions, forwarded verbatim to the plan state
   // (src/plan-state.ts) — same members, same shapes as before the
   // extraction; see PlanAction there for the per-action contracts.
-  | PlanAction;
+  // `hydrate` is the exception: the island hands the whole SharedSnapshot
+  // (plan + chars) and view-state splits it — the plan half goes to
+  // plan-state, the chars half is restored here.
+  | Exclude<PlanAction, { type: 'hydrate' }>
+  | { type: 'hydrate'; shared: SharedSnapshot };
 
 /** The actions the renderer's click handlers produce and hand back through
  *  the build seam's `emit` callback (the island dispatches them verbatim).
@@ -282,12 +283,12 @@ export function createViewState() {
     verdictFor(item: Item) {
       return verdictFor(item, selectedChars.list());
     },
-    /** The plan as bare ids — the island's persistence currency (saved to
-     *  localStorage, fed back through `hydrate`). The plan state serializes
-     *  it from its own lists plus the shared selection, so the island never
-     *  re-extracts ids from the resolved view model. */
-    planSnapshot(): PlanSnapshot {
-      return plan.snapshot(selectedChars.list());
+    /** The transport currency — the plan's own fields plus the shared
+     *  selection — the island saves to localStorage and encodes into share
+     *  links. Each module supplies its half, so the island never re-extracts
+     *  ids from the resolved view model. */
+    sharedSnapshot(): SharedSnapshot {
+      return { plan: plan.snapshot(), chars: selectedChars.list().map((c) => c.id) };
     },
     /** Current view model without a state change — initial paint. */
     derive(): ViewModel {
@@ -319,8 +320,7 @@ export function createViewState() {
           break;
         // Plan actions forward verbatim to the plan state. clearPlan also
         // clears the shared selectedChars — they are the plan's characters,
-        // and view-state owns them. hydrate's chars field is restored here
-        // for the same reason; plan-state ignores it.
+        // and view-state owns them.
         case 'togglePlanItem':
         case 'togglePlanFusion':
         case 'toggleUpgrades':
@@ -344,9 +344,12 @@ export function createViewState() {
           selectedChars.restore([]);
           graphDone.clear(); // a wiped plan has nothing left to track
           break;
+        // The island hands the whole SharedSnapshot; each module restores
+        // its own half — the plan fields go to plan-state, the shared
+        // selection is restored here (view-state owns it).
         case 'hydrate':
-          plan.dispatch(action);
-          selectedChars.restore(action.plan.chars);
+          plan.dispatch({ type: 'hydrate', plan: action.shared.plan });
+          selectedChars.restore(action.shared.chars);
           break;
         case 'search': queries[action.section] = action.query; break;
         case 'clear':

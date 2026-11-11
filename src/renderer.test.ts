@@ -396,11 +396,12 @@ describe('plan screen behavior (jsdom, through paint())', () => {
     // yet repaint the name — the ordered key this replaced made a swap look
     // like a different pair.
     const plan = (a: string, b: string) => ({
-      upgradesOn: true, chars: [], balls: [], passives: [], fused: [{ a, b }],
+      plan: { upgradesOn: true, balls: [], passives: [], fused: [{ a, b }] },
+      chars: [],
     });
     const grid = () => planView().querySelector<HTMLElement>('.plan-section[data-plan="balls"] .plan-grid')!;
 
-    drive({ type: 'hydrate', plan: plan('flash', 'glacier') });
+    drive({ type: 'hydrate', shared: plan('flash', 'glacier') });
     const first = grid().querySelector<HTMLElement>('.plan-entry')!;
     expect(first.querySelector('.plan-name')!.textContent).toBe('Flash × Glacier');
     expect(first.dataset.entry).toBe('fused:flash+glacier');
@@ -412,7 +413,7 @@ describe('plan screen behavior (jsdom, through paint())', () => {
     expect(grid().querySelector('img')).toBe(img);
 
     // reversed compose order: same unordered identity, repainted display
-    drive({ type: 'hydrate', plan: plan('glacier', 'flash') });
+    drive({ type: 'hydrate', shared: plan('glacier', 'flash') });
     const second = grid().querySelector<HTMLElement>('.plan-entry')!;
     expect(second.querySelector('.plan-name')!.textContent).toBe('Glacier × Flash');
     expect(second.dataset.entry).toBe('fused:flash+glacier');
@@ -681,7 +682,10 @@ describe('pairing restrictions in the DOM (jsdom, through paint())', () => {
   it('a hydrated invalid pair marks both plan character entries invalid-pair', () => {
     paint(view.dispatch({
       type: 'hydrate',
-      plan: { upgradesOn: true, chars: ['the-repentant', 'the-shieldbearer'], balls: [], passives: [], fused: [] },
+      shared: {
+        plan: { upgradesOn: true, balls: [], passives: [], fused: [] },
+        chars: ['the-repentant', 'the-shieldbearer'],
+      },
     }));
     const entries = [...planView().querySelectorAll<HTMLElement>('.plan-section[data-plan="characters"] .plan-entry')];
     expect(entries).toHaveLength(2);
@@ -692,7 +696,10 @@ describe('pairing restrictions in the DOM (jsdom, through paint())', () => {
   it('a valid pair leaves the plan character entries unmarked', () => {
     paint(view.dispatch({
       type: 'hydrate',
-      plan: { upgradesOn: true, chars: ['the-warrior', 'the-shade'], balls: [], passives: [], fused: [] },
+      shared: {
+        plan: { upgradesOn: true, balls: [], passives: [], fused: [] },
+        chars: ['the-warrior', 'the-shade'],
+      },
     }));
     const entries = [...planView().querySelectorAll<HTMLElement>('.plan-section[data-plan="characters"] .plan-entry')];
     expect(entries.every((e) => !e.classList.contains('invalid-pair') && e.title === '')).toBe(true);

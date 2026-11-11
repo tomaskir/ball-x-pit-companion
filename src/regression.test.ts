@@ -12,7 +12,8 @@ import { EMPTY_FUSION_PANEL_PLAN } from './test-support/pins';
 import { highlightSet, factorizesIntoSlots } from './graph';
 import { deriveBuildGraph, FUSION_ID_PREFIX } from './build-graph';
 import { verdictFor } from './synergy';
-import { encodePlan, takeShareParam } from './share';
+import { encodeShared } from './plan-codec';
+import { takeShareParam } from './share';
 import { readFileSync, readdirSync } from 'node:fs';
 import {
   expectBerserkIsOnHitStatus,
@@ -587,7 +588,7 @@ describe('regression: share-link one-shot strip left a doubled \'#\' that defeat
   // to parse it on the recipient's next reload (plan hydrated, wrong tab).
   // takeShareParam now returns the stripped hash itself, single '#'.
   it('strippedHash is the bare hash — single #, no doubled hash', () => {
-    const code = encodePlan({ upgradesOn: true, chars: [], balls: [], passives: [], fused: [] });
+    const code = encodeShared({ plan: { upgradesOn: true, balls: [], passives: [], fused: [] }, chars: [] });
     const taken = takeShareParam(`#/plan?p=${code}`)!;
     expect(taken.strippedHash).toBe('#/plan');
     expect(taken.strippedHash.startsWith('##')).toBe(false);

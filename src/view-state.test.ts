@@ -604,12 +604,9 @@ describe('view state: Matchmaker pairing restrictions (game data, character-pair
     const view = createViewState();
     const vm = view.dispatch({
       type: 'hydrate',
-      plan: {
-        upgradesOn: true,
+      shared: {
+        plan: { upgradesOn: true, balls: [], passives: [], fused: [] },
         chars: ['the-repentant', 'the-shieldbearer'],
-        balls: [],
-        passives: [],
-        fused: [],
       },
     });
     expect(vm.plan.characters.map((c) => c.character.id)).toEqual(['the-repentant', 'the-shieldbearer']);
@@ -622,7 +619,10 @@ describe('view state: Matchmaker pairing restrictions (game data, character-pair
     const view = createViewState();
     const vm = view.dispatch({
       type: 'hydrate',
-      plan: { upgradesOn: true, chars: ['the-warrior', 'the-shade'], balls: [], passives: [], fused: [] },
+      shared: {
+        plan: { upgradesOn: true, balls: [], passives: [], fused: [] },
+        chars: ['the-warrior', 'the-shade'],
+      },
     });
     expect(vm.plan.characters[0].pairInvalid).toBe(false);
     expect(vm.plan.characters[1].pairInvalid).toBe(false);
@@ -654,12 +654,14 @@ describe('view state: plan build graphs', () => {
     // over-limit arrives hydrated, kept and marked, never trimmed
     const vm = view.dispatch({
       type: 'hydrate',
-      plan: {
-        upgradesOn: false,
+      shared: {
+        plan: {
+          upgradesOn: false,
+          balls: ['bomb', 'inferno', 'frozen-flame', 'elemental', 'time-bomb'],
+          passives: [],
+          fused: [],
+        },
         chars: [],
-        balls: ['bomb', 'inferno', 'frozen-flame', 'elemental', 'time-bomb'],
-        passives: [],
-        fused: [],
       },
     });
     // paint order is complexity-sorted, so the marked tail entry is the

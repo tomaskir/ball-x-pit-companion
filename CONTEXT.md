@@ -143,22 +143,27 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   wires its change event through the same `update()` path as the other
   toolbar buttons, and `paintPlan` only reflects the checked state on it
   (the renderer builds no shell chrome). **Share** (shell chrome, island-wired) encodes the current
-  plan via `src/share.ts` (`planLink`) into a versioned base64url code in
-  the hash (`#/plan?p=<code>`) and copies the link; opening it hydrates the
-  plan — the link IS the plan, it replaces the recipient's stored plan. The
-  parameter is read once at startup (`takeShareParam`) and then stripped
-  from the URL (the link is one-shot — a Clear plus reload does not
-  resurrect the sender's plan; the strip happens only when the parameter
-  actually decoded); `decodePlan` returns null for anything that is not a v1
-  code and the stored plan is used instead. The island keeps only transport
-  (clipboard, `history.replaceState`, location reads) — the whole link
-  lifecycle is pure functions in `src/share.ts`.
+  plan via `src/plan-codec.ts` (`encodeShared`) into a versioned base64url
+  code in the hash (`#/plan?p=<code>`) and copies the link; opening it
+  hydrates the plan — the link IS the plan, it replaces the recipient's
+  stored plan. The parameter is read once at startup (`takeShareParam`) and
+  then stripped from the URL (the link is one-shot — a Clear plus reload
+  does not resurrect the sender's plan; the strip happens only when the
+  parameter actually decoded); `decodeShared` returns null for anything that
+  is not a v1 code and the stored plan is used instead. The island keeps
+  only transport (clipboard, `history.replaceState`, location reads) — the
+  link's URL half is `src/share.ts`, the codec is `src/plan-codec.ts`.
   Over-limit selections are kept and marked (red), never trimmed. The plan
   persists to localStorage (island's job: `hydrate` action on startup, save
   on every dispatch) and is wiped only by the toolbar's Clear button —
-  Esc/empty-space never touch it. Module: state in `src/plan-state.ts`
-  (`createPlanState` — the `PlanState` derivation, the `PlanSnapshot`
-  persistence currency, and the capacity/toggle invariants), forwarded and
+  Esc/empty-space never touch it. The persistence currency is
+  **`SharedSnapshot { plan, chars }`**: `plan` is the plan's own fields
+  (`PlanSnapshot`, owned by `src/plan-state.ts`), `chars` is the shared
+  selection (owned by `src/view-state.ts`); the codec declares the plan's
+  field list once and normalizes shape, while `hydrate` keeps the deeper
+  validation (unknown ids, degenerate pairs). Module: state in
+  `src/plan-state.ts` (`createPlanState` — the `PlanState` derivation, the
+  `PlanSnapshot` currency, and the capacity/toggle invariants), forwarded and
   embedded into the ViewModel by `src/view-state.ts`; painting in
   `src/renderer.ts` (`buildPlan`/`paintPlan`, plus the build graphs —
   see **Build graph**).

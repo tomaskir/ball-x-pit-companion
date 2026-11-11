@@ -370,7 +370,6 @@ describe('build graph view: the whole Plan-screen derivation', () => {
         type: 'hydrate',
         plan: {
           upgradesOn: false,
-          chars: [],
           balls: ['bomb', 'inferno', 'frozen-flame', 'elemental', 'time-bomb'],
           passives: [],
           fused: [],

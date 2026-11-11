@@ -2,14 +2,14 @@
 // game upgrades toggle, the planned balls/passives/fused pairs, and the
 // PlanState the renderer paints. One interface:
 // createPlanState() → { dispatch(planAction), derive(selectedChars),
-// snapshot(selectedChars), has(id), hasPair(a, b), limits() }.
+// snapshot(), has(id), hasPair(a, b), limits() }.
 // The seam is "selectedChars in, PlanState out": the plan's characters are
 // the shared selectedChars — one selection feeds verdicts, chips, and the
 // plan — and they are owned by view-state.ts. plan-state never mutates
-// them; it reads only what derive/snapshot are handed (hydrate's `chars`
-// field is likewise ignored — view-state resolves and restores them).
-// PlanSnapshot, the persistence currency, lives here; view-state re-exports
-// the plan types so companion.ts and share.ts keep their import paths.
+// them; derive reads only what it is handed, and the persisted characters
+// are view-state's half of the SharedSnapshot (src/plan-codec.ts).
+// PlanSnapshot, the plan-owned persistence currency, lives here; the codec
+// owns the wire/normalized shapes around it.
 // The three plan lists are pick lists (src/pick-list.ts): the sticky toggle,
 // the capacity guard, the resolution guard, and duplicate-free restore live
 // there, not here. The fused-pair list shares the ball capacity with the
@@ -32,12 +32,11 @@ export interface PlanLimits { chars: number; balls: number; passives: number; }
 /** A planned fused pair — compose order (a first) for display, sorted ids
  *  for identity (the reverse composition is the same planned pair). */
 export interface PlanFused { a: string; b: string; }
-/** The plan as bare ids — the persistence currency. The island serializes
- *  this shape to localStorage and feeds it back through `hydrate`; one type
- *  pins both sides. The `chars` field is the shared selection riding
- *  through: plan-state serializes what snapshot is handed and ignores the
- *  field on hydrate (view-state owns restoring it). */
-export interface PlanSnapshot { upgradesOn: boolean; chars: string[]; balls: string[]; passives: string[]; fused: PlanFused[]; }
+/** The plan as bare ids — the plan-owned persistence currency. The codec
+ *  (src/plan-codec.ts) wraps it with the shared character selection as the
+ *  SharedSnapshot the island serializes; plan-state neither reads nor writes
+ *  `chars`. */
+export interface PlanSnapshot { upgradesOn: boolean; balls: string[]; passives: string[]; fused: PlanFused[]; }
 /** One character in the plan: overLimit marks slots beyond the active
  *  limit (kept, never trimmed — the user decides what to remove).
  *  pairInvalid marks a Matchmaker-forbidden pair that arrived hydrated
@@ -76,9 +75,9 @@ export interface PlanState {
   hint: string;
 }
 /** The plan's actions — the plan-shaped slice of the view-state Action
- *  union. view-state forwards them verbatim; `hydrate` carries the whole
- *  PlanSnapshot but plan-state reads only its own fields (chars are the
- *  shared selection, restored by view-state). */
+ *  union. view-state forwards them verbatim; `hydrate` carries the plan's
+ *  own fields (the shared selection is view-state's half of the
+ *  SharedSnapshot). */
 export type PlanAction =
   /** Plan membership toggle for a ball or passive — the namespace comes
    *  from the catalog, callers pass the id only. */
@@ -251,14 +250,11 @@ export function createPlanState() {
       }
     },
     derive,
-    /** The plan as bare ids — the island's persistence currency (saved to
-     *  localStorage, fed back through `hydrate`). The characters are the
-     *  handed-in shared selection, serialized here so the snapshot stays
-     *  one whole type. */
-    snapshot(selectedChars: readonly Character[]): PlanSnapshot {
+    /** The plan's own fields as bare ids — the plan half of the persistence
+     *  currency (the codec pairs it with the shared selection). */
+    snapshot(): PlanSnapshot {
       return {
         upgradesOn,
-        chars: selectedChars.map((c) => c.id),
         balls: [...planBalls.list()],
         passives: [...planPassives.list()],
         fused: planFused.list().map((p) => ({ ...p })),

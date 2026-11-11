@@ -16,7 +16,8 @@ import { emitAction } from './seam';
 import { reconcile } from './reconcile';
 import { icon, verdictBadge } from './dom';
 import type { Verdict } from '../synergy';
-import type { PlanBallEntry, ViewModel } from '../view-state';
+import type { PlanBallEntry } from '../plan-state';
+import type { ViewModel } from '../view-state';
 
 interface PlanSectionEls {
   count: HTMLElement;
