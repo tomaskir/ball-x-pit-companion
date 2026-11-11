@@ -522,6 +522,20 @@ describe('source hygiene (grep pins)', () => {
     expect(renderer).not.toContain('planUpgradesSlot');
     expect(renderer).not.toMatch(/addEventListener\('change'/);
   });
+
+  // C1: reported facts have one home (fusion-knowledge.ts). fuse() applies
+  // the table and names no pair; the per-pair caveat helper is gone.
+  it('fuse() applies the evidence table without naming a pair', () => {
+    const src = readFileSync('src/fusion.ts', 'utf8');
+    const fuseBody = src.slice(src.indexOf('export function fuse('));
+    for (const id of [
+      'dark', 'assassin', 'warp', 'freeze-ray', 'sun',
+      'brood-mother', 'egg-sac', 'mosquito-king', 'flicker', 'reaper',
+    ]) {
+      expect(fuseBody, `fuse() names ${id}`).not.toContain(`'${id}'`);
+    }
+    expect(src).not.toContain('spawnInheritanceCaveats');
+  });
 });
 
 describe('regression: toast touch dismissal (promised in a comment, never wired)', () => {

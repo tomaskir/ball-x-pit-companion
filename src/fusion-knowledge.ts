@@ -3,14 +3,15 @@
 // classification facts that algorithm reads — the Destroy/cooldown/pierce/
 // kill classes, the status-channel model (text heuristics plus
 // community-evidenced exceptions), the spawn-inheritance classes, and the
-// reported caveat prose. Keeping the evidence here makes a research landing a
-// one-table edit and lets every predicate be unit-tested directly
-// (src/fusion-knowledge.test.ts); the corpus's general_rules_notes are the
-// fixture the tables are checked against.
+// reported-fact table (caveat prose plus reported exceptions). Keeping the
+// evidence here makes a research landing a one-table edit and lets every
+// predicate be unit-tested directly (src/fusion-knowledge.test.ts); the
+// corpus's general_rules_notes are the fixture the tables are checked against.
 //
 // Every id is a ball id in src/data/balls.ts. Nothing here composes: the
-// predicates answer "what class is this ball in?", and the caveat constants
-// are the reported copy fuse() emits beside the composed result.
+// predicates answer "what class is this ball in?", and `FUSION_FACTS` /
+// `applyFacts()` are the reported copy and anomalies `fuse()` emits beside
+// the composed result. `fuse()` applies the table; it never names a pair.
 import { BALLS, type Ball } from './data/balls';
 import { LEVEL_3_EFFECTS } from './data/level-3';
 import { pairKey } from './pair';
@@ -143,11 +144,47 @@ export const aoeRank = (b: Ball): number => (b.tags.includes('screen-clear') ? 2
 export const dealsDamage = (b: Ball): boolean =>
   /\b\d+(?:\.\d+)?(?:[–-]\d+(?:\.\d+)?)?(?:x|%)?(?= damage)|\bdeals?\b/i.test(componentText(b));
 
-/** Reported spawn-inheritance caveats (issue #20). fuse() emits the
- *  inheritance caveats only when the wire actually uses the carrier's spawn
- *  channel; the trigger limits describe the carrier + AOE partner, wire or
- *  not. The Flash sentence is shared so it can be deduped when both Brood
- *  Mother caveats fire for the same pair. */
+// ---------- reported-fact prose (the caveats fuse() emits) ----------
+
+/** Pool recursion (CONTRADICTIONS.md §2): not a fusion effect, but the
+ *  first-selected base ball is consumed from the level-up/fusion pool. */
+export const BASE_BALL_POOL_CAVEAT =
+  'Pool note — the first-selected base ball is consumed and does not reappear in the level-up/fusion pool this run (reported).';
+
+/** Dark's multiplier carries into any fusion (namu.wiki). */
+export const DARK_MULTIPLIER_CAVEAT =
+  `Dark's damage multiplier carries into the fusion — Dark is prized as fusion material for exactly this (reported).`;
+
+/** Two self-destruct balls may lose one effect. */
+export const DESTROY_PAIR_CAVEAT =
+  'Both balls self-destruct — fusing two Destroy-class balls may lose one of the two effects (reported).';
+
+/** Hit-once (cooldown) dominates pass-through. */
+export const HIT_ONCE_CAVEAT =
+  `Hit-once + cooldown is dominant: the fused ball keeps it and loses the partner's pass-through (reported).`;
+
+/** Spawned clones/babies keep the fused ball alive (Cell × Bomb). */
+export const SPAWN_COMPENSATES_DESTROY_CAVEAT =
+  'Spawn can compensate Destroy — spawned clones/babies keep the fused ball alive (reported; Cell × Bomb is the known example).';
+
+/** Assassin's back-armor rule beats the partner's pass-through. */
+export const ASSASSIN_BACK_ARMOR_CAVEAT =
+  `Assassin's back-armor rule wins over the partner's pass-through — the fused ball cannot pierce the back (reported; commutative, not an order effect).`;
+
+/** Warp is cast before the partner's pass-through. */
+export const WARP_PASS_THROUGH_CAVEAT =
+  `Warp is cast before the partner's pass-through (reported; commutative, not an order effect).`;
+
+/** Freeze Ray × Sun: the corpus resolves the direction — the beam applies
+ *  Sun's burn, not the reverse (the AOE branch correctly emits no wire). */
+export const FREEZE_RAY_SUN_CAVEAT =
+  `Reported direction — Freeze Ray's beam applies Sun's burn; Sun's field aura does not apply Freeze Ray's freeze.`;
+
+/** Reported spawn-inheritance caveats (issue #20). The inheritance caveats
+ *  fire only when the wire actually uses the carrier's spawn channel; the
+ *  trigger limits describe the carrier + AOE partner, wire or not. The Flash
+ *  sentence is shared so it can be deduped when both Brood Mother caveats
+ *  fire for the same pair. */
 export const BROOD_MOTHER_FLASH_REPORT_FRAGMENT =
   'one launch-week report claims Flash × Brood Mother produced none (unverified).';
 const BROOD_MOTHER_FLASH_REPORT_SENTENCE =
@@ -160,3 +197,229 @@ export const BROOD_MOTHER_TRIGGER_CAVEAT =
   'Reported - Brood Mother\'s spawn fires on hit, so a screen-wide/AOE partner produces fewer babies';
 export const MOSQUITO_KING_TRIGGER_CAVEAT =
   'Reported - Mosquito King\'s spawn is an on-hit effect: the partner\'s screen-wide/AOE damage does not trigger it, so the fused ball spawns mosquitoes only from its own direct hits, not per AOE tick.';
+
+/** Corpus contradiction note for a disputed kill cross-wire (CONTRADICTIONS.md
+ *  §10e). */
+export const DISPUTED_KILL_CAVEAT =
+  'Corpus contradiction — reports disagree on whether the instant kill fires from the partner\'s hits here (see docs/research/fusion-observations/CONTRADICTIONS.md).';
+
+// ---------- the reported-fact table ----------
+
+/** Composition state a caveat rule may read. Rules that qualify a wire need
+ *  the carrier that produced it; the disputed-kill note needs the wire's
+ *  contradiction bit. */
+export interface CaveatContext {
+  /** Id of the spawn carrier whose spawn channel produced the cross-wire
+   *  line, or null when the line came from another channel (or none). */
+  spawnerId: string | null;
+  /** True when the emitted kill cross-wire is corpus-contradicted. */
+  disputed: boolean;
+}
+
+/** A reported fact about a class of pairs: prose emitted beside the composed
+ *  result. `when` reads the pair and the composition context, so `fuse()`
+ *  applies rules without naming pairs. */
+export interface NoteFact {
+  kind: 'note';
+  /** Stable name (the corpus general_rules_notes key where one exists). */
+  id: string;
+  when: (a: Ball, b: Ball, ctx: CaveatContext) => boolean;
+  /** The reported copy, or a function when it depends on context. */
+  note: string | ((a: Ball, b: Ball, ctx: CaveatContext) => string);
+}
+
+/** A reported anomaly outside the general rule. `pair` is an unordered pair
+ *  key, or `<ballId>+*` for a ball-wide anomaly. */
+export interface FusionException {
+  pair: string;
+  title: string;
+  detail: string;
+  source: string;
+  confidence: 'reported' | 'unverified' | 'contradicted';
+  /** True when the report says the two selection orders behave differently.
+   *  The presentation shows the swap affordance only for these (#8). */
+  orderDependent: boolean;
+}
+
+/** A reported anomaly carried by the same table as the caveats. */
+export interface ExceptionFact {
+  kind: 'exception';
+  id: string;
+  exception: FusionException;
+}
+
+export type FusionFact = NoteFact | ExceptionFact;
+
+/** The one home for reported fusion facts: class caveats, pair-direction
+ *  caveats, spawn-inheritance caveats, and the reported exceptions. Table
+ *  order is note order. A research landing edits this table (and, for a new
+ *  class, its predicate) — never `fuse()`. */
+export const FUSION_FACTS: readonly FusionFact[] = [
+  // ---- class caveats (corpus general_rules_notes; commutative) ----
+  {
+    kind: 'note',
+    id: 'base-ball-pool-recursion',
+    when: (a, b) => BASE_BALL_IDS.has(a.id) || BASE_BALL_IDS.has(b.id),
+    note: BASE_BALL_POOL_CAVEAT,
+  },
+  {
+    kind: 'note',
+    id: 'dark-multiplier',
+    when: (a, b) => hasId(a, b, 'dark'),
+    note: DARK_MULTIPLIER_CAVEAT,
+  },
+  {
+    kind: 'note',
+    id: 'destroy-pair-may-lose-one-effect',
+    when: (a, b) => isDestroyClass(a) && isDestroyClass(b),
+    note: DESTROY_PAIR_CAVEAT,
+  },
+  {
+    kind: 'note',
+    id: 'hit-once-dominates-pass-through',
+    when: (a, b) => (isCooldownClass(a) && isPierce(b)) || (isCooldownClass(b) && isPierce(a)),
+    note: HIT_ONCE_CAVEAT,
+  },
+  {
+    kind: 'note',
+    id: 'spawn-compensates-destroy',
+    when: (a, b) => (isDestroyClass(a) && spawnable(b)) || (isDestroyClass(b) && spawnable(a)),
+    note: SPAWN_COMPENSATES_DESTROY_CAVEAT,
+  },
+  {
+    kind: 'note',
+    id: 'assassin-back-armor-wins',
+    when: (a, b) => idWithPiercePartner(a, b, 'assassin'),
+    note: ASSASSIN_BACK_ARMOR_CAVEAT,
+  },
+  {
+    kind: 'note',
+    id: 'warp-cast-before-pass-through',
+    when: (a, b) => idWithPiercePartner(a, b, 'warp'),
+    note: WARP_PASS_THROUGH_CAVEAT,
+  },
+  // ---- pair-direction caveat ----
+  {
+    kind: 'note',
+    id: 'freeze-ray-sun-direction',
+    when: (a, b) => pairKey(a.id, b.id) === 'freeze-ray+sun',
+    note: FREEZE_RAY_SUN_CAVEAT,
+  },
+  // ---- spawn-inheritance caveats (issue #20) ----
+  {
+    kind: 'note',
+    id: 'brood-mother-inheritance',
+    when: (_a, _b, ctx) => ctx.spawnerId === 'brood-mother',
+    note: BROOD_MOTHER_INHERITANCE_CAVEAT,
+  },
+  {
+    kind: 'note',
+    id: 'egg-sac-inheritance',
+    when: (_a, _b, ctx) => ctx.spawnerId === 'egg-sac',
+    note: EGG_SAC_INHERITANCE_CAVEAT,
+  },
+  {
+    kind: 'note',
+    id: 'brood-mother-trigger-limit',
+    when: (a, b) => aoePartner(a, b, 'brood-mother'),
+    // Both caveats fire for Brood Mother × Flash; the inheritance caveat
+    // already carries the Flash sentence, so the trigger caveat drops it.
+    note: (_a, _b, ctx) => (ctx.spawnerId === 'brood-mother'
+      ? `${BROOD_MOTHER_TRIGGER_CAVEAT}.`
+      : `${BROOD_MOTHER_TRIGGER_CAVEAT}; ${BROOD_MOTHER_FLASH_REPORT_FRAGMENT}`),
+  },
+  {
+    kind: 'note',
+    id: 'mosquito-king-trigger-limit',
+    when: (a, b) => aoePartner(a, b, 'mosquito-king'),
+    note: MOSQUITO_KING_TRIGGER_CAVEAT,
+  },
+  // ---- corpus contradiction caveat ----
+  {
+    kind: 'note',
+    id: 'disputed-kill-wire',
+    when: (_a, _b, ctx) => ctx.disputed,
+    note: DISPUTED_KILL_CAVEAT,
+  },
+  // ---- reported exceptions (decision #7 anomalies) ----
+  {
+    kind: 'exception',
+    id: 'nuclear-bomb-wraith-order',
+    exception: {
+      pair: 'nuclear-bomb+wraith',
+      title: 'Order-sensitive one-off',
+      detail: 'The two orders behave differently, and the fused tooltip misdescribes the result (reported).',
+      source: 'Reddit (Abject_Nerve_1052), 2026-04-21; corpus nuclear-bomb+wraith',
+      confidence: 'reported',
+      orderDependent: true,
+    },
+  },
+  {
+    kind: 'exception',
+    id: 'time-bubble-radius',
+    exception: {
+      pair: 'time+*',
+      title: 'Time bubble radius',
+      detail: 'Time fused with any partner reportedly expands the time-snare radius; one comment claims the size follows the second pick. Not verified.',
+      source: 'Bilibili 2026-08-07; Reddit comment (icemage_999)',
+      confidence: 'unverified',
+      orderDependent: true,
+    },
+  },
+  {
+    kind: 'exception',
+    id: 'banshee-curse-override',
+    exception: {
+      pair: 'banshee+*',
+      title: 'Whole-field curse override',
+      detail: "Banshee's whole-field curse reportedly overrides some partner curse effects; a single untested comment.",
+      source: 'Reddit comment (icemage_999), Nov 2026',
+      confidence: 'unverified',
+      orderDependent: false,
+    },
+  },
+];
+
+/** The facts a pair triggers: caveat notes in table order, plus the reported
+ *  exceptions (exact pair or a ball-wide wildcard). `ctx` carries the
+ *  computed wire state the rules may read. */
+export interface AppliedFacts {
+  notes: string[];
+  exceptions: FusionException[];
+}
+
+export function applyFacts(a: Ball, b: Ball, ctx: CaveatContext): AppliedFacts {
+  const key = pairKey(a.id, b.id);
+  const notes: string[] = [];
+  const exceptions: FusionException[] = [];
+  for (const fact of FUSION_FACTS) {
+    if (fact.kind === 'note') {
+      if (fact.when(a, b, ctx)) {
+        notes.push(typeof fact.note === 'function' ? fact.note(a, b, ctx) : fact.note);
+      }
+    } else if (
+      fact.exception.pair === key ||
+      fact.exception.pair === `${a.id}+*` ||
+      fact.exception.pair === `${b.id}+*`
+    ) {
+      exceptions.push(fact.exception);
+    }
+  }
+  return { notes, exceptions };
+}
+
+/** True when the pair contains `id` and the other ball is pass-through. */
+function idWithPiercePartner(a: Ball, b: Ball, id: string): boolean {
+  return (a.id === id && isPierce(b)) || (b.id === id && isPierce(a));
+}
+
+/** True when the pair contains `id` and its partner is an AOE carrier. */
+function aoePartner(a: Ball, b: Ball, id: string): boolean {
+  const partner = a.id === id ? b : b.id === id ? a : null;
+  return partner !== null && aoeRank(partner) > 0;
+}
+
+/** True when either ball is `id`. */
+function hasId(a: Ball, b: Ball, id: string): boolean {
+  return a.id === id || b.id === id;
+}

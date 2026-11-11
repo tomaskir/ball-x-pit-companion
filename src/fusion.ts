@@ -7,9 +7,9 @@
 //   - effect paragraphs concatenate per component, in selection order
 //   - a cross-wire line is emitted when one component's channel can carry the
 //     other's effect; crossWire() returns { line, disputed, spawnerId }:
-//     disputed marks a corpus-contradicted kill wire (flicker × reaper), which
-//     fuse() turns into a caveat note; spawnerId names the carrier whose spawn
-//     channel produced the line, so fuse() can attach the inheritance caveats
+//     disputed marks a corpus-contradicted kill wire (flicker × reaper);
+//     spawnerId names the carrier whose spawn channel produced the line. Both
+//     feed the caveat rules in fusion-knowledge.ts
 //   - order is property-set union with first-pick scalar precedence: the
 //     resolver in fusion-properties.ts returns the union and the shared-key
 //     collisions (first pick wins). The collisions and reported exceptions
@@ -20,41 +20,30 @@
 //     falling back to the level-1 catalog text
 //   - damage rolls are abstracted to "X" (fused numbers are not derivable)
 // The classification evidence behind these rules (status channels,
-// Destroy/cooldown/pierce/kill classes, spawn inheritance, caveat prose) lives
-// in fusion-knowledge.ts; this module owns only the composition algorithm.
+// Destroy/cooldown/pierce/kill classes, spawn inheritance) and the one
+// reported-fact table (caveat prose plus reported exceptions) live in
+// fusion-knowledge.ts; this module owns only the composition algorithm and
+// names no pair.
 // Canonical statement of the composition rules and order model:
 // docs/research/fusion-mechanics.md §2-§3; evidence corpus:
 // docs/research/fusion-observations/ (counts derive from fusion-pairs.json).
 // It is the site's editorial model of fusion, not game data.
 import { BALLS, type Ball } from './data/balls';
+import { resolveProperties, type ResolvedProperties } from './fusion-properties';
 import {
-  exceptionsFor,
-  resolveProperties,
-  type FusionException,
-  type ResolvedProperties,
-} from './fusion-properties';
-import {
-  BASE_BALL_IDS,
-  BROOD_MOTHER_FLASH_REPORT_FRAGMENT,
-  BROOD_MOTHER_INHERITANCE_CAVEAT,
-  BROOD_MOTHER_TRIGGER_CAVEAT,
-  EGG_SAC_INHERITANCE_CAVEAT,
-  MOSQUITO_KING_TRIGGER_CAVEAT,
   aoeRank,
+  applyFacts,
   componentText,
   dealsDamage,
   isAoeExcluded,
-  isCooldownClass,
   isDamageRidingStatus,
-  isDestroyClass,
   isDisputedKillPair,
   isKillEffect,
-  isPierce,
   isStatusOnlySpawner,
   spawnable,
   statusChannel,
+  type FusionException,
 } from './fusion-knowledge';
-import { pairKey } from './pair';
 
 /** Balls offered by the fusion pick list: every ball except Baby Ball, which
  *  is not a fusable upgrade entity (research: docs/research/fusion-*.md).
@@ -164,27 +153,6 @@ export function crossWire(a: Ball, b: Ball): CrossWireResult {
   return NO_WIRE;
 }
 
-/** Spawn-inheritance caveats for a composed pair (issue #20). Inheritance
- *  degradation is wire-only: it qualifies a line the panel actually shows.
- *  The trigger limit is a property of the carrier + AOE partner, wire or not. */
-function spawnInheritanceCaveats(a: Ball, b: Ball, wire: CrossWireResult): string[] {
-  const notes: string[] = [];
-  if (wire.spawnerId === 'brood-mother') notes.push(BROOD_MOTHER_INHERITANCE_CAVEAT);
-  if (wire.spawnerId === 'egg-sac') notes.push(EGG_SAC_INHERITANCE_CAVEAT);
-  const partnerOf = (id: string) => (a.id === id ? b : b.id === id ? a : null);
-  const broodPartner = partnerOf('brood-mother');
-  const mosquitoPartner = partnerOf('mosquito-king');
-  if (broodPartner && aoeRank(broodPartner) > 0) {
-    // Both caveats fire for Brood Mother × Flash; the inheritance caveat
-    // already carries the Flash sentence, so the trigger caveat drops it.
-    notes.push(wire.spawnerId === 'brood-mother'
-      ? `${BROOD_MOTHER_TRIGGER_CAVEAT}.`
-      : `${BROOD_MOTHER_TRIGGER_CAVEAT}; ${BROOD_MOTHER_FLASH_REPORT_FRAGMENT}`);
-  }
-  if (mosquitoPartner && aoeRank(mosquitoPartner) > 0) notes.push(MOSQUITO_KING_TRIGGER_CAVEAT);
-  return notes;
-}
-
 /** If the pair is a 2-component evolution recipe the pair Evolves instead of
  *  Fusing (the Fusion Reactor will not offer it). 3+ component recipes do not
  *  block fusion. */
@@ -231,49 +199,12 @@ export function fuse(a: Ball, b: Ball): FusionResult | null {
   // the "Fused result" rows (#8), so they are not repeated as notes.
   const resolved = resolveProperties(a, b);
 
-  // Pool recursion (CONTRADICTIONS.md §2): not a fusion effect, but the
-  // first-selected base ball is consumed from the level-up/fusion pool.
-  if (BASE_BALL_IDS.has(a.id) || BASE_BALL_IDS.has(b.id)) {
-    notes.push(`Pool note — the first-selected base ball is consumed and does not reappear in the level-up/fusion pool this run (reported).`);
-  }
-
-  // Fixed composition caveats (corpus general rules; commutative, not order).
-  if (a.id === 'dark' || b.id === 'dark') {
-    notes.push(`Dark's damage multiplier carries into the fusion — Dark is prized as fusion material for exactly this (reported).`);
-  }
-  if (isDestroyClass(a) && isDestroyClass(b)) {
-    notes.push('Both balls self-destruct — fusing two Destroy-class balls may lose one of the two effects (reported).');
-  }
-  if ((isCooldownClass(a) && isPierce(b)) || (isCooldownClass(b) && isPierce(a))) {
-    notes.push(`Hit-once + cooldown is dominant: the fused ball keeps it and loses the partner's pass-through (reported).`);
-  }
-  if ((isDestroyClass(a) && spawnable(b)) || (isDestroyClass(b) && spawnable(a))) {
-    notes.push('Spawn can compensate Destroy — spawned clones/babies keep the fused ball alive (reported; Cell × Bomb is the known example).');
-  }
-  // Fixed trait priorities (commutative — not order effects).
-  if ((a.id === 'assassin' && isPierce(b)) || (b.id === 'assassin' && isPierce(a))) {
-    notes.push(`Assassin's back-armor rule wins over the partner's pass-through — the fused ball cannot pierce the back (reported; commutative, not an order effect).`);
-  }
-  if ((a.id === 'warp' && isPierce(b)) || (b.id === 'warp' && isPierce(a))) {
-    notes.push(`Warp is cast before the partner's pass-through (reported; commutative, not an order effect).`);
-  }
-
-  // Freeze Ray × Sun: the corpus resolves the direction — the beam applies
-  // Sun's burn, not the reverse (the AOE branch correctly emits no wire).
-  if (pairKey(a.id, b.id) === 'freeze-ray+sun') {
-    notes.push(`Reported direction — Freeze Ray's beam applies Sun's burn; Sun's field aura does not apply Freeze Ray's freeze.`);
-  }
-
+  // Every reported caveat and exception comes from the evidence table in
+  // fusion-knowledge.ts. The table's predicates read the pair and the
+  // computed wire state; fuse() names no pair and no class.
   const wire = crossWire(a, b);
-  notes.push(...spawnInheritanceCaveats(a, b, wire));
-
-  if (wire.disputed) {
-    notes.push('Corpus contradiction — reports disagree on whether the instant kill fires from the partner\'s hits here (see docs/research/fusion-observations/CONTRADICTIONS.md).');
-  }
-
-  // Reported anomalies outside the general rule (decision #7). Structured for
-  // the panel's separate "Reported exceptions" section (#8).
-  const exceptions = exceptionsFor(a, b);
+  const facts = applyFacts(a, b, { spawnerId: wire.spawnerId, disputed: wire.disputed });
+  notes.push(...facts.notes);
 
   return {
     name: fusionName(a, b),
@@ -282,6 +213,6 @@ export function fuse(a: Ball, b: Ball): FusionResult | null {
     evolvesInstead: evo ? { id: evo.id, name: evo.name } : null,
     notes,
     resolved,
-    exceptions,
+    exceptions: facts.exceptions,
   };
 }

@@ -8,18 +8,34 @@ import { BALLS } from './data/balls';
 import { ballMap } from './catalog';
 import {
   AOE_EXCLUDED_IDS,
+  ASSASSIN_BACK_ARMOR_CAVEAT,
   BASE_BALL_IDS,
+  BASE_BALL_POOL_CAVEAT,
+  BROOD_MOTHER_FLASH_REPORT_FRAGMENT,
+  BROOD_MOTHER_INHERITANCE_CAVEAT,
+  BROOD_MOTHER_TRIGGER_CAVEAT,
   CHANNEL_OVERRIDES,
   COOLDOWN_CLASS_IDS,
+  DARK_MULTIPLIER_CAVEAT,
   DESTROY_CLASS_IDS,
+  DESTROY_PAIR_CAVEAT,
+  DISPUTED_KILL_CAVEAT,
+  EGG_SAC_INHERITANCE_CAVEAT,
+  FREEZE_RAY_SUN_CAVEAT,
+  FUSION_FACTS,
+  HIT_ONCE_CAVEAT,
   KILL_DISPUTED_PAIRS,
   KILL_EFFECT_IDS,
+  MOSQUITO_KING_TRIGGER_CAVEAT,
   ON_DAMAGE_STATUS_IDS,
   PIERCE_IDS,
   SPAWN_BOUND_IDS,
+  SPAWN_COMPENSATES_DESTROY_CAVEAT,
   SPAWN_NO_INHERITANCE_IDS,
   SPAWN_STATUS_ONLY_IDS,
+  WARP_PASS_THROUGH_CAVEAT,
   aoeRank,
+  applyFacts,
   channelOverride,
   isAoeExcluded,
   isCooldownClass,
@@ -32,6 +48,7 @@ import {
   isStatusOnlySpawner,
   spawnable,
   statusChannel,
+  type CaveatContext,
 } from './fusion-knowledge';
 
 const ball = (id: string) => ballMap.get(id)!;
@@ -131,6 +148,90 @@ describe('classification predicates', () => {
     expect(aoeRank(ball('flash'))).toBe(2);
     expect(aoeRank(ball('glacier'))).toBe(1);
     expect(aoeRank(ball('iron'))).toBe(0);
+  });
+});
+
+describe('reported-fact table (one home for caveats and exceptions)', () => {
+  const ctx = (over: Partial<CaveatContext> = {}): CaveatContext =>
+    ({ spawnerId: null, disputed: false, ...over });
+
+  it('fact ids are unique and every exception carries source and confidence', () => {
+    const ids = FUSION_FACTS.map((f) => f.id);
+    expect(new Set(ids).size, 'duplicate fact id').toBe(ids.length);
+    for (const f of FUSION_FACTS) {
+      if (f.kind !== 'exception') continue;
+      expect(f.exception.source.length, `${f.id}: empty source`).toBeGreaterThan(0);
+      expect(['reported', 'unverified', 'contradicted']).toContain(f.exception.confidence);
+    }
+  });
+
+  it('class caveats fire from predicates, not pair names', () => {
+    // A base ball adds the pool note first (table order).
+    expect(applyFacts(ball('dark'), ball('flash'), ctx()).notes)
+      .toEqual([BASE_BALL_POOL_CAVEAT, DARK_MULTIPLIER_CAVEAT]);
+    expect(applyFacts(ball('assassin'), ball('ghost'), ctx()).notes)
+      .toEqual([BASE_BALL_POOL_CAVEAT, ASSASSIN_BACK_ARMOR_CAVEAT]);
+    expect(applyFacts(ball('warp'), ball('ghost'), ctx()).notes)
+      .toEqual([BASE_BALL_POOL_CAVEAT, WARP_PASS_THROUGH_CAVEAT]);
+    expect(applyFacts(ball('bomb'), ball('dark'), ctx()).notes)
+      .toEqual([BASE_BALL_POOL_CAVEAT, DARK_MULTIPLIER_CAVEAT, DESTROY_PAIR_CAVEAT]);
+    expect(applyFacts(ball('black-hole'), ball('ghost'), ctx()).notes)
+      .toEqual([BASE_BALL_POOL_CAVEAT, HIT_ONCE_CAVEAT]);
+    expect(applyFacts(ball('bomb'), ball('cell'), ctx()).notes)
+      .toEqual([BASE_BALL_POOL_CAVEAT, SPAWN_COMPENSATES_DESTROY_CAVEAT]);
+  });
+
+  it('the base-ball pool note is class-driven and order-independent', () => {
+    expect(applyFacts(ball('wraith'), ball('burn'), ctx()).notes).toEqual([BASE_BALL_POOL_CAVEAT]);
+    expect(applyFacts(ball('burn'), ball('wraith'), ctx()).notes).toEqual([BASE_BALL_POOL_CAVEAT]);
+    // Egg Sac is also a cooldown ball and Wraith is pass-through: table order
+    // puts the pool note first, the hit-once caveat second.
+    expect(applyFacts(ball('wraith'), ball('egg-sac'), ctx()).notes)
+      .toEqual([BASE_BALL_POOL_CAVEAT, HIT_ONCE_CAVEAT]);
+    expect(applyFacts(ball('flash'), ball('glacier'), ctx()).notes).toEqual([]);
+  });
+
+  it('the Freeze Ray × Sun direction is a table row', () => {
+    expect(applyFacts(ball('freeze-ray'), ball('sun'), ctx()).notes).toEqual([FREEZE_RAY_SUN_CAVEAT]);
+    expect(applyFacts(ball('sun'), ball('freeze-ray'), ctx()).notes).toEqual([FREEZE_RAY_SUN_CAVEAT]);
+  });
+
+  it('spawn-inheritance caveats read the wire context', () => {
+    expect(applyFacts(ball('brood-mother'), ball('flash'), ctx({ spawnerId: 'brood-mother' })).notes)
+      .toEqual([BASE_BALL_POOL_CAVEAT, BROOD_MOTHER_INHERITANCE_CAVEAT, `${BROOD_MOTHER_TRIGGER_CAVEAT}.`]);
+    // No inheritance wire: the trigger caveat carries the Flash sentence.
+    expect(applyFacts(ball('brood-mother'), ball('sun'), ctx()).notes)
+      .toEqual([BASE_BALL_POOL_CAVEAT, `${BROOD_MOTHER_TRIGGER_CAVEAT}; ${BROOD_MOTHER_FLASH_REPORT_FRAGMENT}`]);
+    expect(applyFacts(ball('egg-sac'), ball('glacier'), ctx({ spawnerId: 'egg-sac' })).notes)
+      .toEqual([BASE_BALL_POOL_CAVEAT, EGG_SAC_INHERITANCE_CAVEAT]);
+    expect(applyFacts(ball('mosquito-king'), ball('glacier'), ctx()).notes)
+      .toEqual([MOSQUITO_KING_TRIGGER_CAVEAT]);
+  });
+
+  it('the disputed kill note reads the wire context', () => {
+    expect(applyFacts(ball('flicker'), ball('reaper'), ctx({ disputed: true })).notes)
+      .toEqual([DISPUTED_KILL_CAVEAT]);
+    expect(applyFacts(ball('flicker'), ball('reaper'), ctx()).notes).toEqual([]);
+  });
+
+  it('exceptions come from the same table and keep their matching rules', () => {
+    expect(applyFacts(ball('nuclear-bomb'), ball('wraith'), ctx()).exceptions.map((e) => e.pair))
+      .toEqual(['nuclear-bomb+wraith']);
+    expect(applyFacts(ball('wraith'), ball('nuclear-bomb'), ctx()).exceptions.map((e) => e.pair))
+      .toEqual(['nuclear-bomb+wraith']);
+    expect(applyFacts(ball('time'), ball('flash'), ctx()).exceptions.map((e) => e.pair)).toEqual(['time+*']);
+    expect(applyFacts(ball('banshee'), ball('flash'), ctx()).exceptions.map((e) => e.pair)).toEqual(['banshee+*']);
+    expect(applyFacts(ball('flash'), ball('glacier'), ctx()).exceptions).toEqual([]);
+  });
+
+  it('marks only the reports that say the two orders differ as order-dependent', () => {
+    const exceptions = FUSION_FACTS.filter((f) => f.kind === 'exception').map((f) => f.exception);
+    expect(exceptions.map((e) => e.pair).sort()).toEqual(['banshee+*', 'nuclear-bomb+wraith', 'time+*']);
+    expect(Object.fromEntries(exceptions.map((e) => [e.pair, e.orderDependent]))).toEqual({
+      'nuclear-bomb+wraith': true, // "the two orders behave differently"
+      'time+*': true, // "the size follows the second pick"
+      'banshee+*': false, // no order claim
+    });
   });
 });
 

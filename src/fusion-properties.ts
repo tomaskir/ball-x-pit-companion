@@ -4,13 +4,12 @@
 // the game files expose no property-merge code
 // (docs/research/fusion-mechanics.md §4).
 //
-// The module has two public contracts:
-// - `resolveProperties(a, b)` — the general rule: union the kits, resolve
-//   shared scalar keys to the first pick, and report the collisions.
-// - `FUSION_EXCEPTIONS` / `exceptionsFor(a, b)` — the reported anomalies the
-//   general rule deliberately does not encode (Nuke × Wraith, Time bubble,
-//   Banshee). Each carries its source and confidence for the presentation's
-//   "Reported exceptions" section (#8).
+// The module's public contract is `resolveProperties(a, b)` — the general
+// rule: union the kits, resolve shared scalar keys to the first pick, and
+// report the collisions. The reported anomalies the general rule deliberately
+// does not encode (Nuke × Wraith, Time bubble, Banshee) live with the rest of
+// the reported fusion facts in `fusion-knowledge.ts` (`FUSION_FACTS`), so a
+// research landing edits one table.
 //
 // Values are level-3 (v1.301, pre-DLC) and are hand-maintained here so the
 // model is testable and independent of the catalog's level-1 text. Every
@@ -222,55 +221,4 @@ export function resolveProperties(a: Ball, b: Ball): ResolvedProperties {
   }
 
   return { channels, scalars, collisions };
-}
-
-/** A reported anomaly outside the general rule. `pair` is an unordered pair
- *  key, or `<ballId>+*` for a ball-wide anomaly. */
-export interface FusionException {
-  pair: string;
-  title: string;
-  detail: string;
-  source: string;
-  confidence: 'reported' | 'unverified' | 'contradicted';
-  /** True when the report says the two selection orders behave differently.
-   *  The presentation shows the swap affordance only for these (#8). */
-  orderDependent: boolean;
-}
-
-/** Anomalies the property model deliberately does not encode (decision #7).
- *  They are surfaced as structured data so the presentation can show a
- *  separate "Reported exceptions" section (#8). */
-export const FUSION_EXCEPTIONS: FusionException[] = [
-  {
-    pair: 'nuclear-bomb+wraith',
-    title: 'Order-sensitive one-off',
-    detail: 'The two orders behave differently, and the fused tooltip misdescribes the result (reported).',
-    source: 'Reddit (Abject_Nerve_1052), 2026-04-21; corpus nuclear-bomb+wraith',
-    confidence: 'reported',
-    orderDependent: true,
-  },
-  {
-    pair: 'time+*',
-    title: 'Time bubble radius',
-    detail: 'Time fused with any partner reportedly expands the time-snare radius; one comment claims the size follows the second pick. Not verified.',
-    source: 'Bilibili 2026-08-07; Reddit comment (icemage_999)',
-    confidence: 'unverified',
-    orderDependent: true,
-  },
-  {
-    pair: 'banshee+*',
-    title: 'Whole-field curse override',
-    detail: "Banshee's whole-field curse reportedly overrides some partner curse effects; a single untested comment.",
-    source: 'Reddit comment (icemage_999), Nov 2026',
-    confidence: 'unverified',
-    orderDependent: false,
-  },
-];
-
-/** Exceptions that apply to this pair (exact pair or a ball-wide wildcard). */
-export function exceptionsFor(a: Ball, b: Ball): FusionException[] {
-  const key = pairKey(a.id, b.id);
-  return FUSION_EXCEPTIONS.filter(
-    (e) => e.pair === key || e.pair === `${a.id}+*` || e.pair === `${b.id}+*`,
-  );
 }

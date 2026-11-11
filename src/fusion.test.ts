@@ -3,6 +3,22 @@ import { describe, it, expect } from 'vitest';
 import { fusionName, abstractDamage, crossWire, evolvesInstead, fuse } from './fusion';
 import { ballMap } from './catalog';
 import {
+  ASSASSIN_BACK_ARMOR_CAVEAT,
+  BASE_BALL_POOL_CAVEAT,
+  BROOD_MOTHER_FLASH_REPORT_FRAGMENT,
+  BROOD_MOTHER_INHERITANCE_CAVEAT,
+  BROOD_MOTHER_TRIGGER_CAVEAT,
+  DARK_MULTIPLIER_CAVEAT,
+  DESTROY_PAIR_CAVEAT,
+  DISPUTED_KILL_CAVEAT,
+  EGG_SAC_INHERITANCE_CAVEAT,
+  FREEZE_RAY_SUN_CAVEAT,
+  HIT_ONCE_CAVEAT,
+  MOSQUITO_KING_TRIGGER_CAVEAT,
+  SPAWN_COMPENSATES_DESTROY_CAVEAT,
+  WARP_PASS_THROUGH_CAVEAT,
+} from './fusion-knowledge';
+import {
   expectBerserkIsOnHitStatus,
   expectBlackHoleSunOrderIndependent,
   expectEqualValuesAreNotCollisions,
@@ -464,5 +480,66 @@ describe('composition caveats (general_rules_notes)', () => {
     expect(nuke.notes.join(' ')).not.toMatch(/Reported exception/);
     expect(fuse(ball('time'), ball('flash'))!.exceptions.map((e) => e.pair)).toContain('time+*');
     expect(fuse(ball('banshee'), ball('flash'))!.exceptions.map((e) => e.pair)).toContain('banshee+*');
+  });
+});
+
+describe('reported facts live in one evidence table (C1)', () => {
+  const DISCLAIMER = 'Composition is modeled from community-observed rules; verify against the game.';
+  const notes = (a: string, b: string) => fuse(ball(a), ball(b))!.notes;
+
+  it('pins each moved fact and its position in the note order', () => {
+    // Dark's multiplier
+    expect(notes('dark', 'flash')).toEqual([DISCLAIMER, BASE_BALL_POOL_CAVEAT, DARK_MULTIPLIER_CAVEAT]);
+    // Assassin's back-armor priority
+    expect(notes('assassin', 'ghost')).toEqual([DISCLAIMER, BASE_BALL_POOL_CAVEAT, ASSASSIN_BACK_ARMOR_CAVEAT]);
+    // Warp's cast order
+    expect(notes('warp', 'ghost')).toEqual([DISCLAIMER, BASE_BALL_POOL_CAVEAT, WARP_PASS_THROUGH_CAVEAT]);
+    // Freeze Ray × Sun direction
+    expect(notes('freeze-ray', 'sun')).toEqual([DISCLAIMER, FREEZE_RAY_SUN_CAVEAT]);
+    // Destroy pair, with Dark's multiplier first (table order)
+    expect(notes('bomb', 'dark')).toEqual([DISCLAIMER, BASE_BALL_POOL_CAVEAT, DARK_MULTIPLIER_CAVEAT, DESTROY_PAIR_CAVEAT]);
+    // Hit-once dominates pass-through
+    expect(notes('black-hole', 'ghost')).toEqual([DISCLAIMER, BASE_BALL_POOL_CAVEAT, HIT_ONCE_CAVEAT]);
+    // Spawn compensates Destroy
+    expect(notes('bomb', 'cell')).toEqual([DISCLAIMER, BASE_BALL_POOL_CAVEAT, SPAWN_COMPENSATES_DESTROY_CAVEAT]);
+    // Base-ball pool recursion
+    expect(notes('wraith', 'burn')).toEqual([DISCLAIMER, BASE_BALL_POOL_CAVEAT]);
+  });
+
+  it('pins the spawn-inheritance facts (Brood Mother, Egg Sac, Mosquito King)', () => {
+    expect(notes('brood-mother', 'flash')).toEqual([
+      DISCLAIMER,
+      BASE_BALL_POOL_CAVEAT,
+      BROOD_MOTHER_INHERITANCE_CAVEAT,
+      `${BROOD_MOTHER_TRIGGER_CAVEAT}.`,
+    ]);
+    // No inheritance wire: the trigger caveat carries the Flash sentence.
+    expect(notes('brood-mother', 'sun')).toEqual([
+      DISCLAIMER,
+      BASE_BALL_POOL_CAVEAT,
+      `${BROOD_MOTHER_TRIGGER_CAVEAT}; ${BROOD_MOTHER_FLASH_REPORT_FRAGMENT}`,
+    ]);
+    expect(notes('egg-sac', 'hemorrhage')).toEqual([
+      DISCLAIMER,
+      BASE_BALL_POOL_CAVEAT,
+      EGG_SAC_INHERITANCE_CAVEAT,
+    ]);
+    expect(notes('mosquito-king', 'glacier')).toEqual([DISCLAIMER, MOSQUITO_KING_TRIGGER_CAVEAT]);
+  });
+
+  it('pins the disputed kill note', () => {
+    expect(notes('flicker', 'reaper')).toEqual([DISCLAIMER, DISPUTED_KILL_CAVEAT]);
+  });
+
+  it('pins the reported exceptions', () => {
+    expect(fuse(ball('nuclear-bomb'), ball('wraith'))!.exceptions).toEqual([
+      expect.objectContaining({ pair: 'nuclear-bomb+wraith', confidence: 'reported', orderDependent: true }),
+    ]);
+    expect(fuse(ball('time'), ball('flash'))!.exceptions).toEqual([
+      expect.objectContaining({ pair: 'time+*', confidence: 'unverified', orderDependent: true }),
+    ]);
+    expect(fuse(ball('banshee'), ball('flash'))!.exceptions).toEqual([
+      expect.objectContaining({ pair: 'banshee+*', confidence: 'unverified', orderDependent: false }),
+    ]);
   });
 });

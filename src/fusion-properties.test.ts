@@ -1,11 +1,6 @@
 // Fusion property model tests — the order-mechanics decision (#7).
 import { describe, it, expect } from 'vitest';
-import {
-  BALL_PROPERTIES,
-  FUSION_EXCEPTIONS,
-  exceptionsFor,
-  resolveProperties,
-} from './fusion-properties';
+import { BALL_PROPERTIES, resolveProperties } from './fusion-properties';
 import { ballMap } from './catalog';
 
 const ball = (id: string) => ballMap.get(id)!;
@@ -101,34 +96,5 @@ describe('resolveProperties', () => {
     expect(r.channels).toEqual([]);
     expect(r.scalars).toEqual([]);
     expect(r.collisions).toEqual([]);
-  });
-});
-
-describe('exception table (decision #7 anomalies)', () => {
-  it('holds the three named anomalies, each with a source and confidence', () => {
-    expect(FUSION_EXCEPTIONS.map((e) => e.pair).sort()).toEqual([
-      'banshee+*', 'nuclear-bomb+wraith', 'time+*',
-    ]);
-    for (const e of FUSION_EXCEPTIONS) {
-      expect(e.source.length).toBeGreaterThan(0);
-      expect(['reported', 'unverified', 'contradicted']).toContain(e.confidence);
-    }
-  });
-
-  it('marks only the reports that say the two orders differ as order-dependent', () => {
-    const flags = Object.fromEntries(FUSION_EXCEPTIONS.map((e) => [e.pair, e.orderDependent]));
-    expect(flags).toEqual({
-      'nuclear-bomb+wraith': true, // "the two orders behave differently"
-      'time+*': true, // "the size follows the second pick"
-      'banshee+*': false, // no order claim
-    });
-  });
-
-  it('matches exact pairs in either order and ball-wide wildcards', () => {
-    expect(exceptionsFor(ball('nuclear-bomb'), ball('wraith')).map((e) => e.pair)).toEqual(['nuclear-bomb+wraith']);
-    expect(exceptionsFor(ball('wraith'), ball('nuclear-bomb')).map((e) => e.pair)).toEqual(['nuclear-bomb+wraith']);
-    expect(exceptionsFor(ball('time'), ball('flash')).map((e) => e.pair)).toEqual(['time+*']);
-    expect(exceptionsFor(ball('banshee'), ball('flash')).map((e) => e.pair)).toEqual(['banshee+*']);
-    expect(exceptionsFor(ball('flash'), ball('glacier'))).toEqual([]);
   });
 });

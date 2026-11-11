@@ -343,8 +343,11 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   order model are stated canonically in `docs/research/fusion-mechanics.md`
   §2-§3, with §3 implemented by `src/fusion-properties.ts`. The evidence behind the composer's
   classifications lives in `src/fusion-knowledge.ts` (Destroy/cooldown/pierce/
-  kill classes, spawn-inheritance classes, status-channel predicates, caveat
-  prose); `fusion.ts` composes, the knowledge module classifies. This is the
+  kill classes, spawn-inheritance classes, status-channel predicates) along
+  with the one reported-fact table (`FUSION_FACTS`: caveat prose plus the
+  reported exceptions, each with source and confidence, applied by
+  `applyFacts()`); `fusion.ts` composes, the knowledge module classifies and
+  carries the reported facts, and `fuse()` names no pair. This is the
   site's editorial model of fusion,
   not game data; the evidence and the observation
   corpus live in `docs/research/fusion-observations/` (counts derive from
