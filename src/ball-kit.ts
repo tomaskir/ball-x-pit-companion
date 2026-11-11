@@ -16,7 +16,7 @@
 // has no recorded kit; `channelsOf` falls back to its status-text heuristic,
 // and `resolveProperties` contributes nothing for it.
 
-/** The property model's application-channel vocabulary. Channels are
+/** The fusion models' application-channel vocabulary. Channels are
  *  set-valued: a ball can apply effects through more than one. */
 export type Channel = 'on-hit' | 'per-second' | 'spawn' | 'field';
 

@@ -25,8 +25,6 @@ import type { Ball } from './data/balls';
 import { BALL_KIT, type BallKit, type Channel, type ScalarProperty } from './ball-kit';
 import { pairKey } from './pair';
 
-export type { ScalarProperty } from './ball-kit';
-
 export interface PropertyCollision {
   key: string;
   label: string;

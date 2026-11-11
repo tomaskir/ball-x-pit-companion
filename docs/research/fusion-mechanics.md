@@ -81,8 +81,9 @@ Consequences:
   `docs/research/level-3-effects.md` and generated into `src/data/level-3.ts`;
   the composer consumes that overlay (decision #12). No fused-specific
   override is evidenced; only damage rolls are fused-specific, and the site
-  abstracts them to "X". The hand-maintained property table that resolves
-  shared keys lives in `src/fusion-properties.ts`.
+  abstracts them to "X". The hand-maintained per-ball kit table that resolves
+  shared keys lives in `src/ball-kit.ts`; `src/fusion-properties.ts` applies
+  it.
 
 ---
 

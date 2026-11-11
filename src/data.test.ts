@@ -200,9 +200,9 @@ describe('level-3 effect-text overlay (decision #12, transcription #22)', () => 
   });
 });
 
-describe('fusion property table agrees with the level-3 overlay', () => {
-  // The property table carries L3 values directly (decision #7). Any value
-  // not marked `source: 'reported'` must appear verbatim in the generated L3
+describe('ball kit table agrees with the level-3 overlay', () => {
+  // The kit table carries L3 values directly (decision #7). Any value not
+  // marked `source: 'reported'` must appear verbatim in the generated L3
   // text, so the table and the composer cannot drift apart.
   it('every non-reported scalar value appears in the ball\'s L3 text', () => {
     for (const [ballId, kit] of Object.entries(BALL_KIT)) {

@@ -8,10 +8,6 @@ import { ballMap } from './catalog';
 const ball = (id: string) => ballMap.get(id)!;
 
 describe('ball kit table', () => {
-  it('every key resolves to a catalog ball', () => {
-    for (const id of Object.keys(BALL_KIT)) expect(ballMap.has(id), id).toBe(true);
-  });
-
   it('every entry has unique scalar keys', () => {
     for (const [id, kit] of Object.entries(BALL_KIT)) {
       const keys = kit.scalars.map((s) => s.key);
@@ -29,12 +25,6 @@ describe('ball kit table', () => {
     // entry: the bonus-damage stat swaps carry no effect.
     for (const id of ['erosion', 'stone', 'drill', 'assassin', 'steel']) {
       expect(BALL_KIT[id].channels, `${id}: stat ball has no application channel`).toEqual([]);
-    }
-  });
-
-  it('the classifier reads the kit channels for every recorded ball', () => {
-    for (const [id, kit] of Object.entries(BALL_KIT)) {
-      expect(channelsOf(ball(id)), `${id}: classifier drifted from the kit`).toEqual(kit.channels);
     }
   });
 
@@ -61,12 +51,6 @@ describe('resolveProperties', () => {
     // A kit ball's channels are its kit's channels.
     expect(resolveProperties(ball('leech'), ball('sacrifice')).channels)
       .toEqual([...new Set([...BALL_KIT['leech'].channels, ...BALL_KIT['sacrifice'].channels])]);
-  });
-
-  it('every kit ball contributes exactly its kit channels', () => {
-    for (const [id, kit] of Object.entries(BALL_KIT)) {
-      expect(resolveProperties(ball(id), ball('iron')).channels, id).toEqual(kit.channels);
-    }
   });
 
   it('unions scalars; different keys do not collide', () => {

@@ -388,6 +388,12 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   `docs/research/fusion-mechanics.md`,
   `docs/research/fusion-observations/CONTRADICTIONS.md`; claim audit
   (historical snapshot): `docs/research/fusion-claim-register.md`).
+- **Ball kit** — one ball's fusion properties: its level-3 scalar values and
+  its application channels, recorded together in the one hand-maintained
+  table `BALL_KIT` (`src/ball-kit.ts`). The order model unions two kits
+  (`resolveProperties`); the wire model reads the same channels through
+  `channelsOf` / `statusChannel`. A ball absent from the table has no recorded
+  kit and falls back to the status-text heuristic.
 - **Spawn carrier** — a ball whose tags include a spawn tag
   (`spawns-baby-balls`, `spawns-allies`, `clone`). Its spawn channel can carry
   a partner's on-hit status across a fusion (`spawnable()` in
