@@ -1,7 +1,7 @@
 // Tests for unordered-pair identity (src/pair.ts) — the one home for the
 // "reverse composition is the same pair" invariant and its key format.
 import { describe, it, expect } from 'vitest';
-import { pairKey, parsePair } from './pair';
+import { pairKey, pairKeyOf, parsePair } from './pair';
 
 describe('pairKey', () => {
   it('sorts the two ids and joins them with +', () => {
@@ -10,6 +10,18 @@ describe('pairKey', () => {
 
   it('is order-insensitive — the reverse composition is the same pair', () => {
     expect(pairKey('timestop', 'egg-sac')).toBe(pairKey('egg-sac', 'timestop'));
+  });
+});
+
+describe('pairKeyOf', () => {
+  it('builds the same key from the two ids in either order', () => {
+    expect(pairKeyOf(['egg-sac', 'timestop'])).toBe('egg-sac+timestop');
+    expect(pairKeyOf(['timestop', 'egg-sac'])).toBe('egg-sac+timestop');
+  });
+
+  it('agrees with pairKey and round-trips through parsePair', () => {
+    expect(pairKeyOf(['timestop', 'egg-sac'])).toBe(pairKey('timestop', 'egg-sac'));
+    expect(parsePair(pairKeyOf(['timestop', 'egg-sac']))).toEqual(['egg-sac', 'timestop']);
   });
 });
 

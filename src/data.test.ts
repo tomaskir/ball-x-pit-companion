@@ -8,6 +8,7 @@ import { TAGS } from './data/tags';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { LEVEL_3_EFFECTS } from './data/level-3';
 import { BALL_PROPERTIES } from './fusion-properties';
+import { pairKey } from './pair';
 import { byId, complexity } from './graph';
 
 const ballIds = new Set(BALLS.map((b) => b.id));
@@ -155,7 +156,7 @@ describe('Matchmaker pairing restrictions (character-pairings.md)', () => {
 
   it('17 forbidden pairs over the 22 pairable characters (the doc\'s table)', () => {
     const pairs = new Set(
-      CHARACTERS.flatMap((c) => c.cannotPair.map((p) => [c.id, p].sort().join('+'))),
+      CHARACTERS.flatMap((c) => c.cannotPair.map((p) => pairKey(c.id, p))),
     );
     // 17 regular pairs + the False Messiah's 22 (they pair with nobody)
     expect(pairs.size).toBe(39);

@@ -8,6 +8,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { loadCorpus, loadRawObservations, validateCorpus } from './corpus';
+import { pairKeyOf } from './pair';
 
 const realSchema = JSON.parse(
   readFileSync(new URL('../docs/research/fusion-observations/schema.json', import.meta.url), 'utf8')
@@ -137,6 +138,24 @@ describe('loadCorpus', () => {
     expect(messages).toContain('pair key "freeze+flash" is not its sorted components "flash+freeze"');
     expect(messages).toContain('pair "flash+not-a-ball" component "not-a-ball" not in catalog');
     expect(messages).toContain('pair "burn+flash" superseded.superseded_by must be YYYY-MM-DD');
+  });
+
+  it("accepts the pair module's canonical key spelling for curated pairs and raw rows", () => {
+    // The validator's canonical spelling is src/pair.ts's, not a local
+    // sort().join('+') — the module is the one home for pair identity.
+    const components: [string, string] = ['freeze', 'flash'];
+    const canonical = pairKeyOf(components);
+    expect(canonical).toBe('flash+freeze'); // independent literal
+    const root = fixture({
+      pairs: curated({ [canonical]: curatedPair(components) }),
+      jsonl: { 'reddit-2026-11-13.jsonl': row({ pair: components }) },
+    });
+    // curated: the module's key is accepted as canonical
+    expect(loadCorpus(root).findings).toEqual([]);
+    // raw: the same components in reverse are not the module's canonical order
+    expect(validateCorpus(root).map((finding) => finding.message)).toContain(
+      'pair not sorted alphabetically: freeze, flash'
+    );
   });
 
   it('rejects a curated self-pair, mirroring the raw-layer check', () => {

@@ -29,6 +29,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ballMap } from './catalog.ts';
+import { pairKeyOf, sortedPairIds } from './pair.ts';
 
 /** A schema or shape violation. Warnings do not fail the gate. */
 export interface Finding {
@@ -214,8 +215,8 @@ function readCurated(root: string, contract: SchemaContract): CuratedLayer {
     ) {
       err(`pair "${key}" components must be exactly 2 ids`);
     } else {
-      const sorted = [...components].sort();
-      if (key !== sorted.join('+')) err(`pair key "${key}" is not its sorted components "${sorted.join('+')}"`);
+      const canonical = pairKeyOf(components);
+      if (key !== canonical) err(`pair key "${key}" is not its sorted components "${canonical}"`);
       if (components[0] === components[1]) err(`pair "${key}" cannot fuse a ball with itself`);
       for (const id of components) {
         if (!ballMap.has(id)) err(`pair "${key}" component "${id}" not in catalog`);
@@ -326,7 +327,7 @@ function validateObservation(
       if (typeof id !== 'string' || !ballMap.has(id)) err(file, lineNo, `pair id "${id}" not in catalog`);
     }
     if (pair.every((id: unknown): id is string => typeof id === 'string')) {
-      const sorted = [...pair].sort();
+      const sorted = sortedPairIds(pair);
       if (pair[0] !== sorted[0] || pair[1] !== sorted[1]) {
         err(file, lineNo, `pair not sorted alphabetically: ${pair.join(', ')}`);
       }
