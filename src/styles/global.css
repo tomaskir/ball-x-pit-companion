@@ -138,6 +138,15 @@ header h1 span { color: var(--muted); font-style: italic; font-size: 14px; }
 
 .header-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
 
+/* The deployed release label, left of the theme toggle. Muted and small so
+   it reads as metadata, not a control. */
+.app-version {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
 /* Per-screen search boxes — one per section, not a global header input.
    Grid/char screens: a toolbar row, box pushed top right (the selection box,
    when visible, takes the left side — the search keeps margin-left:auto).

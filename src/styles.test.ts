@@ -57,6 +57,18 @@ describe('global stylesheet', () => {
     expect(repo!.compareDocumentPosition(toggle!) & 2).toBeTruthy();
   });
 
+  it('app version sits in the header-right cluster, left of the theme toggle', () => {
+    const cluster = shellDoc().querySelector('.header-right')!;
+    const version = cluster.querySelector('.app-version');
+    const toggle = cluster.querySelector('#themeToggle');
+    expect(version, '.app-version exists in header-right').toBeTruthy();
+    expect(toggle, '#themeToggle exists in header-right').toBeTruthy();
+    // the toggle follows the version label (DOCUMENT_POSITION_FOLLOWING = 4 —
+    // the node environment has no Node global)
+    expect(version!.compareDocumentPosition(toggle!) & 4).toBeTruthy();
+    expect(rulesFor(globalCss(), '.app-version').length, '.app-version has a rule').toBeGreaterThan(0);
+  });
+
   it('top menu: title, separator, then Balls/Fusions/Passives/Characters/Plan with group separators', () => {
     // pins the requested menu order and the title↔button vertical alignment
     // (the h1's default heading line-height made it taller than .tab-btn)
