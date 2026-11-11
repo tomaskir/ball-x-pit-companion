@@ -38,9 +38,9 @@ is reconstructed from community sources.
   the second character to any other."
 - **S4 — Naturalist Update patch notes (2026-08-06)**, via Steam news
   aggregators: "Fixed invalid message that shows when you try to matchmake
-  the Warrior with the False Messiah." Together with S1 v2.0 ("The
-  Warrior — No restrictions"), the Warrior × False Messiah pair is allowed as
-  of the Naturalist update.
+  the Warrior with the False Messiah." This corrects the *error message*, not
+  the pairing: the False Messiah still takes no partner (S3; the generated
+  `cannotPair` data and `src/data.test.ts` pin the full exclusion).
 
 ## The pair list (site model, current roster)
 
@@ -65,7 +65,7 @@ incompatible partners and rejecting them with a message.
 | The Radical | The Cogitator | S1 |
 | The Falconer | The Cohabitants, The Shade | S1 |
 | The Tunneller | The Repentant | S1 (v2.0 only) |
-| The False Messiah | *all* — cannot be a second character, and takes no partner (outside the vote mechanic) | S3, S4 |
+| The False Messiah | *all* — cannot be a second character, and takes no partner (outside the vote mechanic) | S3 |
 
 No restrictions (any partner): **The Warrior, The Embedded, The Empty
 Nester, The Carouser, The Tiptoer, The Hoary Hoarder, The Ballbearer.**
@@ -87,8 +87,9 @@ Messiah's special rule.
    (2026-04-27), so v1.1 simply predates the character — not a mechanic
    change. No pair present in v1.1 is absent from v2.0.
 3. **Warrior × False Messiah** was rejected with an "invalid" message before
-   the Naturalist update and is allowed after it (S4, S1 v2.0). The site
-   models the post-Naturalist state.
+   the Naturalist update. The update fixed the *message* (S4), not the
+   pairing; the False Messiah still takes no partner (S3). The site models the
+   post-Naturalist state: the pair stays forbidden.
 4. **Unverified tails.** S1's per-character entries for The Carouser, The
    Tiptoer, The Hoary Hoarder and The Ballbearer were never retrievable
    (snippet truncation + Cloudflare gate). No other source names any

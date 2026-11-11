@@ -48,7 +48,7 @@ level 1; 2 have no L3 diff (Elemental, Ghost); 1 has no table (Baby Ball).
 | Bleed | Inflicts 4 stacks of bleed. Bleeding enemies receive 1 damage per stack when hit by a ball (max 14 stacks). | — |
 | Blizzard | Freezes all enemies within a 2 tile radius for 1.3 seconds, dealing 1–70 damage. | — |
 | Bomb | Explodes when hitting an enemy, dealing 200–400 damage to nearby enemies. Has a 3 second cooldown before it can be shot again. | L2 = L3 (no further L3 change). |
-| Brimstone | Applies 1 stack of burn and poison every second to all enemies within a 2 tile radius (max 4 stacks). Burn deals 1–7 damage per stack per second and poison deals 3–5 damage per stack per second. | Full damage clause (fact base truncated it). |
+| Brimstone | Applies 1 stack of burn and poison every second to all enemies within a 2 tile radius (max 4 stacks). Burn deals 1–7 damage per stack per second and poison deals 3–5 damage per stack per second. | Full damage clause; the fact-base truncation was fixed 2026-11-11. |
 | Brood Mother | Has a 45% chance of birthing a baby ball each time it hits an enemy. | — |
 | Burn | Add 1 stack of burn on hit for 5 seconds (max 5 stacks). Burnt units are dealt 7–11 damage per stack per second. | — |
 | Catapult | Launches 4–6 stone baby balls every 1.5 seconds, which are destroyed after hitting anything. | — |
@@ -115,7 +115,7 @@ level 1; 2 have no L3 diff (Elemental, Ghost); 1 has no table (Baby Ball).
 | Succubus | Each hit has a 5% chance of charming the enemy for 12 seconds. Heals 1 when hitting a charmed enemy. | — |
 | Sun | Blind all enemies in view and add 1 stack of burn every second (max 5 stacks). Burn lasts for 8 seconds and deals 9–15 damage per stack per second. | — |
 | Swamp | Leaves behind tar blobs over time. Enemies who walk into tar blobs are dealt 25–40, are slowed by 50% for 7 seconds and gain 1 stack of poison (max 8 stacks). Each stack of poison deals 2–4 damage per second. This ball and its tar blobs also deal 6–12 damage to nearby units. | — |
-| Time | Explodes into a time snare upon hitting an enemy, which stays on the field for 3.0 seconds and freezes enemies inside it. | Overview says 20 s (typo); per-level 3.0 s. |
+| Time | Explodes into a time snare upon hitting an enemy, which stays on the field for 3.0 seconds and freezes enemies inside it. | Overview said 20 s (typo); fixed to 2.0 s in the fact base 2026-11-11; per-level 3.0 s. |
 | Time Bomb | Throws a time bomb every few seconds, which explodes after a delay, dealing 140–240 damage to nearby enemies. | — |
 | Timestop | Freezes everything on the field for 6.0 seconds but destroys itself after hitting an enemy. Has a 20 second cooldown before it can be shot again. | — |
 | Tumor | Applies tumor on hit. Enemies with a tumor die after 30 seconds (except for bosses). | — |
@@ -151,7 +151,7 @@ level 1; 2 have no L3 diff (Elemental, Ghost); 1 has no table (Baby Ball).
 
 | Ball | Quirk |
 |---|---|
-| Laser Cutter | Per-level text omits the noun "damage": "deals 140–210 per second". The Balls overview table reads "deals 140–210 damage per second"; the meaning is unambiguous. |
+| Laser Cutter | Per-level text omits the noun "damage": "deals 140–210 per second". The Balls overview table reads "deals 100–150 damage per second" (the L1 value); the meaning is unambiguous. |
 | Radiation Beam | "Emit a radiation beam … and cause enemies to receive …" (no -s on either verb). The fact base reads "Emits". |
 | Laser Beam | "Emit a laser beam …" (no -s). The fact base reads "Emits". |
 | Flash | "Damage all enemies …" (imperative). The fact base reads "Damages". |
@@ -215,16 +215,17 @@ per-level tables agree with it on all but these wording/level cases:
 
 | Ball | Fact base / overview | Per-level table | Nature |
 |---|---|---|---|
-| Time | Overview says the snare stays 20 s. | 2.0 / 2.5 / 3.0 s. | Overview typo; per-level is primary. Already flagged in `effect-text-currency.md` §3. |
-| Brimstone | Fact base drops the burn/poison damage clause. | Full clause present. | Fact-base truncation; already flagged. |
-| Laser Cutter | Overview says "deals 100–150 damage per second". | L3 says "deals 140–210 per second". | Per-level omits the noun "damage"; value agrees. |
+| Time | At audit time the overview said the snare stays 20 s; corrected to 2.0 s in the fact base on 2026-11-11. | 2.0 / 2.5 / 3.0 s. | Overview typo; per-level is primary. Already flagged in `effect-text-currency.md` §3. |
+| Brimstone | At audit time the fact base dropped the burn/poison damage clause; corrected 2026-11-11. | Full clause present. | Fact-base truncation; already flagged. |
+| Laser Cutter | Overview says "deals 100–150 damage per second". | L3 says "deals 140–210 per second". | Level scaling (L1 vs L3); per-level also omits the noun "damage". |
 | Landslide | Overview says "damage per second". | "damage / second". | Wording only. |
-| Tumor | Overview says "Applies tumor on hit, Enemies…". | "Applies tumor on hit. Enemies…". | Punctuation only; per-level is correct. |
+| Tumor | Overview says "Applies tumor on hit. Enemies with a tumor die after 40 seconds…". | "Applies tumor on hit. Enemies with a tumor die after 30 seconds…". | Value scales 40 s (L1) → 30 s (L3); punctuation also differs. |
 | Radiation Beam | Fact base says "Emits". | "Emit". | Grammar only. |
 | Flash | Fact base says "Damages". | "Damage". | Grammar only. |
 
 No other overview-vs-per-level differences after normalizing dashes, `max`,
-slash spacing, and terminal periods.
+slash spacing, and terminal periods (Tumor's 40 s → 30 s is the one value
+change).
 
 ## 5. Sources
 
