@@ -9,8 +9,8 @@
 // fixture the tables are checked against.
 //
 // Every id is a ball id in src/data/balls.ts. Nothing here composes: the
-// predicates answer "what class is this ball in?", never "what does the fused
-// ball do?".
+// predicates answer "what class is this ball in?", and the caveat constants
+// are the reported copy fuse() emits beside the composed result.
 import { BALLS, type Ball } from './data/balls';
 import { LEVEL_3_EFFECTS } from './data/level-3';
 import { pairKey } from './pair';
@@ -103,6 +103,7 @@ export const KILL_DISPUTED_PAIRS: ReadonlySet<string> = new Set(['flicker+reaper
 export const BASE_BALL_IDS: ReadonlySet<string> = new Set(BALLS.filter((b) => b.depth === 0).map((b) => b.id));
 
 export const isDestroyClass = (b: Ball): boolean => DESTROY_CLASS_IDS.has(b.id);
+export const isCooldownClass = (b: Ball): boolean => COOLDOWN_CLASS_IDS.has(b.id);
 export const isPierce = (b: Ball): boolean => PIERCE_IDS.has(b.id);
 export const isKillEffect = (b: Ball): boolean => KILL_EFFECT_IDS.has(b.id);
 export const isStatusOnlySpawner = (b: Ball): boolean => SPAWN_STATUS_ONLY_IDS.has(b.id);
@@ -126,7 +127,7 @@ export function statusChannel(b: Ball): StatusChannel {
   return 'hit';
 }
 
-export const hasSpawn = (b: Ball): boolean =>
+const hasSpawn = (b: Ball): boolean =>
   b.tags.some((t) => t === 'spawns-baby-balls' || t === 'spawns-allies' || t === 'clone');
 
 /** A spawn carrier whose spawn channel can inherit the partner's effects.
@@ -147,12 +148,12 @@ export const dealsDamage = (b: Ball): boolean =>
  *  channel; the trigger limits describe the carrier + AOE partner, wire or
  *  not. The Flash sentence is shared so it can be deduped when both Brood
  *  Mother caveats fire for the same pair. */
-export const BROOD_MOTHER_FLASH_REPORT_TAIL =
+export const BROOD_MOTHER_FLASH_REPORT_FRAGMENT =
   'one launch-week report claims Flash × Brood Mother produced none (unverified).';
-export const BROOD_MOTHER_FLASH_REPORT =
-  BROOD_MOTHER_FLASH_REPORT_TAIL.charAt(0).toUpperCase() + BROOD_MOTHER_FLASH_REPORT_TAIL.slice(1);
+const BROOD_MOTHER_FLASH_REPORT_SENTENCE =
+  BROOD_MOTHER_FLASH_REPORT_FRAGMENT.charAt(0).toUpperCase() + BROOD_MOTHER_FLASH_REPORT_FRAGMENT.slice(1);
 export const BROOD_MOTHER_INHERITANCE_CAVEAT =
-  `Reported - Brood Mother's babies inherit the partner's properties, but the inherited effect is weaker and the spawn is probabilistic (25/35/45% per hit). ${BROOD_MOTHER_FLASH_REPORT}`;
+  `Reported - Brood Mother's babies inherit the partner's properties, but the inherited effect is weaker and the spawn is probabilistic (25/35/45% per hit). ${BROOD_MOTHER_FLASH_REPORT_SENTENCE}`;
 export const EGG_SAC_INHERITANCE_CAVEAT =
   'Reported - Egg Sac\'s babies inherit the partner\'s properties, but the inherited effect is weaker than a full clone (namu.wiki).';
 export const BROOD_MOTHER_TRIGGER_CAVEAT =

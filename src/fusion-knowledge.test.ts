@@ -22,11 +22,13 @@ import {
   aoeRank,
   channelOverride,
   isAoeExcluded,
+  isCooldownClass,
   isDamageRidingStatus,
   isDestroyClass,
   isDisputedKillPair,
   isKillEffect,
   isPierce,
+  isSpawnBound,
   isStatusOnlySpawner,
   spawnable,
   statusChannel,
@@ -58,9 +60,12 @@ describe('knowledge tables', () => {
     }
   });
 
-  it('tables carry no duplicate ids and the spawn classes stay disjoint', () => {
+  it('tables are Sets (duplicates collapse at construction) and the spawn classes stay disjoint', () => {
     for (const [name, ids] of Object.entries(TABLES)) {
-      expect(new Set(ids).size, `${name} has duplicates`).toBe(ids.size);
+      // A duplicate id cannot survive a Set literal; asserting the container
+      // type documents the invariant the exported tables rely on.
+      expect(ids, `${name} must be a Set`).toBeInstanceOf(Set);
+      expect([...ids], `${name} yielded duplicate ids`).toHaveLength(ids.size);
     }
     // A carrier cannot be both hard-excluded from inheritance and status-only.
     for (const id of SPAWN_NO_INHERITANCE_IDS) expect(SPAWN_STATUS_ONLY_IDS.has(id)).toBe(false);
@@ -76,6 +81,7 @@ describe('knowledge tables', () => {
   it('predicates match their tables for every catalog ball', () => {
     for (const b of BALLS) {
       expect(isDestroyClass(b)).toBe(DESTROY_CLASS_IDS.has(b.id));
+      expect(isCooldownClass(b)).toBe(COOLDOWN_CLASS_IDS.has(b.id));
       expect(isPierce(b)).toBe(PIERCE_IDS.has(b.id));
       expect(isKillEffect(b)).toBe(KILL_EFFECT_IDS.has(b.id));
       expect(isStatusOnlySpawner(b)).toBe(SPAWN_STATUS_ONLY_IDS.has(b.id));
@@ -107,6 +113,13 @@ describe('classification predicates', () => {
     expect(statusChannel(ball('iron'))).toBeNull(); // not a status ball
   });
 
+  it('isSpawnBound covers the id exception and the text heuristic', () => {
+    expect(isSpawnBound(ball('blizzard'))).toBe(true); // SPAWN_BOUND_IDS
+    expect(isSpawnBound(ball('glacier'))).toBe(true); // text: spikes
+    expect(isSpawnBound(ball('flash'))).toBe(false);
+    expect(isSpawnBound(ball('sun'))).toBe(false);
+  });
+
   it('spawnable admits status-only carriers but not the two-hop exclusion', () => {
     expect(spawnable(ball('cell'))).toBe(true);
     expect(spawnable(ball('brood-mother'))).toBe(true);
@@ -126,18 +139,28 @@ describe('corpus general_rules_notes coverage', () => {
     readFileSync(new URL('../docs/research/fusion-observations/fusion-pairs.json', import.meta.url), 'utf8'),
   ) as { general_rules_notes: Record<string, unknown> };
 
-  /** Notes whose class a knowledge table or predicate encodes. */
+  /** Notes whose class a knowledge table or predicate encodes. Each check
+   *  names the ids the note calls out, so a table that drifted would fail. */
   const ENCODED_CLASSES: Record<string, () => boolean> = {
-    'base-ball-pool-recursion': () => BASE_BALL_IDS.size > 0,
-    'cooldown-first-wins': () => COOLDOWN_CLASS_IDS.size > 0,
-    'pass-through-catalog': () => PIERCE_IDS.size > 0,
-    'destroy-pair-may-lose-one-effect': () => DESTROY_CLASS_IDS.size > 0,
-    'spawn-compensates-destroy': () => BALLS.some(isDestroyClass) && BALLS.some(spawnable),
+    // "If one component is a BASE ball (Wind, Egg Sac, Brood Mother, Burn,
+    // Cell, etc.)…"
+    'base-ball-pool-recursion': () =>
+      ['wind', 'egg-sac', 'brood-mother', 'burn', 'cell'].every((id) => BASE_BALL_IDS.has(id)),
+    // "the composer's PIERCE_IDS follows the fact base plus Sandstorm."
+    'pass-through-catalog': () =>
+      ['ghost', 'wind', 'drill', 'erosion', 'noxious', 'sandstorm', 'sniper', 'soul-sucker', 'wraith', 'assassin']
+        .every((id) => PIERCE_IDS.has(id)),
+    // "When two self-destruct balls are fused, one of their explosion/
+    // self-destruct effects may be lost."
+    'destroy-pair-may-lose-one-effect': () => isDestroyClass(ball('bomb')) && isDestroyClass(ball('dark')),
+    // "Cell(Clone) x Bomb(Destroy) is an indestructible bomb…"
+    'spawn-compensates-destroy': () => isDestroyClass(ball('bomb')) && spawnable(ball('cell')),
   };
 
   /** Notes about the corpus's limits or the order model, not a ball class. */
   const NOT_CLASS_NOTES = new Set([
-    'same-property-first-wins',
+    'same-property-first-wins', // order model: fusion-properties.ts
+    'cooldown-first-wins', // order model: fusion-properties.ts scalar precedence
     'fused-orbs-not-evolution-components',
     'evolution-components-not-always-retained',
     'game-file-negatives',
@@ -152,18 +175,10 @@ describe('corpus general_rules_notes coverage', () => {
     }
   });
 
-  it('the encoded classes are present in the corpus and backed by non-empty tables', () => {
+  it('the encoded classes are present in the corpus and backed by the named ids', () => {
     for (const [key, represented] of Object.entries(ENCODED_CLASSES)) {
       expect(corpus.general_rules_notes[key], `${key} missing from corpus`).toBeDefined();
       expect(represented(), `${key} not represented by knowledge`).toBe(true);
-    }
-  });
-
-  it('PIERCE_IDS follows the fact-base pass-through list plus Sandstorm', () => {
-    // corpus pass-through-catalog: "the composer's PIERCE_IDS follows the
-    // fact base plus Sandstorm."
-    for (const id of ['ghost', 'wind', 'drill', 'erosion', 'noxious', 'sandstorm', 'sniper', 'soul-sucker', 'wraith', 'assassin']) {
-      expect(PIERCE_IDS.has(id), id).toBe(true);
     }
   });
 });

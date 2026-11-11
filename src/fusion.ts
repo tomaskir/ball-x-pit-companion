@@ -47,16 +47,16 @@ import {
 } from './fusion-properties';
 import {
   BASE_BALL_IDS,
-  BROOD_MOTHER_FLASH_REPORT_TAIL,
+  BROOD_MOTHER_FLASH_REPORT_FRAGMENT,
   BROOD_MOTHER_INHERITANCE_CAVEAT,
   BROOD_MOTHER_TRIGGER_CAVEAT,
-  COOLDOWN_CLASS_IDS,
   EGG_SAC_INHERITANCE_CAVEAT,
   MOSQUITO_KING_TRIGGER_CAVEAT,
   aoeRank,
   componentText,
   dealsDamage,
   isAoeExcluded,
+  isCooldownClass,
   isDamageRidingStatus,
   isDestroyClass,
   isDisputedKillPair,
@@ -191,7 +191,7 @@ function spawnInheritanceCaveats(a: Ball, b: Ball, wire: CrossWireResult): strin
     // already carries the Flash sentence, so the trigger caveat drops it.
     notes.push(wire.spawnerId === 'brood-mother'
       ? `${BROOD_MOTHER_TRIGGER_CAVEAT}.`
-      : `${BROOD_MOTHER_TRIGGER_CAVEAT}; ${BROOD_MOTHER_FLASH_REPORT_TAIL}`);
+      : `${BROOD_MOTHER_TRIGGER_CAVEAT}; ${BROOD_MOTHER_FLASH_REPORT_FRAGMENT}`);
   }
   if (mosquitoPartner && aoeRank(mosquitoPartner) > 0) notes.push(MOSQUITO_KING_TRIGGER_CAVEAT);
   return notes;
@@ -256,7 +256,7 @@ export function fuse(a: Ball, b: Ball): FusionResult | null {
   if (isDestroyClass(a) && isDestroyClass(b)) {
     notes.push('Both balls self-destruct — fusing two Destroy-class balls may lose one of the two effects (reported).');
   }
-  if ((COOLDOWN_CLASS_IDS.has(a.id) && isPierce(b)) || (COOLDOWN_CLASS_IDS.has(b.id) && isPierce(a))) {
+  if ((isCooldownClass(a) && isPierce(b)) || (isCooldownClass(b) && isPierce(a))) {
     notes.push(`Hit-once + cooldown is dominant: the fused ball keeps it and loses the partner's pass-through (reported).`);
   }
   if ((isDestroyClass(a) && spawnable(b)) || (isDestroyClass(b) && spawnable(a))) {
