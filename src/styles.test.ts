@@ -93,4 +93,19 @@ describe('global stylesheet', () => {
   it('both picked slots highlight identically (slot-2 was visually subtle)', () => {
     expectSlotHighlightsIdentical();
   });
+
+  it('the fusion order presentation classes are styled', () => {
+    // the result rows, exceptions section, warning line, and swap button are
+    // built by the renderer — each class the skeleton/paint uses has a rule
+    const css = globalCss();
+    for (const selector of [
+      '.fusion-result', '.fusion-result-row', '.fusion-result-empty',
+      '.fusion-exceptions', '.fusion-exception', '.fusion-order-notice', '.fusion-swap-btn',
+    ]) {
+      expect(rulesFor(css, selector).length, `${selector} has a rule`).toBeGreaterThan(0);
+    }
+    // the swap button shares the plan button's box styling (one action row)
+    const shared = css.filter((r) => r.selectors.includes('.fusion-plan-btn') && r.selectors.includes('.fusion-swap-btn'));
+    expect(shared.length, 'swap and plan buttons share a rule').toBeGreaterThan(0);
+  });
 });

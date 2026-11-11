@@ -599,6 +599,48 @@ footer a { color: var(--gold); }
   font-size: 12px;
 }
 
+/* Fused result + Reported exceptions — the order presentation (#8). Both
+   sections sit below the component paragraphs; the rows are text-only. */
+.fusion-result,
+.fusion-exceptions {
+  margin: 14px 0 0;
+  border-top: 1px solid var(--gold-dim);
+  padding-top: 10px;
+}
+
+.fusion-result-title,
+.fusion-exceptions-title {
+  color: var(--gold);
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  margin: 0 0 6px;
+  text-transform: uppercase;
+}
+
+.fusion-result-rows,
+.fusion-exceptions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.fusion-result-row { font-size: 13px; color: var(--text); }
+.fusion-result-label { color: var(--muted); }
+.fusion-result-value { font-weight: 600; }
+.fusion-result-winner { color: var(--gold); }
+.fusion-result-reported { color: var(--muted); font-size: 11px; }
+.fusion-result-empty { color: var(--muted); font-style: italic; margin: 0; }
+
+.fusion-exception { color: var(--muted); font-size: 12px; }
+.fusion-exception-title { color: var(--text); font-weight: 600; }
+.fusion-exception-confidence { font-style: italic; }
+
+/* the warning line sits directly above the action row */
+.fusion-order-notice { color: var(--gold); font-size: 12px; margin: 14px 0 0; }
+
 /* ---------- plan screen ---------- */
 
 .plan-toolbar {
@@ -761,9 +803,10 @@ footer a { color: var(--gold); }
 /* the composed fusion's plan toggle — centered below the panel body (the
    margin rides the button, not the row: a hidden button must leave no
    phantom gap in the pending/empty states) */
-.fusion-plan-row { display: flex; justify-content: center; }
+.fusion-plan-row { display: flex; justify-content: center; gap: 8px; }
 
-.fusion-plan-btn {
+.fusion-plan-btn,
+.fusion-swap-btn {
   background: none;
   border: 1px solid var(--gold-dim);
   border-radius: 4px;
@@ -775,7 +818,8 @@ footer a { color: var(--gold); }
   cursor: pointer;
 }
 
-.fusion-plan-btn:hover:not(:disabled) { border-color: var(--gold); }
+.fusion-plan-btn:hover:not(:disabled),
+.fusion-swap-btn:hover:not(:disabled) { border-color: var(--gold); }
 
 .fusion-plan-btn:disabled {
   color: var(--muted);

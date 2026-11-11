@@ -27,7 +27,9 @@ describe('fusion panel skeleton (renderer.ts)', () => {
       '.fusion-hint', '.fusion-head',
       '.icon-a', '.name-a', '.fusion-times', '.icon-b', '.name-b',
       '.fusion-evo', '.fusion-body', '.eff-a', '.eff-b', '.fusion-cross', '.fusion-notes',
-      '.fusion-plan-btn',
+      '.fusion-result', '.fusion-result-rows', '.fusion-result-empty',
+      '.fusion-exceptions', '.fusion-exceptions-list',
+      '.fusion-order-notice', '.fusion-swap-btn', '.fusion-plan-btn',
     ];
     const missing = selectors.filter((s) => !q(s));
     expect(missing, `selectors matching nothing: ${missing.join(', ')}`).toEqual([]);
@@ -516,6 +518,113 @@ describe('fusion panel plan button (jsdom, through paint())', () => {
     expect(emit).toHaveBeenCalledWith({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
     drive({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
     expect(q('.fusion-plan-btn').textContent).toBe('Remove from plan');
+  });
+});
+
+// ---------- behavior: order presentation (decision #8) ----------
+
+describe('fusion panel order presentation (jsdom, through paint())', () => {
+  it('order-sensitive pair: result rows name label/value/winner, warning + swap show', () => {
+    drive({ type: 'toggleFusion', id: 'egg-sac' }, { type: 'toggleFusion', id: 'timestop' });
+    expect(q('.fusion-result').hidden).toBe(false);
+    const rows = [...panel().querySelectorAll<HTMLElement>('.fusion-result-row')];
+    expect(rows).toHaveLength(1);
+    expect(rows[0].textContent).toContain('Cooldown');
+    expect(rows[0].textContent).toContain('3 second');
+    expect(rows[0].textContent).toContain('Egg Sac');
+    // confirmed row: no unverified marker
+    expect(rows[0].textContent).not.toContain('· reported');
+    expect(q('.fusion-result-empty').hidden).toBe(true);
+    expect(q('.fusion-order-notice').hidden).toBe(false);
+    expect(q('.fusion-order-notice').textContent).toContain('Order matters');
+    expect(q('.fusion-order-notice').textContent).toContain('Cooldown');
+    expect(q('.fusion-swap-btn').hidden).toBe(false);
+    expect(q('.fusion-plan-btn').hidden).toBe(false);
+  });
+
+  it('an unverified collision row carries the compact · reported marker', () => {
+    drive({ type: 'toggleFusion', id: 'freeze-ray' }, { type: 'toggleFusion', id: 'blizzard' });
+    const row = panel().querySelector<HTMLElement>('.fusion-result-row')!;
+    expect(row.textContent).toContain('Freeze duration');
+    expect(row.textContent).toContain('13.0 seconds');
+    expect(row.textContent).toContain('· reported');
+  });
+
+  it('non-order pair: "No shared properties — order does not matter.", no warning, no swap', () => {
+    drive({ type: 'toggleFusion', id: 'flash' }, { type: 'toggleFusion', id: 'glacier' });
+    expect(q('.fusion-result').hidden).toBe(false);
+    expect(panel().querySelectorAll('.fusion-result-row')).toHaveLength(0);
+    expect(q('.fusion-result-empty').hidden).toBe(false);
+    expect(q('.fusion-result-empty').textContent).toBe('No shared properties — order does not matter.');
+    expect(q('.fusion-order-notice').hidden).toBe(true);
+    expect(q('.fusion-swap-btn').hidden).toBe(true);
+    expect(q('.fusion-plan-btn').hidden).toBe(false);
+  });
+
+  it('an order-dependent exception shows the exceptions section and the swap', () => {
+    drive({ type: 'toggleFusion', id: 'nuclear-bomb' }, { type: 'toggleFusion', id: 'wraith' });
+    expect(q('.fusion-exceptions').hidden).toBe(false);
+    expect(q('.fusion-exceptions-list').textContent).toContain('Order-sensitive one-off');
+    expect(q('.fusion-order-notice').hidden).toBe(false);
+    expect(q('.fusion-swap-btn').hidden).toBe(false);
+  });
+
+  it('a non-order exception shows the section but no swap', () => {
+    drive({ type: 'toggleFusion', id: 'banshee' }, { type: 'toggleFusion', id: 'flash' });
+    expect(q('.fusion-exceptions').hidden).toBe(false);
+    expect(q('.fusion-exceptions-list').textContent).toContain('Whole-field curse override');
+    expect(q('.fusion-order-notice').hidden).toBe(true);
+    expect(q('.fusion-swap-btn').hidden).toBe(true);
+  });
+
+  it('evolve-instead pair hides the result block, exceptions, warning, and swap', () => {
+    drive({ type: 'toggleFusion', id: 'bleed' }, { type: 'toggleFusion', id: 'poison' });
+    expect(q('.fusion-evo').hidden).toBe(false);
+    expect(q('.fusion-result').hidden).toBe(true);
+    expect(q('.fusion-exceptions').hidden).toBe(true);
+    expect(q('.fusion-order-notice').hidden).toBe(true);
+    expect(q('.fusion-swap-btn').hidden).toBe(true);
+  });
+
+  it('the result rows and component paragraphs use level-3 values', () => {
+    drive({ type: 'toggleFusion', id: 'erosion' }, { type: 'toggleFusion', id: 'stone' });
+    // Erosion's level-1 text says 3%; the level-3 overlay says 5% — the
+    // fusion screen consumes L3 for both the paragraph and the resolved row
+    expect(q('.eff-a').textContent).toContain("5% of enemy's current health");
+    const row = panel().querySelector<HTMLElement>('.fusion-result-row')!;
+    expect(row.textContent).toContain('5%');
+    expect(row.textContent).toContain('Erosion');
+  });
+
+  it('the swap button emits swapFusion; through the island path it reverses the picks', () => {
+    const emit = vi.fn();
+    buildAll({ getVerdict: () => null, emit });
+    drive({ type: 'toggleFusion', id: 'egg-sac' }, { type: 'toggleFusion', id: 'timestop' });
+    q<HTMLElement>('.fusion-swap-btn').click();
+    expect(emit).toHaveBeenCalledWith({ type: 'swapFusion' });
+
+    // the island's emit: dispatch + paint — the panel recomputes in place
+    const view = createViewState();
+    buildAll({ getVerdict: () => null, emit: (action) => paint(view.dispatch(action)) });
+    paint(view.dispatch({ type: 'toggleFusion', id: 'egg-sac' }));
+    paint(view.dispatch({ type: 'toggleFusion', id: 'timestop' }));
+    q<HTMLElement>('.fusion-swap-btn').click();
+    expect(q('.name-a').textContent).toBe('Timestop');
+    expect(q('.name-b').textContent).toBe('Egg Sac');
+    expect(panel().querySelector<HTMLElement>('.fusion-result-row')!.textContent).toContain('20 second');
+  });
+
+  it('swapping repaints in place: the head <img>s and the result block are never recreated', () => {
+    drive({ type: 'toggleFusion', id: 'egg-sac' }, { type: 'toggleFusion', id: 'timestop' });
+    const iconA = q<HTMLImageElement>('.icon-a');
+    const iconB = q<HTMLImageElement>('.icon-b');
+    const result = q('.fusion-result');
+    drive({ type: 'swapFusion' });
+    expect(q<HTMLImageElement>('.icon-a')).toBe(iconA);
+    expect(q<HTMLImageElement>('.icon-b')).toBe(iconB);
+    expect(q('.fusion-result')).toBe(result);
+    // result rows are text-only — no <img> inside the block to blink
+    expect(panel().querySelectorAll('.fusion-result img')).toHaveLength(0);
   });
 });
 

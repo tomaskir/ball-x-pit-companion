@@ -253,7 +253,15 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   the island): its fusion-row map is purely a DOM-row registry, and the
   fusion panel paints by switching on the view model's named `fusionPanel`
   state — per state, which hooks show and what they show (behavior pinned
-  in `src/renderer.test.ts` through jsdom).
+  in `src/renderer.test.ts` through jsdom). The order presentation is
+  components-first: below the component paragraphs sit the built-once
+  "Fused result" rows (property label, final value, winning ball, `· reported`
+  on unverified rows), the separate "Reported exceptions" section, and — for
+  order-sensitive pairs — a warning line directly above the action row's
+  `[Swap order] [Add to plan]`; non-order pairs show "No shared properties —
+  order does not matter." and no swap. The swap button is built once and
+  hidden unless `orderSensitive`; it emits `swapFusion` through the build
+  seam.
 - **Plan state** — the plan screen's state and derivation as their own
   module: the End game upgrades toggle, the planned balls/passives/fused
   pairs, and the resolved `PlanState` the renderer paints. Module:
@@ -293,10 +301,13 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   screen's panel state as a named 3-state machine (`fusionPanel`: `empty` /
   `pending` with the first resolved Ball / `composed` with both resolved
   Balls, the composed fusion from `src/fusion.ts`, the pair's `planned`
-  mark, and `planFull` — the plan's ball slots at their active limit, which
-  disables the panel's plan toggle) — derived in one
+  mark, `planFull` — the plan's ball slots at their active limit, which
+  disables the panel's plan toggle — and the order presentation derived
+  here: `orderSensitive`, `orderNotice`, and the composer's structured
+  `collisions` / `exceptions`) — derived in one
   place, so the renderer switches on the state instead of re-deriving picks
-  from hidden toggles. The island listens to DOM events, dispatches, and
+  from hidden toggles. `swapFusion` reverses the two picks (a,b → b,a) and
+  recomputes the panel; it is a no-op with fewer than two picks. The island listens to DOM events, dispatches, and
   hands the returned view model to the renderer; the view model is the test
   surface.
 - **Fusion composer** — pure composition of a fused ball from two components:
@@ -304,12 +315,12 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   order with damage rolls abstracted to "X", a role-named cross-wire line
   when a channel can carry the partner's effect (spawn/AOE carrier × on-hit
   status; AOE carrier × kill-on-hit, e.g. Black Hole × Sun; spawn carrier ×
-  spawn-bound status, e.g. Glacier × Maggot), notes for the two order
-  side-effects (both-cooldown pairs, same-property pairs — first-selected
-  wins) and the fixed composition caveats (Destroy × Destroy, hit-once
-  dominance over pass-through, spawn compensates Destroy, Dark's
-  multiplier), and the evolve-instead note for 2-component evolution
-  recipes. Module: `src/fusion.ts` (`fuse(a, b)`, `fusionBalls()`,
+  spawn-bound status, e.g. Glacier × Maggot), structured shared-property
+  collisions (first-selected wins) and reported exceptions for the panel's
+  Fused result / Reported exceptions sections, the fixed composition caveats
+  (Destroy × Destroy, hit-once dominance over pass-through, spawn compensates
+  Destroy, Dark's multiplier), and the evolve-instead note for 2-component
+  evolution recipes. Module: `src/fusion.ts` (`fuse(a, b)`, `fusionBalls()`,
   `fusionName`, `abstractDamage`, `crossWire(a, b) → { line, disputed }`,
   `evolvesInstead`) — the
   site's editorial model of fusion, not game data; the composition rules,

@@ -261,6 +261,13 @@ let fusionPanel: {
   effB: HTMLElement;
   cross: HTMLElement;
   notes: HTMLElement;
+  result: HTMLElement;
+  resultRows: HTMLElement;
+  resultEmpty: HTMLElement;
+  exceptions: HTMLElement;
+  exceptionsList: HTMLElement;
+  orderNotice: HTMLElement;
+  swapBtn: HTMLButtonElement;
   planBtn: HTMLButtonElement;
   planRow: HTMLElement;
 } | null = null;
@@ -310,8 +317,21 @@ export const FUSION_PANEL_SKELETON = `
       <p class="fusion-eff eff-b"></p>
       <p class="fusion-cross" hidden></p>
     </div>
+    <section class="fusion-result" hidden>
+      <h3 class="fusion-result-title">Fused result</h3>
+      <ul class="fusion-result-rows"></ul>
+      <p class="fusion-result-empty" hidden></p>
+    </section>
+    <section class="fusion-exceptions" hidden>
+      <h3 class="fusion-exceptions-title">Reported exceptions</h3>
+      <ul class="fusion-exceptions-list"></ul>
+    </section>
     <ul class="fusion-notes" hidden></ul>
-    <div class="fusion-plan-row"><button class="fusion-plan-btn" hidden></button></div>`;
+    <p class="fusion-order-notice" hidden></p>
+    <div class="fusion-plan-row">
+      <button class="fusion-swap-btn" type="button" hidden>Swap order</button>
+      <button class="fusion-plan-btn" type="button" hidden></button>
+    </div>`;
 
 function buildFusionPanel() {
   const root = document.getElementById('fusionPanel')!;
@@ -332,9 +352,19 @@ function buildFusionPanel() {
     effB: q('.eff-b') as HTMLElement,
     cross: q('.fusion-cross') as HTMLElement,
     notes: q('.fusion-notes') as HTMLElement,
+    result: q('.fusion-result') as HTMLElement,
+    resultRows: q('.fusion-result-rows') as HTMLElement,
+    resultEmpty: q('.fusion-result-empty') as HTMLElement,
+    exceptions: q('.fusion-exceptions') as HTMLElement,
+    exceptionsList: q('.fusion-exceptions-list') as HTMLElement,
+    orderNotice: q('.fusion-order-notice') as HTMLElement,
+    swapBtn: q('.fusion-swap-btn') as HTMLButtonElement,
     planBtn: q('.fusion-plan-btn') as HTMLButtonElement,
     planRow: q('.fusion-plan-row') as HTMLElement,
   };
+  // the swap button is built once and hidden unless the pair is
+  // order-sensitive; it reports the constant action through the seam
+  fusionPanel.swapBtn.addEventListener('click', () => emit({ type: 'swapFusion' }));
   // the composed fusion's plan toggle reports through the build seam. The
   // button is built once; the picks change under it — the compose order it
   // acts on rides the reconcile seam's painted key ("a|b"), the same channel
@@ -385,6 +415,10 @@ function paintFusion(vm: ViewModel) {
     p.evo.hidden = true;
     p.body.hidden = true;
     p.notes.hidden = true;
+    p.result.hidden = true;
+    p.exceptions.hidden = true;
+    p.orderNotice.hidden = true;
+    p.swapBtn.hidden = true;
     return;
   }
 
@@ -406,6 +440,10 @@ function paintFusion(vm: ViewModel) {
     p.evo.hidden = true;
     p.body.hidden = true;
     p.notes.hidden = true;
+    p.result.hidden = true;
+    p.exceptions.hidden = true;
+    p.orderNotice.hidden = true;
+    p.swapBtn.hidden = true;
     return;
   }
   // Both slots filled: the composed fusion replaces the hint entirely —
@@ -441,6 +479,10 @@ function paintFusion(vm: ViewModel) {
     p.body.hidden = true;
     p.cross.hidden = true; // reset the attribute, not just the ancestor
     p.notes.hidden = true;
+    p.result.hidden = true;
+    p.exceptions.hidden = true;
+    p.orderNotice.hidden = true;
+    p.swapBtn.hidden = true;
     return;
   }
   p.body.hidden = false;
@@ -454,6 +496,74 @@ function paintFusion(vm: ViewModel) {
     li.textContent = n;
     return li;
   }));
+
+  // "Fused result" — the shared-property collisions, resolved to the first
+  // pick. Rows are text-only, so repainting never blinks an icon; the
+  // reconcile key is the row content (a swap changes the winner/value).
+  p.result.hidden = false;
+  const rowsKey = fp.collisions.map((c) => `${c.key}|${c.winner}|${c.value}|${c.reported}`).join(',');
+  reconcile(p.resultRows, rowsKey, () => {
+    p.resultRows.replaceChildren(...fp.collisions.map((c) => {
+      const li = document.createElement('li');
+      li.className = 'fusion-result-row';
+      li.title = `${c.winnerName}'s ${c.value} wins over ${c.loserName}'s ${c.loserValue}`;
+      const label = document.createElement('span');
+      label.className = 'fusion-result-label';
+      label.textContent = c.label;
+      const value = document.createElement('span');
+      value.className = 'fusion-result-value';
+      value.textContent = c.value;
+      const winner = document.createElement('span');
+      winner.className = 'fusion-result-winner';
+      winner.textContent = c.winnerName;
+      li.append(label, ': ', value, ' — ', winner);
+      // confirmed rows carry no marker; unverified ones a compact "· reported"
+      if (c.reported) {
+        const reported = document.createElement('span');
+        reported.className = 'fusion-result-reported';
+        reported.textContent = ' · reported';
+        li.append(reported);
+      }
+      return li;
+    }));
+  });
+  const noCollisions = fp.collisions.length === 0;
+  p.resultEmpty.hidden = !noCollisions;
+  if (noCollisions) {
+    // an exception-only order-sensitive pair has no shared properties, but
+    // order still matters — the warning line above the action row says so
+    p.resultEmpty.textContent = fp.orderSensitive
+      ? 'No shared properties.'
+      : 'No shared properties — order does not matter.';
+  }
+
+  // "Reported exceptions" — anomalies outside the general rule, separate
+  // from the result rows.
+  p.exceptions.hidden = fp.exceptions.length === 0;
+  reconcile(p.exceptionsList, fp.exceptions.map((e) => e.pair).join(','), () => {
+    p.exceptionsList.replaceChildren(...fp.exceptions.map((e) => {
+      const li = document.createElement('li');
+      li.className = 'fusion-exception';
+      li.title = e.source;
+      const title = document.createElement('span');
+      title.className = 'fusion-exception-title';
+      title.textContent = e.title;
+      const detail = document.createElement('span');
+      detail.className = 'fusion-exception-detail';
+      detail.textContent = ` — ${e.detail}`;
+      const confidence = document.createElement('span');
+      confidence.className = 'fusion-exception-confidence';
+      confidence.textContent = ` · ${e.confidence}`;
+      li.append(title, detail, confidence);
+      return li;
+    }));
+  });
+
+  // The warning line sits directly above the action row; the swap affordance
+  // exists only for order-sensitive pairs (decision #8).
+  p.orderNotice.hidden = !fp.orderSensitive;
+  p.orderNotice.textContent = fp.orderNotice;
+  p.swapBtn.hidden = !fp.orderSensitive;
 }
 
 // ---------- plan screen ----------
