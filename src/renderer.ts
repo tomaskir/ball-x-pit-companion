@@ -333,34 +333,63 @@ export const FUSION_PANEL_SKELETON = `
       <button class="fusion-plan-btn" type="button" hidden></button>
     </div>`;
 
+/** The fusion panel's hook selectors — the single source for both
+ *  buildFusionPanel's queries and renderer.test.ts's skeleton check, so a
+ *  renamed hook cannot drift between the panel and its test. Pure data. */
+export const FUSION_PANEL_SELECTORS = {
+  hint: '.fusion-hint',
+  head: '.fusion-head',
+  iconA: '.icon-a',
+  nameA: '.name-a',
+  op: '.fusion-times',
+  iconB: '.icon-b',
+  nameB: '.name-b',
+  evo: '.fusion-evo',
+  body: '.fusion-body',
+  effA: '.eff-a',
+  effB: '.eff-b',
+  cross: '.fusion-cross',
+  notes: '.fusion-notes',
+  result: '.fusion-result',
+  resultRows: '.fusion-result-rows',
+  resultEmpty: '.fusion-result-empty',
+  exceptions: '.fusion-exceptions',
+  exceptionsList: '.fusion-exceptions-list',
+  orderNotice: '.fusion-order-notice',
+  swapBtn: '.fusion-swap-btn',
+  planBtn: '.fusion-plan-btn',
+  planRow: '.fusion-plan-row',
+} as const;
+
 function buildFusionPanel() {
   const root = document.getElementById('fusionPanel')!;
   root.innerHTML = FUSION_PANEL_SKELETON;
   const q = (s: string) => root.querySelector(s)!;
+  const sel = FUSION_PANEL_SELECTORS;
   fusionPanel = {
     root,
-    hint: q('.fusion-hint') as HTMLElement,
-    head: q('.fusion-head') as HTMLElement,
-    iconA: q('.icon-a') as HTMLImageElement,
-    nameA: q('.name-a') as HTMLElement,
-    op: q('.fusion-times') as HTMLElement,
-    iconB: q('.icon-b') as HTMLImageElement,
-    nameB: q('.name-b') as HTMLElement,
-    evo: q('.fusion-evo') as HTMLElement,
-    body: q('.fusion-body') as HTMLElement,
-    effA: q('.eff-a') as HTMLElement,
-    effB: q('.eff-b') as HTMLElement,
-    cross: q('.fusion-cross') as HTMLElement,
-    notes: q('.fusion-notes') as HTMLElement,
-    result: q('.fusion-result') as HTMLElement,
-    resultRows: q('.fusion-result-rows') as HTMLElement,
-    resultEmpty: q('.fusion-result-empty') as HTMLElement,
-    exceptions: q('.fusion-exceptions') as HTMLElement,
-    exceptionsList: q('.fusion-exceptions-list') as HTMLElement,
-    orderNotice: q('.fusion-order-notice') as HTMLElement,
-    swapBtn: q('.fusion-swap-btn') as HTMLButtonElement,
-    planBtn: q('.fusion-plan-btn') as HTMLButtonElement,
-    planRow: q('.fusion-plan-row') as HTMLElement,
+    hint: q(sel.hint) as HTMLElement,
+    head: q(sel.head) as HTMLElement,
+    iconA: q(sel.iconA) as HTMLImageElement,
+    nameA: q(sel.nameA) as HTMLElement,
+    op: q(sel.op) as HTMLElement,
+    iconB: q(sel.iconB) as HTMLImageElement,
+    nameB: q(sel.nameB) as HTMLElement,
+    evo: q(sel.evo) as HTMLElement,
+    body: q(sel.body) as HTMLElement,
+    effA: q(sel.effA) as HTMLElement,
+    effB: q(sel.effB) as HTMLElement,
+    cross: q(sel.cross) as HTMLElement,
+    notes: q(sel.notes) as HTMLElement,
+    result: q(sel.result) as HTMLElement,
+    resultRows: q(sel.resultRows) as HTMLElement,
+    resultEmpty: q(sel.resultEmpty) as HTMLElement,
+    exceptions: q(sel.exceptions) as HTMLElement,
+    exceptionsList: q(sel.exceptionsList) as HTMLElement,
+    orderNotice: q(sel.orderNotice) as HTMLElement,
+    swapBtn: q(sel.swapBtn) as HTMLButtonElement,
+    planBtn: q(sel.planBtn) as HTMLButtonElement,
+    planRow: q(sel.planRow) as HTMLElement,
   };
   // the swap button is built once and hidden unless the pair is
   // order-sensitive; it reports the constant action through the seam

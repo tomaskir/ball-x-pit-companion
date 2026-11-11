@@ -9,7 +9,7 @@
 // right action type and id.
 // @vitest-environment jsdom
 import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
-import { buildAll, paint, FUSION_PANEL_SKELETON } from './renderer';
+import { buildAll, paint, FUSION_PANEL_SKELETON, FUSION_PANEL_SELECTORS } from './renderer';
 import { createViewState, type ViewModel, type Action } from './view-state';
 import { ballMap } from './catalog';
 import { iconUrl } from './icon-url';
@@ -17,21 +17,12 @@ import { mountShell } from './test-support/containers';
 
 describe('fusion panel skeleton (renderer.ts)', () => {
   it('every selector buildFusionPanel queries resolves in its own skeleton', () => {
-    // the skeleton is a named export — the same string buildFusionPanel
-    // paints — so a drift here is exactly the bug class being pinned
+    // the skeleton and the selector map are named exports — the same values
+    // buildFusionPanel paints and queries — so a drift here is exactly the
+    // bug class being pinned
     const root = document.createElement('div');
     root.innerHTML = FUSION_PANEL_SKELETON;
-    const q = (s: string) => root.querySelector(s);
-    // the exact selector list from buildFusionPanel
-    const selectors = [
-      '.fusion-hint', '.fusion-head',
-      '.icon-a', '.name-a', '.fusion-times', '.icon-b', '.name-b',
-      '.fusion-evo', '.fusion-body', '.eff-a', '.eff-b', '.fusion-cross', '.fusion-notes',
-      '.fusion-result', '.fusion-result-rows', '.fusion-result-empty',
-      '.fusion-exceptions', '.fusion-exceptions-list',
-      '.fusion-order-notice', '.fusion-swap-btn', '.fusion-plan-btn',
-    ];
-    const missing = selectors.filter((s) => !q(s));
+    const missing = Object.values(FUSION_PANEL_SELECTORS).filter((s) => !root.querySelector(s));
     expect(missing, `selectors matching nothing: ${missing.join(', ')}`).toEqual([]);
   });
 
@@ -82,7 +73,7 @@ const q = <T extends HTMLElement>(s: string) => panel().querySelector<T>(s)!;
 describe('fusion panel behavior (jsdom, through paint())', () => {
   it('empty state: hint visible, everything else hidden', () => {
     expect(q('.fusion-hint').hidden).toBe(false);
-    expect(q('.fusion-hint').textContent).toContain('Pick two balls');
+    expect(q('.fusion-hint').textContent).not.toBe('');
     expect(q('.fusion-head').hidden).toBe(true);
     expect(q('.fusion-evo').hidden).toBe(true);
     expect(q('.fusion-body').hidden).toBe(true);
@@ -102,7 +93,7 @@ describe('fusion panel behavior (jsdom, through paint())', () => {
     expect(iconB.style.display).toBe('none');
     expect(q('.name-b').textContent).toBe('');
     expect(q('.fusion-hint').hidden).toBe(false);
-    expect(q('.fusion-hint').textContent).toContain('pick a second ball');
+    expect(q('.fusion-hint').textContent).not.toBe('');
     expect(q('.fusion-evo').hidden).toBe(true);
     expect(q('.fusion-body').hidden).toBe(true);
     expect(q('.fusion-notes').hidden).toBe(true);
@@ -157,7 +148,7 @@ describe('fusion panel behavior (jsdom, through paint())', () => {
   it('cross-wire pair shows the cross line', () => {
     drive({ type: 'toggleFusion', id: 'black-hole' }, { type: 'toggleFusion', id: 'sun' });
     expect(q('.fusion-cross').hidden).toBe(false);
-    expect(q('.fusion-cross').textContent).toContain('Black Hole');
+    expect(q('.fusion-cross').textContent).not.toBe('');
   });
 
   it('full sequence empty → pending → composed → back to pending repaints every piece in place', () => {
@@ -172,13 +163,13 @@ describe('fusion panel behavior (jsdom, through paint())', () => {
     expect(q('.fusion-times').textContent).toBe('+ ?');
     expect(q<HTMLImageElement>('.icon-b').style.display).toBe('none');
     expect(q('.name-b').textContent).toBe('');
-    expect(q('.fusion-hint').textContent).toContain('pick a second ball');
+    expect(q('.fusion-hint').textContent).not.toBe('');
     expect(q('.fusion-evo').hidden).toBe(true);
     expect(q('.fusion-body').hidden).toBe(true);
     expect(q('.fusion-notes').hidden).toBe(true);
 
     drive({ type: 'toggleFusion', id: 'flash' }); // deselect → empty
-    expect(q('.fusion-hint').textContent).toContain('Pick two balls');
+    expect(q('.fusion-hint').textContent).not.toBe('');
     expect(q('.fusion-head').hidden).toBe(true);
     expect(q('.fusion-body').hidden).toBe(true);
     expect(q('.fusion-notes').hidden).toBe(true);

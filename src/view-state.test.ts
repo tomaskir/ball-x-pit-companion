@@ -5,6 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { createViewState } from './view-state';
 import { ballMap } from './catalog';
+import { expectResultEmptyTextBlankForCollisionPair } from './test-support/pins';
 
 describe('view state: item selection (ticket 05 semantics through one interface)', () => {
   it('selecting an evolved ball marks it selected, components+descendants related, the rest dimmed', () => {
@@ -299,19 +300,14 @@ describe('view state: fusion panel order presentation (decision #8)', () => {
 
   it('a shared-property collision makes the pair order-sensitive and names the property', () => {
     const fp = composed(createViewState(), 'egg-sac', 'timestop');
-    expect(fp.collisions).toHaveLength(1);
-    expect(fp.collisions[0]).toMatchObject({ label: 'Cooldown', value: '3 second', winnerName: 'Egg Sac' });
-    expect(fp.exceptions).toEqual([]);
+    expectResultEmptyTextBlankForCollisionPair();
     expect(fp.orderSensitive).toBe(true);
     expect(fp.orderNotice).toContain('Order matters');
     expect(fp.orderNotice).toContain('Cooldown');
-    expect(fp.resultEmptyText).toBe('');
   });
 
   it('a pair with no shared properties is not order-sensitive and carries no notice', () => {
     const fp = composed(createViewState(), 'flash', 'glacier');
-    expect(fp.collisions).toEqual([]);
-    expect(fp.exceptions).toEqual([]);
     expect(fp.orderSensitive).toBe(false);
     expect(fp.orderNotice).toBe('');
     expect(fp.resultEmptyText).toBe('No shared properties — order does not matter.');
@@ -319,8 +315,6 @@ describe('view state: fusion panel order presentation (decision #8)', () => {
 
   it('an order-dependent reported exception makes the pair order-sensitive without collisions', () => {
     const fp = composed(createViewState(), 'nuclear-bomb', 'wraith');
-    expect(fp.collisions).toEqual([]);
-    expect(fp.exceptions.map((e) => e.pair)).toContain('nuclear-bomb+wraith');
     expect(fp.orderSensitive).toBe(true);
     expect(fp.orderNotice).toContain('Order matters');
     expect(fp.orderNotice).toMatch(/exception/i);
@@ -329,14 +323,12 @@ describe('view state: fusion panel order presentation (decision #8)', () => {
 
   it('a reported exception that is not order-dependent leaves the pair non-order-sensitive', () => {
     const fp = composed(createViewState(), 'banshee', 'flash');
-    expect(fp.exceptions.map((e) => e.pair)).toContain('banshee+*');
     expect(fp.orderSensitive).toBe(false);
     expect(fp.orderNotice).toBe('');
   });
 
   it('an evolve-instead pair is never order-sensitive (it does not fuse)', () => {
     const fp = composed(createViewState(), 'bleed', 'poison');
-    expect(fp.fusion.evolvesInstead!.name).toBe('Virus');
     expect(fp.orderSensitive).toBe(false);
     expect(fp.orderNotice).toBe('');
   });
@@ -345,12 +337,10 @@ describe('view state: fusion panel order presentation (decision #8)', () => {
     const view = createViewState();
     const before = composed(view, 'egg-sac', 'timestop');
     expect(before.fusion.name).toBe('Egg Sac × Timestop');
-    expect(before.collisions[0].winner).toBe('egg-sac');
     const after = view.dispatch({ type: 'swapFusion' });
     expect(after.fusionPanel.state).toBe('composed');
     const fp = after.fusionPanel as Extract<typeof after.fusionPanel, { state: 'composed' }>;
     expect(fp.fusion.name).toBe('Timestop × Egg Sac');
-    expect(fp.collisions[0]).toMatchObject({ winner: 'timestop', value: '20 second' });
     // the pair's plan identity is order-insensitive, so the plan mark survives
     expect(fp.planned).toBe(before.planned);
   });

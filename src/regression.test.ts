@@ -10,11 +10,29 @@ import { ballMap, passiveMap } from './catalog';
 import { highlightSet, factorizesIntoSlots } from './graph';
 import { deriveBuildGraph, FUSION_ID_PREFIX } from './build-graph';
 import { verdictFor } from './synergy';
-import { fuse } from './fusion';
 import { encodePlan, takeShareParam } from './share';
-import { createViewState } from './view-state';
 import { readFileSync } from 'node:fs';
-import { expectHiddenBeatsAuthorDisplay, expectFusionListScrollbarPermanentAndSeparated, expectSlotHighlightsIdentical } from './test-support/pins';
+import {
+  expectBerserkIsOnHitStatus,
+  expectBlackHoleSunOrderIndependent,
+  expectFirstPickCooldownWins,
+  expectFreezeRayFlashWires,
+  expectFreezeRaySunFieldAuraDoesNotWire,
+  expectFusionListScrollbarPermanentAndSeparated,
+  expectHiddenBeatsAuthorDisplay,
+  expectKillEffectsRideAoeCarriers,
+  expectLevel3OvergrowthThresholdApplies,
+  expectOrderResolutionPropertyUnion,
+  expectResultEmptyTextBlankForCollisionPair,
+  expectSandstormIsPassThrough,
+  expectSatanDebuffOnlyCannotCarryOnHitStatuses,
+  expectSlotHighlightsIdentical,
+  expectSpawnBoundTraitsStayUnwired,
+  expectSpawnCarriersCarrySpawnBoundStatuses,
+  expectStatusOnlyCarrierCaveats,
+  expectStatusOnlyCarriersWireOnHitStatuses,
+  expectVesTwoHopSpawnChainDropsProperty,
+} from './test-support/pins';
 import { mountShell } from './test-support/containers';
 
 describe('regression: structural depth (was wiki labels — Tumor et al. misplaced)', () => {
@@ -309,16 +327,10 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
   // against the corpus's no-cross-wire claims in docs/research/fusion-observations/.
   // Fix: SPAWN_NO_INHERITANCE_IDS / AOE_EXCLUDED_IDS / SPAWN_BOUND_IDS. Pinned
   // with positive controls in fusion.test.ts (cross-wire exclusions describe).
-  it('cross-wire exclusions match the corpus no-wire evidence', async () => {
-    const { fuse } = await import('./fusion');
-    const { ballMap } = await import('./catalog');
-    const ball = (id: string) => ballMap.get(id)!;
-    for (const [a, b] of [
-      ['hemorrhage', 'voluptuous-egg-sac'], ['nuclear-bomb', 'voluptuous-egg-sac'],
-      ['freeze-ray', 'sun'], ['hemorrhage', 'satan'],
-    ] as const) {
-      expect(fuse(ball(a), ball(b))!.crossWire, `${a}+${b}`).toBeNull();
-    }
+  it('cross-wire exclusions match the corpus no-wire evidence', () => {
+    expectVesTwoHopSpawnChainDropsProperty();
+    expectFreezeRaySunFieldAuraDoesNotWire();
+    expectSatanDebuffOnlyCannotCarryOnHitStatuses();
   });
 
   // Bug: the composer hard-excluded Brood Mother and Mosquito King from every
@@ -328,18 +340,11 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
   // SPAWN_EXCLUDED_IDS into the VES hard exclusion and the status-only
   // carriers (issue #20); on-hit statuses wire, spawn-bound traits do not,
   // and fuse() attaches the reported degradation/trigger caveats.
-  it('status-only spawn carriers wire on-hit statuses with their caveats', async () => {
-    const { fuse } = await import('./fusion');
-    const { ballMap } = await import('./catalog');
-    const ball = (id: string) => ballMap.get(id)!;
-    const bm = fuse(ball('brood-mother'), ball('flash'))!;
-    expect(bm.crossWire).not.toBeNull();
-    expect(bm.notes.join(' ')).toMatch(/inherited effect is weaker/);
-    expect(bm.notes.join(' ')).toMatch(/spawn fires on hit/);
-    expect(fuse(ball('mosquito-king'), ball('virus'))!.crossWire).not.toBeNull();
+  it('status-only spawn carriers wire on-hit statuses with their caveats', () => {
+    expectStatusOnlyCarriersWireOnHitStatuses();
+    expectStatusOnlyCarrierCaveats();
     // spawn-bound traits stay unwired for both carriers
-    expect(fuse(ball('brood-mother'), ball('glacier'))!.crossWire).toBeNull();
-    expect(fuse(ball('mosquito-king'), ball('glacier'))!.crossWire).toBeNull();
+    expectSpawnBoundTraitsStayUnwired();
   });
 
   // Bug: the composer showed level-1 component numbers even though fusion
@@ -347,41 +352,31 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
   // proc chances up). Fix: the generated level-3 overlay (decision #12)
   // replaces the old FUSED_STATS substring table. Pinned in fusion.test.ts
   // (level-3 component text describe).
-  it('level-3 values apply (Overgrowth threshold 3 → 2 et al.)', async () => {
-    const { fuse } = await import('./fusion');
-    const { ballMap } = await import('./catalog');
-    const r = fuse(ballMap.get('overgrowth')!, ballMap.get('flash')!)!;
-    expect(r.paragraphs[0]).toContain('Upon reaching 2, consume all stacks');
+  it('level-3 values apply (Overgrowth threshold 3 → 2 et al.)', () => {
+    expectLevel3OvergrowthThresholdApplies();
   });
 
   // Bug: Freeze Ray was hard-coded spawn-bound, so Flash × Freeze Ray did not
   // wire even though the Nov 2026 community test showed Flash's AOE spreads
   // the freeze. Fix: remove freeze-ray from SPAWN_BOUND_IDS; keep Sun's
   // field aura from applying the on-hit freeze (the beam carries Sun's burn).
-  it('Freeze Ray × Flash wires; Sun × Freeze Ray does not', async () => {
-    const { fuse } = await import('./fusion');
-    const { ballMap } = await import('./catalog');
-    const ball = (id: string) => ballMap.get(id)!;
-    expect(fuse(ball('flash'), ball('freeze-ray'))!.crossWire).not.toBeNull();
-    expect(fuse(ball('freeze-ray'), ball('sun'))!.crossWire).toBeNull();
+  it('Freeze Ray × Flash wires; Sun × Freeze Ray does not', () => {
+    expectFreezeRayFlashWires();
+    expectFreezeRaySunFieldAuraDoesNotWire();
   });
 
   // Bug: the pass-through set omitted Sandstorm (the fact-base Pass Through
   // list includes it), so the hit-once + cooldown note never fired for it.
   // Fix: add sandstorm to PIERCE_IDS.
-  it('Sandstorm is in the pass-through set', async () => {
-    const { fuse } = await import('./fusion');
-    const { ballMap } = await import('./catalog');
-    expect(fuse(ballMap.get('black-hole')!, ballMap.get('sandstorm')!)!.notes.join(' ')).toMatch(/pass-through/i);
+  it('Sandstorm is in the pass-through set', () => {
+    expectSandstormIsPassThrough();
   });
 
   // Bug: the text-derived channel classified Berserk as a field aura because
   // its text says "every second" (the debuff's tick), so an AOE carrier
   // could not spread it. Fix: CHANNEL_OVERRIDES maps berserk to 'hit'.
-  it('Berserk is an on-hit status, not a field aura', async () => {
-    const { fuse } = await import('./fusion');
-    const { ballMap } = await import('./catalog');
-    expect(fuse(ballMap.get('flash')!, ballMap.get('berserk')!)!.crossWire).not.toBeNull();
+  it('Berserk is an on-hit status, not a field aura', () => {
+    expectBerserkIsOnHitStatus();
   });
 
   // Bug: order was encoded as two hard-coded pair classes (cooldowns,
@@ -389,16 +384,8 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
   // Fix: the property resolver (fusion-properties.ts) unions kits and
   // resolves shared scalar keys to the first pick. Pinned in
   // fusion-properties.test.ts and fusion.test.ts (order resolution describe).
-  it('order is property-set union with first-pick precedence', async () => {
-    const { fuse } = await import('./fusion');
-    const { ballMap } = await import('./catalog');
-    const ball = (id: string) => ballMap.get(id)!;
-    expect(fuse(ball('banished-flame'), ball('sun'))!.collisions.map((c) => c.key).sort())
-      .toEqual(['burn-duration', 'burn-max-stacks', 'burn-per-stack-damage']);
-    expect(fuse(ball('erosion'), ball('stone'))!.collisions[0]).toMatchObject({
-      key: 'bonus-damage', winner: 'erosion', value: '5%', loserValue: '400%',
-    });
-    expect(fuse(ball('bomb'), ball('dark'))!.collisions).toEqual([]);
+  it('order is property-set union with first-pick precedence', () => {
+    expectOrderResolutionPropertyUnion();
   });
 
   // Bug: slot-2 pick highlight was visually subtle (dim border, no glow) —
@@ -430,18 +417,13 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
   // compensates Destroy, Dark's multiplier). Pinned in fusion.test.ts
   // (cross-wire exclusions / order resolution / composition caveats
   // describes).
-  it('kill-on-hit rides AOE carriers and order resolution is structured', async () => {
-    const { fuse } = await import('./fusion');
-    const { ballMap } = await import('./catalog');
-    const ball = (id: string) => ballMap.get(id)!;
+  it('kill-on-hit rides AOE carriers and order resolution is structured', () => {
     // Black Hole × Sun: the corpus meta pair — 7 cross-wire claims
-    expect(fuse(ball('black-hole'), ball('sun'))!.crossWire).toContain('Black Hole');
+    expectKillEffectsRideAoeCarriers();
     // Glacier × Maggot: spawn-bound status rides the spawn carrier
-    expect(fuse(ball('glacier'), ball('maggot'))!.crossWire).toContain('Glacier');
+    expectSpawnCarriersCarrySpawnBoundStatuses();
     // both-cooldown pair resolves to the first pick's value (namu rule)
-    expect(fuse(ball('black-hole'), ball('timestop'))!.collisions[0]).toMatchObject({
-      key: 'cooldown', winner: 'black-hole', value: '5 second', loserValue: '20 second',
-    });
+    expectFirstPickCooldownWins();
   });
 
   // Bug (cross-screen remembering, 2026-10-05): the document-level
@@ -603,8 +585,7 @@ describe('regression: Black Hole × Sun order dispute was resolved to order-inde
   // order does not change function). The old "order direction disputed"
   // exception must not keep the panel warning and swap affordance alive.
   it('no longer surfaces as a reported exception', () => {
-    const result = fuse(ballMap.get('black-hole')!, ballMap.get('sun')!);
-    expect(result!.exceptions).toEqual([]);
+    expectBlackHoleSunOrderIndependent();
   });
 });
 
@@ -614,11 +595,6 @@ describe('regression: resultEmptyText claimed "No shared properties" for pairs t
   // renderer hides it when rows exist, but the view model must not expose a
   // false copy — and the test pinned it.
   it('is blank when the pair has collision rows', () => {
-    const view = createViewState();
-    view.dispatch({ type: 'toggleFusion', id: 'egg-sac' });
-    const vm = view.dispatch({ type: 'toggleFusion', id: 'timestop' });
-    const fp = vm.fusionPanel as Extract<typeof vm.fusionPanel, { state: 'composed' }>;
-    expect(fp.collisions.length).toBeGreaterThan(0);
-    expect(fp.resultEmptyText).toBe('');
+    expectResultEmptyTextBlankForCollisionPair();
   });
 });

@@ -2,6 +2,23 @@
 import { describe, it, expect } from 'vitest';
 import { fusionName, abstractDamage, crossWire, evolvesInstead, fuse } from './fusion';
 import { ballMap } from './catalog';
+import {
+  expectBerserkIsOnHitStatus,
+  expectBlackHoleSunOrderIndependent,
+  expectFirstPickCooldownWins,
+  expectFreezeRayFlashWires,
+  expectFreezeRaySunFieldAuraDoesNotWire,
+  expectKillEffectsRideAoeCarriers,
+  expectLevel3OvergrowthThresholdApplies,
+  expectOrderResolutionPropertyUnion,
+  expectSandstormIsPassThrough,
+  expectSatanDebuffOnlyCannotCarryOnHitStatuses,
+  expectSpawnBoundTraitsStayUnwired,
+  expectSpawnCarriersCarrySpawnBoundStatuses,
+  expectStatusOnlyCarrierCaveats,
+  expectStatusOnlyCarriersWireOnHitStatuses,
+  expectVesTwoHopSpawnChainDropsProperty,
+} from './test-support/pins';
 
 const ball = (id: string) => ballMap.get(id)!;
 
@@ -144,8 +161,8 @@ describe('fuse', () => {
 
 describe('level-3 component text (decision #12)', () => {
   it('uses level-3 values, not the level-1 catalog', () => {
+    expectLevel3OvergrowthThresholdApplies();
     const r = fuse(ball('overgrowth'), ball('flash'))!;
-    expect(r.paragraphs[0]).toContain('Upon reaching 2, consume all stacks');
     expect(r.paragraphs[0]).not.toContain('reaching 3');
     // Flash L1 "Damages ... 1–3"; L3 "Damage ... 2–4"
     expect(r.paragraphs[1]).toContain('Damage all enemies on screen for X damage');
@@ -186,20 +203,15 @@ describe('level-3 component text (decision #12)', () => {
 
 describe('cross-wire exclusions (corpus no-cross-wire evidence)', () => {
   it('VES two-hop spawn chain drops the property (Steam: Assassin × VES, Hemorrhage × VES)', () => {
-    expect(fuse(ball('hemorrhage'), ball('voluptuous-egg-sac'))!.crossWire).toBeNull();
-    expect(fuse(ball('nuclear-bomb'), ball('voluptuous-egg-sac'))!.crossWire).toBeNull();
+    expectVesTwoHopSpawnChainDropsProperty();
   });
 
   it('Freeze Ray × Sun: the field aura does not apply the freeze (the beam carries Sun\'s burn)', () => {
-    const r = fuse(ball('freeze-ray'), ball('sun'))!;
-    expect(r.crossWire).toBeNull();
-    expect(r.notes.join(' ')).toMatch(/beam applies Sun's burn/i);
+    expectFreezeRaySunFieldAuraDoesNotWire();
   });
 
   it('Freeze Ray × Flash: the on-hit AOE spreads the freeze (Nov 2026 test)', () => {
-    const r = fuse(ball('flash'), ball('freeze-ray'))!;
-    expect(r.crossWire).not.toBeNull();
-    expect(r.crossWire).toContain('Freeze Ray');
+    expectFreezeRayFlashWires();
   });
 
   it('a field-aura carrier cannot trigger an on-hit status (Sun × Poison)', () => {
@@ -214,25 +226,21 @@ describe('cross-wire exclusions (corpus no-cross-wire evidence)', () => {
   it('Berserk is an on-hit status, not a field aura (channel override)', () => {
     // Berserk's "every second" phrase describes the debuff's tick; the ball
     // itself applies berserk on hit, so an AOE carrier can spread it.
-    expect(fuse(ball('flash'), ball('berserk'))!.crossWire).not.toBeNull();
+    expectBerserkIsOnHitStatus();
   });
 
   it('status-only spawn carriers wire on-hit statuses (Brood Mother × Flash, Mosquito King × Virus)', () => {
     // Issue #20: the blanket spawn exclusion was too strong. Brood Mother
     // and Mosquito King inherit the partner's on-hit status; spawn-bound
     // traits stay unwired (see the next test).
-    const bm = fuse(ball('brood-mother'), ball('flash'))!;
-    expect(bm.crossWire).toContain('Brood Mother');
-    expect(bm.crossWire).toContain('Flash');
-    const mk = fuse(ball('mosquito-king'), ball('virus'))!;
-    expect(mk.crossWire).toContain('Mosquito King');
-    expect(mk.crossWire).toContain('Virus');
+    expectStatusOnlyCarriersWireOnHitStatuses();
+    expect(fuse(ball('brood-mother'), ball('flash'))!.crossWire).toContain('Brood Mother');
+    expect(fuse(ball('mosquito-king'), ball('virus'))!.crossWire).toContain('Virus');
   });
 
   it('Brood Mother × Flash carries the degradation and trigger caveats, Flash sentence deduped', () => {
+    expectStatusOnlyCarrierCaveats();
     const notes = fuse(ball('brood-mother'), ball('flash'))!.notes.join(' ');
-    expect(notes).toMatch(/Brood Mother's babies inherit the partner's properties, but the inherited effect is weaker/);
-    expect(notes).toMatch(/spawn fires on hit, so a screen-wide\/AOE partner produces fewer babies/);
     // both caveats share the launch-week sentence; it must appear once
     expect(notes.match(/launch-week report claims Flash × Brood Mother produced none/g)).toHaveLength(1);
   });
@@ -255,8 +263,7 @@ describe('cross-wire exclusions (corpus no-cross-wire evidence)', () => {
   });
 
   it('status-only carriers do not inherit spawn-bound traits (Brood Mother / Mosquito King × Glacier)', () => {
-    expect(fuse(ball('brood-mother'), ball('glacier'))!.crossWire).toBeNull();
-    expect(fuse(ball('mosquito-king'), ball('glacier'))!.crossWire).toBeNull();
+    expectSpawnBoundTraitsStayUnwired();
   });
 
   it('Egg Sac as spawner carries the weaker-clone caveat in both inheritance branches', () => {
@@ -269,7 +276,7 @@ describe('cross-wire exclusions (corpus no-cross-wire evidence)', () => {
   });
 
   it('Satan field judgment is debuff-only — cannot carry on-hit statuses', () => {
-    expect(fuse(ball('hemorrhage'), ball('satan'))!.crossWire).toBeNull();
+    expectSatanDebuffOnlyCannotCarryOnHitStatuses();
   });
 
   it('Blizzard freeze stays icicle-bound (status-vs-spawn, both Flash pairs)', () => {
@@ -287,7 +294,7 @@ describe('cross-wire exclusions (corpus no-cross-wire evidence)', () => {
     // "Sun's screen-wide hits apply Black Hole's instant-kill to every
     // non-boss enemy". Previously the composer emitted nothing: Black Hole's
     // kill is not a status effect.
-    expect(fuse(ball('black-hole'), ball('sun'))!.crossWire).toContain('Black Hole');
+    expectKillEffectsRideAoeCarriers();
     expect(fuse(ball('black-hole'), ball('flash'))!.crossWire).toContain('instant kill');
     expect(fuse(ball('reaper'), ball('flash'))!.crossWire).toContain('Reaper');
     expect(fuse(ball('flicker'), ball('reaper'))!.crossWire).not.toBeNull();
@@ -311,7 +318,7 @@ describe('cross-wire exclusions (corpus no-cross-wire evidence)', () => {
     // corpus: glacier+maggot 2 CW, cell+glacier 2, blizzard+spider-queen 2,
     // magma+cell, swamp+cell, inferno+spider-queen — namu rule 6: the spawned
     // balls carry the fused kit including its spawned spikes/blobs.
-    expect(fuse(ball('glacier'), ball('maggot'))!.crossWire).toContain('Glacier');
+    expectSpawnCarriersCarrySpawnBoundStatuses();
     expect(fuse(ball('blizzard'), ball('spider-queen'))!.crossWire).toContain('Spider Queen');
     expect(fuse(ball('cell'), ball('glacier'))!.crossWire).not.toBeNull();
     expect(fuse(ball('magma'), ball('cell'))!.crossWire).not.toBeNull();
@@ -321,15 +328,12 @@ describe('cross-wire exclusions (corpus no-cross-wire evidence)', () => {
 
 describe('order resolution (property-set union, first-pick precedence)', () => {
   it('both-cooldown pairs with different values: first-selected cooldown wins (namu.wiki)', () => {
+    expectFirstPickCooldownWins();
     const r = fuse(ball('black-hole'), ball('timestop'))!;
-    expect(r.collisions).toContainEqual(expect.objectContaining({
-      key: 'cooldown', winner: 'black-hole', value: '5 second', loser: 'timestop', loserValue: '20 second',
-    }));
     // the panel's Fused-result rows carry the resolution — notes must not
     // duplicate it (decision #8)
     expect(r.notes.join(' ')).not.toMatch(/cooldown wins/i);
     // equal cooldowns are not a functional collision
-    expect(fuse(ball('bomb'), ball('dark'))!.collisions).toEqual([]);
     expect(fuse(ball('bomb'), ball('dark'))!.notes.join(' ')).not.toMatch(/cooldown wins/i);
     // non-cooldown pairs get no cooldown note
     expect(fuse(ball('flash'), ball('glacier'))!.notes.join(' ')).not.toMatch(/cooldown wins/i);
@@ -347,13 +351,13 @@ describe('order resolution (property-set union, first-pick precedence)', () => {
   });
 
   it('reported pairs from the Nov 2026 claims collide', () => {
+    expectOrderResolutionPropertyUnion();
     // Egg Sac × Timestop: 3 s vs 20 s cooldown
     expect(fuse(ball('egg-sac'), ball('timestop'))!.collisions[0]).toMatchObject({
       key: 'cooldown', value: '3 second', loserValue: '20 second',
     });
     // Banished Flame × Sun: cap, duration and per-stack damage all collide
     const bf = fuse(ball('banished-flame'), ball('sun'))!;
-    expect(bf.collisions.map((c) => c.key).sort()).toEqual(['burn-duration', 'burn-max-stacks', 'burn-per-stack-damage']);
     expect(bf.collisions.every((c) => c.winner === 'banished-flame')).toBe(true);
     // Erosion × Stone/Drill/Assassin/Steel: first pick's bonus % wins
     for (const [id, value] of [['stone', '400%'], ['drill', '100%'], ['assassin', '50%'], ['steel', '15%']] as const) {
@@ -442,7 +446,7 @@ describe('composition caveats (general_rules_notes)', () => {
   it('Sandstorm is in the pass-through set (hit-once note)', () => {
     // fact-base Pass Through list: Ghost, Wind, Drill, Erosion, Noxious,
     // Sandstorm, Sniper, Soul Sucker, Wraith, Assassin.
-    expect(fuse(ball('black-hole'), ball('sandstorm'))!.notes.join(' ')).toMatch(/pass-through/i);
+    expectSandstormIsPassThrough();
   });
 
   it('fixed trait priorities are commutative notes (Assassin, Warp)', () => {
@@ -453,6 +457,7 @@ describe('composition caveats (general_rules_notes)', () => {
   });
 
   it('reported exceptions surface as structured data (the panel section, not notes)', () => {
+    expectBlackHoleSunOrderIndependent();
     const nuke = fuse(ball('nuclear-bomb'), ball('wraith'))!;
     expect(nuke.exceptions.map((e) => e.pair)).toContain('nuclear-bomb+wraith');
     expect(nuke.notes.join(' ')).not.toMatch(/Reported exception/);
