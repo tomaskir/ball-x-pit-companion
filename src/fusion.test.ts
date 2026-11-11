@@ -218,7 +218,7 @@ describe('cross-wire exclusions (corpus no-cross-wire evidence)', () => {
   });
 
   it('status-only spawn carriers wire on-hit statuses (Brood Mother × Flash, Mosquito King × Virus)', () => {
-    // Decision #20: the blanket spawn exclusion was too strong. Brood Mother
+    // Issue #20: the blanket spawn exclusion was too strong. Brood Mother
     // and Mosquito King inherit the partner's on-hit status; spawn-bound
     // traits stay unwired (see the next test).
     const bm = fuse(ball('brood-mother'), ball('flash'))!;

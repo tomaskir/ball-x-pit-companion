@@ -86,7 +86,7 @@ describe('corpus sanity (the spec itself is loadable)', () => {
   });
 });
 
-describe('no-cross-wire claims → composer emits no cross-wire line', () => {
+describe('cross-wire exclusions → composer emits no line; superseded claims now wire', () => {
   // Corpus pairs whose evidence is exclusively negative (11 pairs). Every one
   // is a trigger-channel exclusion the composer models: spawn-bound statuses
   // (Flash × Glacier), the VES hard exclusion, debuff-only channels (Reaper ×

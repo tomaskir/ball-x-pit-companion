@@ -306,7 +306,7 @@ describe('regression: fusion screen (2026-10-05 session bugs)', () => {
   // Voluptuous Egg Sac's two-hop spawn chain (property drops at hop 2),
   // Freeze Ray's freeze was wrongly treated as spawn-bound, and Satan's
   // debuff-only field judgment. Found by cross-checking the composer
-  // against all 31 no-cross-wire claims in docs/research/fusion-observations/.
+  // against the corpus's no-cross-wire claims in docs/research/fusion-observations/.
   // Fix: SPAWN_NO_INHERITANCE_IDS / AOE_EXCLUDED_IDS / SPAWN_BOUND_IDS. Pinned
   // with positive controls in fusion.test.ts (cross-wire exclusions describe).
   it('cross-wire exclusions match the corpus no-wire evidence', async () => {
