@@ -55,7 +55,7 @@ export function createSelectionBoxes({ emitAction }: { emitAction: Emit }): Sele
   function buildSelectionBox(screen: 'balls' | 'passives') {
     const root = document.getElementById(`selection-${screen}`)!;
     // "Add to plan" / "Add to fusion" own their click: the item is added and
-    // the selection survives adding (CONTEXT.md). This marker is the fix for
+    // the selection survives adding (GLOSSARY.md). This marker is the fix for
     // the missing .selection-box exemption.
     markClearExempt(root);
     const withFusion = screen === 'balls';

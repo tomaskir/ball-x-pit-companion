@@ -42,7 +42,7 @@ wiki overview table.
 ## Headline findings
 
 1. **The central order claim is stale.** `fusion-mechanics.md` §3, the corpus
-   `order_notes`, `CONTEXT.md`, `README.md`, and the tests say order is
+   `order_notes`, `GLOSSARY.md`, `README.md`, and the tests say order is
    functional only for same-property and both-cooldown pairs. The 2026-11-09
    post (v1.301) says the year-old "order does not matter" PSA was correct at
    the time but is **obsolete after the three free DLCs**, and the wiki's own
@@ -220,7 +220,7 @@ wiki overview table.
 
 ---
 
-## E. `CONTEXT.md`
+## E. `GLOSSARY.md`
 
 | ID | Location | Claim | Status | Newer source / note | Action |
 |---|---|---|---|---|---|
@@ -308,11 +308,11 @@ what the audit recommends the repo do with them.
 
 | Claim | Repeated in | Canonical home recommendation |
 |---|---|---|
-| Order model (two classes vs broader) | `fusion-mechanics.md` §3; `fusion-pairs.json` `order_notes`; `CONTRADICTIONS.md` §1/§12; `README.md` #2; `CONTEXT.md` fusion composer; `fusion.ts` header/`SAME_PROPERTY_PAIRS`; `fusion.test.ts` order tests | `fusion-mechanics.md` §3 (one canonical statement); code/tests reference it |
+| Order model (two classes vs broader) | `fusion-mechanics.md` §3; `fusion-pairs.json` `order_notes`; `CONTRADICTIONS.md` §1/§12; `README.md` #2; `GLOSSARY.md` fusion composer; `fusion.ts` header/`SAME_PROPERTY_PAIRS`; `fusion.test.ts` order tests | `fusion-mechanics.md` §3 (one canonical statement); code/tests reference it |
 | `FUSED_STATS` values | `fusion.ts` table; `fusion.test.ts` tests; `data.test.ts` substring gate; `fusion-mechanics.md` §1.1/uncertainty | `src/data/balls.ts` L3 text + one test; delete the table once migrated |
-| Cross-wire rules | `fusion-mechanics.md` §2b–2e; `fusion-pairs.json` rules; `fusion.ts` constants/comments; `CONTEXT.md`; `corpus.test.ts` | `fusion-mechanics.md` §2 + `fusion.ts` constants; tests pin behavior |
+| Cross-wire rules | `fusion-mechanics.md` §2b–2e; `fusion-pairs.json` rules; `fusion.ts` constants/comments; `GLOSSARY.md`; `corpus.test.ts` | `fusion-mechanics.md` §2 + `fusion.ts` constants; tests pin behavior |
 | Corpus counts | `fusion-mechanics.md`; `CONTRADICTIONS.md`; `fusion-pairs.json`; `corpus.test.ts`; `fusion.ts` header | derive from `fusion-pairs.json`; cite once |
-| Name format | `fusion-mechanics.md` §1; `fusion-pairs.json` `name-format`; `fusion.ts` `fusionName`; `CONTEXT.md`; `fusion.test.ts` | `fusion-mechanics.md` §1 + one code comment |
+| Name format | `fusion-mechanics.md` §1; `fusion-pairs.json` `name-format`; `fusion.ts` `fusionName`; `GLOSSARY.md`; `fusion.test.ts` | `fusion-mechanics.md` §1 + one code comment |
 | Freeze Ray classification | `fusion-mechanics.md` §2c; `fusion-pairs.json` `trigger-channel-limits`; `fusion.ts` `SPAWN_BOUND_IDS`; `fusion.test.ts`; `corpus.test.ts` `NULL_RESOLVED` | one model decision (ticket #7), then one home |
 
 ---
@@ -350,7 +350,7 @@ what the audit recommends the repo do with them.
 - `docs/research/fusion-observations/game-files.jsonl` (builds 1.288 and 1.301).
 - `docs/research/fusion-observations/playtest.jsonl` (2026-10-01).
 - `src/fusion.ts`, `src/fusion.test.ts`, `src/corpus.test.ts`, `src/data.test.ts`.
-- `CONTEXT.md`, `AGENTS.md`, `docs/research/fusion-observations/README.md`.
+- `GLOSSARY.md`, `AGENTS.md`, `docs/research/fusion-observations/README.md`.
 - Wiki per-level pages: [Overgrowth](https://ballxpit.wiki.gg/wiki/Overgrowth),
   [Maggot](https://ballxpit.wiki.gg/wiki/Maggot),
   [Spider Queen](https://ballxpit.wiki.gg/wiki/Spider_Queen),

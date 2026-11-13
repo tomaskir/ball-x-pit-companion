@@ -1,8 +1,8 @@
-# Context
+# Glossary
 
-Domain glossary for the Ball x Pit companion site. This file is self-contained:
-it names the concepts the code uses and carries the data those concepts stand on.
-Workflow guidance lives in `AGENTS.md`; the game-data fact base is
+Domain glossary for the Ball x Pit companion site. It names the concepts the
+code uses and carries the data those concepts stand on. Workflow guidance lives
+in `AGENTS.md`; the public overview is `README.md`; the game-data fact base is
 `docs/research/game-mechanics.md`.
 
 ## Game vs site terminology
@@ -513,13 +513,8 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   Guide of Evolutions" charts. Effect text is verbatim from the wiki. The
   overview catalog is **level-1** text; fusion consumes the level-3 overlay
   `src/data/level-3.ts` (generated from `docs/research/level-3-effects.md`).
-- **Pipeline** — `scripts/fact-bases.ts` parses the fact base, the Matchmaker
-  pairing fact base `docs/research/character-pairings.md`, and the level-3
-  overlay `docs/research/level-3-effects.md` (computing depth structurally);
-  `scripts/parse-wiki.ts` writes the result to `src/data/parsed.json`.
-  `scripts/generated-data.ts` turns that plus the hand-maintained maps in
-  `scripts/editorial.ts` into `src/data/{tags,balls,passives,characters,
-  level-3}.ts`, validating before writing. The six `src/data` outputs are
+- **Pipeline** — the two-stage parse/emit pipeline and the generated-file rule
+  are documented in `AGENTS.md` § Data flow. The six `src/data` outputs are
   generated — edit the fact bases or `scripts/editorial.ts`, never the
   generated files.
 - **Icons** — 208 PNGs in `public/icons/`, downloaded from the wiki's

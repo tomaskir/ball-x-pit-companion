@@ -10,6 +10,8 @@ reference, and a fusion composer. Static Astro 5 site with one vanilla-TS
 interactive island, deployed to GitHub Pages at
 https://tomaskir.github.io/ball-x-pit-companion/.
 
+Public overview: `README.md`. Domain vocabulary: `GLOSSARY.md`.
+
 Not an npm package (`"private": true`). Code is MIT-licensed; game art in
 `public/icons/` is not — see `public/icons/CREDITS.md` before touching assets.
 
@@ -17,13 +19,16 @@ Not an npm package (`"private": true`). Code is MIT-licensed; game art in
 
 - `src/pages/index.astro` — static page shell (header, tabs, per-screen search, footer disclaimer).
 - `src/companion.ts` — the **island**: composition root for shell, renderer, and view state — plan persistence, hash routing, and the startup/disposal sequence only.
+- `src/companion-core.ts` — pure startup decisions (`sectionFromHash`, `shouldClear`, `themeFromStorage`); the island and shell are their transport.
 - `src/shell.ts` — the **shell adapter**: `createShell({ ports, dispatch, snapshot })` owns every static-shell control (theme, tabs, per-screen search, plan toolbar, share, Esc/empty-space) in one listener registry and returns `{ showSection, destroy }`; `destroy` removes every listener and clears the share flash timer.
 - `src/clear-exempt.ts` — the clear-exemption marker/predicate (`markClearExempt(el)` at each interactive region's creation site, `isClearExempt(target)` for the shell/island); the empty-space clear rule sits with the markup that creates it, not in a selector list.
 - `src/view-state.ts` — all state + derivations; `dispatch(action) → ViewModel`. The test surface.
+- `src/plan-state.ts` — the plan screen's state and derivation: `createPlanState()` → `dispatch` / `derive(selectedChars)` / `snapshot()`, plus the membership queries (`has`, `hasPair`) and `limits()` the rest of the app reads.
 - `src/plan-codec.ts` — the plan persistence codec: `PlanSnapshot ⇄ v1 wire ⇄ SharedSnapshot { plan, chars }`, with the plan's field list declared once (compiler-checked against `keyof PlanSnapshot`). `encodeShared`/`decodeShared`/`normalizeShared`; shape only, deeper id validation stays in `plan-state`'s `hydrate`. `src/share.ts` keeps the URL transport (`planLink`, `takeShareParam`).
 - `src/plan-session.ts` — the persistence lifecycle over injected ports: `restore({ storage, hash }) → { shared, stripUrl }` owns share-beats-stored precedence, the one-shot strip, and corrupt-storage tolerance; `save(storage, shared)` owns serialization and skips unchanged plans. The island keeps the transport.
 - `src/renderer.ts` — all DOM painting behind one instance lifecycle: `createRenderer({ emit })` → `{ build(), paint(vm), destroy() }`. The instance owns the seam, the toast adapter, the reconcile cache, and every painter registry; `paint(vm)` captures the latest view model for the toast's verdict.
 - `src/renderer/` — internal painter factories behind that facade (grids, characters, chips, fusion screen, plan, build graphs, selection box), each created over the instance's seam and reconcile cache: `reconcile.ts` (the content-diff cache), `action-slot.ts` (the once-built click channel: a typed `ToggleAction` refreshed by every repaint), `seam.ts` (the emit callback, the captured view model, and the toast adapter), and `dom.ts`/`labels.ts` (icon, verdict badge, and display-text helpers). No module-level mutable renderer state.
+- `src/toast.ts` — the hover/tap detail popup adapter (`createToast`); created and torn down by the renderer instance.
 - `src/fusion.ts` — pure fusion composer (`fuse(a, b)`); the site's editorial model of fusion, not game data.
 - `src/ball-kit.ts` — the one per-ball kit table (`BALL_KIT`): level-3 scalars and application channels together, read by both `channelsOf` (wire model) and `resolveProperties` (order model).
 - `src/fusion-properties.ts` — pure order model: `resolveProperties(a, b)` over the per-ball kits (property-set union, first-pick scalar precedence).
@@ -39,6 +44,7 @@ Not an npm package (`"private": true`). Code is MIT-licensed; game art in
 - `src/synergy.ts` — red/green verdict from tag overlap.
 - `src/icon-url.ts` — the base-URL × icon-path join.
 - `src/styles/global.css` — the island's stylesheet; `src/styles.test.ts` pins markup/CSS coupling.
+- `src/test-support/` — shared test harness (`mount-island.ts`) and named pins (`pins.ts`); not production code.
 - `src/data/{balls,passives,characters,tags,level-3}.ts` — **generated** data files.
 - `scripts/parse-wiki.ts`, `scripts/emit-data.ts` — thin CLIs over the data pipeline.
 - `scripts/fact-bases.ts` — exported pure parsers (`parseRecipes`, `parseGameMechanics`, `parsePairings`, `parseLevel3`, `parseFactBases`); the test surface for the fact bases.
@@ -55,7 +61,7 @@ Not an npm package (`"private": true`). Code is MIT-licensed; game art in
 - `docs/research/fusion-observations/CONTRADICTION-RESOLUTION-2026-11-11.md` — the dated source-only resolution pass applied to the curated layer.
 - `docs/research/fusion-claim-register.md` — the claim audit trail (historical snapshot; counts predate the 2026-11-11 pass).
 - `docs/research/fusion-order-mechanism.md`, `fusion-order-claims-nov-2026.md`, `fusion-composition-revalidation-2026-11.md`, `effect-text-currency.md`, `mosquito-king-spawn.md`, `brood-mother-spawn.md` — dated research snapshots whose recommendations have landed; read their status banners first.
-- `CONTEXT.md` — domain glossary; read it first. Module headers carry the same vocabulary.
+- `GLOSSARY.md` — domain glossary; read it first. Module headers carry the same vocabulary.
 
 ## Commands
 
@@ -156,7 +162,7 @@ checked-in data, so the invariants are written once.
   `refactor: …`, `fix…`, `Extract <module>: <one-line why>` for module
   extractions, and `Address review findings: <what>` for review follow-ups.
   TDD commits note `(TDD)`.
-- **Design-decision provenance**: the durable record is `CONTEXT.md` plus the
+- **Design-decision provenance**: the durable record is `GLOSSARY.md` plus the
   module headers themselves; keep both accurate when changing a module's
   contract. Some comments cite numbered decision "tickets" (e.g. #7, #8,
   #12); these resolve to closed GitHub issues, but the issue bodies are not a
@@ -166,7 +172,7 @@ checked-in data, so the invariants are written once.
   at the same time, use the `concurrent-agents` skill — work in your own
   worktree, integrate via rebase + fast-forward, never edit the shared checkout.
 - Prefer small, single-responsibility modules with one public interface each;
-  the codebase is deliberately structured that way (see CONTEXT.md). When a
+  the codebase is deliberately structured that way (see GLOSSARY.md). When a
   module grows a second responsibility, extract rather than accrete.
 
 ## Content caveats
@@ -179,6 +185,8 @@ checked-in data, so the invariants are written once.
 - The synergy tag list and per-character verdicts are this site's **editorial
   model**, not game data — playtest-unverified. Changes there are content
   decisions, not just code.
+- The fusion corpus is append-only: corrections go in a new wave plus
+  `docs/research/fusion-observations/CONTRADICTIONS.md`; never rewrite old rows.
 
 ## Agent skills
 
@@ -189,3 +197,7 @@ Issues live in GitHub Issues (`tomaskir/ball-x-pit-companion`), managed with the
 ### Triage labels
 
 Five canonical roles map to `needs-assessment`, `needs-more-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: the glossary is `GLOSSARY.md` at the repo root. See `docs/agents/domain.md`.

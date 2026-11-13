@@ -55,6 +55,9 @@ npm test          # vitest run, also the CI gate (includes tsc --noEmit)
 npm run build     # astro build → dist/
 ```
 
+Domain vocabulary lives in [`GLOSSARY.md`](GLOSSARY.md); contributor and agent
+rules live in [`AGENTS.md`](AGENTS.md).
+
 ### Architecture
 
 Static Astro 5 page + one vanilla-TS interactive island, decomposed into
@@ -71,7 +74,7 @@ single-responsibility modules:
 | `src/synergy.ts` | Red/green verdict logic from tag overlap |
 | `src/icon-url.ts` | Base-URL × icon-path join |
 
-`CONTEXT.md` is the domain glossary; module headers carry the same vocabulary.
+`GLOSSARY.md` is the domain glossary; module headers carry the same vocabulary.
 Architectural invariants (namespace separation, structural depth, recipe-notation
 factorization) are documented there and enforced by the test suite.
 

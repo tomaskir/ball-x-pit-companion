@@ -3,7 +3,7 @@
 Distilled knowledge about **Fusions** — merging any two unfused level-3 balls
 into a property-stacking ball with no unique identity. Companion to
 `game-mechanics.md`, which covers the 69 named **Evolutions**; the wiki's own
-terminology distinction is in `../../CONTEXT.md`.
+terminology distinction is in `../../GLOSSARY.md`.
 
 This file is hand-maintained (evidence accessed 2026-10-01..04 and
 2026-11-09..11, game v1.301, **pre-DLC** — re-verify version-dependent claims

@@ -3,7 +3,7 @@
 Shared brief for research agents harvesting **fused-ball evidence** for the
 Ball x Pit companion site. Read this file before writing anything.
 
-Domain background: `../../../CONTEXT.md`, `../fusion-mechanics.md` (fusion
+Domain background: `../../../GLOSSARY.md`, `../fusion-mechanics.md` (fusion
 mechanics distilled: why there is no fusion table, composition rules, order
 verdict, and the source survey behind it). Game-evolution fact base:
 `../game-mechanics.md`.
