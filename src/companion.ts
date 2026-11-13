@@ -12,8 +12,8 @@
 // DOM painting lives in src/renderer.ts behind one renderer instance
 // (createRenderer(...).build() + paint(vm), torn down with destroy()); all
 // state and derivations live in src/view-state.ts behind one
-// dispatch(action) → ViewModel interface. See GLOSSARY.md for the domain
-// glossary these contracts use.
+// dispatch(action) → ViewModel interface. The domain glossary defines the
+// vocabulary these contracts use.
 //
 // The startup sequence is callable: startIsland(ports) composes those parts
 // with injected ports for every environment touchpoint — storage,

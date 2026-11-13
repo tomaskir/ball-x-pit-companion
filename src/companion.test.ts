@@ -299,8 +299,8 @@ describe('clear policy wiring (tab click wiped the destination screen, 2026-10-0
   it('clicking "Add to plan" leaves the selection intact (bug: .selection-box was not clear-exempt)', () => {
     // Bug: .selection-box was missing from the exempt selector, so the
     // button's click bubbled to the document handler and cleared the
-    // selection in the same click that added the item — contradicting
-    // GLOSSARY.md's "Selection survives adding".
+    // selection in the same click that added the item — contradicting the
+    // "selection survives adding" invariant.
     const t = stubPorts();
     selectFlash(t);
     selectionBtn('plan').click();
