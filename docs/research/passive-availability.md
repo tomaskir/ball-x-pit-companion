@@ -1,5 +1,12 @@
 # Passive availability by character
 
+> **Update 2026-11-13:** the DLC build (v1.308) was datamined. It does contain
+> a hard per-character allow-list for the 45 DLC passives, plus character-stat
+> gates on several base-game passives. See
+> `character-passive-restrictions.md`. The "no confirmed per-character lockout"
+> bottom line below applies to the pre-DLC / wiki-sourced scope of this
+> snapshot; the DLC mechanism is now confirmed.
+
 Which passives a character can actually be offered or equip, and why. This is a
 **research snapshot** (compiled 2026-11-11), not parsed by the data pipeline and
 not yet reflected in `src/data/`. It exists to answer the question "which
@@ -78,6 +85,8 @@ never satisfy the prerequisite-passive gates because it has no passive slots.
 
 "None confirmed" means no source documents a hard lockout for that character;
 soft interactions with the character's quirk may still exist and are noted.
+This table is the **pre-DLC / wiki-sourced** view; for the DLC build's
+datamined allow-list and stat gates, see `character-passive-restrictions.md`.
 
 | Character | Passive slots | Confirmed restriction | Notes |
 |---|---|---|---|
