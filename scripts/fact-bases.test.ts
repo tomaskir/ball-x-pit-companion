@@ -211,6 +211,51 @@ describe('parsePairings: Risen Ballbylon rows (S5, research #32)', () => {
   });
 });
 
+describe('parsePairings: existing-roster corrections (S5, research #32 §5 / #49)', () => {
+  const { characters } = parseGameMechanics(realMechanics());
+  const md = readFileSync(new URL('../docs/research/character-pairings.md', import.meta.url), 'utf8');
+  const out = parsePairings(md, characters);
+  const byName = new Map(out.map((c) => [c.name, c]));
+
+  it('adds the four pre-DLC pairs the community table missed, both directions', () => {
+    const pairs: Array<[string, string]> = [
+      ['The Tunneller', 'The Shieldbearer'],
+      ['The Tunneller', 'The Flagellant'],
+      ['The Tactician', 'The Carouser'],
+      ['The Ballbearer', 'The Hoary Hoarder'],
+    ];
+    for (const [a, b] of pairs) {
+      expect(byName.get(a)!.cannotPair).toContain(b);
+      expect(byName.get(b)!.cannotPair).toContain(a);
+    }
+  });
+
+  it('drops Cogitator x Radical, which v1.308 does not enforce', () => {
+    expect(byName.get('The Cogitator')!.cannotPair).not.toContain('The Radical');
+    expect(byName.get('The Radical')!.cannotPair).not.toContain('The Cogitator');
+  });
+
+  it('keeps the False Messiah no-partner rule and the symmetric closure', () => {
+    const messiah = byName.get('The False Messiah')!;
+    expect(messiah.cannotPair).toHaveLength(out.length - 1);
+    for (const c of out) {
+      if (c.name === 'The False Messiah') continue;
+      expect(c.cannotPair).toContain('The False Messiah');
+    }
+  });
+
+  it('models exactly the 43 non-Messiah forbidden pairs of the v1.308 matrix', () => {
+    const pairs = new Set(
+      out
+        .filter((c) => c.name !== 'The False Messiah')
+        .flatMap((c) => c.cannotPair
+          .filter((p) => p !== 'The False Messiah')
+          .map((p) => [c.name, p].sort().join('\u0000'))),
+    );
+    expect(pairs.size).toBe(43);
+  });
+});
+
 describe('parseLevel3: id → level-3 text', () => {
   const md = [
     '| Ball | Level-3 effect text | Notes |',
