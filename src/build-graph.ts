@@ -7,11 +7,12 @@
 // src/build-graph.test.ts; the renderer only paints the laid-out model.
 //
 // The module owns the graph's inputs, row model, and highlight rule:
-// `deriveBuildGraphView(planState, { focus, done, collapsed })` assembles the
-// targets from the plan (including Evolves-instead resolution), derives and
-// lays out both namespace graphs, validates the focus id, walks the related
-// set, and carries the fixed row model (row counts, fusion row index, row
-// labels). view-state only embeds the result.
+// `deriveBuildGraphView(planState, { focus, done, collapsed, editions })`
+// assembles the targets from the plan (including Evolves-instead resolution),
+// gates each recipe on the enabled editions (a recipe with a hidden component
+// is unavailable), derives and lays out both namespace graphs, validates the
+// focus id, walks the related set, and carries the fixed row model (row
+// counts, fusion row index, row labels). view-state only embeds the result.
 //
 // The model rules (settled with the user):
 // - One node per id across the whole graph (deduped by id). A planned fused
@@ -40,8 +41,9 @@
 //   still needed in their row.
 import { type GraphItem, complexity, componentsOf, factorizesIntoSlots, recipeSlots, closure, union } from './graph';
 import { pairKey, parsePair } from './pair';
-import { ballMap, passiveMap, graphFor } from './catalog';
+import { ballMap, passiveMap, isPassive } from './catalog';
 import { evolvesInstead } from './fusion';
+import type { Edition } from './data/editions';
 import { DEPTH_LABELS } from './depth-labels';
 import type { PlanState } from './plan-state';
 
@@ -393,11 +395,13 @@ export interface BuildGraphCollapsed {
 
 /** The session-only build-graph UI state view-state owns: the focused node
  *  (null = none), the done marks (nodes the player has already built this
- *  run), and the two panels' collapsed flags. */
+ *  run), the two panels' collapsed flags, and the enabled editions (a recipe
+ *  with a hidden component is unavailable, so it leaves the graph). */
 export interface BuildGraphSessionState {
   focus: string | null;
   done: ReadonlySet<string>;
   collapsed: BuildGraphCollapsed;
+  editions: readonly Edition[];
 }
 
 /** The Plan screen's build graphs: one laid-out model per namespace (balls
@@ -430,8 +434,32 @@ export interface BuildGraphViewState {
  */
 export function deriveBuildGraphView(
   planState: PlanState,
-  { focus, done, collapsed }: BuildGraphSessionState,
+  { focus, done, collapsed, editions }: BuildGraphSessionState,
 ): BuildGraphViewState {
+  // The edition gate: a recipe is available iff every component's edition is
+  // enabled. The gated maps keep the catalog's items and order; only the
+  // recipes change, so complexity, closure, and the demand model all read
+  // the surviving build paths.
+  const gate = <T extends GraphItem & { name: string; icon: string; edition: Edition }>(
+    graph: Map<string, T>,
+  ): Map<string, T> => {
+    const gated = new Map<string, T>();
+    for (const [id, item] of graph) {
+      gated.set(id, {
+        ...item,
+        recipes: item.recipes.filter((recipe) =>
+          recipe.every((component) => {
+            const resolved = graph.get(component);
+            return resolved !== undefined && editions.includes(resolved.edition);
+          }),
+        ),
+      });
+    }
+    return gated;
+  };
+  const ballGraph = gate(ballMap);
+  const passiveGraph = gate(passiveMap);
+
   const ballTargets: BuildGraphTargets = { singles: [], pairs: [] };
   for (const e of planState.balls) {
     if (e.overLimit) continue;
@@ -451,8 +479,8 @@ export function deriveBuildGraphView(
     graph: Map<string, T>,
     rows: number,
   ) => layoutBuildGraph(deriveBuildGraph(targets, graph, { done }), rows);
-  const balls = deriveAndLayout(ballTargets, ballMap, BUILD_GRAPH_ROWS.balls.rowCount);
-  const passives = deriveAndLayout(passiveTargets, passiveMap, BUILD_GRAPH_ROWS.passives.rowCount);
+  const balls = deriveAndLayout(ballTargets, ballGraph, BUILD_GRAPH_ROWS.balls.rowCount);
+  const passives = deriveAndLayout(passiveTargets, passiveGraph, BUILD_GRAPH_ROWS.passives.rowCount);
 
   let resolvedFocus = focus;
   if (resolvedFocus && ![...balls.nodes, ...passives.nodes].some((n) => n.id === resolvedFocus)) {
@@ -466,9 +494,9 @@ export function deriveBuildGraphView(
       related.add(resolvedFocus);
       related.add(a);
       related.add(b);
-      for (const id of closure([a, b], ballMap, false)) related.add(id);
+      for (const id of closure([a, b], ballGraph, false)) related.add(id);
     } else {
-      const g = graphFor(resolvedFocus);
+      const g = isPassive(resolvedFocus) ? passiveGraph : ballGraph;
       for (const id of union(closure([resolvedFocus], g, false), closure([resolvedFocus], g, true))) {
         related.add(id);
       }

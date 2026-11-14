@@ -1,11 +1,19 @@
 // View-state module: the island's state (item selection, character slots,
-// fusion picks, per-screen search queries) and every derivation the island
-// used to hand-wire between its event handlers. One interface:
-// dispatch(action) → ViewModel — 'clear' is section-scoped (the active
-// section's selection only; the plan is excluded — it is deliberate work,
-// only clearPlan wipes it); selections from different screens coexist, so
-// tab switching dispatches nothing. Search is per screen: each section has
-// its own query (own search box), independent of every other screen's.
+// fusion picks, per-screen search queries, the content filter's enabled
+// editions) and every derivation the island used to hand-wire between its
+// event handlers. One interface: dispatch(action) → ViewModel — 'clear' is
+// section-scoped (the active section's selection only; the plan is excluded
+// — it is deliberate work, only clearPlan wipes it); selections from
+// different screens coexist, so tab switching dispatches nothing. Search is
+// per screen: each section has its own query (own search box), independent
+// of every other screen's.
+//
+// The edition filter is content visibility, not a game-version switch:
+// toggling an edition off drops every hidden entry (selected characters,
+// fusion picks, plan entries, fused pairs) and reports the loss count;
+// re-enabling restores nothing. The ViewModel carries the per-item hidden
+// flags, the edition-filtered collections, and each item's surviving
+// recipes, so the renderer never re-derives the gate.
 // The island (src/companion.ts) keeps only composition, hash routing, and
 // plan persistence; the static-shell wiring lives in src/shell.ts and
 // painting lives in src/renderer.ts. Fusion
@@ -21,13 +29,15 @@
 // entries, verdicts, limits, over-limit marks); this module forwards the
 // plan actions to it and embeds the result in the ViewModel, handing the
 // shared selectedChars in on every derive. The persistence currency is
-// src/plan-codec.ts's SharedSnapshot: this module owns the chars half and
-// restores it on hydrate; plan-state owns the plan half.
-import { BALLS } from './data/balls';
-import { PASSIVES } from './data/passives';
+// src/plan-codec.ts's SharedSnapshot: this module owns the chars and editions
+// halves and restores them on hydrate; plan-state owns the plan half.
+import { BALLS, type Ball } from './data/balls';
+import { PASSIVES, type Passive } from './data/passives';
 import { CHARACTERS, type Character } from './data/characters';
+import { EDITIONS, type Edition } from './data/editions';
+import { DEFAULT_EDITIONS, availableRecipes, isEditionEnabled, visibleItems } from './edition-gate';
 import { highlightSet } from './graph';
-import { isPassive, itemFor, graphFor } from './catalog';
+import { ballMap, passiveMap, isPassive, itemFor, graphFor } from './catalog';
 import { deriveBuildGraphView, type BuildGraphViewState } from './build-graph';
 import { fusionBalls, isFusable } from './fusion';
 import { deriveFusionPanel, type FusionPanelState } from './fusion-panel';
@@ -37,16 +47,18 @@ import { createPlanState } from './plan-state';
 import type { PlanAction, PlanLimits, PlanState } from './plan-state';
 import type { SharedSnapshot } from './plan-codec';
 
-export interface TileState { selected: boolean; related: boolean; dimmed: boolean; filtered: boolean; verdict: Verdict | null; }
+export interface TileState { selected: boolean; related: boolean; dimmed: boolean; filtered: boolean; hidden: boolean; verdict: Verdict | null; }
 /** One character card. `blocked` is a Matchmaker pairing restriction (game
  *  data): with exactly one character held (and two allowed), a forbidden
  *  partner is blocked — selecting it is a no-op. `blockedBy` names the held
- *  character for the tooltip; null when not blocked. */
-export interface CharCardState { selected: boolean; filtered: boolean; blocked: boolean; blockedBy: string | null; }
+ *  character for the tooltip; null when not blocked. `hidden` is the edition
+ *  filter — hidden content is not painted, not dimmed. */
+export interface CharCardState { selected: boolean; filtered: boolean; hidden: boolean; blocked: boolean; blockedBy: string | null; }
 /** Pick state of one ball row on the fusion screen: slot = pick order (1
  *  first, 2 second), null when not picked. Baby Ball is not a fusable
- *  upgrade entity and is excluded from the list. */
-export interface FusionRowState { slot: 1 | 2 | null; filtered: boolean; }
+ *  upgrade entity and is excluded from the list. `hidden` is the edition
+ *  filter. */
+export interface FusionRowState { slot: 1 | 2 | null; filtered: boolean; hidden: boolean; }
 /** The balls/passives screens' selection box: the currently selected item
  *  (null = no box on that screen) and the label states for its buttons —
  *  derived here so the renderer only paints. `plan`/`fusion` label kinds:
@@ -80,6 +92,25 @@ export interface ViewModel {
   buildGraph: BuildGraphViewState;
   /** The balls/passives screens' selection boxes — see SelectionBoxState. */
   selectionBoxes: { balls: SelectionBoxState | null; passives: SelectionBoxState | null };
+  /** The content filter's enabled editions, in vocabulary order. */
+  enabledEditions: readonly Edition[];
+  /** Entries the last action removed because the edition filter hid them
+   *  (selected characters, fusion picks, plan entries, fused pairs). 0 when
+   *  nothing was dropped — the loss notice's count; it clears on the next
+   *  action. */
+  editionDroppedCount: number;
+  /** Edition-filtered collections for every screen — the renderer paints
+   *  these instead of re-deriving the gate. */
+  visible: {
+    balls: Ball[];
+    passives: Passive[];
+    characters: Character[];
+    fusionBalls: Ball[];
+  };
+  /** Per-item recipes whose components are all enabled (the catalog's recipe
+   *  notation and the build graph consume these; a recipe with a hidden
+   *  component disappears while the item stays). Keyed by catalog id. */
+  availableRecipes: Map<string, string[][]>;
 }
 // The build-graph view type is build-graph.ts's; the ViewModel's
 // `buildGraph` field imports it from there.
@@ -90,6 +121,11 @@ export type Action =
   | { type: 'toggleFusion'; id: string }
   /** Reverse the two fusion picks (a,b → b,a) and recompute the panel. */
   | { type: 'swapFusion' }
+  /** Toggle one edition in the content filter. Turning an edition off drops
+   *  every hidden entry (selected characters, fusion picks, plan entries,
+   *  fused pairs) and reports the loss count; turning it back on restores
+   *  nothing. */
+  | { type: 'toggleEdition'; edition: Edition }
   /** Per-screen search: each section has its own query (own search box),
    *  independent of every other screen's. */
   | { type: 'search'; section: Section; query: string }
@@ -112,7 +148,12 @@ export type Action =
   // (plan + chars) and view-state splits it — the plan half goes to
   // plan-state, the chars half is restored here.
   | Exclude<PlanAction, { type: 'hydrate' }>
-  | { type: 'hydrate'; shared: SharedSnapshot };
+  /** Restore the whole transport snapshot (plan + chars + editions). The
+   *  editions are applied first, then the plan and chars are restored, then
+   *  the same drop invariant runs — entries the share's own editions hide
+   *  are dropped. `notify` is true for a share restore: the loss notice fires
+   *  then, but not on a plain startup restore. */
+  | { type: 'hydrate'; shared: SharedSnapshot; notify?: boolean };
 
 /** The actions the renderer's click handlers produce and hand back through
  *  the build seam's `emit` callback (the island dispatches them verbatim).
@@ -143,8 +184,24 @@ const SELECTION_FULL = 'selection full — deselect one first';
 const blockedPartner = (chars: readonly Character[], limits: PlanLimits): Character | null =>
   chars.length === 1 && limits.chars > 1 ? chars[0] : null;
 
-export function createViewState() {
+export interface ViewStateOptions {
+  /** The editions to start with (the island passes the restored filter).
+   *  Omitted → the default, base-game only. An explicit empty list is valid
+   *  (both checkboxes unchecked). */
+  editions?: readonly Edition[];
+}
+
+export function createViewState({ editions }: ViewStateOptions = {}) {
   let selectedId: string | null = null;
+  /** The content filter. Canonical vocabulary order; an empty list is a
+   *  valid "nothing enabled" state. */
+  let enabledEditions: Edition[] =
+    editions === undefined
+      ? [...DEFAULT_EDITIONS]
+      : EDITIONS.filter((edition) => editions.includes(edition));
+  /** Entries the last action dropped by the edition filter — the loss
+   *  notice's count, reset at the start of every dispatch. */
+  let editionDroppedCount = 0;
   /** Per-screen search queries — each section has its own search box, so
    *  each keeps its own query, independent of every other screen's. The
    *  plan screen has no search box; its key only completes the record. */
@@ -176,6 +233,37 @@ export function createViewState() {
   const graphCollapsed = { balls: false, passives: false };
   const graphDone = new Set<string>();
 
+  /** Enforce the filter's no-hidden-live-state invariant: drop selected
+   *  characters, fusion picks, plan entries, and fused pairs whose edition is
+   *  disabled. Returns the number of entries removed (a fused pair counts
+   *  once; the transient catalog selection is dropped silently). Re-enabling
+   *  an edition never restores anything. */
+  const dropHiddenEntries = (): number => {
+    let dropped = 0;
+    const visible = (entity: { edition: Edition }): boolean => isEditionEnabled(enabledEditions, entity.edition);
+
+    const charsBefore = selectedChars.list();
+    selectedChars.restore(charsBefore.filter(visible).map((character) => character.id));
+    dropped += charsBefore.length - selectedChars.list().length;
+
+    const picksBefore = fusionPicks.list();
+    fusionPicks.restore(
+      picksBefore.filter((id) => {
+        const ball = ballMap.get(id);
+        return ball !== undefined && visible(ball);
+      }),
+    );
+    dropped += picksBefore.length - fusionPicks.list().length;
+
+    dropped += plan.dropHidden(enabledEditions);
+
+    if (selectedId) {
+      const selected = itemFor(selectedId);
+      if (!selected || !visible(selected)) selectedId = null;
+    }
+    return dropped;
+  };
+
   const derive = (): ViewModel => {
     const tiles = new Map<string, TileState>();
     const charCards = new Map<string, CharCardState>();
@@ -188,7 +276,8 @@ export function createViewState() {
     const charQ = queries.characters.trim().toLowerCase();
     const fusionQ = queries.fusions.trim().toLowerCase();
     // each namespace filters against its own screen's query — one loop shape,
-    // two (collection, query) pairs; the graphs themselves stay separate
+    // two (collection, query) pairs; the graphs themselves stay separate.
+    // `hidden` is the edition filter: hidden content is not painted at all.
     for (const [items, q] of [[BALLS, ballQ], [PASSIVES, passiveQ]] as const) {
       for (const item of items) {
         const v = verdictFor(item, chars);
@@ -197,6 +286,7 @@ export function createViewState() {
           related: !!selectedId && selectedId !== item.id && related.has(item.id),
           dimmed: !!selectedId && !related.has(item.id),
           filtered: !!q && !(item.name.toLowerCase().includes(q) || item.effects.toLowerCase().includes(q)),
+          hidden: !isEditionEnabled(enabledEditions, item.edition),
           verdict: v,
         });
       }
@@ -212,6 +302,7 @@ export function createViewState() {
       charCards.set(ch.id, {
         selected: selectedChars.has(ch.id),
         filtered: !!charQ && !(ch.name.toLowerCase().includes(charQ) || ch.quirk.toLowerCase().includes(charQ) || (ch.baseBallId && itemFor(ch.baseBallId)?.name.toLowerCase().includes(charQ) || false)),
+        hidden: !isEditionEnabled(enabledEditions, ch.edition),
         blocked: blockedBy !== null,
         blockedBy,
       });
@@ -221,6 +312,7 @@ export function createViewState() {
       fusionRows.set(b.id, {
         slot: pick === 0 ? 1 : pick === 1 ? 2 : null,
         filtered: !!fusionQ && !b.name.toLowerCase().includes(fusionQ),
+        hidden: !isEditionEnabled(enabledEditions, b.edition),
       });
     }
     // The fusion panel and its hint are derived in src/fusion-panel.ts from
@@ -260,7 +352,17 @@ export function createViewState() {
       focus: graphFocus,
       done: graphDone,
       collapsed: graphCollapsed,
+      editions: enabledEditions,
     });
+    // The edition-filtered collections and the surviving recipes — derived
+    // once here so every screen (and the build graph) reads the same gate.
+    const availableRecipeMap = new Map<string, string[][]>();
+    for (const ball of BALLS) {
+      availableRecipeMap.set(ball.id, availableRecipes(ball, enabledEditions, (id) => ballMap.get(id)));
+    }
+    for (const passive of PASSIVES) {
+      availableRecipeMap.set(passive.id, availableRecipes(passive, enabledEditions, (id) => passiveMap.get(id)));
+    }
     return {
       tiles,
       charCards,
@@ -275,6 +377,15 @@ export function createViewState() {
       plan: planState,
       buildGraph,
       selectionBoxes,
+      enabledEditions: [...enabledEditions],
+      editionDroppedCount,
+      visible: {
+        balls: visibleItems(BALLS, enabledEditions),
+        passives: visibleItems(PASSIVES, enabledEditions),
+        characters: visibleItems(CHARACTERS, enabledEditions),
+        fusionBalls: visibleItems(FUSION_BALLS, enabledEditions),
+      },
+      availableRecipes: availableRecipeMap,
     };
   };
 
@@ -284,14 +395,33 @@ export function createViewState() {
      *  links. Each module supplies its half, so the island never re-extracts
      *  ids from the resolved view model. */
     sharedSnapshot(): SharedSnapshot {
-      return { plan: plan.snapshot(), chars: selectedChars.list().map((c) => c.id) };
+      return {
+        plan: plan.snapshot(),
+        chars: selectedChars.list().map((c) => c.id),
+        editions: [...enabledEditions],
+      };
     },
     /** Current view model without a state change — initial paint. */
     derive(): ViewModel {
       return derive();
     },
     dispatch(action: Action): ViewModel {
+      // The loss notice clears on the next action; only a toggle-off or a
+      // share restore that drops entries sets it again below.
+      editionDroppedCount = 0;
       switch (action.type) {
+        // The content filter. Turning an edition off drops every hidden
+        // entry (the no-hidden-live-state invariant); turning it on restores
+        // nothing. Canonical vocabulary order keeps the list stable.
+        case 'toggleEdition': {
+          const wasEnabled = enabledEditions.includes(action.edition);
+          const next = new Set(enabledEditions);
+          if (wasEnabled) next.delete(action.edition);
+          else next.add(action.edition);
+          enabledEditions = EDITIONS.filter((edition) => next.has(edition));
+          if (wasEnabled) editionDroppedCount = dropHiddenEntries();
+          break;
+        }
         case 'toggleItem': selectedId = selectedId === action.id ? null : action.id; break;
         // Character slots and fusion picks are pick lists (src/pick-list.ts):
         // sticky semantics (re-click deselects; adding past the limit is a
@@ -342,10 +472,17 @@ export function createViewState() {
           break;
         // The island hands the whole SharedSnapshot; each module restores
         // its own half — the plan fields go to plan-state, the shared
-        // selection is restored here (view-state owns it).
+        // selection and editions are restored here (view-state owns them).
+        // The editions apply first, then the same drop invariant runs: a
+        // share's entries excluded by its own editions are dropped. The loss
+        // notice fires only for a share restore (`notify`), not a plain
+        // startup restore.
         case 'hydrate':
+          enabledEditions = EDITIONS.filter((edition) => action.shared.editions.includes(edition));
           plan.dispatch({ type: 'hydrate', plan: action.shared.plan });
           selectedChars.restore(action.shared.chars);
+          editionDroppedCount = dropHiddenEntries();
+          if (!action.notify) editionDroppedCount = 0;
           break;
         case 'search': queries[action.section] = action.query; break;
         case 'clear':

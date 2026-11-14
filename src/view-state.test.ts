@@ -607,6 +607,7 @@ describe('view state: Matchmaker pairing restrictions (game data, character-pair
       shared: {
         plan: { upgradesOn: true, balls: [], passives: [], fused: [] },
         chars: ['the-repentant', 'the-shieldbearer'],
+        editions: ['base-game'],
       },
     });
     expect(vm.plan.characters.map((c) => c.character.id)).toEqual(['the-repentant', 'the-shieldbearer']);
@@ -622,6 +623,7 @@ describe('view state: Matchmaker pairing restrictions (game data, character-pair
       shared: {
         plan: { upgradesOn: true, balls: [], passives: [], fused: [] },
         chars: ['the-warrior', 'the-shade'],
+        editions: ['base-game'],
       },
     });
     expect(vm.plan.characters[0].pairInvalid).toBe(false);
@@ -662,6 +664,7 @@ describe('view state: plan build graphs', () => {
           fused: [],
         },
         chars: [],
+        editions: ['base-game'],
       },
     });
     // paint order is complexity-sorted, so the marked tail entry is the
@@ -733,5 +736,177 @@ describe('view state: build-graph done marks', () => {
     expect(vm.buildGraph.balls.nodes).toHaveLength(0);
     const vm2 = view.dispatch({ type: 'togglePlanFusion', a: 'freeze-ray', b: 'time-bomb' });
     expect(vm2.buildGraph.balls.nodes.find((x) => x.id === 'freeze-ray')!.done).toBe(false);
+  });
+});
+
+// ---------- the edition filter (content visibility, not a version switch) ----------
+
+describe('view state: edition filter state and derived collections', () => {
+  it('defaults to base-game only: DLC content is hidden, not dimmed', () => {
+    const vm = createViewState().derive();
+    expect(vm.enabledEditions).toEqual(['base-game']);
+    expect(vm.tiles.get('bleed')!.hidden).toBe(false);
+    expect(vm.tiles.get('beast')!.hidden).toBe(true); // DLC ball
+    expect(vm.charCards.get('the-warrior')!.hidden).toBe(false);
+    expect(vm.charCards.get('the-potager')!.hidden).toBe(true); // DLC character
+    expect(vm.fusionRows.get('flash')!.hidden).toBe(false);
+    expect(vm.fusionRows.get('beast')!.hidden).toBe(true);
+    expect(vm.visible.balls.some((b) => b.id === 'beast')).toBe(false);
+    expect(vm.visible.characters.some((c) => c.id === 'the-potager')).toBe(false);
+    expect(vm.visible.fusionBalls.some((b) => b.id === 'beast')).toBe(false);
+  });
+
+  it('toggling the expansion on reveals DLC content and its recipes', () => {
+    const view = createViewState();
+    const vm = view.dispatch({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' });
+    expect(vm.enabledEditions).toEqual(['base-game', 'dlc-risen-ballbylon']);
+    expect(vm.tiles.get('beast')!.hidden).toBe(false);
+    expect(vm.charCards.get('the-potager')!.hidden).toBe(false);
+    expect(vm.visible.balls.some((b) => b.id === 'beast')).toBe(true);
+    // Blizzard's Water recipe becomes available with the expansion on
+    expect(vm.availableRecipes.get('blizzard')).toEqual(ballMap.get('blizzard')!.recipes);
+  });
+
+  it('availableRecipes hides a recipe with a disabled component while the item stays', () => {
+    const vm = createViewState().derive();
+    expect(vm.tiles.get('blizzard')!.hidden).toBe(false);
+    expect(vm.availableRecipes.get('blizzard')).toEqual([
+      ['freeze', 'wind'],
+      ['freeze', 'lightning'],
+    ]);
+  });
+
+  it('an explicit empty edition list is valid (both checkboxes unchecked)', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleEdition', edition: 'base-game' });
+    const vm = view.derive();
+    expect(vm.enabledEditions).toEqual([]);
+    expect([...vm.tiles.values()].every((t) => t.hidden)).toBe(true);
+    expect(vm.visible.balls).toHaveLength(0);
+  });
+});
+
+describe('view state: edition filter drop semantics', () => {
+  /** Enable the expansion, then populate every kind of selection. */
+  const withDlcContent = () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' });
+    view.dispatch({ type: 'toggleChar', id: 'the-potager' }); // DLC character
+    view.dispatch({ type: 'toggleFusion', id: 'beast' }); // DLC ball
+    view.dispatch({ type: 'togglePlanItem', id: 'beast' }); // DLC plan ball
+    view.dispatch({ type: 'togglePlanFusion', a: 'beast', b: 'bleed' }); // pair with a DLC component
+    view.dispatch({ type: 'togglePlanItem', id: 'wagon-wheel' }); // base passive stays
+    return view;
+  };
+
+  it('toggling the expansion off drops hidden chars, fusion picks, plan entries, and fused pairs', () => {
+    const view = withDlcContent();
+    const vm = view.dispatch({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' });
+    expect(vm.selectedChars).toHaveLength(0);
+    expect(vm.fusionPanel).toEqual({ state: 'empty' });
+    expect(vm.plan.balls).toHaveLength(0);
+    expect(vm.plan.passives.map((e) => e.item.id)).toEqual(['wagon-wheel']);
+    // 1 char + 1 fusion pick + 1 plan ball + 1 fused pair
+    expect(vm.editionDroppedCount).toBe(4);
+  });
+
+  it('a fused pair with one hidden component is dropped as one entry', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' });
+    view.dispatch({ type: 'togglePlanFusion', a: 'beast', b: 'bleed' });
+    const vm = view.dispatch({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' });
+    expect(vm.plan.balls).toHaveLength(0);
+    expect(vm.editionDroppedCount).toBe(1);
+  });
+
+  it('re-enabling the expansion does not restore anything', () => {
+    const view = withDlcContent();
+    view.dispatch({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' });
+    const vm = view.dispatch({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' });
+    expect(vm.selectedChars).toHaveLength(0);
+    expect(vm.plan.balls).toHaveLength(0);
+    expect(vm.plan.passives.map((e) => e.item.id)).toEqual(['wagon-wheel']);
+  });
+
+  it('the loss count clears on the next action', () => {
+    const view = withDlcContent();
+    expect(view.dispatch({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' }).editionDroppedCount).toBe(4);
+    expect(view.dispatch({ type: 'search', section: 'balls', query: '' }).editionDroppedCount).toBe(0);
+  });
+
+  it('toggling an edition on reports no loss', () => {
+    const view = createViewState();
+    expect(view.dispatch({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' }).editionDroppedCount).toBe(0);
+  });
+
+  it('a hidden catalog selection is dropped silently (no hidden-but-live state)', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' });
+    view.dispatch({ type: 'toggleItem', id: 'beast' });
+    const vm = view.dispatch({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' });
+    expect(vm.selectionBoxes.balls).toBeNull();
+    expect(vm.editionDroppedCount).toBe(0); // the transient selection is not an "entry"
+  });
+});
+
+describe('view state: edition filter on hydrate (share restore)', () => {
+  const dlcShared = {
+    plan: { upgradesOn: true, balls: ['beast'], passives: ['wagon-wheel'], fused: [{ a: 'beast', b: 'bleed' }] },
+    chars: ['the-potager'],
+    editions: ['base-game', 'dlc-risen-ballbylon'] as ('base-game' | 'dlc-risen-ballbylon')[],
+  };
+
+  it('a share with both editions keeps its DLC entries', () => {
+    const view = createViewState();
+    const vm = view.dispatch({ type: 'hydrate', shared: dlcShared, notify: true });
+    expect(vm.enabledEditions).toEqual(['base-game', 'dlc-risen-ballbylon']);
+    expect(vm.selectedChars.map((c) => c.id)).toEqual(['the-potager']);
+    expect(vm.plan.balls.some((e) => e.kind === 'single' && e.item.id === 'beast')).toBe(true);
+    expect(vm.editionDroppedCount).toBe(0);
+  });
+
+  it('a share with base-game only drops its hidden entries and reports the loss', () => {
+    const view = createViewState();
+    const vm = view.dispatch({
+      type: 'hydrate',
+      shared: { ...dlcShared, editions: ['base-game'] },
+      notify: true,
+    });
+    expect(vm.selectedChars).toHaveLength(0);
+    expect(vm.plan.balls).toHaveLength(0);
+    expect(vm.plan.passives.map((e) => e.item.id)).toEqual(['wagon-wheel']);
+    // 1 char + 1 plan ball + 1 fused pair
+    expect(vm.editionDroppedCount).toBe(3);
+  });
+
+  it('a plain startup restore enforces the invariant but does not fire the loss notice', () => {
+    const view = createViewState();
+    const vm = view.dispatch({
+      type: 'hydrate',
+      shared: { ...dlcShared, editions: ['base-game'] },
+      notify: false,
+    });
+    expect(vm.plan.balls).toHaveLength(0);
+    expect(vm.editionDroppedCount).toBe(0);
+  });
+});
+
+describe('view state: the build graph honors gated recipes', () => {
+  it('a hidden recipe leaves the build graph while the base ball stays', () => {
+    const view = createViewState();
+    const vm = view.dispatch({ type: 'togglePlanItem', id: 'blizzard' });
+    const ids = vm.buildGraph.balls.nodes.map((n) => n.id);
+    expect(ids).toContain('blizzard');
+    expect(ids).toContain('freeze');
+    expect(ids).toContain('wind');
+    expect(ids).toContain('lightning');
+    expect(ids).not.toContain('water'); // Water is DLC — its recipe is unavailable
+  });
+
+  it('enabling the expansion brings the gated recipe back into the graph', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' });
+    const vm = view.dispatch({ type: 'togglePlanItem', id: 'blizzard' });
+    expect(vm.buildGraph.balls.nodes.map((n) => n.id)).toContain('water');
   });
 });

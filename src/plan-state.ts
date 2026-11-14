@@ -20,6 +20,7 @@
 import { type Ball } from './data/balls';
 import { type Passive } from './data/passives';
 import { type Character } from './data/characters';
+import { type Edition } from './data/editions';
 import { ballMap, passiveMap, isPassive } from './catalog';
 import { complexity } from './graph';
 import { fusionName, isFusable } from './fusion';
@@ -288,6 +289,27 @@ export function createPlanState() {
      *  panel's `planned` mark queries this. */
     hasPair(a: string, b: string): boolean {
       return planFused.has({ a, b });
+    },
+    /** Drop every plan entry the edition filter hides — singles whose own
+     *  edition is disabled and fused pairs with either component hidden.
+     *  Returns the number of entries removed (a fused pair counts once). The
+     *  filter's no-hidden-live-state invariant lives here, with the plan's
+     *  lists; re-enabling an edition does not restore anything. */
+    dropHidden(enabled: readonly Edition[]): number {
+      const visible = (id: string): boolean => {
+        const item = isPassive(id) ? passiveMap.get(id) : ballMap.get(id);
+        return item !== undefined && enabled.includes(item.edition);
+      };
+      const before = planBalls.list().length + planPassives.list().length + planFused.list().length;
+      planBalls.restore(planBalls.list().filter((ball) => visible(ball.id)).map((ball) => ball.id));
+      planPassives.restore(planPassives.list().filter((passive) => visible(passive.id)).map((passive) => passive.id));
+      planFused.restore(
+        planFused.list()
+          .filter((pair) => visible(pair.a.id) && visible(pair.b.id))
+          .map((pair) => ({ a: pair.a.id, b: pair.b.id })),
+      );
+      const after = planBalls.list().length + planPassives.list().length + planFused.list().length;
+      return before - after;
     },
     /** The limits in force right now — view-state's character slots gate
      *  on them (the character limit rides the plan's upgrade toggle). */

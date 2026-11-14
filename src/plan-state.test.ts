@@ -398,3 +398,39 @@ describe('plan state: fused pairs in the plan', () => {
     expect(state.hasPair('flash', 'maggot')).toBe(false);
   });
 });
+
+describe('plan state: dropHidden (the edition filter\'s no-hidden-live-state rule)', () => {
+  const BASE = ['base-game'] as const;
+  const BOTH = ['base-game', 'dlc-risen-ballbylon'] as const;
+
+  it('drops hidden singles and fused pairs, keeps visible entries, and counts entries', () => {
+    const state = createPlanState();
+    state.dispatch({ type: 'togglePlanItem', id: 'beast' }); // DLC ball
+    state.dispatch({ type: 'togglePlanItem', id: 'flash' }); // base ball
+    state.dispatch({ type: 'togglePlanItem', id: 'wagon-wheel' }); // base passive
+    state.dispatch({ type: 'togglePlanFusion', a: 'beast', b: 'bleed' }); // hidden component
+    state.dispatch({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' }); // both base
+
+    expect(state.dropHidden(BASE)).toBe(2); // beast single + beast×bleed pair
+    const plan = state.derive([]);
+    expect(singleIds(plan.balls)).toEqual(['flash']);
+    expect(plan.passives.map((e) => e.item.id)).toEqual(['wagon-wheel']);
+    expect(fusedOf(plan).map((e) => e.name)).toEqual(['Flash × Glacier']);
+  });
+
+  it('drops nothing when every entry is visible', () => {
+    const state = createPlanState();
+    state.dispatch({ type: 'togglePlanItem', id: 'flash' });
+    state.dispatch({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
+    expect(state.dropHidden(BOTH)).toBe(0);
+    expect(state.derive([]).counts.balls).toBe(2);
+  });
+
+  it('re-enabling an edition does not restore dropped entries', () => {
+    const state = createPlanState();
+    state.dispatch({ type: 'togglePlanItem', id: 'beast' });
+    state.dropHidden(BASE);
+    state.dropHidden(BOTH);
+    expect(state.derive([]).balls).toHaveLength(0);
+  });
+});

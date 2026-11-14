@@ -17,6 +17,7 @@ import {
   type BuildGraphSessionState,
 } from './build-graph';
 import { ballMap, passiveMap } from './catalog';
+import { EDITIONS } from './data/editions';
 import { createPlanState, type PlanAction } from './plan-state';
 
 const node = (model: ReturnType<typeof deriveBuildGraph>, id: string) =>
@@ -352,6 +353,7 @@ describe('build graph view: the whole Plan-screen derivation', () => {
     focus: null,
     done: new Set<string>(),
     collapsed: { balls: false, passives: false },
+    editions: [...EDITIONS],
     ...over,
   });
   const fusionId = fusionNodeId('freeze-ray', 'time-bomb');
