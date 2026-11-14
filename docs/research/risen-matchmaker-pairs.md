@@ -14,15 +14,22 @@ ticket should add.
 **Existing fact base:** `docs/research/character-pairings.md` (community-
 sourced, game v1.301 era).
 
-> **Status — findings.** The pair relation is **not** in
+> **Status — landed (2026-11-14).** This is a dated research snapshot. The
+> DLC rows landed in `docs/research/character-pairings.md` via T13
+> ([#39](https://github.com/tomaskir/ball-x-pit-companion/issues/39)) and the
+> existing-roster corrections via T23
+> ([#49](https://github.com/tomaskir/ball-x-pit-companion/issues/49)); read
+> the landed relation in `src/data/characters.ts` (`cannotPair`). The record
+> below is kept for provenance.
+>
+> **Findings.** The pair relation is **not** in
 > `game-data/extracted/` (`extract.json`, `REPORT.md`, `SUMMARY.md` contain no
 > pairing field). It is hard-coded in `GameAssembly.dll`. The v1.308 code was
 > decoded; the eight new characters' restrictions are listed in §1 and the
 > rows to add are in §2. Confidence is **high** (code-level, four call sites
 > in the character-select UI, one error string). The datamine also disagrees
 > with several rows of the current community-sourced table; those are listed
-> in §4 and should be handled as a separate correction, not silently folded
-> into the DLC rows.
+> in §4 and were handled as the separate T23 correction.
 
 ---
 

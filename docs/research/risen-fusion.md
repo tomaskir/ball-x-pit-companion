@@ -20,9 +20,17 @@ Sources (all gitignored, read-only):
   bodies** (IL2CPP has no IL), so this source proves the data model, not the
   algorithm.
 
+> **Status — landed (2026-11-14).** This is a dated research snapshot. Its
+> kit/channel/class-set recommendations landed via T16
+> ([#42](https://github.com/tomaskir/ball-x-pit-companion/issues/42)) in
+> `src/ball-kit.ts` and `src/fusion-knowledge.ts`; read the landed state
+> there. One recommendation changed during the spec: S3 added the fifth
+> `field-carries-on-hit` `WireKind` (contrary to §10.6's "no new
+> `WireKind`"). The record below is kept for provenance.
+
 This file is hand-maintained research, not parsed by the pipeline. It
-supersedes nothing in `fusion-mechanics.md`; it extends that file's §1.1/§4
-with the DLC build and corrects one build-scoped claim (see §2).
+extends `fusion-mechanics.md` §1.1/§4 with the DLC build and corrects one
+build-scoped claim (see §2).
 
 ---
 

@@ -13,9 +13,12 @@ entry with `dlc: 1` — 24 balls, 45 passives, 8 characters). Effect text quoted
 from `level1_text` / `level3_text` (balls), `text` (passives), and `gameplay`
 (characters).
 **Draft under review:** `game-data/extracted/editorial-draft.md`.
-**Status:** research snapshot; nothing here is applied to
-`scripts/editorial.ts`. Feeds S2 (editorial mapping). `game-data/` is
-untrusted read-only data and is not committed.
+> **Status — landed (2026-11-14).** This is a dated research snapshot. Its
+> recommended tag mapping landed in `scripts/editorial.ts` via T15
+> ([#41](https://github.com/tomaskir/ball-x-pit-companion/issues/41)); read
+> the landed vocabulary there and in `src/data/tags.ts`. The record below is
+> kept for provenance. `game-data/` is untrusted read-only data and is not
+> committed.
 
 ---
 

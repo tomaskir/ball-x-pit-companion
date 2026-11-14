@@ -6,12 +6,17 @@
 > `character-passive-restrictions.md`. The "no confirmed per-character lockout"
 > bottom line below applies to the pre-DLC / wiki-sourced scope of this
 > snapshot; the DLC mechanism is now confirmed.
+>
+> **Status — landed (2026-11-14).** The confirmed mechanisms landed via T24
+> ([#50](https://github.com/tomaskir/ball-x-pit-companion/issues/50)): the
+> allow-lists are authored in `docs/research/game-mechanics.md` §2.3 and the
+> rules live in `src/passive-availability.ts`. The record below is kept for
+> provenance.
 
 Which passives a character can actually be offered or equip, and why. This is a
-**research snapshot** (compiled 2026-11-11), not parsed by the data pipeline and
-not yet reflected in `src/data/`. It exists to answer the question "which
-passives are unavailable to which characters?" without conflating three
-different mechanisms:
+**research snapshot** (compiled 2026-11-11), not parsed by the data pipeline.
+It exists to answer the question "which passives are unavailable to which
+characters?" without conflating three different mechanisms:
 
 - **Hard-unavailable** — the game never offers/equips the passive (offer-pool
   gate or zero slots).

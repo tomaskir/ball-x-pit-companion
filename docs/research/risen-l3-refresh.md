@@ -1,8 +1,15 @@
 # Risen Ballbylon — level-3 text validation (R9 / #35)
 
-**Status:** Researched 2026-11-13 (source-only; no playtest capability). Answers
-wayfinder ticket [#35](https://github.com/tomaskir/ball-x-pit-companion/issues/35);
-feeds T20 ([#46](https://github.com/tomaskir/ball-x-pit-companion/issues/46)).
+> **Status — landed (2026-11-14).** This is a dated research snapshot. Its
+> corrections landed in `docs/research/level-3-effects.md` via T20
+> ([#46](https://github.com/tomaskir/ball-x-pit-companion/issues/46)) and the
+> 24 DLC rows via T11
+> ([#37](https://github.com/tomaskir/ball-x-pit-companion/issues/37)); read
+> the landed texts in `src/data/level-3.ts`. The record below is kept for
+> provenance.
+
+Researched 2026-11-13 (source-only; no playtest capability). Answers
+wayfinder ticket [#35](https://github.com/tomaskir/ball-x-pit-companion/issues/35).
 The datamined build is *Risen Ballbylon* (Unity 6000.0.62f1, extracted
 2026-11-13); the existing transcription is the wiki's v1.301 pre-DLC per-level
 tables (last rebuilt 2026-09-15/17).

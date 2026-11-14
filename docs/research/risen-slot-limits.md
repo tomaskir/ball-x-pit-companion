@@ -26,6 +26,13 @@ Sources (all gitignored, read-only):
   `docs/research/character-passive-restrictions.md` (the zero/double slot
   claims and their open questions).
 
+> **Status — landed (2026-11-14).** This is a dated research snapshot. Its
+> formulas landed via T19
+> ([#45](https://github.com/tomaskir/ball-x-pit-companion/issues/45)) in
+> `src/slot-limits.ts`; the zero-passive-slot rule also fed T24
+> ([#50](https://github.com/tomaskir/ball-x-pit-companion/issues/50)). Read
+> the landed state there. The record below is kept for provenance.
+
 This file is hand-maintained research, not parsed by the pipeline.
 
 > **Status — findings.** The two slot quirks are implemented as two

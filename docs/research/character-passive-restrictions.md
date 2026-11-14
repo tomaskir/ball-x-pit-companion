@@ -1,14 +1,20 @@
 # Character–passive restrictions
 
 Which passives each character can actually be offered, datamined from the
-Risen Ballbylon build. This is a **research snapshot** (2026-11-13) and is not
-parsed by the data pipeline. It supersedes the "no confirmed per-character
-lockout" conclusion in `passive-availability.md` for the DLC build.
+Risen Ballbylon build. This is a **research snapshot** (2026-11-13). It
+supersedes the "no confirmed per-character lockout" conclusion in
+`passive-availability.md` for the DLC build.
+
+> **Status — landed (2026-11-14).** The allow-lists and stat gates were
+> authored into `docs/research/game-mechanics.md` §2.3 and landed via T24
+> ([#50](https://github.com/tomaskir/ball-x-pit-companion/issues/50)); the
+> rules live in `src/passive-availability.ts`. This document is not itself
+> parsed — the fact base it fed is. Read the landed state there; the record
+> below is kept for provenance.
 
 Game build: `Balls_Data/BuildVersion.txt` = **1.308**, 2026-10-12
-(`game-data/BALLxPIT`). The repo's checked-in `src/data/` is the older
-pre-DLC wiki snapshot (71 passives, 23 characters); this document covers the
-DLC build (116 passives, 31 characters).
+(`game-data/BALLxPIT`). This document covers the DLC build (116 passives, 31
+characters); the checked-in `src/data/` now matches it.
 
 ## Bottom line
 
