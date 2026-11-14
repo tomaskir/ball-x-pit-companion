@@ -102,6 +102,47 @@ describe('global stylesheet', () => {
     }
   });
 
+  it('the edition filter controls are styled and sit right of the search box', () => {
+    const css = globalCss();
+    for (const selector of ['.edition-filter', '.edition-loss', '.empty-filter-hint']) {
+      expect(rulesFor(css, selector).length, `${selector} has a rule`).toBeGreaterThan(0);
+    }
+    // the search moved left to match the fusion screen; the filter takes the
+    // right edge on every screen that has a search box
+    for (const section of ['balls', 'passives', 'characters']) {
+      const view = shellDoc().querySelector(`.section-view[data-section="${section}"]`)!;
+      const search = view.querySelector('.screen-search')!;
+      const filter = view.querySelector('.edition-filter')!;
+      expect(search.compareDocumentPosition(filter) & 4, `${section}: search precedes filter`).toBeTruthy();
+    }
+  });
+
+  it('the plan toolbar keeps Clear/Share left and the edition filter rightmost', () => {
+    const toolbar = shellDoc().querySelector('.section-view[data-section="plan"] .plan-toolbar')!;
+    const order = [...toolbar.children].map((el) => el.id || el.className);
+    expect(order).toEqual(['planClear', 'planShare', 'plan-upgrades', 'edition-filter']);
+    // the upgrades toggle keeps the auto margin that pushes it and the filter right
+    const upgrades = rulesFor(globalCss(), '.plan-upgrades').find((r) => r.decls.has('margin'))!;
+    expect(upgrades.decls.get('margin')).toBe('0 0 0 auto');
+    const filter = rulesFor(globalCss(), '.plan-toolbar .edition-filter');
+    expect(filter.map((r) => r.decls.get('margin-left')), 'plan filter has no auto margin').toContain('0');
+  });
+
+  it('the fusions screen carries a filter toolbar above the layout (panel moves down)', () => {
+    const view = shellDoc().querySelector('.section-view[data-section="fusions"]')!;
+    const toolbar = view.querySelector('.screen-toolbar')!;
+    const layout = view.querySelector('.fusion-layout')!;
+    expect(toolbar.querySelector('.edition-filter')).toBeTruthy();
+    expect(toolbar.compareDocumentPosition(layout) & 4, 'toolbar precedes the layout').toBeTruthy();
+  });
+
+  it('the loss notice is a polite status line in the header', () => {
+    const notice = shellDoc().querySelector('header #editionLoss')!;
+    expect(notice.getAttribute('role')).toBe('status');
+    expect(notice.getAttribute('aria-live')).toBe('polite');
+    expect(notice.hasAttribute('hidden')).toBe(true);
+  });
+
   it('both picked slots highlight identically (slot-2 was visually subtle)', () => {
     expectSlotHighlightsIdentical();
   });

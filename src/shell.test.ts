@@ -121,6 +121,48 @@ describe('per-screen search', () => {
   });
 });
 
+// ---------- edition filter ----------
+
+describe('edition filter checkboxes', () => {
+  it('every screen toolbar carries one labelled Editions group with both checkboxes', () => {
+    const groups = [...document.querySelectorAll<HTMLElement>('.edition-filter')];
+    // one per screen: balls, passives, characters, fusions, plan
+    expect(groups).toHaveLength(5);
+    for (const group of groups) {
+      expect(group.querySelector('legend')!.textContent).toBe('Editions');
+      const inputs = [...group.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')];
+      expect(inputs.map((i) => i.dataset.edition)).toEqual(['base-game', 'dlc-risen-ballbylon']);
+      expect(inputs.map((i) => i.closest('label')!.textContent!.trim())).toEqual(['Base game', 'Risen Ballbylon']);
+    }
+    // the controls sit in each screen's toolbar, never the shell header
+    for (const section of ['balls', 'passives', 'characters', 'fusions', 'plan']) {
+      const view = sectionView(section);
+      expect(view.querySelector('.edition-filter'), `${section} has the filter`).toBeTruthy();
+      expect(document.querySelector('header .edition-filter'), 'not in the header').toBeNull();
+    }
+  });
+
+  it('a checkbox change dispatches toggleEdition with its edition', () => {
+    const t = stubPorts();
+    const { dispatch } = mount(t.ports);
+    const dlc = document.querySelector<HTMLInputElement>('.edition-toggle[data-edition="dlc-risen-ballbylon"]')!;
+
+    dlc.dispatchEvent(new Event('change', { bubbles: true }));
+
+    expect(dispatch).toHaveBeenCalledWith({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' });
+  });
+
+  it('destroy removes every checkbox listener', () => {
+    const t = stubPorts();
+    const { dispatch, shell: s } = mount(t.ports);
+    s.destroy();
+
+    document.querySelector<HTMLInputElement>('.edition-toggle[data-edition="base-game"]')!
+      .dispatchEvent(new Event('change', { bubbles: true }));
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+});
+
 // ---------- plan toolbar ----------
 
 describe('plan toolbar', () => {

@@ -1,8 +1,9 @@
 // Shell-adapter module: every static-shell control the island wires lives
 // here behind one createShell({ ports, dispatch, snapshot }) call — the
-// theme toggle, the tab buttons, the per-screen search boxes, the plan
-// toolbar (Clear, End game upgrades, Share), and the document-level Esc /
-// empty-space clear handlers. All listeners and the share flash timer go
+// theme toggle, the tab buttons, the per-screen search boxes, the
+// per-screen edition-filter checkboxes, the plan toolbar (Clear, End game
+// upgrades, Share), and the document-level Esc / empty-space clear handlers.
+// All listeners and the share flash timer go
 // through one registry, so destroy() is total: it removes every listener
 // this shell added, clears a pending flash timer, and ignores a clipboard
 // promise that settles after teardown.
@@ -16,6 +17,7 @@
 // full island mount.
 import type { Action, Section } from './view-state';
 import type { SharedSnapshot } from './plan-codec';
+import type { Edition } from './data/editions';
 import { planLink } from './share';
 import { isClearExempt } from './clear-exempt';
 import { ESC_EXEMPT_SELECTOR, shouldClear, themeFromStorage } from './companion-core';
@@ -118,6 +120,17 @@ export function createShell({ ports, dispatch, snapshot }: ShellOptions): Shell 
   for (const input of document.querySelectorAll<HTMLInputElement>('.screen-search[data-section]')) {
     const inputSection = input.dataset.section as Section;
     listen(input, 'input', () => dispatch({ type: 'search', section: inputSection, query: input.value }));
+  }
+
+  // ---------- edition filter ----------
+
+  // One checkbox group per screen toolbar (static markup, same controls on all
+  // five screens). A change dispatches the toggle through the same update()
+  // path; the renderer paints the checked state from the view model, so the
+  // five groups stay in sync without the shell holding filter state.
+  for (const input of document.querySelectorAll<HTMLInputElement>('.edition-toggle[data-edition]')) {
+    const edition = input.dataset.edition as Edition;
+    listen(input, 'change', () => dispatch({ type: 'toggleEdition', edition }));
   }
 
   // ---------- plan toolbar ----------

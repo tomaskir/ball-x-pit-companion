@@ -40,6 +40,9 @@ const faviconUrl = `${import.meta.env.BASE_URL}/favicon.ico`;
       </nav>
       <div class="chips" id="charChips"></div>
       <span class="hint" id="slotHint"></span>
+      <!-- The edition filter's loss notice: a polite status line the renderer
+           fills when a toggle-off (or a share restore) drops entries. -->
+      <p class="edition-loss" id="editionLoss" role="status" aria-live="polite" hidden></p>
       <div class="header-right">
         <span class="app-version" title="Deployed version">v{version}</span>
         <button id="themeToggle" aria-label="Toggle theme">☀️</button>
@@ -52,25 +55,53 @@ const faviconUrl = `${import.meta.env.BASE_URL}/favicon.ico`;
     <main>
       <div class="section-view" data-section="balls">
         <div class="screen-toolbar">
-          <div id="selection-balls" class="selection-box" hidden></div>
           <input class="screen-search" data-section="balls" data-clear-exempt id="search-balls" type="search" placeholder="Search name or effect…" autocomplete="off" />
+          <div id="selection-balls" class="selection-box" hidden></div>
+          <!-- The content filter's controls: one group per screen toolbar,
+               top-right. Native checkboxes in a labelled fieldset; the island
+               wires their change events (src/shell.ts) and the renderer paints
+               the checked state (src/renderer/edition-filter.ts). -->
+          <fieldset class="edition-filter" data-clear-exempt>
+            <legend>Editions</legend>
+            <label><input type="checkbox" class="edition-toggle" data-edition="base-game"> Base game</label>
+            <label><input type="checkbox" class="edition-toggle" data-edition="dlc-risen-ballbylon"> Risen Ballbylon</label>
+          </fieldset>
         </div>
         <div id="ballsGrid"></div>
       </div>
       <div class="section-view" data-section="passives" hidden>
         <div class="screen-toolbar">
-          <div id="selection-passives" class="selection-box" hidden></div>
           <input class="screen-search" data-section="passives" data-clear-exempt id="search-passives" type="search" placeholder="Search name or effect…" autocomplete="off" />
+          <div id="selection-passives" class="selection-box" hidden></div>
+          <fieldset class="edition-filter" data-clear-exempt>
+            <legend>Editions</legend>
+            <label><input type="checkbox" class="edition-toggle" data-edition="base-game"> Base game</label>
+            <label><input type="checkbox" class="edition-toggle" data-edition="dlc-risen-ballbylon"> Risen Ballbylon</label>
+          </fieldset>
         </div>
         <div id="passivesGrid"></div>
       </div>
       <div class="section-view" data-section="characters" hidden>
         <div class="screen-toolbar">
           <input class="screen-search" data-section="characters" data-clear-exempt id="search-characters" type="search" placeholder="Search name, quirk, or base ball…" autocomplete="off" />
+          <fieldset class="edition-filter" data-clear-exempt>
+            <legend>Editions</legend>
+            <label><input type="checkbox" class="edition-toggle" data-edition="base-game"> Base game</label>
+            <label><input type="checkbox" class="edition-toggle" data-edition="dlc-risen-ballbylon"> Risen Ballbylon</label>
+          </fieldset>
         </div>
         <div id="charactersGrid" class="char-grid"></div>
       </div>
       <div class="section-view" data-section="fusions" hidden>
+        <!-- the filter row sits above the layout, pushing the panel down to
+             make room for the controls at the screen's top-right -->
+        <div class="screen-toolbar">
+          <fieldset class="edition-filter" data-clear-exempt>
+            <legend>Editions</legend>
+            <label><input type="checkbox" class="edition-toggle" data-edition="base-game"> Base game</label>
+            <label><input type="checkbox" class="edition-toggle" data-edition="dlc-risen-ballbylon"> Risen Ballbylon</label>
+          </fieldset>
+        </div>
         <div class="fusion-layout">
           <div class="fusion-list-col">
             <input class="screen-search" data-section="fusions" data-clear-exempt id="search-fusions" type="search" placeholder="Search balls…" autocomplete="off" />
@@ -90,6 +121,11 @@ const faviconUrl = `${import.meta.env.BASE_URL}/favicon.ico`;
             <input type="checkbox" id="planUpgrades" checked>
             <span>End game upgrades</span>
           </label>
+          <fieldset class="edition-filter" data-clear-exempt>
+            <legend>Editions</legend>
+            <label><input type="checkbox" class="edition-toggle" data-edition="base-game"> Base game</label>
+            <label><input type="checkbox" class="edition-toggle" data-edition="dlc-risen-ballbylon"> Risen Ballbylon</label>
+          </fieldset>
         </div>
         <div id="planView"></div>
       </div>

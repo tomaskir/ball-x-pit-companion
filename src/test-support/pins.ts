@@ -34,9 +34,9 @@ export function expectFusionListScrollbarPermanentAndSeparated(): void {
   expect(block.get('overflow-y')).toBe('scroll');
   expect(block.get('scrollbar-width')).toBe('thin');
   expect(block.get('padding-right')).toBe('12px');
-  // 100vh minus header/footer/search chrome (~232px) — was 100vh-140px, a
-  // whole-page scroll
-  expect(block.get('max-height')).toBe('calc(100vh - 232px)');
+  // 100vh minus header/footer/search + edition-toolbar chrome (~274px) — was
+  // 100vh-140px, a whole-page scroll
+  expect(block.get('max-height')).toBe('calc(100vh - 274px)');
   // rows keep clearance from the scrollbar gutter (Firefox hover-expansion)
   const row = rulesFor(css, '.fusion-list > .fusion-row');
   expect(row.map((r) => r.decls.get('margin-right')), '.fusion-row clears the gutter')

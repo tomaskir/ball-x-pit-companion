@@ -148,10 +148,10 @@ header h1 span { color: var(--muted); font-style: italic; font-size: 14px; }
 }
 
 /* Per-screen search boxes — one per section, not a global header input.
-   Grid/char screens: a toolbar row, box pushed top right (the selection box,
-   when visible, takes the left side — the search keeps margin-left:auto).
-   Fusion screen: the box sits on top of the pick list (inside the list
-   column). */
+   Grid/char screens: a toolbar row with the search on the left (matching the
+   fusion screen) and the edition filter on the right. Fusion screen: the box
+   sits on top of the pick list (inside the list column); its edition filter
+   rides the toolbar row above the layout. */
 .screen-toolbar {
   display: flex;
   align-items: center;
@@ -169,12 +169,38 @@ header h1 span { color: var(--muted); font-style: italic; font-size: 14px; }
   min-width: 200px;
 }
 
-/* Grid-screen toolbars: the selection box takes the left side when visible;
-   the search keeps the right edge either way (justify-content:flex-end would
-   strand it left when the box is display:none). Scoped to .screen-toolbar —
-   the fusion screen's search sits in a column flex, where auto margins
-   would un-stretch it. */
-.screen-toolbar .screen-search { margin-left: auto; }
+/* Grid-screen toolbars: the search sits left (matching the fusion screen);
+   the edition filter takes the right edge. Scoped to .screen-toolbar — the
+   fusion screen's search sits in a column flex, where auto margins would
+   un-stretch it. */
+
+/* The content filter's controls: one labelled group per screen toolbar,
+   top-right. Native checkboxes in a fieldset (the legend labels the group). */
+.edition-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 0 auto;
+  padding: 2px 8px;
+  border: 1px solid var(--gold-dim);
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.edition-filter legend { color: var(--muted); padding: 0 4px; }
+
+.edition-filter label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.edition-filter input { accent-color: var(--gold); cursor: pointer; }
+
+/* The edition filter's loss notice — a polite status line in the header. */
+.edition-loss { color: var(--gold); font-size: 12px; margin: 0; }
 
 /* the balls/passives selection box: label + action buttons */
 .selection-box {
@@ -280,6 +306,17 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 8px;
+}
+
+/* The content filter's empty screen: one hint line. `grid-column` spans the
+   whole row when the hint lands inside a grid container (characters, the
+   fusion list on mobile); it is inert in the block containers. */
+.empty-filter-hint {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-style: italic;
+  font-size: 12px;
+  margin: 6px 0;
 }
 
 .tile {
@@ -491,10 +528,11 @@ footer a { color: var(--gold); }
   flex-direction: column;
   gap: 2px;
   /* Budget: header ~57 + main padding 2×16 + footer ~89 + margin ≈ 190, plus
-     the screen-search box above the list (~34 + 8 margin ≈ 42) — the list
-     must never push the page past the viewport (the whole-page scroll it
-     caused otherwise). */
-  max-height: calc(100vh - 232px);
+     the screen-search box above the list (~34 + 8 margin ≈ 42) and the
+     edition-filter toolbar row (~34 + 8 margin ≈ 42) — the list must never
+     push the page past the viewport (the whole-page scroll it caused
+     otherwise). */
+  max-height: calc(100vh - 274px);
   overflow-y: scroll; /* always show the scrollbar, not just on hover */
   /* Firefox: `thin` selects the custom-rendered scrollbar, which is a fixed
      size — it never expands on hover the way the classic (auto) scrollbar
@@ -683,6 +721,10 @@ footer a { color: var(--gold); }
 }
 
 .plan-upgrades input { accent-color: var(--gold); cursor: pointer; }
+
+/* the edition filter sits rightmost on the plan toolbar, after the upgrades
+   toggle (which keeps the auto margin that pushes both to the right) */
+.plan-toolbar .edition-filter { margin-left: 0; }
 
 .plan-hint {
   margin: 0 0 14px;
@@ -1020,6 +1062,7 @@ footer a { color: var(--gold); }
   .screen-toolbar .selection-box { order: 2; width: 100%; }
   .screen-toolbar .screen-search { order: 1; }
   .screen-toolbar .screen-search { min-width: 0; flex: 1; }
+  .screen-toolbar .edition-filter { order: 3; }
   .fusion-list-col .screen-search { min-width: 0; }
   .fusion-layout { grid-template-columns: 1fr; }
   .fusion-list {
