@@ -68,6 +68,10 @@ export type FusionPanelState =
       b: Ball;
       planned: boolean;
       planFull: boolean;
+      /** The Potager is selected and this pair actually fuses: the plan's
+       *  add-to-plan action is blocked (removal stays allowed). Evolve-instead
+       *  pairs are never blocked — they evolve, not fuse. */
+      fusionBlocked: boolean;
       /** The "Fused result" rows; empty when the pair has no collisions. */
       resultRows: FusionResultRow[];
       /** The "Reported exceptions" rows; empty when the pair has none. */
@@ -92,6 +96,9 @@ export type FusionPanelState =
 export interface FusionPanelPlan {
   hasPair(a: string, b: string): boolean;
   ballSlots: { used: number; capacity: number };
+  /** The Potager is selected (the plan state's derived `fusionBlocked`). The
+   *  panel exempts evolve-instead pairs itself. */
+  fusionBlocked: boolean;
 }
 
 /** Both max-2 selections (characters, fusion picks) show this when full —
@@ -178,6 +185,7 @@ function composedPanel(a: Ball, b: Ball, plan: FusionPanelPlan): FusionPanelStat
     b,
     planned: plan.hasPair(a.id, b.id),
     planFull: plan.ballSlots.used >= plan.ballSlots.capacity,
+    fusionBlocked: plan.fusionBlocked && !fusion.evolvesInstead,
     ...composedPresentation(fusion),
   };
 }

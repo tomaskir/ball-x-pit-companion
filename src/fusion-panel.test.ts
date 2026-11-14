@@ -121,6 +121,13 @@ describe('fusion panel: plan marks', () => {
     expect(composed(['flash', 'glacier'], plan({ ballSlots: { used: 5, capacity: 5 } })).planFull).toBe(true);
     expect(composed(['flash', 'glacier'], plan({ ballSlots: { used: 6, capacity: 5 } })).planFull).toBe(true);
   });
+
+  it('fusionBlocked follows the plan fact, but evolve-instead pairs are exempt', () => {
+    expect(composed(['flash', 'glacier']).fusionBlocked).toBe(false);
+    expect(composed(['flash', 'glacier'], plan({ fusionBlocked: true })).fusionBlocked).toBe(true);
+    // Bleed + Poison evolve into Hemorrhage — they do not fuse
+    expect(composed(['bleed', 'poison'], plan({ fusionBlocked: true })).fusionBlocked).toBe(false);
+  });
 });
 
 describe('fusion panel: composed presentation', () => {

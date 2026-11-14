@@ -14,6 +14,8 @@ import { EMPTY_FUSION_PANEL_PLAN } from './test-support/pins';
 import { highlightSet, factorizesIntoSlots, recipeHtml } from './graph';
 import { deriveBuildGraph, FUSION_ID_PREFIX } from './build-graph';
 import { verdictFor } from './synergy';
+import { createPlanState } from './plan-state';
+import { limitsFor } from './slot-limits';
 import { encodeShared } from './plan-codec';
 import { takeShareParam } from './share';
 import { readFileSync, readdirSync } from 'node:fs';
@@ -684,5 +686,68 @@ describe('regression: Ash misclassified as on-hit by the text heuristic (game da
     const w = wireFor(ballMap.get('ash')!, ballMap.get('overgrowth')!)!;
     expect(w.kind).toBe('field-carries-on-hit');
     expect(w.carrier.id).toBe('ash');
+  });
+});
+
+describe('regression: The Ballbearer has zero passive slots (a slot-limit formula, not a fixed table)', () => {
+  const ballbearer = () => CHARACTERS.filter((c) => c.id === 'the-ballbearer');
+
+  it('the overlay doubles balls and zeroes passives in both upgrade states', () => {
+    expect(limitsFor(false, ballbearer())).toEqual({ chars: 1, balls: 8, passives: 0 });
+    expect(limitsFor(true, ballbearer())).toEqual({ chars: 2, balls: 10, passives: 0 });
+  });
+
+  it('every live passive add is a no-op while The Ballbearer is selected', () => {
+    const plan = createPlanState();
+    plan.dispatch({ type: 'togglePlanItem', id: 'wagon-wheel' }, ballbearer());
+    expect(plan.derive(ballbearer()).passives).toHaveLength(0);
+  });
+});
+
+describe('regression: The Hoary Hoarder redistributes slots (2 balls, the rest passives)', () => {
+  const hoarder = () => CHARACTERS.filter((c) => c.id === 'the-hoary-hoarder');
+
+  it('the overlay keeps 2 ball slots and turns the rest into passives', () => {
+    expect(limitsFor(false, hoarder())).toEqual({ chars: 1, balls: 2, passives: 6 });
+    expect(limitsFor(true, hoarder())).toEqual({ chars: 2, balls: 2, passives: 8 });
+  });
+
+  it('live ball adds stop at 2; the extras stay when the quirk is selected later', () => {
+    const plan = createPlanState();
+    for (const id of ['flash', 'glacier', 'maggot']) plan.dispatch({ type: 'togglePlanItem', id }, hoarder());
+    expect(plan.derive(hoarder()).counts.balls).toBe(2);
+
+    // a plan built under the global limits keeps its extras, marked red
+    const built = createPlanState();
+    for (const id of ['flash', 'glacier', 'maggot']) built.dispatch({ type: 'togglePlanItem', id });
+    const derived = built.derive(hoarder());
+    expect(derived.counts.balls).toBe(3);
+    expect(derived.balls.filter((e) => e.overLimit)).toHaveLength(1);
+  });
+});
+
+describe('regression: The Potager cannot fuse balls normally (fusion-invalid pairs)', () => {
+  const potager = () => CHARACTERS.filter((c) => c.id === 'the-potager');
+
+  it('a planned fusing pair is marked, kept, and excluded from the build graph', () => {
+    const plan = createPlanState();
+    plan.dispatch({
+      type: 'hydrate',
+      plan: { upgradesOn: true, balls: [], passives: [], fused: [{ a: 'flash', b: 'glacier' }] },
+    });
+    const derived = plan.derive(potager());
+    const pair = derived.balls.find((e) => e.kind === 'fused');
+    expect(pair && pair.kind === 'fused' && pair.fusionInvalid).toBe(true);
+    expect(derived.counts.balls).toBe(1); // counts still include the pair
+  });
+
+  it('live fusing-pair adds are blocked; evolve-instead pairs are exempt', () => {
+    const plan = createPlanState();
+    plan.dispatch({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' }, potager());
+    expect(plan.derive(potager()).counts.balls).toBe(0);
+
+    plan.dispatch({ type: 'togglePlanFusion', a: 'freeze', b: 'laser-horizontal' }, potager());
+    const pair = plan.derive(potager()).balls.find((e) => e.kind === 'fused');
+    expect(pair && pair.kind === 'fused' && pair.fusionInvalid).toBe(false);
   });
 });

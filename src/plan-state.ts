@@ -1,13 +1,18 @@
 // Plan-state module: the plan screen's state and its derivation — the End
 // game upgrades toggle, the planned balls/passives/fused pairs, and the
 // PlanState the renderer paints. One interface:
-// createPlanState() → { dispatch(planAction), derive(selectedChars),
-// snapshot(), has(id), hasPair(a, b), dropHidden(enabled), limits() }.
+// createPlanState() → { dispatch(planAction, selectedChars),
+// derive(selectedChars), snapshot(), has(id), hasPair(a, b),
+// dropHidden(enabled), limits() }.
 // The seam is "selectedChars in, PlanState out": the plan's characters are
 // the shared selectedChars — one selection feeds verdicts, chips, and the
 // plan — and they are owned by view-state.ts. plan-state never mutates
-// them; derive reads only what it is handed, and the persisted characters
-// are view-state's half of the SharedSnapshot (src/plan-codec.ts).
+// them; dispatch and derive read only what they are handed, and the
+// persisted characters are view-state's half of the SharedSnapshot
+// (src/plan-codec.ts). The selection is read at dispatch time because the
+// capacity guards are character-aware: src/slot-limits.ts overlays the
+// global limits with the selected characters' slot quirks (The Ballbearer's
+// zero passives, The Hoary Hoarder's redistribution).
 // PlanSnapshot, the plan-owned persistence currency, lives here; the codec
 // owns the wire/normalized shapes around it.
 // The three plan lists are pick lists (src/pick-list.ts): the sticky toggle,
@@ -17,6 +22,9 @@
 // Paint order is derived here as well: the plan's balls (singles + fused
 // pairs, one merged grid) and passives sort by complexity — how many base
 // entities the final form contains (graph.complexity), most complex left.
+// The Potager's "cannot fuse balls normally" is derived here too: a planned
+// pair that actually fuses is marked `fusionInvalid` (kept, never trimmed)
+// while The Potager is selected, and live fusing-pair adds are blocked.
 import { type Ball } from './data/balls';
 import { type Passive } from './data/passives';
 import { type Character } from './data/characters';
@@ -24,14 +32,13 @@ import { type Edition } from './data/editions';
 import { ballMap, passiveMap, isPassive, itemFor } from './catalog';
 import { isEditionEnabled } from './edition-gate';
 import { complexity } from './graph';
-import { fusionName, isFusable } from './fusion';
+import { evolvesInstead, fusionName, isFusable } from './fusion';
 import { createPickList } from './pick-list';
 import { verdictFor, type Item, type Verdict } from './synergy';
 import { pairKey } from './pair';
+import { globalLimits, limitsFor, type PlanLimits } from './slot-limits';
 
-/** The plan screen's slot limits: without end-game upgrades 1 character,
- *  4 balls, 4 passives; with them 2 / 5 / 5. */
-export interface PlanLimits { chars: number; balls: number; passives: number; }
+export type { PlanLimits };
 /** A planned fused pair — compose order (a first) for display, sorted ids
  *  for identity (the reverse composition is the same planned pair). */
 export interface PlanFused { a: string; b: string; }
@@ -54,9 +61,11 @@ export interface PlanEntryState { item: Item; overLimit: boolean; verdict: Verdi
 export interface PlanSingleState { kind: 'single'; item: Ball; overLimit: boolean; verdict: Verdict | null; }
 /** One fused pair in the plan's merged ball grid: resolved components in
  *  compose order, the composed display name, one verdict per component
- *  (badges ride each icon), and the over-limit mark. A pair counts as ONE
- *  ball slot and paints as ONE entry. */
-export interface PlanFusedState { kind: 'fused'; a: Ball; b: Ball; name: string; overLimit: boolean; verdicts: [Verdict | null, Verdict | null]; }
+ *  (badges ride each icon), the over-limit mark, and The Potager's
+ *  `fusionInvalid` mark (the pair actually fuses, which The Potager cannot
+ *  do; evolve-instead pairs are exempt). A pair counts as ONE ball slot and
+ *  paints as ONE entry. */
+export interface PlanFusedState { kind: 'fused'; a: Ball; b: Ball; name: string; overLimit: boolean; fusionInvalid: boolean; verdicts: [Verdict | null, Verdict | null]; }
 /** The plan's ball grid is ONE ordered list — singles and fused pairs
  *  interleaved by complexity (`graph.complexity`; a pair's is the sum of
  *  its components'), most complex left, ties in pick order (stable sort). */
@@ -74,8 +83,18 @@ export interface PlanState {
   passives: PlanEntryState[];
   /** Any section holds more than its active limit allows. */
   overLimit: boolean;
-  /** Warning shown while over limit; '' otherwise. */
+  /** Warning shown while over limit; '' otherwise. Names the slot quirk when
+   *  one is responsible (The Ballbearer's passives, The Hoary Hoarder's
+   *  balls), because re-enabling End game upgrades cannot help those. */
   hint: string;
+  /** The Potager is selected: live fusing-pair adds are blocked and planned
+   *  pairs are marked `fusionInvalid`. */
+  fusionBlocked: boolean;
+  /** Second warning line shown while fusion-invalid pairs exist; '' otherwise. */
+  fusionInvalidHint: string;
+  /** Override for the passives section's empty hint (The Ballbearer has no
+   *  passive slots); null means the renderer's default. */
+  passivesEmptyHint: string | null;
 }
 /** The plan's actions — the plan-shaped slice of the view-state Action
  *  union. view-state forwards them verbatim; `hydrate` carries the plan's
@@ -88,7 +107,9 @@ export type PlanAction =
   /** Plan membership toggle for a fused pair (the fusion screen's composed
    *  panel and the balls screen's selection box emit it). Identity is
    *  order-insensitive: the pair is stored in compose order but matched by
-   *  sorted ids. Counts as ONE ball slot. */
+   *  sorted ids. Counts as ONE ball slot. While The Potager is selected a
+   *  live add of a pair that actually fuses is a no-op; removal is always
+   *  allowed, and evolve-instead pairs are exempt. */
   | { type: 'togglePlanFusion'; a: string; b: string }
   /** The plan screen's End game upgrades toggle (on by default). */
   | { type: 'toggleUpgrades' }
@@ -102,15 +123,21 @@ export type PlanAction =
    *  kept as-is and marked, not trimmed. */
   | { type: 'hydrate'; plan: PlanSnapshot };
 
-/** Slot limits by upgrade state: base game vs end-game upgrades. */
-const LIMITS: { on: PlanLimits; off: PlanLimits } = {
-  on: { chars: 2, balls: 5, passives: 5 },
-  off: { chars: 1, balls: 4, passives: 4 },
-};
+/** The Potager's "cannot fuse balls normally" quirk: any planned pair that
+ *  actually fuses is impossible while The Potager is selected. One id
+ *  constant for the live block and the derived mark. */
+const POTAGER_ID = 'the-potager';
 
-/** The limits in force for an upgrade-toggle state — one place, every call
- *  site (plan derivation and view-state's character slots alike). */
-const activeLimits = (upgradesOn: boolean): PlanLimits => (upgradesOn ? LIMITS.on : LIMITS.off);
+/** The Ballbearer's zero passive slots drive the quirk-aware hint copy. */
+const BALLBEARER_ID = 'the-ballbearer';
+
+/** The Hoary Hoarder's two ball slots drive the quirk-aware hint copy. */
+const HOARDER_ID = 'the-hoary-hoarder';
+
+/** Whether any selected character is The Potager — the fusion block applies
+ *  with one or two selected characters. */
+const potagerSelected = (selectedChars: readonly Character[]): boolean =>
+  selectedChars.some((character) => character.id === POTAGER_ID);
 
 /** Ball slots a plan occupies: every single ball is one slot, and a fused
  *  pair is ONE slot (the pair replaces its two components) — one internal
@@ -125,6 +152,14 @@ interface ResolvedFusedPair { a: Ball; b: Ball; }
 export function createPlanState() {
   /** The plan's End game upgrades toggle — on by default. */
   let upgradesOn = true;
+  /** The selection the last dispatch/derive was handed — the capacity guards
+   *  read it at toggle time (the active limits are character-aware). The
+   *  shared selection itself stays view-state's; this is only the latest
+   *  handed-in view. */
+  let currentChars: readonly Character[] = [];
+  /** The active limits: the globals overlaid by the selected characters'
+   *  slot quirks (src/slot-limits.ts). Read at toggle time, never cached. */
+  const activeLimits = (): PlanLimits => limitsFor(upgradesOn, currentChars);
   /** Plan balls/passives in pick order — the storage order (snapshot,
    *  hydrate); the paint order is derived (complexity, see derive). The
    *  plan's characters are the shared selectedChars — one selection feeds
@@ -137,12 +172,12 @@ export function createPlanState() {
     // is ONE slot), so room is "slots used < capacity", not this list's length.
     // `planFused` is declared below; the callback runs only after
     // createPlanState returns, so the forward reference is safe.
-    hasRoom: (list) => ballSlotsUsed(list, planFused.list()) < activeLimits(upgradesOn).balls,
+    hasRoom: (list) => ballSlotsUsed(list, planFused.list()) < activeLimits().balls,
   });
   const planPassives = createPickList<Passive, string>({
     resolve: (id) => passiveMap.get(id),
     key: (passive) => passive.id,
-    hasRoom: (list) => list.length < activeLimits(upgradesOn).passives,
+    hasRoom: (list) => list.length < activeLimits().passives,
   });
   /** Planned fused pairs in compose order, resolved to their catalog balls;
    *  identity is the sorted id pair, so the reverse composition is the same
@@ -156,7 +191,7 @@ export function createPlanState() {
       return a && b && a.id !== b.id && isFusable(a.id) && isFusable(b.id) ? { a, b } : undefined;
     },
     key: (p) => pairKey(p.a.id, p.b.id),
-    hasRoom: (list) => ballSlotsUsed(planBalls.list(), list) < activeLimits(upgradesOn).balls,
+    hasRoom: (list) => ballSlotsUsed(planBalls.list(), list) < activeLimits().balls,
   });
 
   /** Apply a normalized plan to the in-memory state, keyed by PlanSnapshot's
@@ -186,11 +221,15 @@ export function createPlanState() {
    *  the displayed tail is what gets flagged). Verdicts ride along so the
    *  renderer paints them without re-deriving. */
   const derive = (selectedChars: readonly Character[]): PlanState => {
-    const limits = activeLimits(upgradesOn);
+    currentChars = selectedChars;
+    const limits = activeLimits();
     const planBallItems = planBalls.list();
     const planFusedPairs = planFused.list();
     const planPassiveItems = planPassives.list();
     const ballSlots = ballSlotsUsed(planBallItems, planFusedPairs);
+    // The Potager cannot fuse balls normally: a planned pair that actually
+    // fuses is marked (kept, never trimmed); evolve-instead pairs are exempt.
+    const potager = potagerSelected(selectedChars);
     const ballComplexity = (e: PlanBallEntry): number =>
       e.kind === 'single' ? complexity(e.item, ballMap) : complexity(e.a, ballMap) + complexity(e.b, ballMap);
     const balls: PlanBallEntry[] = [
@@ -206,6 +245,7 @@ export function createPlanState() {
         b,
         name: fusionName(a, b),
         overLimit: false,
+        fusionInvalid: potager && !evolvesInstead(a, b),
         verdicts: [verdictFor(a, selectedChars), verdictFor(b, selectedChars)] as [Verdict | null, Verdict | null],
       })),
     ]
@@ -215,10 +255,22 @@ export function createPlanState() {
       .map((item) => ({ item, overLimit: false, verdict: verdictFor(item, selectedChars) }))
       .sort((x, y) => complexity(y.item, passiveMap) - complexity(x.item, passiveMap))
       .map((e, i) => ({ ...e, overLimit: i >= limits.passives }));
-    const overLimit =
-      selectedChars.length > limits.chars ||
-      ballSlots > limits.balls ||
-      planPassiveItems.length > limits.passives;
+    const ballsOver = ballSlots > limits.balls;
+    const passivesOver = planPassiveItems.length > limits.passives;
+    const overLimit = selectedChars.length > limits.chars || ballsOver || passivesOver;
+    const ballbearer = selectedChars.some((c) => c.id === BALLBEARER_ID);
+    const hoarder = selectedChars.some((c) => c.id === HOARDER_ID);
+    // Quirk-aware copy: re-enabling End game upgrades cannot help The
+    // Ballbearer's passives (0 either way) or The Hoary Hoarder's balls
+    // (2 either way), so those hints name the quirk instead.
+    const hint = passivesOver && ballbearer
+      ? 'The Ballbearer has no passive slots — remove the highlighted passives'
+      : ballsOver && hoarder
+        ? 'The Hoary Hoarder has 2 ball slots — remove the highlighted balls'
+        : overLimit
+          ? 'Over the limit — remove the highlighted picks or re-enable End game upgrades.'
+          : '';
+    const fusionInvalid = balls.some((e) => e.kind === 'fused' && e.fusionInvalid);
     return {
       upgradesOn,
       limits,
@@ -233,14 +285,19 @@ export function createPlanState() {
       balls,
       passives: planPassivesState,
       overLimit,
-      hint: overLimit ? 'Over the limit — remove the highlighted picks or re-enable End game upgrades.' : '',
+      hint,
+      fusionBlocked: potager,
+      fusionInvalidHint: fusionInvalid ? "The Potager can't fuse balls — remove the highlighted pairs" : '',
+      passivesEmptyHint: ballbearer ? 'The Ballbearer has no passive slots.' : null,
     };
   };
 
   return {
     /** Mutates the plan's own state only — the shared selectedChars are
-     *  view-state's; derive(selectedChars) reads them back afterwards. */
-    dispatch(action: PlanAction): void {
+     *  view-state's; the selection is handed in so the capacity guards can
+     *  read the active (quirk-overlaid) limits at toggle time. */
+    dispatch(action: PlanAction, selectedChars: readonly Character[] = []): void {
+      currentChars = selectedChars;
       switch (action.type) {
         // Plan membership: the catalog decides the namespace; the pick list
         // rejects unknown ids, re-click removes, adding past the active
@@ -253,10 +310,17 @@ export function createPlanState() {
         // order-insensitive (the reverse composition toggles the same pair)
         // and its resolution guard rejects unknown/non-fusable components;
         // adding past the ball limit is a no-op. Compose order is kept for
-        // display.
-        case 'togglePlanFusion':
+        // display. The Potager blocks live adds of pairs that actually fuse
+        // (removal and evolve-instead pairs stay allowed) — the fusion
+        // screen disables its button too; this is the seam's own guard.
+        case 'togglePlanFusion': {
+          const a = ballMap.get(action.a);
+          const b = ballMap.get(action.b);
+          const planned = planFused.has({ a: action.a, b: action.b });
+          if (!planned && a && b && potagerSelected(currentChars) && !evolvesInstead(a, b)) break;
           planFused.toggle({ a: action.a, b: action.b });
           break;
+        }
         case 'toggleUpgrades': upgradesOn = !upgradesOn; break;
         case 'clearPlan':
           planBalls.restore([]);
@@ -312,10 +376,12 @@ export function createPlanState() {
       const after = planBalls.list().length + planPassives.list().length + planFused.list().length;
       return before - after;
     },
-    /** The limits in force right now — view-state's character slots gate
-     *  on them (the character limit rides the plan's upgrade toggle). */
+    /** The GLOBAL limits in force right now — view-state's character slots
+     *  gate on them (the character limit rides the plan's upgrade toggle and
+     *  the quirk map never changes it). The character-overlaid limits ride
+     *  `derive(selectedChars).limits` instead. */
     limits(): PlanLimits {
-      return activeLimits(upgradesOn);
+      return globalLimits(upgradesOn);
     },
   };
 }

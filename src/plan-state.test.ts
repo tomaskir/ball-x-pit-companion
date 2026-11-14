@@ -376,7 +376,7 @@ describe('plan state: fused pairs in the plan', () => {
     state.dispatch({ type: 'togglePlanFusion', a: 'vampire', b: 'wind' });
     // 5 slots filled; shrinking the limits marks the pair (5th slot) over limit
     state.dispatch({ type: 'toggleUpgrades' });
-    const plan = state.derive(chars('the-ballbearer'));
+    const plan = state.derive(chars('the-warrior'));
     expect(fusedOf(plan)[0].overLimit).toBe(true);
     expect(fusedOf(plan)[0].verdicts).toHaveLength(2);
   });
@@ -396,6 +396,131 @@ describe('plan state: fused pairs in the plan', () => {
     expect(state.hasPair('flash', 'glacier')).toBe(true);
     expect(state.hasPair('glacier', 'flash')).toBe(true); // order-insensitive
     expect(state.hasPair('flash', 'maggot')).toBe(false);
+  });
+});
+
+describe('plan state: character slot quirks (selectedChars at the dispatch seam)', () => {
+  it('The Ballbearer zeroes passive capacity: every live passive add is a no-op', () => {
+    const state = createPlanState();
+    state.dispatch({ type: 'togglePlanItem', id: 'wagon-wheel' }, chars('the-ballbearer'));
+    const plan = state.derive(chars('the-ballbearer'));
+    expect(plan.passives).toHaveLength(0);
+    expect(plan.limits).toEqual({ chars: 2, balls: 10, passives: 0 });
+    expect(plan.counts.passives).toBe(0);
+  });
+
+  it('The Ballbearer doubles the ball capacity: 10 live adds fit with upgrades on', () => {
+    const state = createPlanState();
+    const ids = ['flash', 'glacier', 'maggot', 'flicker', 'burn', 'vampire', 'wind', 'poison', 'bleed', 'iron'];
+    for (const id of ids) state.dispatch({ type: 'togglePlanItem', id }, chars('the-ballbearer'));
+    state.dispatch({ type: 'togglePlanItem', id: 'stone' }, chars('the-ballbearer'));
+    const plan = state.derive(chars('the-ballbearer'));
+    expect(plan.counts.balls).toBe(10);
+    expect(singleIds(plan.balls)).not.toContain('stone');
+  });
+
+  it('The Hoary Hoarder caps live ball adds at 2 and grows passives to 8', () => {
+    const state = createPlanState();
+    for (const id of ['flash', 'glacier', 'maggot']) state.dispatch({ type: 'togglePlanItem', id }, chars('the-hoary-hoarder'));
+    for (const id of ['wagon-wheel', 'ardent-tire', 'deadeyes-cross', 'deadeyes-impaler', 'magnet', 'silver-bullet', 'slingshot', 'spiked-collar']) {
+      state.dispatch({ type: 'togglePlanItem', id }, chars('the-hoary-hoarder'));
+    }
+    const plan = state.derive(chars('the-hoary-hoarder'));
+    expect(plan.limits).toEqual({ chars: 2, balls: 2, passives: 8 });
+    expect(plan.counts.balls).toBe(2);
+    expect(plan.counts.passives).toBe(8);
+  });
+
+  it('selecting a quirk character after entries exist marks over-limit without trimming', () => {
+    const state = createPlanState();
+    // 5 balls and 4 passives fit the global limits, then The Hoary Hoarder
+    // shrinks ball capacity to 2 — the extras stay and mark red.
+    for (const id of ['flash', 'glacier', 'maggot', 'flicker', 'burn']) state.dispatch({ type: 'togglePlanItem', id });
+    for (const id of ['wagon-wheel', 'ardent-tire', 'deadeyes-cross', 'deadeyes-impaler']) state.dispatch({ type: 'togglePlanItem', id });
+    const plan = state.derive(chars('the-hoary-hoarder'));
+    expect(plan.counts.balls).toBe(5);
+    expect(plan.counts.passives).toBe(4);
+    expect(plan.balls.filter((e) => e.overLimit)).toHaveLength(3);
+    expect(plan.overLimit).toBe(true);
+    expect(plan.hint).toBe('The Hoary Hoarder has 2 ball slots — remove the highlighted balls');
+  });
+
+  it('the Ballbearer over-limit hint names the quirk, and the passives empty hint explains it', () => {
+    const state = createPlanState();
+    state.dispatch({
+      type: 'hydrate',
+      plan: { upgradesOn: true, balls: [], passives: ['wagon-wheel', 'ardent-tire'], fused: [] },
+    });
+    const plan = state.derive(chars('the-ballbearer'));
+    expect(plan.overLimit).toBe(true);
+    expect(plan.hint).toBe('The Ballbearer has no passive slots — remove the highlighted passives');
+    expect(plan.passivesEmptyHint).toBe('The Ballbearer has no passive slots.');
+  });
+
+  it('ordinary characters keep the generic over-limit hint and the default empty hint', () => {
+    const state = createPlanState();
+    state.dispatch({
+      type: 'hydrate',
+      plan: { upgradesOn: false, balls: ['flash', 'glacier', 'maggot', 'flicker', 'burn'], passives: [], fused: [] },
+    });
+    const plan = state.derive(chars('the-warrior'));
+    expect(plan.hint).toContain('Over the limit');
+    expect(plan.passivesEmptyHint).toBeNull();
+  });
+});
+
+describe('plan state: The Potager and planned fused pairs (fusionInvalid)', () => {
+  const potager = chars('the-potager');
+
+  it('marks a planned fusing pair fusion-invalid under The Potager (kept, counted)', () => {
+    const state = createPlanState();
+    state.dispatch({
+      type: 'hydrate',
+      plan: { upgradesOn: true, balls: [], passives: [], fused: [{ a: 'flash', b: 'glacier' }] },
+    });
+    const plan = state.derive(potager);
+    const pair = fusedOf(plan)[0];
+    expect(pair.fusionInvalid).toBe(true);
+    expect(pair.overLimit).toBe(false);
+    expect(plan.counts.balls).toBe(1); // counts still include invalid pairs
+    expect(plan.fusionBlocked).toBe(true);
+    expect(plan.fusionInvalidHint).toBe("The Potager can't fuse balls — remove the highlighted pairs");
+  });
+
+  it('blocks a live fusing pair add while The Potager is selected (no-op)', () => {
+    const state = createPlanState();
+    state.dispatch({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' }, potager);
+    const plan = state.derive(potager);
+    expect(fusedOf(plan)).toHaveLength(0);
+    expect(plan.counts.balls).toBe(0);
+  });
+
+  it('removal stays allowed under The Potager', () => {
+    const state = createPlanState();
+    state.dispatch({
+      type: 'hydrate',
+      plan: { upgradesOn: true, balls: [], passives: [], fused: [{ a: 'flash', b: 'glacier' }] },
+    });
+    state.dispatch({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' }, potager);
+    expect(fusedOf(state.derive(potager))).toHaveLength(0);
+  });
+
+  it('evolve-instead pairs are exempt: they evolve, not fuse', () => {
+    const state = createPlanState();
+    state.dispatch({ type: 'togglePlanFusion', a: 'freeze', b: 'laser-horizontal' }, potager);
+    const plan = state.derive(potager);
+    expect(fusedOf(plan)).toHaveLength(1);
+    expect(fusedOf(plan)[0].fusionInvalid).toBe(false);
+    expect(plan.fusionInvalidHint).toBe('');
+  });
+
+  it('no Potager: pairs are valid and the hint is empty', () => {
+    const state = createPlanState();
+    state.dispatch({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' }, chars('the-warrior'));
+    const plan = state.derive(chars('the-warrior'));
+    expect(fusedOf(plan)[0].fusionInvalid).toBe(false);
+    expect(plan.fusionBlocked).toBe(false);
+    expect(plan.fusionInvalidHint).toBe('');
   });
 });
 

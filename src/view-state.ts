@@ -332,6 +332,9 @@ export function createViewState({ editions }: ViewStateOptions = {}) {
     const { panel: fusionPanel, hint: fusionHint } = deriveFusionPanel(picks, {
       hasPair: (x, y) => plan.hasPair(x, y),
       ballSlots: { used: planState.counts.balls, capacity: planState.limits.balls },
+      // The Potager's fusion block is derived with the plan state (one
+      // selection feeds both); the panel exempts evolve-instead pairs.
+      fusionBlocked: planState.fusionBlocked,
     });
     // The selection boxes: one per item screen, filled only when the
     // selected item lives in that screen's namespace. Plan membership and
@@ -460,7 +463,10 @@ export function createViewState({ editions }: ViewStateOptions = {}) {
         case 'togglePlanItem':
         case 'togglePlanFusion':
         case 'toggleUpgrades':
-          plan.dispatch(action);
+          // the selection rides along: the plan's capacity guards are
+          // character-aware (src/slot-limits.ts) and The Potager blocks live
+          // fusing-pair adds
+          plan.dispatch(action, selectedChars.list());
           break;
         // Build-graph UI state: focus toggles (re-click clears); a stale
         // focus (its node left the graph) simply highlights nothing. The
@@ -476,7 +482,7 @@ export function createViewState({ editions }: ViewStateOptions = {}) {
           else graphDone.add(action.id);
           break;
         case 'clearPlan':
-          plan.dispatch(action);
+          plan.dispatch(action, selectedChars.list());
           selectedChars.restore([]);
           graphDone.clear(); // a wiped plan has nothing left to track
           break;
@@ -489,7 +495,7 @@ export function createViewState({ editions }: ViewStateOptions = {}) {
         // startup restore.
         case 'hydrate':
           enabledEditions = canonicalEditions(action.shared.editions);
-          plan.dispatch({ type: 'hydrate', plan: action.shared.plan });
+          plan.dispatch({ type: 'hydrate', plan: action.shared.plan }, selectedChars.list());
           selectedChars.restore(action.shared.chars);
           editionDroppedCount = dropHiddenEntries();
           if (!action.notify) editionDroppedCount = 0;

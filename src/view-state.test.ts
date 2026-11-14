@@ -387,8 +387,10 @@ describe('view state: plan actions forward to the plan state (integration)', () 
 
   it('the shared selectedChars feed the plan: character picks become plan entries with verdicts', () => {
     const view = createViewState();
-    view.dispatch({ type: 'toggleChar', id: 'the-ballbearer' });
-    const vm = view.dispatch({ type: 'togglePlanItem', id: 'wagon-wheel' });
+    // plan the passive first: The Ballbearer's zero passive slots would block
+    // a live add (the quirk capacity is exercised in its own tests below)
+    view.dispatch({ type: 'togglePlanItem', id: 'wagon-wheel' });
+    const vm = view.dispatch({ type: 'toggleChar', id: 'the-ballbearer' });
     expect(vm.plan.characters.map((c) => c.character.id)).toEqual(['the-ballbearer']);
     expect(vm.plan.passives[0].verdict).toMatchObject({ verdict: 'red' });
     // deselecting the character updates the plan's verdicts on the next derive
@@ -438,6 +440,91 @@ describe('view state: plan actions forward to the plan state (integration)', () 
     expect(vm.fusionPanel.state).toBe('composed');
     if (vm.fusionPanel.state === 'composed') expect(vm.fusionPanel.planFull).toBe(true);
     expect(vm.plan.counts.balls).toBe(4);
+  });
+});
+
+describe('view state: character slot quirks (integration)', () => {
+  it('The Ballbearer blocks live passive adds and reports 0 / 0', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleChar', id: 'the-ballbearer' });
+    const vm = view.dispatch({ type: 'togglePlanItem', id: 'wagon-wheel' });
+    expect(vm.plan.counts.passives).toBe(0);
+    expect(vm.plan.limits).toEqual({ chars: 2, balls: 10, passives: 0 });
+    expect(vm.plan.passivesEmptyHint).toBe('The Ballbearer has no passive slots.');
+  });
+
+  it('The Hoary Hoarder caps live ball adds at 2 and grows passives to 8', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleChar', id: 'the-hoary-hoarder' });
+    for (const id of ['flash', 'glacier', 'maggot']) view.dispatch({ type: 'togglePlanItem', id });
+    const vm = view.derive();
+    expect(vm.plan.counts.balls).toBe(2);
+    expect(vm.plan.limits).toEqual({ chars: 2, balls: 2, passives: 8 });
+  });
+
+  it('the selection box disables a passive add under The Ballbearer', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleChar', id: 'the-ballbearer' });
+    const passive = view.dispatch({ type: 'toggleItem', id: 'wagon-wheel' });
+    expect(passive.selectionBoxes.passives!.plan).toBe('disabled');
+    const ball = view.dispatch({ type: 'toggleItem', id: 'flash' });
+    expect(ball.selectionBoxes.balls!.plan).toBe('add');
+  });
+
+  it('the fusion panel reads the quirk-overlaid ball capacity', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleChar', id: 'the-hoary-hoarder' });
+    view.dispatch({ type: 'toggleFusion', id: 'flash' });
+    const vm = view.dispatch({ type: 'toggleFusion', id: 'glacier' });
+    expect(vm.fusionPanel.state).toBe('composed');
+    if (vm.fusionPanel.state === 'composed') {
+      // Hoarder: 2 ball slots — a pair fills the plan at 0 used, so not full
+      // yet; one planned ball makes it full.
+      expect(vm.fusionPanel.planFull).toBe(false);
+    }
+    view.dispatch({ type: 'togglePlanItem', id: 'flash' });
+    view.dispatch({ type: 'togglePlanItem', id: 'glacier' });
+    const full = view.derive();
+    if (full.fusionPanel.state === 'composed') expect(full.fusionPanel.planFull).toBe(true);
+  });
+});
+
+describe('view state: The Potager fusion block (integration)', () => {
+  const withPotager = () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' });
+    view.dispatch({ type: 'toggleChar', id: 'the-potager' });
+    return view;
+  };
+
+  it('blocks a live fusing-pair add and marks a hydrated pair fusion-invalid', () => {
+    const view = withPotager();
+    view.dispatch({ type: 'toggleFusion', id: 'flash' });
+    view.dispatch({ type: 'toggleFusion', id: 'glacier' });
+    const blocked = view.dispatch({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
+    expect(blocked.plan.counts.balls).toBe(0);
+    expect(blocked.fusionPanel.state).toBe('composed');
+    if (blocked.fusionPanel.state === 'composed') expect(blocked.fusionPanel.fusionBlocked).toBe(true);
+
+    const hydrated = view.dispatch({
+      type: 'hydrate',
+      shared: {
+        plan: { upgradesOn: true, balls: [], passives: [], fused: [{ a: 'flash', b: 'glacier' }] },
+        chars: ['the-potager'],
+        editions: ['base-game', 'dlc-risen-ballbylon'],
+      },
+    });
+    const pair = hydrated.plan.balls.find((e) => e.kind === 'fused');
+    expect(pair && pair.kind === 'fused' && pair.fusionInvalid).toBe(true);
+    expect(hydrated.plan.fusionInvalidHint).toContain("The Potager can't fuse balls");
+  });
+
+  it('an evolve-instead pair is not blocked (it evolves, not fuses)', () => {
+    const view = withPotager();
+    view.dispatch({ type: 'toggleFusion', id: 'bleed' });
+    const vm = view.dispatch({ type: 'toggleFusion', id: 'poison' });
+    expect(vm.fusionPanel.state).toBe('composed');
+    if (vm.fusionPanel.state === 'composed') expect(vm.fusionPanel.fusionBlocked).toBe(false);
   });
 });
 

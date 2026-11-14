@@ -8,9 +8,10 @@
 //
 // The module owns the graph's inputs, row model, and highlight rule:
 // `deriveBuildGraphView(planState, { focus, done, collapsed, editions })`
-// assembles the targets from the plan (including Evolves-instead resolution),
-// gates each recipe on the enabled editions (a recipe with a hidden component
-// is unavailable), derives and lays out both namespace graphs, validates the
+// assembles the targets from the plan (including Evolves-instead resolution;
+// over-limit entries and The Potager's fusion-invalid pairs stay out), gates
+// each recipe on the enabled editions (a recipe with a hidden component is
+// unavailable), derives and lays out both namespace graphs, validates the
 // focus id, walks the related set, and carries the fixed row model (row
 // counts, fusion row index, row labels). view-state only embeds the result.
 //
@@ -447,6 +448,9 @@ export function deriveBuildGraphView(
   const ballTargets: BuildGraphTargets = { singles: [], pairs: [] };
   for (const e of planState.balls) {
     if (e.overLimit) continue;
+    // The Potager cannot fuse: a fusion-invalid pair is not buildable, so it
+    // stays out of the graph like an over-limit entry.
+    if (e.kind === 'fused' && e.fusionInvalid) continue;
     if (e.kind === 'single') ballTargets.singles.push(e.item.id);
     else {
       const evo = evolvesInstead(e.a, e.b);

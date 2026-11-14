@@ -17,6 +17,7 @@ import {
   type BuildGraphSessionState,
 } from './build-graph';
 import { ballMap, passiveMap } from './catalog';
+import { CHARACTERS } from './data/characters';
 import { EDITIONS } from './data/editions';
 import { createPlanState, type PlanAction } from './plan-state';
 
@@ -380,6 +381,20 @@ describe('build graph view: the whole Plan-screen derivation', () => {
     );
     expect(view.balls.nodes.find((n) => n.id === 'freeze-ray')!.final).toBe(true);
     expect(view.balls.nodes.some((n) => n.row === FUSION_ROW)).toBe(false);
+  });
+
+  it('keeps fusion-invalid pairs out of the graph (The Potager cannot build them)', () => {
+    const plan = createPlanState();
+    plan.dispatch({
+      type: 'hydrate',
+      plan: { upgradesOn: true, balls: [], passives: [], fused: [{ a: 'flash', b: 'glacier' }] },
+    });
+    const potager = CHARACTERS.filter((c) => c.id === 'the-potager');
+    const planState = plan.derive(potager);
+    expect(planState.balls[0].kind === 'fused' && planState.balls[0].fusionInvalid).toBe(true);
+    const view = deriveBuildGraphView(planState, session());
+    expect(view.balls.nodes.some((n) => n.row === FUSION_ROW)).toBe(false);
+    expect(view.balls.nodes.some((n) => n.id === 'flash')).toBe(false);
   });
 
   it('keeps over-limit entries out of the graph', () => {

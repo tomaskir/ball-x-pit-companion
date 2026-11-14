@@ -174,5 +174,6 @@ export function expectBlackHoleSunOrderIndependent(): void {
 export const EMPTY_FUSION_PANEL_PLAN: FusionPanelPlan = {
   hasPair: () => false,
   ballSlots: { used: 0, capacity: 5 },
+  fusionBlocked: false,
 };
 
