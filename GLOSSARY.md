@@ -14,7 +14,9 @@ The wiki (ballxpit.wiki.gg) distinguishes two mechanics that fan sites conflate:
   from the fact base.
 - **Fusion** — merging any two unfused level-3 balls into a property-stacking
   ball with no unique identity. Modeled **editorially** on the Fusions screen:
-  the game stores no fusion table (see `docs/research/fusion-mechanics.md`),
+  the game stores no fusion result table — it does store structured per-ball
+  effect channels and runtime ordered-pair state, but no fused-result data
+  (see `docs/research/fusion-mechanics.md`),
   so `src/fusion.ts` composes fused-ball text from the two components' effect
   text using community-observed rules — damage rolls abstracted to "X" (fused
   numbers are not derivable from public sources). Component paragraphs use the
@@ -468,9 +470,9 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   separator is localized; first-selected first; canonical statement:
   `docs/research/fusion-mechanics.md` §1), component effect paragraphs
   in selection order with damage rolls abstracted to "X", a role-named
-  cross-wire line when a channel can carry the partner's effect (spawn/AOE
-  carrier × on-hit status; AOE carrier × kill-on-hit, e.g. Black Hole × Sun;
-  spawn carrier × spawn-bound status, e.g. Glacier × Maggot), structured
+  cross-wire line when a channel can carry the partner's effect (spawn/AOE/
+  field carrier × on-hit status; AOE carrier × kill-on-hit, e.g. Black Hole ×
+  Sun; spawn carrier × spawn-bound status, e.g. Glacier × Maggot), structured
   property-set union with first-pick scalar precedence (shared scalar keys
   collide; the first-selected value wins) and reported exceptions for the
   panel's Fused result / Reported exceptions sections, the fixed composition
@@ -487,7 +489,7 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   channels in one hand-maintained table). The evidence behind the composer's
   classifications lives in `src/fusion-knowledge.ts`, exposed as questions:
   `wireFor(a, b) → Wire | null` returns the structured cross-wire (branch,
-  carrier, carried effect, disputed bit, spawner id) with the four branches,
+  carrier, carried effect, disputed bit, spawner id) with the five branches,
   their priority, and the per-branch capability predicates kept private,
   alongside the one application-channel
   classifier `channelsOf` (reads the kit table and falls back to the
@@ -507,8 +509,9 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   `docs/research/fusion-observations/CONTRADICTIONS.md`; claim audit
   (historical snapshot): `docs/research/fusion-claim-register.md`).
 - **Ball kit** — one ball's fusion properties: its level-3 scalar values and
-  its application channels, recorded together in the one hand-maintained
-  table `BALL_KIT` (`src/ball-kit.ts`). The order model unions two kits
+  its application channels, plus an `aoe` flag (the game's `AOETypes`), recorded
+  together in the one hand-maintained table `BALL_KIT` (`src/ball-kit.ts`).
+  The order model unions two kits
   (`resolveProperties`); the wire model reads the same channels through
   `channelsOf` / `statusChannel`. A ball absent from the table has no recorded
   kit and falls back to the status-text heuristic.
@@ -517,6 +520,11 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   a partner's on-hit status across a fusion (the spawn branches of
   `wireFor()` in `src/fusion-knowledge.ts`). Voluptuous Egg Sac is the only hard exclusion: its two-hop
   chain drops the partner property.
+- **Field carrier** — a ball whose kit channels include `field` (a trail or
+  persistent ground zone). Its field can carry a partner's on-hit status
+  across a fusion through the `field-carries-on-hit` branch of `wireFor()`;
+  only damage-riding statuses ride (the Freeze Ray × Sun evidence), and
+  `per-second` alone does not make a carrier (attach balls stay non-carriers).
 - **Status-only spawn carrier** — a spawn carrier whose babies inherit only
   the partner's on-hit status, not spawn-bound traits (Brood Mother, Mosquito
   King). Their inheritance is reported; Brood Mother's is degraded;
