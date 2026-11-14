@@ -10,7 +10,8 @@ in `AGENTS.md`; the public overview is `README.md`; the game-data fact base is
 The wiki (ballxpit.wiki.gg) distinguishes two mechanics that fan sites conflate:
 
 - **Evolution** — combining 2+ specific level-3 balls in the Fusion Reactor into
-  a new *named* Evolved Ball (69 of them as of pre-DLC game v1.301). Modeled
+  a new *named* Evolved Ball (89 as of game v1.308: 69 base-game + 20 DLC).
+  Modeled
   from the fact base.
 - **Fusion** — merging any two unfused level-3 balls into a property-stacking
   ball with no unique identity. Modeled **editorially** on the Fusions screen:
@@ -25,8 +26,8 @@ The wiki (ballxpit.wiki.gg) distinguishes two mechanics that fan sites conflate:
   canonical statement: `docs/research/fusion-mechanics.md` §3). This is the
   site's model, not game data.
 
-Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special),
-**Base Passives** (54), **Evolved Passives** (17), **Fusion Reactor**.
+Other wiki terms used verbatim: **Base Balls** (25), **Baby Ball** (not special),
+**Base Passives** (77), **Evolved Passives** (39), **Fusion Reactor**.
 
 ## Terms
 
@@ -57,22 +58,24 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   resolution. Module: `src/catalog.ts` (`ballMap`, `passiveMap`,
   `isPassive(id)`, `itemFor(id)`, `graphFor(id)`).
 - **Edition** — a release grouping of game content: `base-game` or
-  `dlc-risen-ballbylon`. Every ball, passive, and character carries
-  `edition`; it is authored as the `Edition` column in the fact base (an
-  absent cell means `base-game`) and typed in `src/data/editions.ts`.
-  Recipes and level-3 texts carry no edition of their own — a recipe
-  inherits its components', a level-3 text its ball's.
-- **Edition filter** — the user-controlled set of enabled editions
-  (`enabledEditions` in the view state), persisted under `ball-x-pit-editions`
-  and carried by share links (codec v2; a v1 link means `base-game`).
-  Hidden content is dropped from state, not dimmed: toggling an edition off
-  removes selected characters, fusion picks, plan entries, and fused pairs
-  with a hidden component; re-enabling does not restore. A dropped loss is
-  reported by the header status line.
-- **Edition gate** — a recipe is available iff every component ball's edition
-  is enabled; fusion visibility applies the same rule to both components.
-  The six DLC-era recipe additions are gated by their DLC components, so
-  base recipes survive with the expansion off.
+  `dlc-risen-ballbylon` (the "DLC flag" is this dimension, not a separate
+  boolean). Every ball, passive, and character carries `edition`; it is
+  authored as the `Edition` column in the fact base (an absent cell means
+  `base-game`) and generated into `src/data/editions.ts` from
+  `scripts/editions.ts`. Recipes and level-3 texts carry no edition of their
+  own — a recipe inherits its components', a level-3 text its ball's.
+- **Edition filter** (the content filter) — the user-controlled set of enabled
+  editions (`enabledEditions` in the view state, default `['base-game']`),
+  persisted under `ball-x-pit-editions` and carried by share links (codec v2;
+  a v1 link means `base-game`). Hidden content is dropped from state, not
+  dimmed: toggling an edition off removes selected characters, fusion picks,
+  plan entries, and fused pairs with a hidden component; re-enabling does not
+  restore. A dropped loss is reported by the header status line.
+- **Edition gate** — the content filter's pure rules (`src/edition-gate.ts`):
+  a recipe is available iff every component's edition is enabled, and a fusion
+  is visible iff both components are enabled. The six DLC-era recipe additions
+  are gated by their DLC components, so base recipes survive with the
+  expansion off.
 - **Depth** — evolution tier computed from recipe structure, not wiki labels:
   0 = basic, 1 = evolved (recipe includes a base ball only), 2 = tier-3
   (recipe includes an evolved component). Rule and recursion (tier rule,
@@ -98,19 +101,6 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   vocabulary, verdict-rule sanity, and wildcard uniqueness; `validateGenerated`
   calls it. The `emit-data.ts` CLI runs validate before write;
   `src/data.test.ts` runs the same list against the checked-in data.
-- **Edition** — the content-filter dimension on every ball, passive, and
-  character: `base-game` or `dlc-risen-ballbylon`, authored as a trailing
-  `Edition` cell in the fact base (an absent cell means base-game) and
-  generated into `src/data/editions.ts` from `scripts/editions.ts`. Recipes
-  and level-3 texts carry no edition; they inherit from their components/ball.
-- **Edition filter** — the user's enabled-edition list (`enabledEditions`,
-  default `['base-game']`), persisted under its own `ball-x-pit-editions`
-  key and carried in v2 share links. Hidden content is not painted (not
-  dimmed); toggling an edition off drops hidden selections and plan entries,
-  and re-enabling does not restore them.
-- **Edition gate** — the rule that a recipe is available iff every
-  component's edition is enabled, and a fusion is visible iff both components
-  are enabled (`src/edition-gate.ts`).
 - **Tag** — one of the 30 entries in the synergy vocabulary
   (`src/data/tags.ts`), listed alphabetically: `aim-direction`, `aoe`,
   `attach`, `baby-ball-scaling`, `backstab`, `ball-speed`, `bounce-scaling`,
@@ -564,6 +554,14 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   `docs/research/fusion-mechanics.md`,
   `docs/research/fusion-observations/CONTRADICTIONS.md`; claim audit
   (historical snapshot): `docs/research/fusion-claim-register.md`).
+- **Application channel** — how a ball applies an effect: `on-hit`,
+  `per-second`, `spawn`, or `field` (set-valued — a ball can use more than
+  one). The channel decides whether a partner's effect can ride a fusion
+  (the cross-wire branches); an empty channel set is an explicit "none"
+  (the bonus-damage stat balls). Recorded per ball in `BALL_KIT`
+  (`src/ball-kit.ts`) and classified by `channelsOf` in
+  `src/fusion-knowledge.ts`, which falls back to the status-text heuristic
+  for balls without a kit.
 - **Ball kit** — one ball's fusion properties: its level-3 scalar values and
   its application channels, plus an `aoe` flag (the game's `AOETypes`), recorded
   together in the one hand-maintained table `BALL_KIT` (`src/ball-kit.ts`).
@@ -594,11 +592,13 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
 ## Data provenance
 
 - **Fact base** — `docs/research/game-mechanics.md`: hand-maintained
-  transcription of ballxpit.wiki.gg tables (fetched 2026-09-13, pre-DLC game
-  v1.301 *Naturalist* update), cross-checked against the community "Ultimate
-  Guide of Evolutions" charts. Effect text is verbatim from the wiki. The
-  overview catalog is **level-1** text; fusion consumes the level-3 overlay
-  `src/data/level-3.ts` (generated from `docs/research/level-3-effects.md`).
+  transcription of ballxpit.wiki.gg tables (fetched 2026-09-13, game v1.301
+  *Naturalist* update), cross-checked against the community "Ultimate Guide of
+  Evolutions" charts; the *Risen Ballbylon* rows are the v1.308 datamine
+  (extracted 2026-11-13). Effect text is verbatim from the wiki (base game) or
+  normalized from the datamine (DLC). The overview catalog is **level-1** text;
+  fusion consumes the level-3 overlay `src/data/level-3.ts` (generated from
+  `docs/research/level-3-effects.md`).
 - **Pipeline** — the two-stage parse/emit pipeline and the generated-file rule
   are documented in `AGENTS.md` § Data flow. The six `src/data` outputs are
   generated — edit the fact bases or `scripts/editorial.ts`, never the
@@ -608,6 +608,8 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   the wiki's MediaWiki API; the *Risen Ballbylon* art is from the v1.308
   datamine. Provenance and the rights-holder disclaimer live in
   `public/icons/CREDITS.md`.
-- **Counts** (pinned by `src/data.test.ts`, pre-DLC v1.301): 91 balls (21
-  base + Baby Ball + 69 evolved), 71 passives (54 + 17), 23 characters; 30
-  tags (current vocabulary).
+- **Counts** (pinned by `src/data.test.ts`): 115 balls (25 base + Baby Ball +
+  89 evolved; 26 basic / 75 evolved / 14 tier-3), 116 passives (77 base + 39
+  evolved), 31 characters (23 base + 8 DLC), 114 level-3 texts, and 30 tags
+  (current vocabulary). The Matchmaker forbids 43 pairs over the 30 pairable
+  characters, plus the False Messiah's "pairs with nobody" rule.
