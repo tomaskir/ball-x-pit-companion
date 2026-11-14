@@ -198,6 +198,33 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   embedded into the ViewModel by `src/view-state.ts`; painting in
   `src/renderer.ts` (`createPlan` — build/paint, plus the build graphs —
   see **Build graph**).
+- **Fusion-invalid pair** — a planned fused pair the selected character
+  cannot build: The Potager's "cannot fuse balls normally" makes every
+  planned pair that actually fuses impossible. Live adds are blocked while
+  The Potager is selected; already-planned and hydrated pairs are kept and
+  marked red (`fusionInvalid`) — never trimmed, the same philosophy as
+  over-limit and `pairInvalid`. Evolve-instead pairs are exempt (they
+  evolve, not fuse), counts still include the pair, and the build graph
+  excludes it. The mark is derived from the selected characters, so
+  persistence and share links need no new field. Module:
+  `src/plan-state.ts` (`PlanFusedState.fusionInvalid`), painted by
+  `src/renderer/plan.ts`.
+- **Passive availability** — whether a passive can be used by the selected
+  character(s). Two authored lists carry the rule: a DLC allow-list
+  (`characterIds`, one or two characters) and base-game stat-gate exclusions
+  (`excludedCharacterIds`; the site has no character stats to compute them).
+  Evolved passives derive availability from their components' intersection,
+  with Handheld Rupture the explicit exception. Two selected characters use
+  union semantics (the game's active-or-combined-type rule); zero selected
+  means no restriction. Loadout gates (status ball, friendly piece, stone
+  ally) are informational, not enforced. The Ballbearer's zero passive slots
+  make every passive unavailable.
+- **Passive-invalid entry** — a planned passive the selected character(s)
+  cannot use. Live adds are blocked; already-planned and hydrated entries are
+  kept and marked red (`passiveInvalid`), never trimmed; counts include them
+  and the build graph excludes them. The mark is derived from the selection,
+  so persistence and share links need no new field. Painted by the Plan
+  screen.
 - **Build graph** — the Plan screen's layered "how do I build this" view
   (one collapsible panel per namespace, under the plan sections): every
   planned item plus its full component ancestry as ONE deduped graph —
