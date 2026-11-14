@@ -36,7 +36,7 @@
 //   complexity (graph.complexity, most complex left), ties in catalog order;
 //   done/suppressed nodes read as disabled and move right of everything
 //   still needed in their row.
-import { type GraphItem, complexity, componentsOf, recipeSlots, closure, union } from './graph';
+import { type GraphItem, complexity, componentsOf, factorizesIntoSlots, recipeSlots, closure, union } from './graph';
 import { pairKey, parsePair } from './pair';
 import { ballMap, passiveMap, graphFor } from './catalog';
 import { evolvesInstead } from './fusion';
@@ -324,6 +324,13 @@ function slotFactor(
   if (fusionByNode.has(builder)) return [1, 1];
   const item = graph.get(builder);
   if (!item || !item.recipes.length) return [0, 0];
+  if (!factorizesIntoSlots(item.recipes)) {
+    // Recipes that are not per-slot alternates must be counted one by one:
+    // a component can sit in different slots across recipes (Swamp's Poison),
+    // so the column-wise sum would overcount it.
+    const counts = item.recipes.map((recipe) => recipe.filter((c) => c === component).length);
+    return [Math.min(...counts), Math.max(...counts)];
+  }
   let min = 0;
   let max = 0;
   for (const slot of recipeSlots(item.recipes)) {

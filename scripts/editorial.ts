@@ -138,6 +138,33 @@ export const BALL_TAGS: Record<string, string[]> = {
   'wraith': ['pass-through', 'status-effect'],
   'x-ray': ['aoe', 'status-effect'],
   'zombie': ['spawns-allies', 'status-effect'],
+  // Risen Ballbylon balls: placeholder coverage so the generated-data pipeline
+  // can emit. The editorial tag model for these lands in its own pass; empty
+  // arrays are a valid interim state (neutral synergy).
+  'ash': [],
+  'beast': [],
+  'bullet': [],
+  'force': [],
+  'fruit': [],
+  'gale': [],
+  'hedgehog': [],
+  'ironwood': [],
+  'ivy': [],
+  'kaiju': [],
+  'misfortune': [],
+  'mudslide': [],
+  'rot': [],
+  'siren': [],
+  'stalagmite': [],
+  'steam': [],
+  'thunderbird': [],
+  'tsunami': [],
+  'water': [],
+  'water-bug': [],
+  'waterfall': [],
+  'werewolf': [],
+  'wolfpack': [],
+  'wood': [],
 };
 
 export const PASSIVE_TAGS: Record<string, string[]> = {
@@ -214,6 +241,54 @@ export const PASSIVE_TAGS: Record<string, string[]> = {
   'tormenters-mask': [],
   'windweaver': ['spawns-baby-balls', 'ball-speed'],
   'wings-of-the-anointed': ['ball-speed'],
+  // Risen Ballbylon passives: placeholder coverage so the generated-data
+  // pipeline can emit. The editorial tag model for these lands in its own
+  // pass; empty arrays are a valid interim state (neutral synergy).
+  'ancient-ladle': [],
+  'bent-spyglass': [],
+  'charged-bracelet': [],
+  'cracked-cinderblock': [],
+  'crystal-decanter': [],
+  'eldritch-gauntlet': [],
+  'fractured-boulder': [],
+  'goniometer': [],
+  'hand-drill': [],
+  'hand-me-downs': [],
+  'jugglers-club': [],
+  'kris-knife': [],
+  'kunai': [],
+  'lucky-coin': [],
+  'refracting-glass': [],
+  'rusted-blade': [],
+  'silver-revolver': [],
+  'spiked-discipline': [],
+  'steel-bulwark': [],
+  'teardrop-necklace': [],
+  'test-tube': [],
+  'unkempt-cradle': [],
+  'wrapped-explosive': [],
+  'baby-armor': [],
+  'blood-kunai': [],
+  'charged-bow': [],
+  'cradle-of-filth': [],
+  'eldritch-dagger': [],
+  'eyeless-spyglass': [],
+  'handheld-rupture': [],
+  'jugglers-wheel': [],
+  'levitating-rock': [],
+  'liquid-flame': [],
+  'mystic-dipper': [],
+  'peacemaker': [],
+  'reachers-drill': [],
+  'refracted-echo': [],
+  'relentless-whip': [],
+  'sands-of-time': [],
+  'shadow-blade': [],
+  'spiked-shield': [],
+  'teardrop-dagger': [],
+  'tilted-dagger': [],
+  'vampires-kiss': [],
+  'volatile-explosive': [],
 };
 
 // ---- per-character verdict rules (fact base §4; editorial, not playtested) ----
@@ -293,6 +368,17 @@ export const CHAR_VERDICTS: Record<string, VerdictRule[]> = {
     { tag: '*passives', verdict: 'red', note: 'No passive slots — every passive is dead weight' },
   ],
   'the-false-messiah': [],
+  // Risen Ballbylon characters: placeholder coverage so the generated-data
+  // pipeline can emit. The verdict model for these lands in its own pass;
+  // empty arrays are a valid interim state (neutral synergy).
+  'the-conduit': [],
+  'the-potager': [],
+  'the-recollector': [],
+  'the-right-hand-man': [],
+  'the-scandalmonger': [],
+  'the-scrupulous-scoundrel': [],
+  'the-sentinel': [],
+  'the-wallbreaker': [],
 };
 
 export const EDITORIAL: EditorialMaps = { TAGS, BALL_TAGS, PASSIVE_TAGS, CHAR_VERDICTS };

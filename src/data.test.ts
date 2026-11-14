@@ -18,20 +18,20 @@ import { EDITORIAL, WILDCARD } from '../scripts/editorial.ts';
 const ballIds = new Set(BALLS.map((b) => b.id));
 const iconDir = new URL('./../public/icons/', import.meta.url).pathname;
 
-describe('fact-base counts (ticket 02, game v1.301)', () => {
-  it('has 91 balls (21 base + Baby Ball + 69 evolved)', () => {
-    expect(BALLS).toHaveLength(91);
-    expect(BALLS.filter((b) => b.depth === 0)).toHaveLength(22);
+describe('fact-base counts (ticket 02; base game v1.301 + Risen Ballbylon v1.308)', () => {
+  it('has 115 balls (25 base + Baby Ball + 89 evolved)', () => {
+    expect(BALLS).toHaveLength(115);
+    expect(BALLS.filter((b) => b.depth === 0)).toHaveLength(26);
   });
-  it('has 71 passives (54 base + 17 evolved)', () => {
-    expect(PASSIVES).toHaveLength(71);
-    expect(PASSIVES.filter((p) => p.depth === 0)).toHaveLength(54);
+  it('has 116 passives (77 base + 39 evolved)', () => {
+    expect(PASSIVES).toHaveLength(116);
+    expect(PASSIVES.filter((p) => p.depth === 0)).toHaveLength(77);
   });
-  it('has 23 characters', () => {
-    expect(CHARACTERS).toHaveLength(23);
+  it('has 31 characters', () => {
+    expect(CHARACTERS).toHaveLength(31);
   });
-  it('has 69 evolved balls (depth > 0)', () => {
-    expect(BALLS.filter((b) => b.depth > 0)).toHaveLength(69);
+  it('has 89 evolved balls (depth > 0)', () => {
+    expect(BALLS.filter((b) => b.depth > 0)).toHaveLength(89);
   });
 });
 
@@ -182,13 +182,13 @@ describe('characters (ticket 06)', () => {
 describe('Matchmaker pairing restrictions (character-pairings.md)', () => {
   const byId = new Map(CHARACTERS.map((c) => [c.id, c]));
 
-  it('17 forbidden pairs over the 22 pairable characters (the doc\'s table)', () => {
+  it('43 forbidden pairs over the 30 pairable characters (the doc\'s table)', () => {
     const pairs = new Set(
       CHARACTERS.flatMap((c) => c.cannotPair.map((p) => pairKey(c.id, p))),
     );
-    // 17 regular pairs + the False Messiah's 22 (they pair with nobody)
-    expect(pairs.size).toBe(39);
-    expect(pairs.size - [...pairs].filter((k) => k.includes('the-false-messiah')).length).toBe(17);
+    // 43 regular pairs + the False Messiah's 30 (they pair with nobody)
+    expect(pairs.size).toBe(73);
+    expect(pairs.size - [...pairs].filter((k) => k.includes('the-false-messiah')).length).toBe(43);
   });
 
   it('spot-checks from the research: Repentant x Shieldbearer, Cohabitants x Juggler, Itchy Finger x Tactician', () => {
@@ -201,8 +201,8 @@ describe('Matchmaker pairing restrictions (character-pairings.md)', () => {
 });
 
 describe('level-3 effect-text overlay (decision #12, transcription #22)', () => {
-  it('has level-3 text for all 90 fusable balls; Baby Ball is excluded', () => {
-    expect(Object.keys(LEVEL_3_EFFECTS)).toHaveLength(90);
+  it('has level-3 text for all 114 fusable balls; Baby Ball is excluded', () => {
+    expect(Object.keys(LEVEL_3_EFFECTS)).toHaveLength(114);
     expect(LEVEL_3_EFFECTS['baby-ball']).toBeUndefined();
     for (const b of BALLS) {
       if (b.id === 'baby-ball') continue;
@@ -210,12 +210,12 @@ describe('level-3 effect-text overlay (decision #12, transcription #22)', () => 
     }
   });
 
-  it('only Elemental and Ghost have no L3 diff (the transcription\'s two documented cases)', () => {
+  it('only Elemental, Ghost, and Water Bug have no L3 diff (the documented cases)', () => {
     const same = BALLS
       .filter((b) => b.id !== 'baby-ball' && LEVEL_3_EFFECTS[b.id] === b.effects)
       .map((b) => b.id)
       .sort();
-    expect(same).toEqual(['elemental', 'ghost']);
+    expect(same).toEqual(['elemental', 'ghost', 'water-bug']);
   });
 });
 

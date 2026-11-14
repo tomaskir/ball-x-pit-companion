@@ -96,10 +96,12 @@ export function renderGenerated(data: GeneratedData): { name: string; content: s
 export const TAGS: Record<string, string> = ${JSON.stringify(data.tags, null, 2)};
 `);
 
-  const ballsTs = ts(`// Ball data from ballxpit.wiki.gg (2026-09-13, game v1.301) — effect text
-// verbatim. recipes: OR-of-ANDs of component ids. depth: 0 = basic,
-// 1 = evolved (level-2), 2 = tier-3. Tags are the site's editorial synergy
-// model, not game data.
+  const ballsTs = ts(`// Ball data from docs/research/game-mechanics.md — base-game rows from
+// ballxpit.wiki.gg (2026-09-13, game v1.301), effect text verbatim; Risen
+// Ballbylon rows datamined from v1.308, normalized to display units.
+// recipes: OR-of-ANDs of component ids. depth: 0 = basic, 1 = evolved
+// (level-2), 2 = tier-3. Tags are the site's editorial synergy model, not
+// game data.
 export interface Ball {
   id: string;
   name: string;
@@ -114,7 +116,9 @@ export interface Ball {
 export const BALLS: Ball[] = ${JSON.stringify(data.balls, null, 2)};
 `);
 
-  const passivesTs = ts(`// Passive data from ballxpit.wiki.gg (2026-09-13) — effect text verbatim.
+  const passivesTs = ts(`// Passive data from docs/research/game-mechanics.md — base-game rows from
+// ballxpit.wiki.gg (2026-09-13, game v1.301), effect text verbatim; Risen
+// Ballbylon rows datamined from v1.308, normalized to display units.
 // Same shape as Ball; own id namespace. Ball and passive graphs never
 // cross-reference.
 export interface Passive {
@@ -130,9 +134,11 @@ export interface Passive {
 export const PASSIVES: Passive[] = ${JSON.stringify(data.passives, null, 2)};
 `);
 
-  const charactersTs = ts(`// Character data from ballxpit.wiki.gg (2026-09-13). Verdict rules are the
-// site's editorial synergy model derived from quirk text — not playtested
-// (flagged in docs/research/game-mechanics.md). Unlisted tags are neutral.
+  const charactersTs = ts(`// Character data from docs/research/game-mechanics.md — base-game rows from
+// ballxpit.wiki.gg (2026-09-13, game v1.301); Risen Ballbylon rows datamined
+// from v1.308. Verdict rules are the site's editorial synergy model derived
+// from quirk text — not playtested (flagged in docs/research/game-mechanics.md).
+// Unlisted tags are neutral.
 // The wildcard tag "*passives" matches every passive (The Ballbearer).
 // cannotPair is game data: the Matchmaker's forbidden two-character pairs
 // (docs/research/character-pairings.md) — symmetric; the False Messiah
@@ -158,10 +164,11 @@ export interface Character {
 export const CHARACTERS: Character[] = ${JSON.stringify(data.characters, null, 2)};
 `);
 
-  const level3Ts = ts(`// Level-3 effect text from docs/research/level-3-effects.md (wiki per-level
-// tables, v1.301 pre-DLC). The catalog keeps level-1 text for the browser;
-// the fusion composer uses this overlay (decision #12). Generated — do not
-// edit by hand.
+  const level3Ts = ts(`// Level-3 effect text from docs/research/level-3-effects.md — base-game rows
+// from the wiki per-level tables (v1.301); Risen Ballbylon rows datamined from
+// v1.308, normalized to display units. The catalog keeps level-1 text for the
+// browser; the fusion composer uses this overlay (decision #12). Generated —
+// do not edit by hand.
 export const LEVEL_3_EFFECTS: Record<string, string> = ${JSON.stringify(data.level3, null, 2)};
 `);
 

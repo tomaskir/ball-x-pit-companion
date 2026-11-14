@@ -1,6 +1,13 @@
 {
   "balls": [
     {
+      "name": "Beast",
+      "depth": 0,
+      "recipes": [],
+      "onhit": "Attach",
+      "effect": "Attaches to enemies, dealing 50–100 damage per second until it's dead."
+    },
+    {
       "name": "Bleed",
       "depth": 0,
       "recipes": [],
@@ -62,6 +69,13 @@
       "recipes": [],
       "onhit": "—",
       "effect": "Speed increases by 25% per bounce."
+    },
+    {
+      "name": "Force",
+      "depth": 0,
+      "recipes": [],
+      "onhit": "Pass Through",
+      "effect": "Pierces enemies. Damage increases by 10% each time it hits an enemy (max 200%)."
     },
     {
       "name": "Freeze",
@@ -141,11 +155,25 @@
       "effect": "Each hit has a 4.5% chance of healing 1 health."
     },
     {
+      "name": "Water",
+      "depth": 0,
+      "recipes": [],
+      "onhit": "Spawn, AOE",
+      "effect": "Explodes into 3–5 baby water balls on hitting an enemy, dealing 30–80 damage to nearby enemies. Baby water balls deal reduced damage to an area around them on hit. Has a 3 second cooldown before it can be shot again."
+    },
+    {
       "name": "Wind",
       "depth": 0,
       "recipes": [],
       "onhit": "Pass Through",
       "effect": "Passes through enemies and slows them down by 30% for 5 seconds, but deals 25% less damage."
+    },
+    {
+      "name": "Wood",
+      "depth": 0,
+      "recipes": [],
+      "onhit": "AOE",
+      "effect": "Deals 3–8 damage to nearby enemies. AOE damage increases by 10% each hit (max 200%)."
     },
     {
       "name": "Baby Ball",
@@ -165,6 +193,18 @@
       ],
       "onhit": "Destroy, AOE",
       "effect": "Creates a meteor shower upon hitting an enemy. The meteor shower lasts for 5 seconds and deals 30–50 damage/second to enemies within a 3 tile radius."
+    },
+    {
+      "name": "Ash",
+      "depth": 1,
+      "recipes": [
+        [
+          "wood",
+          "burn"
+        ]
+      ],
+      "onhit": "Pass Through",
+      "effect": "Goes through enemies and leaves behind a trail of ash for the first 5.0 seconds after being launched. Ash lasts for 6.0 seconds and applies 1 stack of burn per second (max 4 stacks). Burn lasts for 6 seconds. Burnt units are dealt 2–5 damage per stack per second."
     },
     {
       "name": "Assassin",
@@ -249,6 +289,10 @@
         [
           "freeze",
           "lightning"
+        ],
+        [
+          "freeze",
+          "water"
         ]
       ],
       "onhit": "—",
@@ -281,6 +325,18 @@
       ],
       "onhit": "—",
       "effect": "Applies 1 stack of burn and poison every second to all enemies within a 2 tile radius (max 4 stacks). Burn deals 1–4 damage per stack per second and poison deals 2–3 damage per stack per second."
+    },
+    {
+      "name": "Bullet",
+      "depth": 1,
+      "recipes": [
+        [
+          "iron",
+          "force"
+        ]
+      ],
+      "onhit": "Pass Through",
+      "effect": "Pierces enemies. Initially deals 1000% damage. Damage erodes by 200% each time hitting an enemy (minimum 100%)."
     },
     {
       "name": "Catapult",
@@ -409,6 +465,30 @@
       "effect": "Add 1 stack of frostburn on hit for 20 seconds (max 4 stacks). Frostburnt units are dealt 8–12 damage per stack per second and receive 25% more damage from other sources."
     },
     {
+      "name": "Fruit",
+      "depth": 1,
+      "recipes": [
+        [
+          "wood",
+          "cell"
+        ]
+      ],
+      "onhit": "Destroy",
+      "effect": "Destroyed after hitting 3 enemies, but heals you by 5 if it returns to you."
+    },
+    {
+      "name": "Gale",
+      "depth": 1,
+      "recipes": [
+        [
+          "force",
+          "wind"
+        ]
+      ],
+      "onhit": "AOE",
+      "effect": "Knocks enemies into the air briefly, allowing balls to pass under them. Enemies are hurt for 100–150 damage upon falling back to the ground."
+    },
+    {
       "name": "Glacier",
       "depth": 1,
       "recipes": [
@@ -435,6 +515,18 @@
       ],
       "onhit": "—",
       "effect": "Saps enemies on hit, with a 40% chance of stealing 1 health and reducing their attack damage by 20%."
+    },
+    {
+      "name": "Hedgehog",
+      "depth": 1,
+      "recipes": [
+        [
+          "beast",
+          "bleed"
+        ]
+      ],
+      "onhit": "Spawn",
+      "effect": "Inflicts 3 stacks of bleed (max 10 stacks) and emits 1–3 spiky baby balls on hitting an enemy."
     },
     {
       "name": "Hemorrhage",
@@ -491,6 +583,42 @@
       ],
       "onhit": "—",
       "effect": "Applies 1 stack of burn every second to all enemies within a 2 tile radius. Burn lasts for 6 seconds, dealing 3–7 damage per stack per second."
+    },
+    {
+      "name": "Ironwood",
+      "depth": 1,
+      "recipes": [
+        [
+          "iron",
+          "wood"
+        ]
+      ],
+      "onhit": "AOE",
+      "effect": "Deals 10–15 damage to nearby enemies. AOE damage increases by 15% each hit (max 300%)."
+    },
+    {
+      "name": "Ivy",
+      "depth": 1,
+      "recipes": [
+        [
+          "wood",
+          "poison"
+        ]
+      ],
+      "onhit": "AOE",
+      "effect": "Applies 1 stack of ivy. Each stack deals 1–4 damage per second. Upon reaching 5, consume all stacks and deal 100–150 damage to all nearby enemies."
+    },
+    {
+      "name": "Kaiju",
+      "depth": 1,
+      "recipes": [
+        [
+          "beast",
+          "earthquake"
+        ]
+      ],
+      "onhit": "AOE",
+      "effect": "Moves slowly and deals triple damage. Deals 50–130 damage to nearby units every second."
     },
     {
       "name": "Landslide",
@@ -617,6 +745,18 @@
       "effect": "Emits lava blobs over time. Enemies who walk into lava blobs are dealt 15–30 damage and gain 1 stack of burn (max 3 stacks). This ball and its lava blobs also deal 6–12 damage to nearby units."
     },
     {
+      "name": "Misfortune",
+      "depth": 1,
+      "recipes": [
+        [
+          "dark",
+          "force"
+        ]
+      ],
+      "onhit": "Destroy, AOE",
+      "effect": "Deals 5.0x damage and curses all enemies on first hit, destroying self afterwards. Cursed enemies are dealt 20–40 damage after being hit 5 times. 4 second cooldown."
+    },
+    {
       "name": "Mosquito King",
       "depth": 1,
       "recipes": [
@@ -651,6 +791,22 @@
       ],
       "onhit": "Destroy, Spawn",
       "effect": "Explodes into 3–6 mosquitos. Mosquitos attack random enemies, dealing 80–120 damage each. If a mosquito kills an enemy, they steal 1 health."
+    },
+    {
+      "name": "Mudslide",
+      "depth": 2,
+      "recipes": [
+        [
+          "landslide",
+          "water"
+        ],
+        [
+          "sandstorm",
+          "water"
+        ]
+      ],
+      "onhit": "Destroy, AOE",
+      "effect": "Creates a mudslide and destroys self upon hitting an enemy. The landslide lasts for 5 seconds and deals 30–40 damage per second to enemies and slowing them within a 2 tile radius."
     },
     {
       "name": "Nosferatu",
@@ -712,6 +868,10 @@
         [
           "earthquake",
           "cell"
+        ],
+        [
+          "time",
+          "wood"
         ]
       ],
       "onhit": "—",
@@ -778,6 +938,18 @@
       "effect": "Has a 10% chance to kill enemies on impact, healing you for 5 health."
     },
     {
+      "name": "Rot",
+      "depth": 1,
+      "recipes": [
+        [
+          "water",
+          "wood"
+        ]
+      ],
+      "onhit": "Destroy",
+      "effect": "Deals 20% of enemy's current health as bonus damage but destroys itself after hitting an enemy. 5 second cooldown."
+    },
+    {
       "name": "Sacrifice",
       "depth": 1,
       "recipes": [
@@ -830,6 +1002,22 @@
       "effect": "Shoots 3–7 iron baby balls after hitting a wall. Iron baby balls move at 200% speed but are destroyed upon hitting anything."
     },
     {
+      "name": "Siren",
+      "depth": 1,
+      "recipes": [
+        [
+          "water",
+          "charm"
+        ],
+        [
+          "water",
+          "ghost"
+        ]
+      ],
+      "onhit": "Pass Through",
+      "effect": "Goes through enemies. Each hit has a 6% chance of charming the enemy for 9 seconds."
+    },
+    {
       "name": "Sniper",
       "depth": 2,
       "recipes": [
@@ -860,10 +1048,38 @@
         [
           "brood-mother",
           "egg-sac"
+        ],
+        [
+          "beast",
+          "egg-sac"
         ]
       ],
       "onhit": "Spawn",
       "effect": "Has a 25% chance of birthing an Egg Sac each time it hits an enemy."
+    },
+    {
+      "name": "Stalagmite",
+      "depth": 1,
+      "recipes": [
+        [
+          "force",
+          "earthquake"
+        ]
+      ],
+      "onhit": "AOE",
+      "effect": "Deals 20–25 damage to nearby units in a 3x3 tile square and knocks them into the air briefly, allowing balls to pass under them."
+    },
+    {
+      "name": "Steam",
+      "depth": 1,
+      "recipes": [
+        [
+          "water",
+          "burn"
+        ]
+      ],
+      "onhit": "Pass Through",
+      "effect": "Goes through enemies and leaves behind a trail of steam for the first 6.0 seconds after being launched. Steam lasts for 8.0 seconds and deals 20–40 damage per second."
     },
     {
       "name": "Steel",
@@ -884,6 +1100,10 @@
         [
           "lightning",
           "wind"
+        ],
+        [
+          "lightning",
+          "water"
         ]
       ],
       "onhit": "—",
@@ -918,12 +1138,28 @@
       "depth": 1,
       "recipes": [
         [
+          "earthquake",
+          "poison"
+        ],
+        [
           "poison",
-          "earthquake"
+          "water"
         ]
       ],
       "onhit": "—",
       "effect": "Leaves behind tar blobs over time. Enemies who walk into tar blobs are dealt 15–30, are slowed by 50% for 7 seconds and gain 1 stack of poison (max 8 stacks). This ball and its tar blobs also deal 6–12 damage to nearby units."
+    },
+    {
+      "name": "Thunderbird",
+      "depth": 1,
+      "recipes": [
+        [
+          "lightning",
+          "beast"
+        ]
+      ],
+      "onhit": "Attach, AOE",
+      "effect": "Attaches to enemies, dealing 80–120 damage per second while emitting lightning that deals 1–40 damage to nearby enemies."
     },
     {
       "name": "Time Bomb",
@@ -948,6 +1184,18 @@
       ],
       "onhit": "Destroy",
       "effect": "Freezes everything on the field for 5.0 seconds but destroys itself after hitting an enemy. Has a 30 second cooldown."
+    },
+    {
+      "name": "Tsunami",
+      "depth": 1,
+      "recipes": [
+        [
+          "water",
+          "earthquake"
+        ]
+      ],
+      "onhit": "Pass Through, Destroy, AOE",
+      "effect": "Goes through enemies and deals 80–150 damage in a large area, but is destroyed upon hitting an edge of the field."
     },
     {
       "name": "Tumor",
@@ -982,8 +1230,12 @@
       "depth": 1,
       "recipes": [
         [
-          "poison",
-          "freeze"
+          "freeze",
+          "poison"
+        ],
+        [
+          "beast",
+          "poison"
         ]
       ],
       "onhit": "—",
@@ -1034,6 +1286,54 @@
       "effect": "After each hit, warps to a random spot on the field and speeds up by 5%."
     },
     {
+      "name": "Water Bug",
+      "depth": 1,
+      "recipes": [
+        [
+          "water",
+          "brood-mother"
+        ]
+      ],
+      "onhit": "Spawn",
+      "effect": "Births a baby ball each time it hits an enemy."
+    },
+    {
+      "name": "Waterfall",
+      "depth": 1,
+      "recipes": [
+        [
+          "water",
+          "force"
+        ]
+      ],
+      "onhit": "Destroy, AOE",
+      "effect": "Creates a waterfall and destroys self upon hitting an enemy. The waterfall lasts for 8.0 seconds and deals 10–15 damage per second to enemies within a 2 tile radius."
+    },
+    {
+      "name": "Werewolf",
+      "depth": 1,
+      "recipes": [
+        [
+          "beast",
+          "vampire"
+        ]
+      ],
+      "onhit": "Attach",
+      "effect": "Attaches to enemies, dealing 100–150 damage per second until it's dead. 30% chance to heal you for 3 when target dies."
+    },
+    {
+      "name": "Wolfpack",
+      "depth": 1,
+      "recipes": [
+        [
+          "beast",
+          "brood-mother"
+        ]
+      ],
+      "onhit": "Attach, Spawn",
+      "effect": "Spawns with 2 other copies. Attaches to enemies, dealing 50–100 damage per second until it's dead."
+    },
+    {
       "name": "Wraith",
       "depth": 1,
       "recipes": [
@@ -1072,6 +1372,12 @@
   ],
   "passives": [
     {
+      "name": "Ancient Ladle",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Your combined ball has a 6% chance of birthing a copy of one of its components with each bounce."
+    },
+    {
       "name": "Archer's Effigy",
       "depth": 0,
       "recipes": [],
@@ -1096,6 +1402,12 @@
       "effect": "Shoot 1–2 baby balls each time you're healed"
     },
     {
+      "name": "Bent Spyglass",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Balls that are shot while aiming backwards deal 60% more damage."
+    },
+    {
       "name": "Bottled Tornado",
       "depth": 0,
       "recipes": [],
@@ -1108,10 +1420,28 @@
       "effect": "Decrease damage taken by 10%"
     },
     {
+      "name": "Charged Bracelet",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Increase range of all ball area-of-effects by an extra 20%."
+    },
+    {
+      "name": "Cracked Cinderblock",
+      "depth": 0,
+      "recipes": [],
+      "effect": "After a special ball passes through a wall, spawn 1–3 baby balls where it emerges."
+    },
+    {
       "name": "Crown of Thorns",
       "depth": 0,
       "recipes": [],
       "effect": "Destroy the 2 nearest enemies when you are hit from close range"
+    },
+    {
+      "name": "Crystal Decanter",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Balls deal 20% more damage when in orbit."
     },
     {
       "name": "Cursed Elixir",
@@ -1136,6 +1466,12 @@
       "depth": 0,
       "recipes": [],
       "effect": "Every 5–10 rows, spawn an enemy with dynamite attached. Destroying them deals 200–500 damage to nearby enemies"
+    },
+    {
+      "name": "Eldritch Gauntlet",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Increase bonus damage after hitting the right wall by 20%."
     },
     {
       "name": "Emerald Hilted Dagger",
@@ -1168,6 +1504,12 @@
       "effect": "Increase movement speed by 10% and move at full speed while shooting"
     },
     {
+      "name": "Fractured Boulder",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Increase area-of-effect damage (such as earthquake, laser, and lightning) and status effect damage (such as burn and poison) by 10%."
+    },
+    {
       "name": "Frozen Spike",
       "depth": 0,
       "recipes": [],
@@ -1198,10 +1540,28 @@
       "effect": "Every 7–11 rows, spawn a golden bull with 400 health; accrues 10 gold/minute; moves up the field blocking/attacking"
     },
     {
+      "name": "Goniometer",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Balls' first bounce deals more damage based on how close to a perfect diagonal it is (up to 100%)."
+    },
+    {
+      "name": "Hand Drill",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Each time a ball loops around, it deals 30% extra damage on the next hit."
+    },
+    {
       "name": "Hand Fan",
       "depth": 0,
       "recipes": [],
       "effect": "Slow down enemies in the same column as you by 50%"
+    },
+    {
+      "name": "Hand Me Downs",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Launch 1–2 baby balls randomly with each shot."
     },
     {
       "name": "Hand Mirror",
@@ -1228,16 +1588,40 @@
       "effect": "Balls deal 0.5% more damage for each baby ball on the field"
     },
     {
+      "name": "Juggler's Club",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Balls deal an extra 5–15 damage to nearby enemies upon first landing."
+    },
+    {
       "name": "Kiss of Death",
       "depth": 0,
       "recipes": [],
       "effect": "Charmed enemies have a 10% chance of dying after recovering"
     },
     {
+      "name": "Kris Knife",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Backstabs deal 10–15 bonus damage until they hit the back of the field."
+    },
+    {
+      "name": "Kunai",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Balls deal 10–15 bonus damage to bosses and minibosses."
+    },
+    {
       "name": "Lover's Quiver",
       "depth": 0,
       "recipes": [],
       "effect": "Projectiles have a 40% chance to heal you for 1 health instead of hurting you"
+    },
+    {
+      "name": "Lucky Coin",
+      "depth": 0,
+      "recipes": [],
+      "effect": "30% bonus gold dropped. Launch 1–2 baby balls when picking up gold or other resources."
     },
     {
       "name": "Magic Staff",
@@ -1288,6 +1672,12 @@
       "effect": "Increase crit chance to 20% when hitting enemies in the same column as you"
     },
     {
+      "name": "Refracting Glass",
+      "depth": 0,
+      "recipes": [],
+      "effect": "After a special ball reaches its target position, spawn 1–2 baby balls from that position."
+    },
+    {
       "name": "Rubber Headband",
       "depth": 0,
       "recipes": [],
@@ -1298,6 +1688,12 @@
       "depth": 0,
       "recipes": [],
       "effect": "Increase crit chance to 15% when hitting enemies in the back"
+    },
+    {
+      "name": "Rusted Blade",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Whenever bleed is applied, add 2 extra stacks."
     },
     {
       "name": "Sapphire Hilted Dagger",
@@ -1324,6 +1720,12 @@
       "effect": "Balls deal 20% bonus damage until they hit a wall"
     },
     {
+      "name": "Silver Revolver",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Balls pierce and deal 50% extra damage to the first enemy they hit."
+    },
+    {
       "name": "Slingshot",
       "depth": 0,
       "recipes": [],
@@ -1334,6 +1736,18 @@
       "depth": 0,
       "recipes": [],
       "effect": "Deal 30–50 to enemies the first time you get into their melee attack range"
+    },
+    {
+      "name": "Spiked Discipline",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Each time a ball hits the bottom of the screen, it deals 50% extra damage on the next hit."
+    },
+    {
+      "name": "Steel Bulwark",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Increase shield size by 20%."
     },
     {
       "name": "Stone Effigy",
@@ -1348,6 +1762,18 @@
       "effect": "Balls deal 40% less damage, but gain 1% damage for each enemy on the field"
     },
     {
+      "name": "Teardrop Necklace",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Balls deal 50% more damage when on a return trajectory."
+    },
+    {
+      "name": "Test Tube",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Balls deal more damage the faster they move (up to 100%)."
+    },
+    {
       "name": "Traitor's Cowl",
       "depth": 0,
       "recipes": [],
@@ -1358,6 +1784,12 @@
       "depth": 0,
       "recipes": [],
       "effect": "Floats around your character and shoots a baby ball at enemies every 2.0 seconds"
+    },
+    {
+      "name": "Unkempt Cradle",
+      "depth": 0,
+      "recipes": [],
+      "effect": "Shots made while characters are facing each other have a 30% chance to shoot an extra baby ball straight forward."
     },
     {
       "name": "Upturned Hatchet",
@@ -1388,6 +1820,12 @@
       "depth": 0,
       "recipes": [],
       "effect": "All baby balls deal 20% more damage"
+    },
+    {
+      "name": "Wrapped Explosive",
+      "depth": 0,
+      "recipes": [],
+      "effect": "The first time balls hit a wall, they emit an explosion, dealing 20–30 to nearby enemies."
     },
     {
       "name": "Wretched Onion",
@@ -1429,6 +1867,39 @@
       "effect": "Projectiles no longer hurt you. Shoot 1–2 baby balls when hit by a projectile."
     },
     {
+      "name": "Baby Armor",
+      "depth": 1,
+      "recipes": [
+        [
+          "hand-me-downs",
+          "iron-onesie"
+        ]
+      ],
+      "effect": "Each shot, launch 1–3 baby balls with the properties of the ball being shot."
+    },
+    {
+      "name": "Blood Kunai",
+      "depth": 1,
+      "recipes": [
+        [
+          "kunai",
+          "everflowing-goblet"
+        ]
+      ],
+      "effect": "Balls deal 0.6 of target's current health as bonus damage."
+    },
+    {
+      "name": "Charged Bow",
+      "depth": 1,
+      "recipes": [
+        [
+          "charged-bracelet",
+          "shortbow"
+        ]
+      ],
+      "effect": "Area-of-effects trigger at the nearest enemy. Increase range of all ball area-of-effects by an extra 30%. Increase fire rate by 20%."
+    },
+    {
       "name": "Cornucopia",
       "depth": 1,
       "recipes": [
@@ -1438,6 +1909,17 @@
         ]
       ],
       "effect": "Each time baby balls are created, spawn 0–1 additional baby balls."
+    },
+    {
+      "name": "Cradle of Filth",
+      "depth": 1,
+      "recipes": [
+        [
+          "unkempt-cradle",
+          "baby-rattle"
+        ]
+      ],
+      "effect": "Shots made while characters are facing each other have a 60% chance to shoot an extra baby ball in a random direction."
     },
     {
       "name": "Deadeye's Cross",
@@ -1462,6 +1944,28 @@
         ]
       ],
       "effect": "Increase critical hit chance to 5%. Critical hits instantly kill non-boss enemies."
+    },
+    {
+      "name": "Eldritch Dagger",
+      "depth": 1,
+      "recipes": [
+        [
+          "eldritch-gauntlet",
+          "diamond-hilted-dagger"
+        ]
+      ],
+      "effect": "First hit after hitting a right wall creates an explosion that deals 30–50 damage to nearby enemies."
+    },
+    {
+      "name": "Eyeless Spyglass",
+      "depth": 1,
+      "recipes": [
+        [
+          "bent-spyglass",
+          "silver-blindfold"
+        ]
+      ],
+      "effect": "Increase crit chance to 300% while you're looking backwards."
     },
     {
       "name": "Full Metal Rapier",
@@ -1497,6 +2001,17 @@
       "effect": "Floats around your character and shoots a random level 1 unevolved special ball at enemies every 8.0 seconds."
     },
     {
+      "name": "Handheld Rupture",
+      "depth": 1,
+      "recipes": [
+        [
+          "cracked-cinderblock",
+          "fractured-boulder"
+        ]
+      ],
+      "effect": "Whenever a special ball warps, emit an earthquake that deals 5–13 damage to nearby enemies. Increase area-of-effect damage and status effect damage by 20%."
+    },
+    {
       "name": "Inglorious Hammer",
       "depth": 1,
       "recipes": [
@@ -1506,6 +2021,50 @@
         ]
       ],
       "effect": "When balls hit a wall or the back of the field, they hit a random enemy with 50% bonus damage."
+    },
+    {
+      "name": "Juggler's Wheel",
+      "depth": 1,
+      "recipes": [
+        [
+          "jugglers-club",
+          "wagon-wheel"
+        ]
+      ],
+      "effect": "Balls deal an extra 15–25 damage to nearby enemies in a large area upon first landing."
+    },
+    {
+      "name": "Levitating Rock",
+      "depth": 1,
+      "recipes": [
+        [
+          "fractured-boulder",
+          "magic-staff"
+        ]
+      ],
+      "effect": "Increase area-of-effect damage (such as earthquake, laser, and lightning) and status effect damage (such as burn and poison) by 20%."
+    },
+    {
+      "name": "Liquid Flame",
+      "depth": 1,
+      "recipes": [
+        [
+          "crystal-decanter",
+          "midnight-oil"
+        ]
+      ],
+      "effect": "Balls that hit flaming enemies light on fire and deal 20–30 bonus fire damage on the next hit. Orbiting balls are always on fire."
+    },
+    {
+      "name": "Mystic Dipper",
+      "depth": 1,
+      "recipes": [
+        [
+          "ancient-ladle",
+          "magic-staff"
+        ]
+      ],
+      "effect": "Your combined ball has a 10% chance of birthing a copy of one of its components with each bounce. Increase area-of-effect damage by 40%."
     },
     {
       "name": "Odiferous Shell",
@@ -1519,6 +2078,17 @@
       "effect": "When you touch enemies, they have a 50% chance of instantly dying."
     },
     {
+      "name": "Peacemaker",
+      "depth": 1,
+      "recipes": [
+        [
+          "silver-revolver",
+          "silver-bullet"
+        ]
+      ],
+      "effect": "Balls pierce and deal 100% extra damage to the first enemy they hit."
+    },
+    {
       "name": "Phantom Regalia",
       "depth": 1,
       "recipes": [
@@ -1528,6 +2098,39 @@
         ]
       ],
       "effect": "Balls go through enemies until they hit the back wall. Balls deal 50% more damage when going through enemies."
+    },
+    {
+      "name": "Reacher's Drill",
+      "depth": 1,
+      "recipes": [
+        [
+          "hand-drill",
+          "reachers-spear"
+        ]
+      ],
+      "effect": "After a ball loops around, increase its crit hit chance to 300%."
+    },
+    {
+      "name": "Refracted Echo",
+      "depth": 1,
+      "recipes": [
+        [
+          "refracting-glass",
+          "dynamite"
+        ]
+      ],
+      "effect": "After a special ball reaches its target position, 30% chance to spawn a clone from that position."
+    },
+    {
+      "name": "Relentless Whip",
+      "depth": 1,
+      "recipes": [
+        [
+          "spiked-discipline",
+          "bottled-tornado"
+        ]
+      ],
+      "effect": "Each time a special ball hits the bottom of the screen, it launches 0–2 baby balls with its properties."
     },
     {
       "name": "Remote Detonator",
@@ -1541,6 +2144,28 @@
       "effect": "Enemies spawn a level 1 bomb ball upon dying."
     },
     {
+      "name": "Sands of Time",
+      "depth": 1,
+      "recipes": [
+        [
+          "test-tube",
+          "hourglass"
+        ]
+      ],
+      "effect": "Balls deal more damage the faster they move (up to 200%)."
+    },
+    {
+      "name": "Shadow Blade",
+      "depth": 1,
+      "recipes": [
+        [
+          "kris-knife",
+          "ruby-hilted-dagger"
+        ]
+      ],
+      "effect": "Increase crit chance to 700% when hitting enemies in the back."
+    },
+    {
       "name": "Soul Reaver",
       "depth": 1,
       "recipes": [
@@ -1552,6 +2177,39 @@
       "effect": "Each kill heals you by 1 and you can heal past your max health at 30% efficiency."
     },
     {
+      "name": "Spiked Shield",
+      "depth": 1,
+      "recipes": [
+        [
+          "steel-bulwark",
+          "spiked-collar"
+        ]
+      ],
+      "effect": "Increase shield size by 50%. Whenever you bounce a special ball, eject a spike at a random enemy that deals 50–90."
+    },
+    {
+      "name": "Teardrop Dagger",
+      "depth": 1,
+      "recipes": [
+        [
+          "teardrop-necklace",
+          "sapphire-hilted-dagger"
+        ]
+      ],
+      "effect": "Balls deal 100% more damage and move 20 faster when on a return trajectory."
+    },
+    {
+      "name": "Tilted Dagger",
+      "depth": 1,
+      "recipes": [
+        [
+          "goniometer",
+          "emerald-hilted-dagger"
+        ]
+      ],
+      "effect": "When balls hit enemies on their right side, increase crit chance to 600% and bounce horizontally."
+    },
+    {
       "name": "Tormenters Mask",
       "depth": 1,
       "recipes": [
@@ -1561,6 +2219,28 @@
         ]
       ],
       "effect": "Enemies have a 10% chance of dying immediately the first time they detect you."
+    },
+    {
+      "name": "Vampire's Kiss",
+      "depth": 1,
+      "recipes": [
+        [
+          "rusted-blade",
+          "vampiric-sword"
+        ]
+      ],
+      "effect": "Whenever bleed is applied, add 3 extra stacks. Dealing bleed damage has a 2% chance of healing 1 health."
+    },
+    {
+      "name": "Volatile Explosive",
+      "depth": 1,
+      "recipes": [
+        [
+          "wrapped-explosive",
+          "pressure-valve"
+        ]
+      ],
+      "effect": "Enemies create a large explosion on death, dealing 40–60 damage to nearby enemies."
     },
     {
       "name": "Windweaver",
@@ -1611,7 +2291,8 @@
         "The Shieldbearer",
         "The Flagellant",
         "The Tunneller",
-        "The False Messiah"
+        "The False Messiah",
+        "The Recollector"
       ]
     },
     {
@@ -1623,7 +2304,8 @@
         "The Spendthrift",
         "The Juggler",
         "The Falconer",
-        "The False Messiah"
+        "The False Messiah",
+        "The Recollector"
       ]
     },
     {
@@ -1631,7 +2313,6 @@
       "baseBall": "Laser (Vertical)",
       "quirk": "Automatically chooses upgrades.",
       "cannotPair": [
-        "The Radical",
         "The False Messiah"
       ]
     },
@@ -1640,7 +2321,8 @@
       "baseBall": "Poison",
       "quirk": "Balls always pierce enemies until they hit a wall.",
       "cannotPair": [
-        "The False Messiah"
+        "The False Messiah",
+        "The Recollector"
       ]
     },
     {
@@ -1650,7 +2332,8 @@
       "cannotPair": [
         "The Makeshift Sisyphus",
         "The Falconer",
-        "The False Messiah"
+        "The False Messiah",
+        "The Sentinel"
       ]
     },
     {
@@ -1662,7 +2345,9 @@
         "The Flagellant",
         "The Physicist",
         "The Tactician",
-        "The False Messiah"
+        "The Tunneller",
+        "The False Messiah",
+        "The Recollector"
       ]
     },
     {
@@ -1672,7 +2357,9 @@
       "cannotPair": [
         "The Cohabitants",
         "The Makeshift Sisyphus",
-        "The False Messiah"
+        "The False Messiah",
+        "The Potager",
+        "The Recollector"
       ]
     },
     {
@@ -1681,7 +2368,9 @@
       "quirk": "Lobs balls at a target position; no bouncing until landing.",
       "cannotPair": [
         "The Cohabitants",
-        "The False Messiah"
+        "The False Messiah",
+        "The Recollector",
+        "The Sentinel"
       ]
     },
     {
@@ -1689,7 +2378,8 @@
       "baseBall": "Ghost",
       "quirk": "No baby balls. Each shot shoots multiple instances of one equipped special ball.",
       "cannotPair": [
-        "The False Messiah"
+        "The False Messiah",
+        "The Potager"
       ]
     },
     {
@@ -1701,7 +2391,9 @@
         "The Shieldbearer",
         "The Physicist",
         "The Tactician",
-        "The False Messiah"
+        "The Tunneller",
+        "The False Messiah",
+        "The Recollector"
       ]
     },
     {
@@ -1722,7 +2414,10 @@
       "cannotPair": [
         "The Shieldbearer",
         "The Flagellant",
-        "The False Messiah"
+        "The False Messiah",
+        "The Recollector",
+        "The Scandalmonger",
+        "The Scrupulous Scoundrel"
       ]
     },
     {
@@ -1733,7 +2428,9 @@
         "The Itchy Finger",
         "The Shieldbearer",
         "The Flagellant",
-        "The False Messiah"
+        "The Carouser",
+        "The False Messiah",
+        "The Scandalmonger"
       ]
     },
     {
@@ -1741,7 +2438,6 @@
       "baseBall": "Wind",
       "quirk": "Plays the game and chooses upgrades automatically (AI plays).",
       "cannotPair": [
-        "The Cogitator",
         "The False Messiah"
       ]
     },
@@ -1752,7 +2448,8 @@
       "cannotPair": [
         "The Cohabitants",
         "The Shade",
-        "The False Messiah"
+        "The False Messiah",
+        "The Sentinel"
       ]
     },
     {
@@ -1760,7 +2457,9 @@
       "baseBall": "Charm",
       "quirk": "Balls can briefly orbit the player on return trajectory.",
       "cannotPair": [
-        "The False Messiah"
+        "The Tactician",
+        "The False Messiah",
+        "The Scandalmonger"
       ]
     },
     {
@@ -1769,7 +2468,10 @@
       "quirk": "Balls wrap around top and bottom of the screen.",
       "cannotPair": [
         "The Repentant",
-        "The False Messiah"
+        "The Shieldbearer",
+        "The Flagellant",
+        "The False Messiah",
+        "The Recollector"
       ]
     },
     {
@@ -1785,6 +2487,7 @@
       "baseBall": null,
       "quirk": "Only 2 ball slots; remaining equipment slots become passive slots.",
       "cannotPair": [
+        "The Ballbearer",
         "The False Messiah"
       ]
     },
@@ -1793,6 +2496,7 @@
       "baseBall": "Stone",
       "quirk": "Twice as many ball slots, but no passive slots.",
       "cannotPair": [
+        "The Hoary Hoarder",
         "The False Messiah"
       ]
     },
@@ -1822,15 +2526,117 @@
         "The Tunneller",
         "The Tiptoer",
         "The Hoary Hoarder",
-        "The Ballbearer"
+        "The Ballbearer",
+        "The Conduit",
+        "The Potager",
+        "The Recollector",
+        "The Right Hand Man",
+        "The Scandalmonger",
+        "The Scrupulous Scoundrel",
+        "The Sentinel",
+        "The Wallbreaker"
+      ]
+    },
+    {
+      "name": "The Conduit",
+      "baseBall": "Lightning",
+      "quirk": "Area-of-effect damage from balls is centered on the player.",
+      "cannotPair": [
+        "The False Messiah"
+      ]
+    },
+    {
+      "name": "The Potager",
+      "baseBall": "Wood",
+      "quirk": "All equipped special balls are fused into one ball when shot. Cannot fuse balls normally, and has no baby balls.",
+      "cannotPair": [
+        "The Spendthrift",
+        "The Empty Nester",
+        "The False Messiah"
+      ]
+    },
+    {
+      "name": "The Recollector",
+      "baseBall": "Time",
+      "quirk": "Balls return to you after reaching your aim cursor, piercing enemies there and back.",
+      "cannotPair": [
+        "The Cohabitants",
+        "The Embedded",
+        "The Flagellant",
+        "The Juggler",
+        "The Physicist",
+        "The Repentant",
+        "The Right Hand Man",
+        "The Scrupulous Scoundrel",
+        "The Sentinel",
+        "The Shieldbearer",
+        "The Spendthrift",
+        "The Tunneller",
+        "The Wallbreaker",
+        "The False Messiah"
+      ]
+    },
+    {
+      "name": "The Right Hand Man",
+      "baseBall": "Stone",
+      "quirk": "After hitting the right wall, balls deal double damage. After hitting the left wall, balls deal half damage and go through enemies.",
+      "cannotPair": [
+        "The Recollector",
+        "The False Messiah"
+      ]
+    },
+    {
+      "name": "The Scandalmonger",
+      "baseBall": "Beast",
+      "quirk": "Balls can briefly orbit around the aim cursor when on a return trajectory.",
+      "cannotPair": [
+        "The Carouser",
+        "The Physicist",
+        "The Sentinel",
+        "The Tactician",
+        "The False Messiah"
+      ]
+    },
+    {
+      "name": "The Scrupulous Scoundrel",
+      "baseBall": "Force",
+      "quirk": "Balls only bounce in perfect diagonals.",
+      "cannotPair": [
+        "The Physicist",
+        "The Recollector",
+        "The False Messiah"
+      ]
+    },
+    {
+      "name": "The Sentinel",
+      "baseBall": "Force",
+      "quirk": "Can aim and shoot in any direction (including behind you).",
+      "cannotPair": [
+        "The Falconer",
+        "The Juggler",
+        "The Recollector",
+        "The Scandalmonger",
+        "The Shade",
+        "The False Messiah"
+      ]
+    },
+    {
+      "name": "The Wallbreaker",
+      "baseBall": "Earthquake",
+      "quirk": "Balls teleport to the opposite side of the screen the first time hitting a wall.",
+      "cannotPair": [
+        "The Recollector",
+        "The False Messiah"
       ]
     }
   ],
   "level3": {
     "armageddon": "Creates a meteor shower upon hitting an enemy. The meteor shower lasts for 5 seconds and deals 50–70 damage/second to enemies within a 3 tile radius.",
+    "ash": "Goes through enemies and leaves behind a trail of ash for the first 5.0 seconds after being launched. Ash lasts for 6.0 seconds and applies 1 stack of burn per second (max 4 stacks). Burn lasts for 8 seconds. Burnt units are dealt 4–7 damage per stack per second.",
     "assassin": "Passes through the front of enemies, but not the back. Backstabs deal 50% bonus damage.",
     "banished-flame": "Add 1 stack of darkflame on hit for 2 seconds (max 8 stacks). Darkflame deals 1–35 damage per stack per second. When the darkflame goes out, it deals 1–100 to the enemy.",
     "banshee": "Curses all enemies while on the field when launched. Cursed enemies are dealt 250–400 after being hit 6 times.",
+    "beast": "Attaches to enemies, dealing 100–200 damage per second until it's dead.",
     "berserk": "Each hit has a 40% chance of causing enemies to go berserk for 9 seconds. Berserk enemies deal 23–32 damage to adjacent enemies every second.",
     "black-hole": "Instantly kills the first non-boss enemy that it hits, but destroys itself afterwards. Has a 5 second cooldown before it can be shot again.",
     "bleed": "Inflicts 4 stacks of bleed. Bleeding enemies receive 1 damage per stack when hit by a ball (max 14 stacks).",
@@ -1838,6 +2644,7 @@
     "bomb": "Explodes when hitting an enemy, dealing 200–400 damage to nearby enemies. Has a 3 second cooldown before it can be shot again.",
     "brimstone": "Applies 1 stack of burn and poison every second to all enemies within a 2 tile radius (max 4 stacks). Burn deals 1–7 damage per stack per second and poison deals 3–5 damage per stack per second.",
     "brood-mother": "Has a 45% chance of birthing a baby ball each time it hits an enemy.",
+    "bullet": "Pierces enemies. Initially deals 1200% damage. Damage erodes by 200% each time hitting an enemy (minimum 100%).",
     "burn": "Add 1 stack of burn on hit for 5 seconds (max 5 stacks). Burnt units are dealt 7–11 damage per stack per second.",
     "catapult": "Launches 4–6 stone baby balls every 1.5 seconds, which are destroyed after hitting anything.",
     "cell": "Splits into a clone on hit 4 times.",
@@ -1853,17 +2660,24 @@
     "flesh": "Speed increases by 40% per bounce.",
     "flesh-mound": "Emits a fleshy baby ball in a random direction every 0.6 seconds.",
     "flicker": "Deals 2–10 damage to every enemy on screen every 1.2 seconds.",
+    "force": "Pierces enemies. Damage increases by 15% each time it hits an enemy (max 300%).",
     "freeze": "Has a 7% chance to freeze enemies for 8.0 seconds. Frozen enemies receive 25% more damage.",
     "freeze-ray": "Emits a freeze ray when hitting an enemy, dealing 25–65 to all enemies in its path, with a 10% chance of freezing them for 13.0 seconds.",
     "frozen-flame": "Add 1 stack of frostburn on hit for 30 seconds (max 5 stacks). Frostburnt units are dealt 10–16 damage per stack per second and receive 25% more damage from other sources.",
+    "fruit": "Destroyed after hitting 4 enemies, but heals you by 6 if it returns to you.",
+    "gale": "Knocks enemies into the air briefly, allowing balls to pass under them. Enemies are hurt for 150–200 damage upon falling back to the ground.",
     "ghost": "Passes through enemies.",
     "glacier": "Releases glacial spikes over time that deal 25–40 to enemies that touch them and freeze them for 3.0 seconds. This ball and its glacial spikes also deal 6–12 damage to nearby units.",
     "heart-swallower": "Saps enemies on hit, with a 70% chance of stealing 1 health and reducing their attack damage by 40%. Lifesteal chance only applies once per enemy.",
-    "hemorrhage": "Inflicts 4 stacks of bleed. When hitting an enemy with 12 stacks of bleed or more, consumes all stacks of bleed to deal 30% of their current health.",
+    "hedgehog": "Inflicts 5 stacks of bleed (max 14 stacks) and emits 2–4 spiky baby balls on hitting an enemy.",
+    "hemorrhage": "Inflicts 4 stacks of bleed. When hitting an enemy with 12 stacks of bleed or more, consumes all stacks of bleed to deal 20% of their current health.",
     "holy-laser": "Deals 30–60 damage to all enemies in the same row and column.",
     "incubus": "Each hit has a 5% chance of charming the enemy for 9 seconds. Charmed enemies curse nearby enemies. Cursed enemies are dealt 150–250 after being hit 5 times.",
     "inferno": "Applies 1 stack of burn every second to all enemies within a 2 tile radius. Burn lasts for 10 seconds, dealing 6–10 damage per stack per second.",
     "iron": "Deals double damage but moves 30% slower.",
+    "ironwood": "Deals 15–20 damage to nearby enemies. AOE damage increases by 15% each hit (max 300%).",
+    "ivy": "Applies 1 stack of ivy. Each stack deals 1–4 damage per second. Upon reaching 4, consume all stacks and deal 130–200 damage to all nearby enemies.",
+    "kaiju": "Moves slowly and deals triple damage. Deals 70–180 damage to nearby units every second.",
     "landslide": "Creates a landslide and destroys self upon hitting an enemy. The landslide lasts for 5 seconds and deals 30–40 damage/second to enemies within a 2 tile radius.",
     "laser-horizontal": "Deals 13–34 damage to all enemies in the same row.",
     "laser-vertical": "Deals 13–34 damage to all enemies in the same column.",
@@ -1877,9 +2691,11 @@
     "lovestruck": "Inflicts lovestruck on hit enemies for 30 seconds. Lovestruck units have a 50% chance of healing you for 8 health when they attack.",
     "maggot": "Infest enemies on hit with maggots. When they die, they explode into 2–3 baby balls.",
     "magma": "Emits lava blobs over time. Enemies who walk into lava blobs are dealt 20–35 damage and gain 1 stack of burn (max 3 stacks). Burn lasts for 3 seconds, dealing 5–10 damage per stack per second. This ball and its lava blobs also deal 6–12 damage to nearby units.",
+    "misfortune": "Deals 6.0x damage and curses all enemies on first hit, destroying self afterwards. Cursed enemies are dealt 20–40 damage after being hit 5 times. 4 second cooldown.",
     "mosquito-king": "Spawns a mosquito each time it hits an enemy. Mosquitos attack a random enemy, dealing 100–150 damage each. If a mosquito kills an enemy, they steal 2 health.",
     "mosquito-kingdom": "Spawns 2–3 mosquitos each time it hits an enemy. Mosquitos attack a random enemy, dealing 100–150 damage each. If a mosquito kills an enemy, they steal 2 health.",
     "mosquito-swarm": "Explodes into 4–8 mosquitos. Mosquitos attack random enemies, dealing 100–150 damage each. If a mosquito kills an enemy, they steal 1 health.",
+    "mudslide": "Creates a mudslide and destroys self upon hitting an enemy. The landslide lasts for 5 seconds and deals 40–50 damage/second to enemies and slowing them within a 2 tile radius.",
     "nosferatu": "Spawns a vampire bat each bounce. Vampire bats fly towards a random enemy, dealing 180–272 damage on hit, turning into a Vampire Lord.",
     "noxious": "Passes through enemies and applies 3 stacks of poison to nearby enemies within a 2 tile radius. Poison lasts for 6 seconds and each stack deals 2–5 damage per second.",
     "nuclear-bomb": "Explodes when hitting an enemy, dealing 400–700 damage to nearby enemies and applying 1 stack of radiation to everyone present indefinitely (max 5 stacks). Each stack of radiation increases damage received by 15%. Has a 3 second cooldown.",
@@ -1890,30 +2706,42 @@
     "poison": "Applies 1 stack of poison on hit (max 8 stacks). Poison lasts for 9 seconds and each stack deals 2–5 damage per second.",
     "radiation-beam": "Emit a radiation beam on hit that deals 36–72 damage and applies 1 stack of radiation (max 5 stacks). Radiation lasts for 15 seconds and cause enemies to receive 10% more damage from all sources per stack.",
     "reaper": "Has a 15% chance to kill enemies on impact, healing you for 7 health.",
+    "rot": "Deals 30% of enemy's current health as bonus damage but destroys itself after hitting an enemy. 5 second cooldown.",
     "sacrifice": "Inflicts 6 stacks of bleed (max 20 stacks) and applies curse to hit enemies. Cursed enemies are dealt 75–125 after being hit 5 times.",
     "sandstorm": "Goes through enemies and is surrounded by a raging storm dealing 15–30 damage per second and blinding nearby enemies for 4 seconds.",
     "satan": "While active, add 1 stack of burn to all active enemies per second (max 5 stacks), dealing 15–30 damage per stack per second and make them go berserk, dealing 21–30 damage to adjacent enemies every second.",
     "shotgun": "Shoots 5–9 iron baby balls after hitting a wall. Iron baby balls move at 200% speed but are destroyed upon hitting anything.",
+    "siren": "Goes through enemies. Each hit has a 7.5% chance of charming the enemy for 12 seconds.",
     "sniper": "Pierces enemies and shoots 5–9 sniper baby balls after hitting a wall. Sniper baby balls pierce enemies but are destroyed upon hitting a wall.",
     "soul-sucker": "Passes through enemies and saps them, with a 50% chance of stealing 1 health and reducing their attack damage by 40%. Lifesteal chance only applies once per enemy.",
     "spider-queen": "Has a 45% chance of birthing an Egg Sac each time it hits an enemy.",
+    "stalagmite": "Deals 25–30 damage to nearby units in a 4x4 tile square and knocks them into the air briefly, allowing balls to pass under them.",
+    "steam": "Goes through enemies and leaves behind a trail of steam for the first 6.0 seconds after being launched. Steam lasts for 8.0 seconds and deals 30–60 damage per second.",
     "steel": "Initially deals double damage but moves 50% slower. Damage increases by 15% each time it hits an enemy (max 400%).",
     "stone": "Initially deals 400% damage. Damage erodes by 30% each time hitting an enemy (minimum 50%).",
     "storm": "Emits lightning to strike nearby enemies every second, dealing 1–80 damage.",
     "succubus": "Each hit has a 5% chance of charming the enemy for 12 seconds. Heals 1 when hitting a charmed enemy.",
     "sun": "Blind all enemies in view and add 1 stack of burn every second (max 5 stacks). Burn lasts for 8 seconds and deals 9–15 damage per stack per second.",
     "swamp": "Leaves behind tar blobs over time. Enemies who walk into tar blobs are dealt 25–40, are slowed by 50% for 7 seconds and gain 1 stack of poison (max 8 stacks). Each stack of poison deals 2–4 damage per second. This ball and its tar blobs also deal 6–12 damage to nearby units.",
+    "thunderbird": "Attaches to enemies, dealing 120–200 damage per second while emitting lightning that deals 1–80 damage to nearby enemies.",
     "time": "Explodes into a time snare upon hitting an enemy, which stays on the field for 3.0 seconds and freezes enemies inside it.",
     "time-bomb": "Throws a time bomb every few seconds, which explodes after a delay, dealing 140–240 damage to nearby enemies.",
     "timestop": "Freezes everything on the field for 6.0 seconds but destroys itself after hitting an enemy. Has a 20 second cooldown before it can be shot again.",
+    "tsunami": "Goes through enemies and deals 90–170 damage in a large area, but is destroyed upon hitting an edge of the field.",
     "tumor": "Applies tumor on hit. Enemies with a tumor die after 30 seconds (except for bosses).",
     "vampire": "Each hit has a 6% chance of healing 2 health.",
-    "vampire-lord": "Each hit inflicts 3 stacks of bleed. Heals 1 health and consumes all stacks when hitting an enemy with at least 9 stacks of bleed.",
+    "vampire-lord": "Each hit inflicts 4 stacks of bleed. Heals 1 health and consumes all stacks when hitting an enemy with at least 9 stacks of bleed.",
     "venom": "Applies 1 stack of venom on hit (max 12 stacks). Each stack deals 4–7 damage per second and slows down enemies.",
     "virus": "Applies 1 stack of disease to units it hits (max 8 stacks). Disease lasts for 6 seconds. Each stack of disease deals 5–9 damage per second and diseased units have a 25% chance of passing a stack to undiseased nearby enemies each second.",
     "voluptuous-egg-sac": "Explodes into 3–4 egg sacs on hitting an enemy. Has a 3 second cooldown before it can be shot again.",
     "warp": "After each hit, warps to a random spot on the field and speeds up by 10%.",
+    "water": "Explodes into 4–6 baby water balls on hitting an enemy, dealing 40–110 damage to nearby enemies. Baby water balls deal reduced damage to an area around them on hit. Has a 3 second cooldown before it can be shot again.",
+    "water-bug": "Births a baby ball each time it hits an enemy.",
+    "waterfall": "Creates a waterfall and destroys self upon hitting an enemy. The waterfall lasts for 8.0 seconds and deals 20–25 damage/second to enemies within a 2 tile radius.",
+    "werewolf": "Attaches to enemies, dealing 150–200 damage per second until it's dead. 40% chance to heal you for 3 when target dies.",
     "wind": "Passes through enemies and slows them down by 45% for 8 seconds, but deals 25% less damage.",
+    "wolfpack": "Spawns with 2 other copies. Attaches to enemies, dealing 100–200 damage per second until it's dead.",
+    "wood": "Deals 6–11 damage to nearby enemies. AOE damage increases by 10% each hit (max 200%).",
     "wraith": "Freezes any enemy it passes through for 1.8 seconds.",
     "x-ray": "Emits an X-shaped laser on hit, which deals 60–95 damage to enemies and applies 1 stack of radiation (max 5 stacks). Radiation causes enemies to receive 10% more damage from all sources per stack.",
     "zombie": "Infects enemies on hit, giving them a 60% chance to turn into a friendly zombie on death."

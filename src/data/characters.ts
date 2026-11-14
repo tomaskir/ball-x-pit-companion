@@ -1,6 +1,8 @@
-// Character data from ballxpit.wiki.gg (2026-09-13). Verdict rules are the
-// site's editorial synergy model derived from quirk text — not playtested
-// (flagged in docs/research/game-mechanics.md). Unlisted tags are neutral.
+// Character data from docs/research/game-mechanics.md — base-game rows from
+// ballxpit.wiki.gg (2026-09-13, game v1.301); Risen Ballbylon rows datamined
+// from v1.308. Verdict rules are the site's editorial synergy model derived
+// from quirk text — not playtested (flagged in docs/research/game-mechanics.md).
+// Unlisted tags are neutral.
 // The wildcard tag "*passives" matches every passive (The Ballbearer).
 // cannotPair is game data: the Matchmaker's forbidden two-character pairs
 // (docs/research/character-pairings.md) — symmetric; the False Messiah
@@ -82,6 +84,7 @@ export const CHARACTERS: Character[] = [
     "cannotPair": [
       "the-false-messiah",
       "the-flagellant",
+      "the-recollector",
       "the-shieldbearer",
       "the-tunneller"
     ]
@@ -120,6 +123,7 @@ export const CHARACTERS: Character[] = [
       "the-false-messiah",
       "the-juggler",
       "the-makeshift-sisyphus",
+      "the-recollector",
       "the-spendthrift"
     ]
   },
@@ -132,8 +136,7 @@ export const CHARACTERS: Character[] = [
     "sprite": "icons/character-sprites/the-cogitator.png",
     "verdicts": [],
     "cannotPair": [
-      "the-false-messiah",
-      "the-radical"
+      "the-false-messiah"
     ]
   },
   {
@@ -161,7 +164,8 @@ export const CHARACTERS: Character[] = [
       }
     ],
     "cannotPair": [
-      "the-false-messiah"
+      "the-false-messiah",
+      "the-recollector"
     ]
   },
   {
@@ -186,7 +190,8 @@ export const CHARACTERS: Character[] = [
     "cannotPair": [
       "the-falconer",
       "the-false-messiah",
-      "the-makeshift-sisyphus"
+      "the-makeshift-sisyphus",
+      "the-sentinel"
     ]
   },
   {
@@ -207,8 +212,10 @@ export const CHARACTERS: Character[] = [
       "the-false-messiah",
       "the-flagellant",
       "the-physicist",
+      "the-recollector",
       "the-repentant",
-      "the-tactician"
+      "the-tactician",
+      "the-tunneller"
     ]
   },
   {
@@ -228,7 +235,9 @@ export const CHARACTERS: Character[] = [
     "cannotPair": [
       "the-cohabitants",
       "the-false-messiah",
-      "the-makeshift-sisyphus"
+      "the-makeshift-sisyphus",
+      "the-potager",
+      "the-recollector"
     ]
   },
   {
@@ -252,7 +261,9 @@ export const CHARACTERS: Character[] = [
     ],
     "cannotPair": [
       "the-cohabitants",
-      "the-false-messiah"
+      "the-false-messiah",
+      "the-recollector",
+      "the-sentinel"
     ]
   },
   {
@@ -285,7 +296,8 @@ export const CHARACTERS: Character[] = [
       }
     ],
     "cannotPair": [
-      "the-false-messiah"
+      "the-false-messiah",
+      "the-potager"
     ]
   },
   {
@@ -305,9 +317,11 @@ export const CHARACTERS: Character[] = [
     "cannotPair": [
       "the-false-messiah",
       "the-physicist",
+      "the-recollector",
       "the-repentant",
       "the-shieldbearer",
-      "the-tactician"
+      "the-tactician",
+      "the-tunneller"
     ]
   },
   {
@@ -362,6 +376,9 @@ export const CHARACTERS: Character[] = [
     "cannotPair": [
       "the-false-messiah",
       "the-flagellant",
+      "the-recollector",
+      "the-scandalmonger",
+      "the-scrupulous-scoundrel",
       "the-shieldbearer"
     ]
   },
@@ -374,9 +391,11 @@ export const CHARACTERS: Character[] = [
     "sprite": "icons/character-sprites/the-tactician.png",
     "verdicts": [],
     "cannotPair": [
+      "the-carouser",
       "the-false-messiah",
       "the-flagellant",
       "the-itchy-finger",
+      "the-scandalmonger",
       "the-shieldbearer"
     ]
   },
@@ -389,7 +408,6 @@ export const CHARACTERS: Character[] = [
     "sprite": "icons/character-sprites/the-radical.png",
     "verdicts": [],
     "cannotPair": [
-      "the-cogitator",
       "the-false-messiah"
     ]
   },
@@ -410,6 +428,7 @@ export const CHARACTERS: Character[] = [
     "cannotPair": [
       "the-cohabitants",
       "the-false-messiah",
+      "the-sentinel",
       "the-shade"
     ]
   },
@@ -422,7 +441,9 @@ export const CHARACTERS: Character[] = [
     "sprite": "icons/character-sprites/the-carouser.png",
     "verdicts": [],
     "cannotPair": [
-      "the-false-messiah"
+      "the-false-messiah",
+      "the-scandalmonger",
+      "the-tactician"
     ]
   },
   {
@@ -441,7 +462,10 @@ export const CHARACTERS: Character[] = [
     ],
     "cannotPair": [
       "the-false-messiah",
-      "the-repentant"
+      "the-flagellant",
+      "the-recollector",
+      "the-repentant",
+      "the-shieldbearer"
     ]
   },
   {
@@ -487,6 +511,7 @@ export const CHARACTERS: Character[] = [
       }
     ],
     "cannotPair": [
+      "the-ballbearer",
       "the-false-messiah"
     ]
   },
@@ -515,7 +540,8 @@ export const CHARACTERS: Character[] = [
       }
     ],
     "cannotPair": [
-      "the-false-messiah"
+      "the-false-messiah",
+      "the-hoary-hoarder"
     ]
   },
   {
@@ -531,6 +557,7 @@ export const CHARACTERS: Character[] = [
       "the-carouser",
       "the-cogitator",
       "the-cohabitants",
+      "the-conduit",
       "the-embedded",
       "the-empty-nester",
       "the-falconer",
@@ -540,15 +567,146 @@ export const CHARACTERS: Character[] = [
       "the-juggler",
       "the-makeshift-sisyphus",
       "the-physicist",
+      "the-potager",
       "the-radical",
+      "the-recollector",
       "the-repentant",
+      "the-right-hand-man",
+      "the-scandalmonger",
+      "the-scrupulous-scoundrel",
+      "the-sentinel",
       "the-shade",
       "the-shieldbearer",
       "the-spendthrift",
       "the-tactician",
       "the-tiptoer",
       "the-tunneller",
+      "the-wallbreaker",
       "the-warrior"
+    ]
+  },
+  {
+    "id": "the-conduit",
+    "name": "The Conduit",
+    "baseBallId": "lightning",
+    "quirk": "Area-of-effect damage from balls is centered on the player.",
+    "icon": "icons/character-portraits/the-conduit.png",
+    "sprite": "icons/character-sprites/the-conduit.png",
+    "verdicts": [],
+    "cannotPair": [
+      "the-false-messiah"
+    ]
+  },
+  {
+    "id": "the-potager",
+    "name": "The Potager",
+    "baseBallId": "wood",
+    "quirk": "All equipped special balls are fused into one ball when shot. Cannot fuse balls normally, and has no baby balls.",
+    "icon": "icons/character-portraits/the-potager.png",
+    "sprite": "icons/character-sprites/the-potager.png",
+    "verdicts": [],
+    "cannotPair": [
+      "the-empty-nester",
+      "the-false-messiah",
+      "the-spendthrift"
+    ]
+  },
+  {
+    "id": "the-recollector",
+    "name": "The Recollector",
+    "baseBallId": "time",
+    "quirk": "Balls return to you after reaching your aim cursor, piercing enemies there and back.",
+    "icon": "icons/character-portraits/the-recollector.png",
+    "sprite": "icons/character-sprites/the-recollector.png",
+    "verdicts": [],
+    "cannotPair": [
+      "the-cohabitants",
+      "the-embedded",
+      "the-false-messiah",
+      "the-flagellant",
+      "the-juggler",
+      "the-physicist",
+      "the-repentant",
+      "the-right-hand-man",
+      "the-scrupulous-scoundrel",
+      "the-sentinel",
+      "the-shieldbearer",
+      "the-spendthrift",
+      "the-tunneller",
+      "the-wallbreaker"
+    ]
+  },
+  {
+    "id": "the-right-hand-man",
+    "name": "The Right Hand Man",
+    "baseBallId": "stone",
+    "quirk": "After hitting the right wall, balls deal double damage. After hitting the left wall, balls deal half damage and go through enemies.",
+    "icon": "icons/character-portraits/the-right-hand-man.png",
+    "sprite": "icons/character-sprites/the-right-hand-man.png",
+    "verdicts": [],
+    "cannotPair": [
+      "the-false-messiah",
+      "the-recollector"
+    ]
+  },
+  {
+    "id": "the-scandalmonger",
+    "name": "The Scandalmonger",
+    "baseBallId": "beast",
+    "quirk": "Balls can briefly orbit around the aim cursor when on a return trajectory.",
+    "icon": "icons/character-portraits/the-scandalmonger.png",
+    "sprite": "icons/character-sprites/the-scandalmonger.png",
+    "verdicts": [],
+    "cannotPair": [
+      "the-carouser",
+      "the-false-messiah",
+      "the-physicist",
+      "the-sentinel",
+      "the-tactician"
+    ]
+  },
+  {
+    "id": "the-scrupulous-scoundrel",
+    "name": "The Scrupulous Scoundrel",
+    "baseBallId": "force",
+    "quirk": "Balls only bounce in perfect diagonals.",
+    "icon": "icons/character-portraits/the-scrupulous-scoundrel.png",
+    "sprite": "icons/character-sprites/the-scrupulous-scoundrel.png",
+    "verdicts": [],
+    "cannotPair": [
+      "the-false-messiah",
+      "the-physicist",
+      "the-recollector"
+    ]
+  },
+  {
+    "id": "the-sentinel",
+    "name": "The Sentinel",
+    "baseBallId": "force",
+    "quirk": "Can aim and shoot in any direction (including behind you).",
+    "icon": "icons/character-portraits/the-sentinel.png",
+    "sprite": "icons/character-sprites/the-sentinel.png",
+    "verdicts": [],
+    "cannotPair": [
+      "the-falconer",
+      "the-false-messiah",
+      "the-juggler",
+      "the-recollector",
+      "the-scandalmonger",
+      "the-shade"
+    ]
+  },
+  {
+    "id": "the-wallbreaker",
+    "name": "The Wallbreaker",
+    "baseBallId": "earthquake",
+    "quirk": "Balls teleport to the opposite side of the screen the first time hitting a wall.",
+    "icon": "icons/character-portraits/the-wallbreaker.png",
+    "sprite": "icons/character-sprites/the-wallbreaker.png",
+    "verdicts": [],
+    "cannotPair": [
+      "the-false-messiah",
+      "the-recollector"
     ]
   }
 ];

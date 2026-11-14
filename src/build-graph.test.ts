@@ -113,6 +113,22 @@ describe('build graph: count semantics', () => {
     expect(node(model, 'laser-vertical')).toMatchObject({ min: 1, max: 2 });
   });
 
+  it('non-factorizable recipes count components per recipe, not per column', () => {
+    // Swamp = Earthquake+Poison OR Poison+Water. Poison sits in a different
+    // slot in each recipe, so the column-wise alternate sum would report it
+    // as 0-2; it is mandatory in both recipes (1-1).
+    const model = deriveBuildGraph({ singles: ['swamp'], pairs: [] }, ballMap);
+    expect(node(model, 'poison')).toMatchObject({ min: 1, max: 1 });
+    expect(node(model, 'earthquake')).toMatchObject({ min: 0, max: 1 });
+    expect(node(model, 'water')).toMatchObject({ min: 0, max: 1 });
+
+    // Overgrowth = Earthquake+Cell OR Time+Wood: each component is 0-1.
+    const overgrowth = deriveBuildGraph({ singles: ['overgrowth'], pairs: [] }, ballMap);
+    for (const id of ['earthquake', 'cell', 'time', 'wood']) {
+      expect(node(overgrowth, id)).toMatchObject({ min: 0, max: 1 });
+    }
+  });
+
   it('a ball both planned and demanded by a planned fusion counts twice', () => {
     const model = deriveBuildGraph(
       { singles: ['freeze-ray'], pairs: [{ a: 'freeze-ray', b: 'time-bomb' }] },

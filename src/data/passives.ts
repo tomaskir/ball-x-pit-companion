@@ -1,4 +1,6 @@
-// Passive data from ballxpit.wiki.gg (2026-09-13) — effect text verbatim.
+// Passive data from docs/research/game-mechanics.md — base-game rows from
+// ballxpit.wiki.gg (2026-09-13, game v1.301), effect text verbatim; Risen
+// Ballbylon rows datamined from v1.308, normalized to display units.
 // Same shape as Ball; own id namespace. Ball and passive graphs never
 // cross-reference.
 export interface Passive {
@@ -12,6 +14,15 @@ export interface Passive {
 }
 
 export const PASSIVES: Passive[] = [
+  {
+    "id": "ancient-ladle",
+    "name": "Ancient Ladle",
+    "depth": 0,
+    "effects": "Your combined ball has a 6% chance of birthing a copy of one of its components with each bounce.",
+    "recipes": [],
+    "icon": "icons/passives/ancient-ladle.png",
+    "tags": []
+  },
   {
     "id": "archers-effigy",
     "name": "Archer's Effigy",
@@ -56,6 +67,15 @@ export const PASSIVES: Passive[] = [
     ]
   },
   {
+    "id": "bent-spyglass",
+    "name": "Bent Spyglass",
+    "depth": 0,
+    "effects": "Balls that are shot while aiming backwards deal 60% more damage.",
+    "recipes": [],
+    "icon": "icons/passives/bent-spyglass.png",
+    "tags": []
+  },
+  {
     "id": "bottled-tornado",
     "name": "Bottled Tornado",
     "depth": 0,
@@ -76,6 +96,24 @@ export const PASSIVES: Passive[] = [
     "tags": []
   },
   {
+    "id": "charged-bracelet",
+    "name": "Charged Bracelet",
+    "depth": 0,
+    "effects": "Increase range of all ball area-of-effects by an extra 20%.",
+    "recipes": [],
+    "icon": "icons/passives/charged-bracelet.png",
+    "tags": []
+  },
+  {
+    "id": "cracked-cinderblock",
+    "name": "Cracked Cinderblock",
+    "depth": 0,
+    "effects": "After a special ball passes through a wall, spawn 1–3 baby balls where it emerges.",
+    "recipes": [],
+    "icon": "icons/passives/cracked-cinderblock.png",
+    "tags": []
+  },
+  {
     "id": "crown-of-thorns",
     "name": "Crown of Thorns",
     "depth": 0,
@@ -85,6 +123,15 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "aoe"
     ]
+  },
+  {
+    "id": "crystal-decanter",
+    "name": "Crystal Decanter",
+    "depth": 0,
+    "effects": "Balls deal 20% more damage when in orbit.",
+    "recipes": [],
+    "icon": "icons/passives/crystal-decanter.png",
+    "tags": []
   },
   {
     "id": "cursed-elixir",
@@ -130,6 +177,15 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "aoe"
     ]
+  },
+  {
+    "id": "eldritch-gauntlet",
+    "name": "Eldritch Gauntlet",
+    "depth": 0,
+    "effects": "Increase bonus damage after hitting the right wall by 20%.",
+    "recipes": [],
+    "icon": "icons/passives/eldritch-gauntlet.png",
+    "tags": []
   },
   {
     "id": "emerald-hilted-dagger",
@@ -183,6 +239,15 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "ball-speed"
     ]
+  },
+  {
+    "id": "fractured-boulder",
+    "name": "Fractured Boulder",
+    "depth": 0,
+    "effects": "Increase area-of-effect damage (such as earthquake, laser, and lightning) and status effect damage (such as burn and poison) by 10%.",
+    "recipes": [],
+    "icon": "icons/passives/fractured-boulder.png",
+    "tags": []
   },
   {
     "id": "frozen-spike",
@@ -239,6 +304,24 @@ export const PASSIVES: Passive[] = [
     ]
   },
   {
+    "id": "goniometer",
+    "name": "Goniometer",
+    "depth": 0,
+    "effects": "Balls' first bounce deals more damage based on how close to a perfect diagonal it is (up to 100%).",
+    "recipes": [],
+    "icon": "icons/passives/goniometer.png",
+    "tags": []
+  },
+  {
+    "id": "hand-drill",
+    "name": "Hand Drill",
+    "depth": 0,
+    "effects": "Each time a ball loops around, it deals 30% extra damage on the next hit.",
+    "recipes": [],
+    "icon": "icons/passives/hand-drill.png",
+    "tags": []
+  },
+  {
     "id": "hand-fan",
     "name": "Hand Fan",
     "depth": 0,
@@ -248,6 +331,15 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "status-effect"
     ]
+  },
+  {
+    "id": "hand-me-downs",
+    "name": "Hand Me Downs",
+    "depth": 0,
+    "effects": "Launch 1–2 baby balls randomly with each shot.",
+    "recipes": [],
+    "icon": "icons/passives/hand-me-downs.png",
+    "tags": []
   },
   {
     "id": "hand-mirror",
@@ -293,6 +385,15 @@ export const PASSIVES: Passive[] = [
     ]
   },
   {
+    "id": "jugglers-club",
+    "name": "Juggler's Club",
+    "depth": 0,
+    "effects": "Balls deal an extra 5–15 damage to nearby enemies upon first landing.",
+    "recipes": [],
+    "icon": "icons/passives/jugglers-club.png",
+    "tags": []
+  },
+  {
     "id": "kiss-of-death",
     "name": "Kiss of Death",
     "depth": 0,
@@ -304,6 +405,24 @@ export const PASSIVES: Passive[] = [
     ]
   },
   {
+    "id": "kris-knife",
+    "name": "Kris Knife",
+    "depth": 0,
+    "effects": "Backstabs deal 10–15 bonus damage until they hit the back of the field.",
+    "recipes": [],
+    "icon": "icons/passives/kris-knife.png",
+    "tags": []
+  },
+  {
+    "id": "kunai",
+    "name": "Kunai",
+    "depth": 0,
+    "effects": "Balls deal 10–15 bonus damage to bosses and minibosses.",
+    "recipes": [],
+    "icon": "icons/passives/kunai.png",
+    "tags": []
+  },
+  {
     "id": "lovers-quiver",
     "name": "Lover's Quiver",
     "depth": 0,
@@ -313,6 +432,15 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "lifesteal"
     ]
+  },
+  {
+    "id": "lucky-coin",
+    "name": "Lucky Coin",
+    "depth": 0,
+    "effects": "30% bonus gold dropped. Launch 1–2 baby balls when picking up gold or other resources.",
+    "recipes": [],
+    "icon": "icons/passives/lucky-coin.png",
+    "tags": []
   },
   {
     "id": "magic-staff",
@@ -399,6 +527,15 @@ export const PASSIVES: Passive[] = [
     ]
   },
   {
+    "id": "refracting-glass",
+    "name": "Refracting Glass",
+    "depth": 0,
+    "effects": "After a special ball reaches its target position, spawn 1–2 baby balls from that position.",
+    "recipes": [],
+    "icon": "icons/passives/refracting-glass.png",
+    "tags": []
+  },
+  {
     "id": "rubber-headband",
     "name": "Rubber Headband",
     "depth": 0,
@@ -420,6 +557,15 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "crit"
     ]
+  },
+  {
+    "id": "rusted-blade",
+    "name": "Rusted Blade",
+    "depth": 0,
+    "effects": "Whenever bleed is applied, add 2 extra stacks.",
+    "recipes": [],
+    "icon": "icons/passives/rusted-blade.png",
+    "tags": []
   },
   {
     "id": "sapphire-hilted-dagger",
@@ -464,6 +610,15 @@ export const PASSIVES: Passive[] = [
     ]
   },
   {
+    "id": "silver-revolver",
+    "name": "Silver Revolver",
+    "depth": 0,
+    "effects": "Balls pierce and deal 50% extra damage to the first enemy they hit.",
+    "recipes": [],
+    "icon": "icons/passives/silver-revolver.png",
+    "tags": []
+  },
+  {
     "id": "slingshot",
     "name": "Slingshot",
     "depth": 0,
@@ -484,6 +639,24 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "single-target"
     ]
+  },
+  {
+    "id": "spiked-discipline",
+    "name": "Spiked Discipline",
+    "depth": 0,
+    "effects": "Each time a ball hits the bottom of the screen, it deals 50% extra damage on the next hit.",
+    "recipes": [],
+    "icon": "icons/passives/spiked-discipline.png",
+    "tags": []
+  },
+  {
+    "id": "steel-bulwark",
+    "name": "Steel Bulwark",
+    "depth": 0,
+    "effects": "Increase shield size by 20%.",
+    "recipes": [],
+    "icon": "icons/passives/steel-bulwark.png",
+    "tags": []
   },
   {
     "id": "stone-effigy",
@@ -508,6 +681,24 @@ export const PASSIVES: Passive[] = [
     ]
   },
   {
+    "id": "teardrop-necklace",
+    "name": "Teardrop Necklace",
+    "depth": 0,
+    "effects": "Balls deal 50% more damage when on a return trajectory.",
+    "recipes": [],
+    "icon": "icons/passives/teardrop-necklace.png",
+    "tags": []
+  },
+  {
+    "id": "test-tube",
+    "name": "Test Tube",
+    "depth": 0,
+    "effects": "Balls deal more damage the faster they move (up to 100%).",
+    "recipes": [],
+    "icon": "icons/passives/test-tube.png",
+    "tags": []
+  },
+  {
     "id": "traitors-cowl",
     "name": "Traitor's Cowl",
     "depth": 0,
@@ -529,6 +720,15 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "spawns-baby-balls"
     ]
+  },
+  {
+    "id": "unkempt-cradle",
+    "name": "Unkempt Cradle",
+    "depth": 0,
+    "effects": "Shots made while characters are facing each other have a 30% chance to shoot an extra baby ball straight forward.",
+    "recipes": [],
+    "icon": "icons/passives/unkempt-cradle.png",
+    "tags": []
   },
   {
     "id": "upturned-hatchet",
@@ -585,6 +785,15 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "baby-ball-scaling"
     ]
+  },
+  {
+    "id": "wrapped-explosive",
+    "name": "Wrapped Explosive",
+    "depth": 0,
+    "effects": "The first time balls hit a wall, they emit an explosion, dealing 20–30 to nearby enemies.",
+    "recipes": [],
+    "icon": "icons/passives/wrapped-explosive.png",
+    "tags": []
   },
   {
     "id": "wretched-onion",
@@ -648,6 +857,48 @@ export const PASSIVES: Passive[] = [
     ]
   },
   {
+    "id": "baby-armor",
+    "name": "Baby Armor",
+    "depth": 1,
+    "effects": "Each shot, launch 1–3 baby balls with the properties of the ball being shot.",
+    "recipes": [
+      [
+        "hand-me-downs",
+        "iron-onesie"
+      ]
+    ],
+    "icon": "icons/passives/baby-armor.png",
+    "tags": []
+  },
+  {
+    "id": "blood-kunai",
+    "name": "Blood Kunai",
+    "depth": 1,
+    "effects": "Balls deal 0.6 of target's current health as bonus damage.",
+    "recipes": [
+      [
+        "kunai",
+        "everflowing-goblet"
+      ]
+    ],
+    "icon": "icons/passives/blood-kunai.png",
+    "tags": []
+  },
+  {
+    "id": "charged-bow",
+    "name": "Charged Bow",
+    "depth": 1,
+    "effects": "Area-of-effects trigger at the nearest enemy. Increase range of all ball area-of-effects by an extra 30%. Increase fire rate by 20%.",
+    "recipes": [
+      [
+        "charged-bracelet",
+        "shortbow"
+      ]
+    ],
+    "icon": "icons/passives/charged-bow.png",
+    "tags": []
+  },
+  {
     "id": "cornucopia",
     "name": "Cornucopia",
     "depth": 1,
@@ -662,6 +913,20 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "spawns-baby-balls"
     ]
+  },
+  {
+    "id": "cradle-of-filth",
+    "name": "Cradle of Filth",
+    "depth": 1,
+    "effects": "Shots made while characters are facing each other have a 60% chance to shoot an extra baby ball in a random direction.",
+    "recipes": [
+      [
+        "unkempt-cradle",
+        "baby-rattle"
+      ]
+    ],
+    "icon": "icons/passives/cradle-of-filth.png",
+    "tags": []
   },
   {
     "id": "deadeyes-cross",
@@ -696,6 +961,34 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "crit"
     ]
+  },
+  {
+    "id": "eldritch-dagger",
+    "name": "Eldritch Dagger",
+    "depth": 1,
+    "effects": "First hit after hitting a right wall creates an explosion that deals 30–50 damage to nearby enemies.",
+    "recipes": [
+      [
+        "eldritch-gauntlet",
+        "diamond-hilted-dagger"
+      ]
+    ],
+    "icon": "icons/passives/eldritch-dagger.png",
+    "tags": []
+  },
+  {
+    "id": "eyeless-spyglass",
+    "name": "Eyeless Spyglass",
+    "depth": 1,
+    "effects": "Increase crit chance to 300% while you're looking backwards.",
+    "recipes": [
+      [
+        "bent-spyglass",
+        "silver-blindfold"
+      ]
+    ],
+    "icon": "icons/passives/eyeless-spyglass.png",
+    "tags": []
   },
   {
     "id": "full-metal-rapier",
@@ -746,6 +1039,20 @@ export const PASSIVES: Passive[] = [
     ]
   },
   {
+    "id": "handheld-rupture",
+    "name": "Handheld Rupture",
+    "depth": 1,
+    "effects": "Whenever a special ball warps, emit an earthquake that deals 5–13 damage to nearby enemies. Increase area-of-effect damage and status effect damage by 20%.",
+    "recipes": [
+      [
+        "cracked-cinderblock",
+        "fractured-boulder"
+      ]
+    ],
+    "icon": "icons/passives/handheld-rupture.png",
+    "tags": []
+  },
+  {
     "id": "inglorious-hammer",
     "name": "Inglorious Hammer",
     "depth": 1,
@@ -762,6 +1069,62 @@ export const PASSIVES: Passive[] = [
     ]
   },
   {
+    "id": "jugglers-wheel",
+    "name": "Juggler's Wheel",
+    "depth": 1,
+    "effects": "Balls deal an extra 15–25 damage to nearby enemies in a large area upon first landing.",
+    "recipes": [
+      [
+        "jugglers-club",
+        "wagon-wheel"
+      ]
+    ],
+    "icon": "icons/passives/jugglers-wheel.png",
+    "tags": []
+  },
+  {
+    "id": "levitating-rock",
+    "name": "Levitating Rock",
+    "depth": 1,
+    "effects": "Increase area-of-effect damage (such as earthquake, laser, and lightning) and status effect damage (such as burn and poison) by 20%.",
+    "recipes": [
+      [
+        "fractured-boulder",
+        "magic-staff"
+      ]
+    ],
+    "icon": "icons/passives/levitating-rock.png",
+    "tags": []
+  },
+  {
+    "id": "liquid-flame",
+    "name": "Liquid Flame",
+    "depth": 1,
+    "effects": "Balls that hit flaming enemies light on fire and deal 20–30 bonus fire damage on the next hit. Orbiting balls are always on fire.",
+    "recipes": [
+      [
+        "crystal-decanter",
+        "midnight-oil"
+      ]
+    ],
+    "icon": "icons/passives/liquid-flame.png",
+    "tags": []
+  },
+  {
+    "id": "mystic-dipper",
+    "name": "Mystic Dipper",
+    "depth": 1,
+    "effects": "Your combined ball has a 10% chance of birthing a copy of one of its components with each bounce. Increase area-of-effect damage by 40%.",
+    "recipes": [
+      [
+        "ancient-ladle",
+        "magic-staff"
+      ]
+    ],
+    "icon": "icons/passives/mystic-dipper.png",
+    "tags": []
+  },
+  {
     "id": "odiferous-shell",
     "name": "Odiferous Shell",
     "depth": 1,
@@ -773,6 +1136,20 @@ export const PASSIVES: Passive[] = [
       ]
     ],
     "icon": "icons/passives/odiferous-shell.png",
+    "tags": []
+  },
+  {
+    "id": "peacemaker",
+    "name": "Peacemaker",
+    "depth": 1,
+    "effects": "Balls pierce and deal 100% extra damage to the first enemy they hit.",
+    "recipes": [
+      [
+        "silver-revolver",
+        "silver-bullet"
+      ]
+    ],
+    "icon": "icons/passives/peacemaker.png",
     "tags": []
   },
   {
@@ -792,6 +1169,48 @@ export const PASSIVES: Passive[] = [
     ]
   },
   {
+    "id": "reachers-drill",
+    "name": "Reacher's Drill",
+    "depth": 1,
+    "effects": "After a ball loops around, increase its crit hit chance to 300%.",
+    "recipes": [
+      [
+        "hand-drill",
+        "reachers-spear"
+      ]
+    ],
+    "icon": "icons/passives/reachers-drill.png",
+    "tags": []
+  },
+  {
+    "id": "refracted-echo",
+    "name": "Refracted Echo",
+    "depth": 1,
+    "effects": "After a special ball reaches its target position, 30% chance to spawn a clone from that position.",
+    "recipes": [
+      [
+        "refracting-glass",
+        "dynamite"
+      ]
+    ],
+    "icon": "icons/passives/refracted-echo.png",
+    "tags": []
+  },
+  {
+    "id": "relentless-whip",
+    "name": "Relentless Whip",
+    "depth": 1,
+    "effects": "Each time a special ball hits the bottom of the screen, it launches 0–2 baby balls with its properties.",
+    "recipes": [
+      [
+        "spiked-discipline",
+        "bottled-tornado"
+      ]
+    ],
+    "icon": "icons/passives/relentless-whip.png",
+    "tags": []
+  },
+  {
     "id": "remote-detonator",
     "name": "Remote Detonator",
     "depth": 1,
@@ -807,6 +1226,34 @@ export const PASSIVES: Passive[] = [
       "spawns-baby-balls",
       "aoe"
     ]
+  },
+  {
+    "id": "sands-of-time",
+    "name": "Sands of Time",
+    "depth": 1,
+    "effects": "Balls deal more damage the faster they move (up to 200%).",
+    "recipes": [
+      [
+        "test-tube",
+        "hourglass"
+      ]
+    ],
+    "icon": "icons/passives/sands-of-time.png",
+    "tags": []
+  },
+  {
+    "id": "shadow-blade",
+    "name": "Shadow Blade",
+    "depth": 1,
+    "effects": "Increase crit chance to 700% when hitting enemies in the back.",
+    "recipes": [
+      [
+        "kris-knife",
+        "ruby-hilted-dagger"
+      ]
+    ],
+    "icon": "icons/passives/shadow-blade.png",
+    "tags": []
   },
   {
     "id": "soul-reaver",
@@ -825,6 +1272,48 @@ export const PASSIVES: Passive[] = [
     ]
   },
   {
+    "id": "spiked-shield",
+    "name": "Spiked Shield",
+    "depth": 1,
+    "effects": "Increase shield size by 50%. Whenever you bounce a special ball, eject a spike at a random enemy that deals 50–90.",
+    "recipes": [
+      [
+        "steel-bulwark",
+        "spiked-collar"
+      ]
+    ],
+    "icon": "icons/passives/spiked-shield.png",
+    "tags": []
+  },
+  {
+    "id": "teardrop-dagger",
+    "name": "Teardrop Dagger",
+    "depth": 1,
+    "effects": "Balls deal 100% more damage and move 20 faster when on a return trajectory.",
+    "recipes": [
+      [
+        "teardrop-necklace",
+        "sapphire-hilted-dagger"
+      ]
+    ],
+    "icon": "icons/passives/teardrop-dagger.png",
+    "tags": []
+  },
+  {
+    "id": "tilted-dagger",
+    "name": "Tilted Dagger",
+    "depth": 1,
+    "effects": "When balls hit enemies on their right side, increase crit chance to 600% and bounce horizontally.",
+    "recipes": [
+      [
+        "goniometer",
+        "emerald-hilted-dagger"
+      ]
+    ],
+    "icon": "icons/passives/tilted-dagger.png",
+    "tags": []
+  },
+  {
     "id": "tormenters-mask",
     "name": "Tormenters Mask",
     "depth": 1,
@@ -836,6 +1325,34 @@ export const PASSIVES: Passive[] = [
       ]
     ],
     "icon": "icons/passives/tormenters-mask.png",
+    "tags": []
+  },
+  {
+    "id": "vampires-kiss",
+    "name": "Vampire's Kiss",
+    "depth": 1,
+    "effects": "Whenever bleed is applied, add 3 extra stacks. Dealing bleed damage has a 2% chance of healing 1 health.",
+    "recipes": [
+      [
+        "rusted-blade",
+        "vampiric-sword"
+      ]
+    ],
+    "icon": "icons/passives/vampires-kiss.png",
+    "tags": []
+  },
+  {
+    "id": "volatile-explosive",
+    "name": "Volatile Explosive",
+    "depth": 1,
+    "effects": "Enemies create a large explosion on death, dealing 40–60 damage to nearby enemies.",
+    "recipes": [
+      [
+        "wrapped-explosive",
+        "pressure-valve"
+      ]
+    ],
+    "icon": "icons/passives/volatile-explosive.png",
     "tags": []
   },
   {

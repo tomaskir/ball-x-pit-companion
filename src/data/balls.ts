@@ -1,7 +1,9 @@
-// Ball data from ballxpit.wiki.gg (2026-09-13, game v1.301) — effect text
-// verbatim. recipes: OR-of-ANDs of component ids. depth: 0 = basic,
-// 1 = evolved (level-2), 2 = tier-3. Tags are the site's editorial synergy
-// model, not game data.
+// Ball data from docs/research/game-mechanics.md — base-game rows from
+// ballxpit.wiki.gg (2026-09-13, game v1.301), effect text verbatim; Risen
+// Ballbylon rows datamined from v1.308, normalized to display units.
+// recipes: OR-of-ANDs of component ids. depth: 0 = basic, 1 = evolved
+// (level-2), 2 = tier-3. Tags are the site's editorial synergy model, not
+// game data.
 export interface Ball {
   id: string;
   name: string;
@@ -14,6 +16,16 @@ export interface Ball {
 }
 
 export const BALLS: Ball[] = [
+  {
+    "id": "beast",
+    "name": "Beast",
+    "depth": 0,
+    "effects": "Attaches to enemies, dealing 50–100 damage per second until it's dead.",
+    "recipes": [],
+    "onHit": "Attach",
+    "icon": "icons/balls/beast.png",
+    "tags": []
+  },
   {
     "id": "bleed",
     "name": "Bleed",
@@ -124,6 +136,16 @@ export const BALLS: Ball[] = [
     "tags": [
       "ball-speed"
     ]
+  },
+  {
+    "id": "force",
+    "name": "Force",
+    "depth": 0,
+    "effects": "Pierces enemies. Damage increases by 10% each time it hits an enemy (max 200%).",
+    "recipes": [],
+    "onHit": "Pass Through",
+    "icon": "icons/balls/force.png",
+    "tags": []
   },
   {
     "id": "freeze",
@@ -259,6 +281,16 @@ export const BALLS: Ball[] = [
     ]
   },
   {
+    "id": "water",
+    "name": "Water",
+    "depth": 0,
+    "effects": "Explodes into 3–5 baby water balls on hitting an enemy, dealing 30–80 damage to nearby enemies. Baby water balls deal reduced damage to an area around them on hit. Has a 3 second cooldown before it can be shot again.",
+    "recipes": [],
+    "onHit": "Spawn, AOE",
+    "icon": "icons/balls/water.png",
+    "tags": []
+  },
+  {
     "id": "wind",
     "name": "Wind",
     "depth": 0,
@@ -270,6 +302,16 @@ export const BALLS: Ball[] = [
       "pass-through",
       "status-effect"
     ]
+  },
+  {
+    "id": "wood",
+    "name": "Wood",
+    "depth": 0,
+    "effects": "Deals 3–8 damage to nearby enemies. AOE damage increases by 10% each hit (max 200%).",
+    "recipes": [],
+    "onHit": "AOE",
+    "icon": "icons/balls/wood.png",
+    "tags": []
   },
   {
     "id": "baby-ball",
@@ -298,6 +340,21 @@ export const BALLS: Ball[] = [
       "aoe",
       "destroy-on-hit"
     ]
+  },
+  {
+    "id": "ash",
+    "name": "Ash",
+    "depth": 1,
+    "effects": "Goes through enemies and leaves behind a trail of ash for the first 5.0 seconds after being launched. Ash lasts for 6.0 seconds and applies 1 stack of burn per second (max 4 stacks). Burn lasts for 6 seconds. Burnt units are dealt 2–5 damage per stack per second.",
+    "recipes": [
+      [
+        "wood",
+        "burn"
+      ]
+    ],
+    "onHit": "Pass Through",
+    "icon": "icons/balls/ash.png",
+    "tags": []
   },
   {
     "id": "assassin",
@@ -411,6 +468,10 @@ export const BALLS: Ball[] = [
       [
         "freeze",
         "lightning"
+      ],
+      [
+        "freeze",
+        "water"
       ]
     ],
     "onHit": "—",
@@ -459,6 +520,21 @@ export const BALLS: Ball[] = [
       "aoe",
       "status-effect"
     ]
+  },
+  {
+    "id": "bullet",
+    "name": "Bullet",
+    "depth": 1,
+    "effects": "Pierces enemies. Initially deals 1000% damage. Damage erodes by 200% each time hitting an enemy (minimum 100%).",
+    "recipes": [
+      [
+        "iron",
+        "force"
+      ]
+    ],
+    "onHit": "Pass Through",
+    "icon": "icons/balls/bullet.png",
+    "tags": []
   },
   {
     "id": "catapult",
@@ -645,6 +721,36 @@ export const BALLS: Ball[] = [
     ]
   },
   {
+    "id": "fruit",
+    "name": "Fruit",
+    "depth": 1,
+    "effects": "Destroyed after hitting 3 enemies, but heals you by 5 if it returns to you.",
+    "recipes": [
+      [
+        "wood",
+        "cell"
+      ]
+    ],
+    "onHit": "Destroy",
+    "icon": "icons/balls/fruit.png",
+    "tags": []
+  },
+  {
+    "id": "gale",
+    "name": "Gale",
+    "depth": 1,
+    "effects": "Knocks enemies into the air briefly, allowing balls to pass under them. Enemies are hurt for 100–150 damage upon falling back to the ground.",
+    "recipes": [
+      [
+        "force",
+        "wind"
+      ]
+    ],
+    "onHit": "AOE",
+    "icon": "icons/balls/gale.png",
+    "tags": []
+  },
+  {
     "id": "glacier",
     "name": "Glacier",
     "depth": 1,
@@ -683,6 +789,21 @@ export const BALLS: Ball[] = [
       "lifesteal",
       "status-effect"
     ]
+  },
+  {
+    "id": "hedgehog",
+    "name": "Hedgehog",
+    "depth": 1,
+    "effects": "Inflicts 3 stacks of bleed (max 10 stacks) and emits 1–3 spiky baby balls on hitting an enemy.",
+    "recipes": [
+      [
+        "beast",
+        "bleed"
+      ]
+    ],
+    "onHit": "Spawn",
+    "icon": "icons/balls/hedgehog.png",
+    "tags": []
   },
   {
     "id": "hemorrhage",
@@ -760,6 +881,51 @@ export const BALLS: Ball[] = [
       "aoe",
       "status-effect"
     ]
+  },
+  {
+    "id": "ironwood",
+    "name": "Ironwood",
+    "depth": 1,
+    "effects": "Deals 10–15 damage to nearby enemies. AOE damage increases by 15% each hit (max 300%).",
+    "recipes": [
+      [
+        "iron",
+        "wood"
+      ]
+    ],
+    "onHit": "AOE",
+    "icon": "icons/balls/ironwood.png",
+    "tags": []
+  },
+  {
+    "id": "ivy",
+    "name": "Ivy",
+    "depth": 1,
+    "effects": "Applies 1 stack of ivy. Each stack deals 1–4 damage per second. Upon reaching 5, consume all stacks and deal 100–150 damage to all nearby enemies.",
+    "recipes": [
+      [
+        "wood",
+        "poison"
+      ]
+    ],
+    "onHit": "AOE",
+    "icon": "icons/balls/ivy.png",
+    "tags": []
+  },
+  {
+    "id": "kaiju",
+    "name": "Kaiju",
+    "depth": 1,
+    "effects": "Moves slowly and deals triple damage. Deals 50–130 damage to nearby units every second.",
+    "recipes": [
+      [
+        "beast",
+        "earthquake"
+      ]
+    ],
+    "onHit": "AOE",
+    "icon": "icons/balls/kaiju.png",
+    "tags": []
   },
   {
     "id": "landslide",
@@ -938,6 +1104,21 @@ export const BALLS: Ball[] = [
     ]
   },
   {
+    "id": "misfortune",
+    "name": "Misfortune",
+    "depth": 1,
+    "effects": "Deals 5.0x damage and curses all enemies on first hit, destroying self afterwards. Cursed enemies are dealt 20–40 damage after being hit 5 times. 4 second cooldown.",
+    "recipes": [
+      [
+        "dark",
+        "force"
+      ]
+    ],
+    "onHit": "Destroy, AOE",
+    "icon": "icons/balls/misfortune.png",
+    "tags": []
+  },
+  {
     "id": "mosquito-king",
     "name": "Mosquito King",
     "depth": 1,
@@ -991,6 +1172,25 @@ export const BALLS: Ball[] = [
       "spawns-allies",
       "lifesteal"
     ]
+  },
+  {
+    "id": "mudslide",
+    "name": "Mudslide",
+    "depth": 2,
+    "effects": "Creates a mudslide and destroys self upon hitting an enemy. The landslide lasts for 5 seconds and deals 30–40 damage per second to enemies and slowing them within a 2 tile radius.",
+    "recipes": [
+      [
+        "landslide",
+        "water"
+      ],
+      [
+        "sandstorm",
+        "water"
+      ]
+    ],
+    "onHit": "Destroy, AOE",
+    "icon": "icons/balls/mudslide.png",
+    "tags": []
   },
   {
     "id": "nosferatu",
@@ -1078,6 +1278,10 @@ export const BALLS: Ball[] = [
       [
         "earthquake",
         "cell"
+      ],
+      [
+        "time",
+        "wood"
       ]
     ],
     "onHit": "—",
@@ -1171,6 +1375,21 @@ export const BALLS: Ball[] = [
     ]
   },
   {
+    "id": "rot",
+    "name": "Rot",
+    "depth": 1,
+    "effects": "Deals 20% of enemy's current health as bonus damage but destroys itself after hitting an enemy. 5 second cooldown.",
+    "recipes": [
+      [
+        "water",
+        "wood"
+      ]
+    ],
+    "onHit": "Destroy",
+    "icon": "icons/balls/rot.png",
+    "tags": []
+  },
+  {
     "id": "sacrifice",
     "name": "Sacrifice",
     "depth": 1,
@@ -1246,6 +1465,25 @@ export const BALLS: Ball[] = [
     ]
   },
   {
+    "id": "siren",
+    "name": "Siren",
+    "depth": 1,
+    "effects": "Goes through enemies. Each hit has a 6% chance of charming the enemy for 9 seconds.",
+    "recipes": [
+      [
+        "water",
+        "charm"
+      ],
+      [
+        "water",
+        "ghost"
+      ]
+    ],
+    "onHit": "Pass Through",
+    "icon": "icons/balls/siren.png",
+    "tags": []
+  },
+  {
     "id": "sniper",
     "name": "Sniper",
     "depth": 2,
@@ -1291,6 +1529,10 @@ export const BALLS: Ball[] = [
       [
         "brood-mother",
         "egg-sac"
+      ],
+      [
+        "beast",
+        "egg-sac"
       ]
     ],
     "onHit": "Spawn",
@@ -1298,6 +1540,36 @@ export const BALLS: Ball[] = [
     "tags": [
       "spawns-baby-balls"
     ]
+  },
+  {
+    "id": "stalagmite",
+    "name": "Stalagmite",
+    "depth": 1,
+    "effects": "Deals 20–25 damage to nearby units in a 3x3 tile square and knocks them into the air briefly, allowing balls to pass under them.",
+    "recipes": [
+      [
+        "force",
+        "earthquake"
+      ]
+    ],
+    "onHit": "AOE",
+    "icon": "icons/balls/stalagmite.png",
+    "tags": []
+  },
+  {
+    "id": "steam",
+    "name": "Steam",
+    "depth": 1,
+    "effects": "Goes through enemies and leaves behind a trail of steam for the first 6.0 seconds after being launched. Steam lasts for 8.0 seconds and deals 20–40 damage per second.",
+    "recipes": [
+      [
+        "water",
+        "burn"
+      ]
+    ],
+    "onHit": "Pass Through",
+    "icon": "icons/balls/steam.png",
+    "tags": []
   },
   {
     "id": "steel",
@@ -1326,6 +1598,10 @@ export const BALLS: Ball[] = [
       [
         "lightning",
         "wind"
+      ],
+      [
+        "lightning",
+        "water"
       ]
     ],
     "onHit": "—",
@@ -1378,8 +1654,12 @@ export const BALLS: Ball[] = [
     "effects": "Leaves behind tar blobs over time. Enemies who walk into tar blobs are dealt 15–30, are slowed by 50% for 7 seconds and gain 1 stack of poison (max 8 stacks). This ball and its tar blobs also deal 6–12 damage to nearby units.",
     "recipes": [
       [
+        "earthquake",
+        "poison"
+      ],
+      [
         "poison",
-        "earthquake"
+        "water"
       ]
     ],
     "onHit": "—",
@@ -1388,6 +1668,21 @@ export const BALLS: Ball[] = [
       "aoe",
       "status-effect"
     ]
+  },
+  {
+    "id": "thunderbird",
+    "name": "Thunderbird",
+    "depth": 1,
+    "effects": "Attaches to enemies, dealing 80–120 damage per second while emitting lightning that deals 1–40 damage to nearby enemies.",
+    "recipes": [
+      [
+        "lightning",
+        "beast"
+      ]
+    ],
+    "onHit": "Attach, AOE",
+    "icon": "icons/balls/thunderbird.png",
+    "tags": []
   },
   {
     "id": "time-bomb",
@@ -1425,6 +1720,21 @@ export const BALLS: Ball[] = [
       "status-effect",
       "destroy-on-hit"
     ]
+  },
+  {
+    "id": "tsunami",
+    "name": "Tsunami",
+    "depth": 1,
+    "effects": "Goes through enemies and deals 80–150 damage in a large area, but is destroyed upon hitting an edge of the field.",
+    "recipes": [
+      [
+        "water",
+        "earthquake"
+      ]
+    ],
+    "onHit": "Pass Through, Destroy, AOE",
+    "icon": "icons/balls/tsunami.png",
+    "tags": []
   },
   {
     "id": "tumor",
@@ -1472,8 +1782,12 @@ export const BALLS: Ball[] = [
     "effects": "Applies 1 stack of venom on hit (max 8 stacks). Each stack deals 3–6 damage per second and slows down enemies.",
     "recipes": [
       [
-        "poison",
-        "freeze"
+        "freeze",
+        "poison"
+      ],
+      [
+        "beast",
+        "poison"
       ]
     ],
     "onHit": "—",
@@ -1541,6 +1855,66 @@ export const BALLS: Ball[] = [
     "tags": [
       "ball-speed"
     ]
+  },
+  {
+    "id": "water-bug",
+    "name": "Water Bug",
+    "depth": 1,
+    "effects": "Births a baby ball each time it hits an enemy.",
+    "recipes": [
+      [
+        "water",
+        "brood-mother"
+      ]
+    ],
+    "onHit": "Spawn",
+    "icon": "icons/balls/water-bug.png",
+    "tags": []
+  },
+  {
+    "id": "waterfall",
+    "name": "Waterfall",
+    "depth": 1,
+    "effects": "Creates a waterfall and destroys self upon hitting an enemy. The waterfall lasts for 8.0 seconds and deals 10–15 damage per second to enemies within a 2 tile radius.",
+    "recipes": [
+      [
+        "water",
+        "force"
+      ]
+    ],
+    "onHit": "Destroy, AOE",
+    "icon": "icons/balls/waterfall.png",
+    "tags": []
+  },
+  {
+    "id": "werewolf",
+    "name": "Werewolf",
+    "depth": 1,
+    "effects": "Attaches to enemies, dealing 100–150 damage per second until it's dead. 30% chance to heal you for 3 when target dies.",
+    "recipes": [
+      [
+        "beast",
+        "vampire"
+      ]
+    ],
+    "onHit": "Attach",
+    "icon": "icons/balls/werewolf.png",
+    "tags": []
+  },
+  {
+    "id": "wolfpack",
+    "name": "Wolfpack",
+    "depth": 1,
+    "effects": "Spawns with 2 other copies. Attaches to enemies, dealing 50–100 damage per second until it's dead.",
+    "recipes": [
+      [
+        "beast",
+        "brood-mother"
+      ]
+    ],
+    "onHit": "Attach, Spawn",
+    "icon": "icons/balls/wolfpack.png",
+    "tags": []
   },
   {
     "id": "wraith",

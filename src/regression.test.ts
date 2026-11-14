@@ -9,7 +9,7 @@ import { CHARACTERS } from './data/characters';
 import { ballMap, passiveMap } from './catalog';
 import { deriveFusionPanel } from './fusion-panel';
 import { EMPTY_FUSION_PANEL_PLAN } from './test-support/pins';
-import { highlightSet, factorizesIntoSlots } from './graph';
+import { highlightSet, factorizesIntoSlots, recipeHtml } from './graph';
 import { deriveBuildGraph, FUSION_ID_PREFIX } from './build-graph';
 import { verdictFor } from './synergy';
 import { encodeShared } from './plan-codec';
@@ -110,12 +110,25 @@ describe('regression: tier-2 ball selection includes tier-3 children', () => {
 });
 
 describe('regression: multi-recipe data supports the compact x+(y/z) notation', () => {
-  // The notation is only faithful if every multi-recipe entity factorizes
-  // into per-slot alternates — verified over the whole dataset when built.
-  it('every multi-recipe ball/passive factorizes into slots', () => {
-    for (const item of [...BALLS, ...PASSIVES]) {
-      if (item.recipes.length > 1) expect(factorizesIntoSlots(item.recipes), item.id).toBe(true);
-    }
+  // The compact notation is only faithful for entities that factorize into
+  // per-slot alternates. Risen Ballbylon added two recipes that genuinely do
+  // not (Overgrowth and Swamp); those must render as explicit alternatives,
+  // never as an invented per-slot cross product.
+  it('only Overgrowth and Swamp have non-factorizable recipes', () => {
+    const nonFactorizable = [...BALLS, ...PASSIVES]
+      .filter((item) => item.recipes.length > 1 && !factorizesIntoSlots(item.recipes))
+      .map((item) => item.id)
+      .sort();
+    expect(nonFactorizable).toEqual(['overgrowth', 'swamp']);
+  });
+
+  it('non-factorizable recipes render as explicit or-separated alternatives', () => {
+    const overgrowth = ballMap.get('overgrowth')!;
+    expect(recipeHtml(overgrowth.recipes, (id) => id)).toBe(
+      'earthquake<span class="plus">+</span>cell' +
+      '<span class="or">or</span>' +
+      'time<span class="plus">+</span>wood',
+    );
   });
 
   it('Vampire Lord: Vampire + (Bleed or Dark) — 2 recipes, shared first slot', () => {
@@ -189,8 +202,8 @@ describe('regression: apostrophe slug normalization (Archer\'s Effigy et al.)', 
 describe('regression: every character has a verdict entry (The Carouser omission)', () => {
   // CHAR_VERDICTS initially missed The Carouser; the emitter now fails hard
   // on missing characters — pinned here at the data level.
-  it('all 23 characters present in data with verdict arrays', () => {
-    expect(CHARACTERS).toHaveLength(23);
+  it('all 31 characters present in data with verdict arrays', () => {
+    expect(CHARACTERS).toHaveLength(31);
     for (const ch of CHARACTERS) expect(Array.isArray(ch.verdicts)).toBe(true);
   });
 });
