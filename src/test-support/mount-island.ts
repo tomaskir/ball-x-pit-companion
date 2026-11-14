@@ -13,9 +13,10 @@
 import { vi, type Mock } from 'vitest';
 import { createRenderer, type Renderer } from '../renderer';
 import { createViewState, type Action, type ToggleAction, type ViewModel } from '../view-state';
-import { PLAN_KEY } from '../plan-session';
+import { EDITIONS_KEY, PLAN_KEY } from '../plan-session';
 import type { IslandPorts } from '../companion';
 import type { SharedSnapshot } from '../plan-codec';
+import type { Edition } from '../data/editions';
 import { shellDoc } from './styles';
 
 /** The real page shell: index.astro's body markup, parsed by the shared
@@ -150,7 +151,11 @@ export function stubPorts(init: {
     setHashValue: (h: string) => { hash = h; },
     savedPlan: (): SharedSnapshot | null => {
       const raw = store.get(PLAN_KEY);
-      return raw ? (JSON.parse(raw) as SharedSnapshot) : null;
+      if (!raw) return null;
+      const plan = JSON.parse(raw) as Pick<SharedSnapshot, 'plan' | 'chars'>;
+      const editionsRaw = store.get(EDITIONS_KEY);
+      const editions = editionsRaw ? (JSON.parse(editionsRaw) as Edition[]) : (['base-game'] as Edition[]);
+      return { plan: plan.plan, chars: plan.chars, editions };
     },
     /** How many times the plan key was written — the skip-unchanged pin. */
     planWrites: () => setItem.mock.calls.filter(([key]) => key === PLAN_KEY).length,

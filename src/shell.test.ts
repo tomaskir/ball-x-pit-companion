@@ -12,7 +12,7 @@ import type { Action } from './view-state';
 import { decodeShared, type SharedSnapshot } from './plan-codec';
 import { shellDoc } from './test-support/styles';
 
-const emptyShared: SharedSnapshot = { plan: { upgradesOn: true, balls: [], passives: [], fused: [] }, chars: [] };
+const emptyShared: SharedSnapshot = { plan: { upgradesOn: true, balls: [], passives: [], fused: [] }, chars: [], editions: ['base-game'] };
 
 function stubPorts(init: {
   stored?: Record<string, string>;
@@ -179,7 +179,7 @@ describe('share button', () => {
 
   it('encodes the snapshot supplied at click time', () => {
     const t = stubPorts({ copy: () => undefined });
-    const shared: SharedSnapshot = { plan: { upgradesOn: false, balls: ['flash'], passives: [], fused: [] }, chars: ['the-warrior'] };
+    const shared: SharedSnapshot = { plan: { upgradesOn: false, balls: ['flash'], passives: [], fused: [] }, chars: ['the-warrior'], editions: ['base-game'] };
     let current = emptyShared;
     mount(t.ports, vi.fn(), () => current);
     // the plan can change between mount and click — Share must encode the

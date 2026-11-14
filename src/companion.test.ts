@@ -8,7 +8,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { startIsland, type IslandPorts } from './companion';
-import { PLAN_KEY } from './plan-session';
+import { EDITIONS_KEY, PLAN_KEY } from './plan-session';
 import { encodeShared, type SharedSnapshot } from './plan-codec';
 import { isClearExempt } from './clear-exempt';
 import { mountShell, stubPorts } from './test-support/mount-island';
@@ -20,7 +20,7 @@ import { mountShell, stubPorts } from './test-support/mount-island';
 // selection boxes — through the renderer instance's build(), so every
 // behavioral pin below runs against the real built DOM.)
 
-const emptyShared: SharedSnapshot = { plan: { upgradesOn: true, balls: [], passives: [], fused: [] }, chars: [] };
+const emptyShared: SharedSnapshot = { plan: { upgradesOn: true, balls: [], passives: [], fused: [] }, chars: [], editions: ['base-game'] };
 
 let stop: (() => void) | null = null;
 
@@ -57,6 +57,7 @@ describe('startup precedence (share param vs stored plan)', () => {
     const shared: SharedSnapshot = {
       plan: { upgradesOn: false, balls: ['flash'], passives: [], fused: [] },
       chars: ['the-warrior'],
+      editions: ['base-game'],
     };
     const t = stubPorts({ stored: { [PLAN_KEY]: JSON.stringify(stored) }, hash: `#/plan?p=${encodeShared(shared)}` });
 
@@ -80,7 +81,7 @@ describe('startup precedence (share param vs stored plan)', () => {
     start(t.ports);
 
     expect(t.replaceState).not.toHaveBeenCalled();
-    expect(t.savedPlan()).toEqual({ plan: { upgradesOn: true, balls: [], passives: ['wagon-wheel'], fused: [] }, chars: [] });
+    expect(t.savedPlan()).toEqual({ plan: { upgradesOn: true, balls: [], passives: ['wagon-wheel'], fused: [] }, chars: [], editions: ['base-game'] });
     expect(planCounts()).toEqual(['0 / 2', '0 / 5', '1 / 5']);
   });
 
@@ -96,6 +97,73 @@ describe('startup precedence (share param vs stored plan)', () => {
   });
 });
 
+// ---------- the edition filter at startup and through share links ----------
+
+describe('edition filter persistence', () => {
+  const dlcPlan = { upgradesOn: true, balls: ['beast'], passives: [], fused: [] };
+
+  it('restores the stored edition filter from its own key', () => {
+    const t = stubPorts({
+      stored: {
+        [PLAN_KEY]: JSON.stringify({ plan: dlcPlan, chars: [] }),
+        [EDITIONS_KEY]: JSON.stringify(['base-game', 'dlc-risen-ballbylon']),
+      },
+    });
+
+    start(t.ports);
+
+    // the DLC plan entry survives because the stored filter enables it
+    expect(planCounts()).toEqual(['0 / 2', '1 / 5', '0 / 5']);
+    expect(t.savedPlan()!.editions).toEqual(['base-game', 'dlc-risen-ballbylon']);
+  });
+
+  it('drops stored hidden entries under the stored base-game-only filter', () => {
+    const t = stubPorts({
+      stored: {
+        [PLAN_KEY]: JSON.stringify({ plan: dlcPlan, chars: [] }),
+        [EDITIONS_KEY]: JSON.stringify(['base-game']),
+      },
+    });
+
+    start(t.ports);
+
+    expect(planCounts()).toEqual(['0 / 2', '0 / 5', '0 / 5']);
+    expect(t.savedPlan()!.plan.balls).toEqual([]);
+    expect(t.savedPlan()!.editions).toEqual(['base-game']);
+  });
+
+  it('a share link carries its editions and persists them with the plan', () => {
+    const shared: SharedSnapshot = {
+      plan: dlcPlan,
+      chars: [],
+      editions: ['base-game', 'dlc-risen-ballbylon'],
+    };
+    const t = stubPorts({ hash: `#/plan?p=${encodeShared(shared)}` });
+
+    start(t.ports);
+
+    expect(t.savedPlan()).toEqual(shared);
+    expect(planCounts()).toEqual(['0 / 2', '1 / 5', '0 / 5']);
+  });
+
+  it('a share link with base-game only drops its hidden entries on restore', () => {
+    const shared: SharedSnapshot = {
+      plan: { ...dlcPlan, passives: ['wagon-wheel'] },
+      chars: [],
+      editions: ['base-game'],
+    };
+    const t = stubPorts({ hash: `#/plan?p=${encodeShared(shared)}` });
+
+    start(t.ports);
+
+    // the DLC ball is dropped; the base passive survives and persists
+    expect(t.savedPlan()!.plan.balls).toEqual([]);
+    expect(t.savedPlan()!.plan.passives).toEqual(['wagon-wheel']);
+    expect(t.savedPlan()!.editions).toEqual(['base-game']);
+    expect(planCounts()).toEqual(['0 / 2', '0 / 5', '1 / 5']);
+  });
+});
+
 // ---------- hydrate before first paint ----------
 
 describe('hydrate-before-first-paint ordering', () => {
@@ -106,6 +174,7 @@ describe('hydrate-before-first-paint ordering', () => {
     const stored: SharedSnapshot = {
       plan: { upgradesOn: true, balls: ['flash'], passives: ['wagon-wheel'], fused: [] },
       chars: [],
+      editions: ['base-game'],
     };
     const t = stubPorts({ stored: { [PLAN_KEY]: JSON.stringify(stored) }, hash: '' });
 

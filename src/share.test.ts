@@ -14,6 +14,7 @@ const shared: SharedSnapshot = {
     fused: [{ a: 'nosferatu', b: 'vampire-lord' }],
   },
   chars: ['the-warrior', 'the-shade'],
+  editions: ['base-game'],
 };
 
 describe('planLink', () => {

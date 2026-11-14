@@ -3,10 +3,10 @@
 // one-shot read of the ?p= parameter out of a location hash
 // (takeShareParam). The island keeps only transport: it passes location
 // parts in, copies the link, and hands strippedHash to
-// history.replaceState. The codec itself (SharedSnapshot ⇄ v1 wire) lives
-// in src/plan-codec.ts; anything that does not parse as a v1 code decodes
-// to null — the caller then ignores the parameter and falls back to the
-// stored plan.
+// history.replaceState. The codec itself (SharedSnapshot ⇄ v2 wire) lives
+// in src/plan-codec.ts; it still decodes v1 codes (as base-game only).
+// Anything that does not parse as a recognized code decodes to null — the
+// caller then ignores the parameter and falls back to the stored state.
 //
 // takeShareParam returns `{ shared, strippedHash }` (not just a snapshot)
 // because the one-shot rule strips the parameter only when it actually
@@ -22,9 +22,9 @@ export function planLink(origin: string, pathname: string, shared: SharedSnapsho
 }
 
 export interface ShareParam {
-  /** The decoded plan + shared selection, or null when the parameter is
-   *  present but is not a valid v1 code — the caller then uses the stored
-   *  plan instead. */
+  /** The decoded plan + shared selection + editions, or null when the
+   *  parameter is present but is not a valid code — the caller then uses the
+   *  stored state instead. */
   shared: SharedSnapshot | null;
   /** The hash with the query stripped (`#/plan`), for the one-shot
    *  history.replaceState — applied only when shared is non-null. */

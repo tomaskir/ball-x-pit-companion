@@ -601,7 +601,7 @@ describe('regression: share-link one-shot strip left a doubled \'#\' that defeat
   // to parse it on the recipient's next reload (plan hydrated, wrong tab).
   // takeShareParam now returns the stripped hash itself, single '#'.
   it('strippedHash is the bare hash — single #, no doubled hash', () => {
-    const code = encodeShared({ plan: { upgradesOn: true, balls: [], passives: [], fused: [] }, chars: [] });
+    const code = encodeShared({ plan: { upgradesOn: true, balls: [], passives: [], fused: [] }, chars: [], editions: ['base-game'] });
     const taken = takeShareParam(`#/plan?p=${code}`)!;
     expect(taken.strippedHash).toBe('#/plan');
     expect(taken.strippedHash.startsWith('##')).toBe(false);

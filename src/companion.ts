@@ -53,8 +53,18 @@ export function startIsland(ports: IslandPorts): () => void {
   // islands would double every listener (tabs, search, share, Esc…).
   activeStop?.();
 
-  const view = createViewState();
   const { storage, location: loc } = ports;
+
+  // Restore the persisted state before the view state exists: the edition
+  // filter applies from the first paint even when there is no plan to
+  // restore. plan-session owns the policy — a decodable share parameter wins
+  // over the stored state (the link IS the plan), the parameter is stripped
+  // from the URL only when it decoded (the link is one-shot), and corrupt
+  // storage reads as "no stored state". The island supplies the transport:
+  // it hands in the hash and applies the strip through history.replaceState.
+  const { shared: restored, editions: restoredEditions, stripUrl, fromShare } = restore({ storage, hash: loc.hash() });
+
+  const view = createViewState({ editions: restoredEditions });
 
   // ---------- dispatch pipeline ----------
 
@@ -93,16 +103,15 @@ export function startIsland(ports: IslandPorts): () => void {
   addEventListener('hashchange', applyHash);
   applyHash();
   renderer.build();
-  // Restore the plan before the initial paint. plan-session owns the policy:
-  // a decodable share parameter wins over the stored plan (the link IS the
-  // plan), the parameter is stripped from the URL only when it decoded (the
-  // link is one-shot), and corrupt storage reads as "no stored plan". The
-  // island supplies the transport: it hands in the hash and applies the
-  // strip through history.replaceState.
-  const { shared: restored, stripUrl } = restore({ storage, hash: loc.hash() });
+  // Restore the plan before the initial paint. The share/stored precedence
+  // and the one-shot strip were resolved above (before the view state was
+  // created, so the edition filter starts correct); here the island applies
+  // the strip and hydrates the plan + characters. `notify` marks a share
+  // restore: the loss notice fires when the share's own editions drop
+  // entries, but not on a plain startup restore.
   // null means "leave the URL alone"; an empty string is a real strip target
   if (stripUrl !== null) loc.replaceState(`${loc.pathname()}${stripUrl}`);
-  if (restored) update({ type: 'hydrate', shared: restored });
+  if (restored) update({ type: 'hydrate', shared: restored, notify: fromShare });
   // initial paint: derive the view model once everything is built
   renderer.paint(view.derive());
 

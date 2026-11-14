@@ -11,6 +11,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { FUSION_PANEL_SKELETON, FUSION_PANEL_SELECTORS } from './renderer';
 import type { createViewState, ViewModel, Action } from './view-state';
+import type { SharedSnapshot } from './plan-codec';
 import { BUILD_GRAPH_ROWS } from './build-graph';
 import { ballMap } from './catalog';
 import { iconUrl } from './icon-url';
@@ -399,9 +400,10 @@ describe('plan screen behavior (jsdom, through paint())', () => {
     // display content. A reversed hydrate must keep the same entry identity
     // yet repaint the name — the ordered key this replaced made a swap look
     // like a different pair.
-    const plan = (a: string, b: string) => ({
+    const plan = (a: string, b: string): SharedSnapshot => ({
       plan: { upgradesOn: true, balls: [], passives: [], fused: [{ a, b }] },
       chars: [],
+      editions: ['base-game'],
     });
     const grid = () => planView().querySelector<HTMLElement>('.plan-section[data-plan="balls"] .plan-grid')!;
 
@@ -684,6 +686,7 @@ describe('pairing restrictions in the DOM (jsdom, through paint())', () => {
       shared: {
         plan: { upgradesOn: true, balls: [], passives: [], fused: [] },
         chars: ['the-repentant', 'the-shieldbearer'],
+        editions: ['base-game'],
       },
     }));
     const entries = [...planView().querySelectorAll<HTMLElement>('.plan-section[data-plan="characters"] .plan-entry')];
@@ -698,6 +701,7 @@ describe('pairing restrictions in the DOM (jsdom, through paint())', () => {
       shared: {
         plan: { upgradesOn: true, balls: [], passives: [], fused: [] },
         chars: ['the-warrior', 'the-shade'],
+        editions: ['base-game'],
       },
     }));
     const entries = [...planView().querySelectorAll<HTMLElement>('.plan-section[data-plan="characters"] .plan-entry')];
