@@ -49,13 +49,9 @@ const SPAWN_BOUND_IDS: ReadonlySet<string> = new Set(['blizzard']);
 
 /** Text-derived channel exceptions. Berserk is applied on hit (40% at L3),
  *  not a field aura — the "every second" phrase describes the berserk
- *  debuff's tick. */
-const CHANNEL_OVERRIDES: Readonly<Record<string, StatusChannel>> = {
-  berserk: 'hit',
-  // The text heuristic reads Ash as an on-hit status, but its lava trail
-  // leaves a damaging field (docs/research/risen-fusion.md).
-  ash: 'field',
-};
+ *  debuff's tick. Ash is deliberately absent: its kit entry (`BALL_KIT.ash`)
+ *  records the field channel and wins over this heuristic. */
+const CHANNEL_OVERRIDES: Readonly<Record<string, StatusChannel>> = { berserk: 'hit' };
 
 /** Statuses the corpus shows a field-aura carrier applying. The trigger
  *  matrix says AOE applies statuses on the damage event, not the hit event,
@@ -96,14 +92,19 @@ const KILL_EFFECT_IDS: ReadonlySet<string> = new Set(['black-hole', 'reaper']);
 /** The hit-once class (game-file I2 effect-text dump: exactly the balls whose
  *  text lists a cooldown). Order resolution itself lives in the property
  *  resolver (fusion-properties.ts); this set remains for the fixed
- *  hit-once-dominates-pass-through caveat. */
-const COOLDOWN_CLASS_IDS: ReadonlySet<string> = new Set(['black-hole', 'bomb', 'dark', 'egg-sac', 'nuclear-bomb', 'timestop', 'voluptuous-egg-sac']);
+ *  hit-once-dominates-pass-through caveat. Risen Ballbylon adds the three
+ *  balls whose L3 text states a cooldown (R7 §7). */
+const COOLDOWN_CLASS_IDS: ReadonlySet<string> = new Set(['black-hole', 'bomb', 'dark', 'egg-sac', 'misfortune', 'nuclear-bomb', 'rot', 'timestop', 'voluptuous-egg-sac', 'water']);
 
 /** Fixed composition caveats from the corpus (general_rules_notes): reported
- *  interactions beyond naive text concatenation. */
-const DESTROY_CLASS_IDS: ReadonlySet<string> = new Set(['dark', 'egg-sac', 'time', 'armageddon', 'black-hole', 'bomb', 'fireworks', 'landslide', 'mosquito-swarm', 'nuclear-bomb', 'timestop', 'voluptuous-egg-sac']);
+ *  interactions beyond naive text concatenation. Risen Ballbylon adds the
+ *  balls whose L3 text says they destroy themselves on hit (R7 §7). */
+const DESTROY_CLASS_IDS: ReadonlySet<string> = new Set(['dark', 'egg-sac', 'time', 'armageddon', 'black-hole', 'bomb', 'fireworks', 'landslide', 'misfortune', 'mosquito-swarm', 'mudslide', 'nuclear-bomb', 'rot', 'timestop', 'tsunami', 'voluptuous-egg-sac', 'waterfall']);
 
-const PIERCE_IDS: ReadonlySet<string> = new Set(['ghost', 'wind', 'assassin', 'drill', 'erosion', 'noxious', 'sandstorm', 'sniper', 'soul-sucker', 'wraith']);
+/** Pass-through class. Risen Ballbylon's `kGhost` special is the game's
+ *  authoritative pierce marker; the new ids plus the two existing gaps
+ *  (Phantom, Storm) land here (R7 §7). */
+const PIERCE_IDS: ReadonlySet<string> = new Set(['ash', 'assassin', 'bullet', 'drill', 'erosion', 'force', 'gale', 'ghost', 'noxious', 'phantom', 'sandstorm', 'siren', 'sniper', 'soul-sucker', 'steam', 'storm', 'tsunami', 'wind', 'wraith']);
 
 /** Pairs whose kill cross-wire is corpus-contradicted (both polarities
  *  reported, unresolved — CONTRADICTIONS.md §10e). Keys are canonical
@@ -182,12 +183,23 @@ const hasSpawn = (b: Ball): boolean =>
  *  and are filtered per branch instead. */
 const spawnable = (b: Ball): boolean => hasSpawn(b) && !SPAWN_NO_INHERITANCE_IDS.has(b.id);
 
-/** AOE carrier rank: screen-clear > aoe > none. */
-const aoeRank = (b: Ball): number => (b.tags.includes('screen-clear') ? 2 : b.tags.includes('aoe') ? 1 : 0);
+/** AOE carrier rank: screen-clear > aoe > none. The kit's game `aoe` flag is
+ *  authoritative where recorded (the editorial `aoe` tag diverges from the
+ *  game's `AOETypes`); balls without the flag keep the tag fallback. */
+const aoeRank = (b: Ball): number => {
+  if (b.tags.includes('screen-clear')) return 2;
+  const kitAoe = BALL_KIT[b.id]?.aoe;
+  return (kitAoe ?? b.tags.includes('aoe')) ? 1 : 0;
+};
 
 /** An AOE carrier that can carry a partner's effect: rank > 0 and not the
  *  debuff-only exclusion (Satan). */
 const aoeCarrier = (b: Ball): boolean => aoeRank(b) > 0 && !AOE_EXCLUDED_IDS.has(b.id);
+
+/** A field/trail carrier: a ball whose recorded (or text-derived) application
+ *  channel includes `field`. Attach balls map to `per-second` and stay
+ *  non-carriers (S3 #29). */
+const fieldCarrier = (b: Ball): boolean => channelsOf(b).includes('field');
 
 /** AOE carriers with no damage rolls cannot carry a kill-on-hit effect.
  *  Timestop freezes but deals no damage; its pairs don't wire (corpus). */
@@ -198,10 +210,12 @@ const dealsDamage = (b: Ball): boolean =>
 
 /** Which cross-wire rule produced a wire. The order of the checks in
  *  `wireFor` is the branch priority: spawn × on-hit status, AOE × on-hit
- *  status, AOE × kill-on-hit, spawn × spawn-bound status. */
+ *  status, field × on-hit status, AOE × kill-on-hit, spawn × spawn-bound
+ *  status. */
 export type WireKind =
   | 'spawn-carries-on-hit'
   | 'aoe-carries-on-hit'
+  | 'field-carries-on-hit'
   | 'aoe-carries-kill'
   | 'spawn-carries-spawn-bound';
 
@@ -210,8 +224,8 @@ export type WireKind =
  *  the class evidence that produced it stay in this module. */
 export interface Wire {
   kind: WireKind;
-  /** The ball whose channel carries the partner's effect (a spawn carrier or
-   *  an AOE carrier). */
+  /** The ball whose channel carries the partner's effect (a spawn, AOE, or
+   *  field/trail carrier). */
   carrier: Ball;
   /** The partner ball whose effect the carrier applies. In the kill branch
    *  this is the kill-on-hit ball. */
@@ -234,6 +248,16 @@ export interface Wire {
 function canCarry(carrier: Ball, status: Ball): boolean {
   if (!aoeCarrier(carrier) || statusChannel(status) !== 'hit') return false;
   return !(statusChannel(carrier) === 'field' && !isDamageRidingStatus(status));
+}
+
+/** Can a field/trail carrier apply the partner's on-hit status? Only the
+ *  corpus-evidenced damage-riding statuses: a trail/field applies statuses on
+ *  the damage event, not the hit event (S3 #29, preserving Freeze Ray × Sun).
+ *  Satan stays excluded — his judgment is debuff-only, so the field branch
+ *  must not bypass the corpus negative (hemorrhage + satan). */
+function canCarryField(carrier: Ball, status: Ball): boolean {
+  if (!fieldCarrier(carrier) || AOE_EXCLUDED_IDS.has(carrier.id)) return false;
+  return statusChannel(status) === 'hit' && isDamageRidingStatus(status);
 }
 
 /** Can a spawn carrier's babies inherit the partner's status? Only the two
@@ -268,12 +292,17 @@ export function wireFor(a: Ball, b: Ball): Wire | null {
     //    Only the higher-ranked carrier may carry.
     ?? directional(a, b, 'aoe-carries-on-hit', (carrier, status) =>
       aoeRank(carrier) > aoeRank(status) && canCarry(carrier, status))
-    // 3. AOE carrier + partner's kill-on-hit (Black Hole × Sun — the corpus
+    // 3. field/trail carrier + partner's damage-riding on-hit status (S3 #29:
+    //    TouchableTrailObj/RadialVFX route damage with a HitEffectSrc, so a
+    //    trail or field is a real carrier path). Ranked after the AOE branch
+    //    so an AOE carrier keeps its line; only damage-riding statuses pass.
+    ?? directional(a, b, 'field-carries-on-hit', canCarryField)
+    // 4. AOE carrier + partner's kill-on-hit (Black Hole × Sun — the corpus
     //    meta pair; kamigame: "Black Hole's effect rides on Flash's
     //    screen-wide attack"). The kill ball is often itself screen-clear
     //    (Black Hole, Reaper), so no rank comparison.
     ?? directional(a, b, 'aoe-carries-kill', canCarryKill)
-    // 4. spawn carrier + partner's spawn-bound status (Glacier × Maggot — the
+    // 5. spawn carrier + partner's spawn-bound status (Glacier × Maggot — the
     //    babies inherit the fused kit, spikes included; namu rule 6, corpus
     //    glacier+maggot / cell+glacier / blizzard+spider-queen). Status-only
     //    carriers inherit on-hit statuses but not spawn-bound traits (#20).

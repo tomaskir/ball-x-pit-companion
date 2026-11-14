@@ -41,11 +41,13 @@ describe('one application-channel classification per ball', () => {
     'spawn': [
       'blizzard', 'egg-sac', 'fireworks', 'glacier', 'lightning-rod', 'magma',
       'mosquito-king', 'mosquito-kingdom', 'mosquito-swarm', 'swamp', 'time',
-      'time-bomb', 'voluptuous-egg-sac',
+      'time-bomb', 'voluptuous-egg-sac', 'water', 'water-bug',
     ],
-    'field': ['ash', 'banshee', 'petrify', 'timestop'],
+    'field': ['ash', 'banshee', 'petrify', 'steam', 'timestop', 'waterfall'],
+    'per-second': ['beast', 'kaiju', 'thunderbird', 'werewolf'],
     'per-second+field': ['brimstone', 'inferno', 'satan', 'sun'],
     'per-second+spawn': ['leech'],
+    'spawn+per-second': ['wolfpack'],
   };
   const GOLDEN: Record<string, readonly Channel[]> = {};
   for (const [spec, ids] of Object.entries(GOLDEN_GROUPS)) {
@@ -118,7 +120,7 @@ describe('module surface', () => {
   it('keeps the capability predicates private behind wireFor', () => {
     // Production only crosses the oracle; a public predicate could pass its
     // own test while the oracle's rank/branch layering is wrong.
-    for (const name of ['canCarry', 'canInheritSpawn', 'canCarryKill']) {
+    for (const name of ['canCarry', 'canCarryField', 'canInheritSpawn', 'canCarryKill', 'fieldCarrier']) {
       expect(knowledge).not.toHaveProperty(name);
     }
   });
@@ -287,6 +289,106 @@ describe('wireFor (the cross-wire oracle)', () => {
     expect(wireFor(ball('overgrowth'), ball('flash'))!.carrier.id).toBe('flash');
     // The kill branch has no rank comparison: both balls are screen-clear.
     expect(wireFor(ball('black-hole'), ball('sun'))!.kind).toBe('aoe-carries-kill');
+  });
+});
+
+describe('field carrier branch (Risen Ballbylon trails and fields)', () => {
+  it('a trail/field carrier applies a damage-riding on-hit status (Ash × Overgrowth)', () => {
+    const w = wireFor(ball('ash'), ball('overgrowth'))!;
+    expect(w.kind).toBe('field-carries-on-hit');
+    expect(w.carrier.id).toBe('ash');
+    expect(w.status.id).toBe('overgrowth');
+    expect(w.spawnerId).toBeNull();
+    expect(w.disputed).toBe(false);
+  });
+
+  it('Steam and Waterfall fields carry the damage-riding statuses too', () => {
+    expect(wireFor(ball('steam'), ball('hemorrhage'))!.kind).toBe('field-carries-on-hit');
+    expect(wireFor(ball('waterfall'), ball('virus'))!.kind).toBe('field-carries-on-hit');
+    expect(wireFor(ball('waterfall'), ball('succubus'))!.kind).toBe('field-carries-on-hit');
+  });
+
+  it('a field carrier cannot apply a hit-bound status (Ash × Freeze Ray, Ash × Poison)', () => {
+    // The damage-riding restriction preserves the Freeze Ray × Sun evidence.
+    expect(wireFor(ball('ash'), ball('freeze-ray'))).toBeNull();
+    expect(wireFor(ball('ash'), ball('poison'))).toBeNull();
+    expect(wireFor(ball('steam'), ball('bleed'))).toBeNull();
+  });
+
+  it('Satan stays excluded from carrying (corpus: hemorrhage + satan no wire)', () => {
+    // Satan's judgment is debuff-only; the field branch must not bypass the
+    // AOE exclusion the corpus negative established.
+    expect(wireFor(ball('satan'), ball('hemorrhage'))).toBeNull();
+    expect(wireFor(ball('satan'), ball('overgrowth'))).toBeNull();
+  });
+
+  it('the field branch is unordered and ranks after the AOE branch', () => {
+    for (const [a, b] of [['ash', 'overgrowth'], ['steam', 'hemorrhage'], ['waterfall', 'virus']]) {
+      const ab = wireFor(ball(a), ball(b))!;
+      const ba = wireFor(ball(b), ball(a))!;
+      expect(ab.kind, `${a}+${b}`).toBe(ba.kind);
+      expect(ab.carrier.id, `${a}+${b}`).toBe(ba.carrier.id);
+    }
+    // Sun is an AOE carrier and a field carrier; the AOE branch wins.
+    expect(wireFor(ball('sun'), ball('overgrowth'))!.kind).toBe('aoe-carries-on-hit');
+  });
+});
+
+describe('the kit aoe flag (game AOETypes, editorial-tag fallback)', () => {
+  it('the game flag overrides the editorial aoe tag (Steam is not an AOE carrier)', () => {
+    // Steam carries the editorial `aoe` tag but the game's AOETypes is empty;
+    // the kit flag wins, so the field branch (not the AOE branch) fires.
+    expect(ball('steam').tags).toContain('aoe');
+    expect(BALL_KIT['steam'].aoe).toBe(false);
+    const w = wireFor(ball('steam'), ball('hemorrhage'))!;
+    expect(w.kind).toBe('field-carries-on-hit');
+    expect(w.carrier.id).toBe('steam');
+  });
+
+  it('a new ball with the game flag carries AOE (Misfortune)', () => {
+    expect(BALL_KIT['misfortune'].aoe).toBe(true);
+    const w = wireFor(ball('misfortune'), ball('hemorrhage'))!;
+    expect(w.kind).toBe('aoe-carries-on-hit');
+    expect(w.carrier.id).toBe('misfortune');
+  });
+
+  it('a new ball with aoe: false is not an AOE carrier', () => {
+    expect(BALL_KIT['rot'].aoe).toBe(false);
+    expect(wireFor(ball('rot'), ball('hemorrhage'))).toBeNull();
+  });
+
+  it('the flag is recorded exactly where the game AOETypes are non-empty', () => {
+    // Existing kit balls with AOETypes: bomb, nuclear-bomb, magma, freeze-ray,
+    // glacier, swamp, radiation-beam, x-ray.
+    for (const id of ['bomb', 'nuclear-bomb', 'magma', 'freeze-ray', 'glacier', 'swamp', 'radiation-beam', 'x-ray']) {
+      expect(BALL_KIT[id].aoe, id).toBe(true);
+    }
+    // Balls without a kit keep the editorial-tag fallback (Sun, Flash…).
+    expect(BALL_KIT['sun'].aoe).toBeUndefined();
+  });
+});
+
+describe('Risen Ballbylon class sets', () => {
+  const hitOnce = (a: string, b: string) =>
+    factsFor(ball(a), ball(b), ctx()).notes.some((n) => n.includes('Hit-once + cooldown is dominant'));
+
+  it('adds the new pass-through balls to the pierce class', () => {
+    for (const id of ['ash', 'bullet', 'force', 'gale', 'siren', 'steam', 'tsunami', 'phantom', 'storm']) {
+      expect(hitOnce('black-hole', id), id).toBe(true);
+    }
+  });
+
+  it('adds the new cooldown balls to the hit-once class', () => {
+    for (const id of ['water', 'misfortune', 'rot']) {
+      expect(hitOnce(id, 'ghost'), id).toBe(true);
+    }
+  });
+
+  it('adds the new destroy balls to the destroy class', () => {
+    for (const id of ['rot', 'misfortune', 'tsunami', 'waterfall', 'mudslide']) {
+      const notes = factsFor(ball(id), ball('dark'), ctx()).notes;
+      expect(notes.some((n) => n.includes('Both balls self-destruct')), id).toBe(true);
+    }
   });
 });
 

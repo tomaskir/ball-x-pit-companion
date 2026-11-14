@@ -7,6 +7,8 @@ import { BALLS } from './data/balls';
 import { PASSIVES } from './data/passives';
 import { CHARACTERS } from './data/characters';
 import { ballMap, passiveMap } from './catalog';
+import { channelsOf, wireFor } from './fusion-knowledge';
+import { BALL_KIT } from './ball-kit';
 import { deriveFusionPanel } from './fusion-panel';
 import { EMPTY_FUSION_PANEL_PLAN } from './test-support/pins';
 import { highlightSet, factorizesIntoSlots, recipeHtml } from './graph';
@@ -664,5 +666,23 @@ describe('regression: fusion toggles accepted ids derive() could not resolve (cr
     const plan = view.derive().plan;
     expect(plan.counts.balls).toBe(0);
     expect(plan.balls).toHaveLength(0);
+  });
+});
+
+describe('regression: Ash misclassified as on-hit by the text heuristic (game data says field)', () => {
+  // Ash's L3 text ("applies 1 stack of burn per second") does not match the
+  // field-aura regex, so the text heuristic returned ['on-hit']. The game's
+  // HitEffects is empty and the burn comes from the ash trail (kLavaTrail):
+  // the kit entry is the fix, and the field branch carries damage-riding
+  // statuses through it.
+  it('Ash is a field carrier, not an on-hit carrier', () => {
+    expect(channelsOf(ballMap.get('ash')!)).toEqual(['field']);
+    expect(BALL_KIT['ash'].channels).toEqual(['field']);
+  });
+
+  it('the field classification makes Ash × Overgrowth wire as a field carrier', () => {
+    const w = wireFor(ballMap.get('ash')!, ballMap.get('overgrowth')!)!;
+    expect(w.kind).toBe('field-carries-on-hit');
+    expect(w.carrier.id).toBe('ash');
   });
 });

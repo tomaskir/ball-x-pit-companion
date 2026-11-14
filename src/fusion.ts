@@ -89,14 +89,14 @@ export interface CrossWireResult {
 
 /** Render the wire the oracle found, or the no-wire result. Role-named like
  *  the game's tooltip ("Spawned balls from X … as Y"), not order-named. The
- *  four branches and their priority live in fusion-knowledge.ts. */
+ *  five branches and their priority live in fusion-knowledge.ts. */
 export function crossWire(a: Ball, b: Ball): CrossWireResult {
   const wire = wireFor(a, b);
   if (!wire) return { line: null, disputed: false, spawnerId: null };
   return { line: wireLine(wire), disputed: wire.disputed, spawnerId: wire.spawnerId };
 }
 
-/** The four cross-wire line templates. Which branch fires — and in what
+/** The five cross-wire line templates. Which branch fires — and in what
  *  priority — is fusion-knowledge.ts's call; this module only renders it. */
 function wireLine(wire: Wire): string {
   switch (wire.kind) {
@@ -104,6 +104,8 @@ function wireLine(wire: Wire): string {
       return `Spawned balls from ${wire.carrier.name} have the same properties as ${wire.status.name}.`;
     case 'aoe-carries-on-hit':
       return `Area-of-effect damage from ${wire.carrier.name} inflicts the status effect of ${wire.status.name}.`;
+    case 'field-carries-on-hit':
+      return `The trail or field from ${wire.carrier.name} inflicts the status effect of ${wire.status.name}.`;
     case 'aoe-carries-kill':
       return `Area-of-effect damage from ${wire.carrier.name} triggers the instant kill of ${wire.status.name}.`;
     case 'spawn-carries-spawn-bound':

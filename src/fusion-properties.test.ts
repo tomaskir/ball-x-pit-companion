@@ -28,11 +28,62 @@ describe('ball kit table', () => {
     }
   });
 
-  it('the only reported (non-L3) value is the Nuke range', () => {
+  it('pins every reported (non-L3) value', () => {
     const reported = Object.entries(BALL_KIT).flatMap(([id, kit]) =>
       kit.scalars.filter((s) => s.source === 'reported').map((s) => `${id}:${s.key}`),
     );
-    expect(reported).toEqual(['nuclear-bomb:range']);
+    // Values the L3 text does not state. Everything else is verbatim and
+    // enforced by data.test.ts.
+    expect(reported.sort()).toEqual([
+      'ash:range',
+      'black-hole:damage-multiplier',
+      'elemental:slow-duration',
+      'elemental:slow-pct',
+      'ironwood:range',
+      'ivy:range',
+      'kaiju:range',
+      'kaiju:self-speed-reduction',
+      'mudslide:slow-pct',
+      'nuclear-bomb:range',
+      'thunderbird:range',
+      'tsunami:range',
+      'water-bug:birth-chance',
+      'water:range',
+      'wind:damage-multiplier',
+      'wood:range',
+    ].sort());
+  });
+
+  it('records a kit for all 24 Risen Ballbylon balls', () => {
+    const dlcBalls = [
+      'ash', 'beast', 'bullet', 'force', 'fruit', 'gale', 'hedgehog', 'ironwood',
+      'ivy', 'kaiju', 'misfortune', 'mudslide', 'rot', 'siren', 'stalagmite',
+      'steam', 'thunderbird', 'tsunami', 'water', 'water-bug', 'waterfall',
+      'werewolf', 'wolfpack', 'wood',
+    ];
+    for (const id of dlcBalls) {
+      expect(BALL_KIT[id], `${id}: missing kit`).toBeDefined();
+      expect(typeof BALL_KIT[id].aoe, `${id}: explicit aoe flag`).toBe('boolean');
+    }
+    // Spot-check the S3 contract rows.
+    expect(BALL_KIT['ash']).toMatchObject({ aoe: false, channels: ['field'] });
+    expect(BALL_KIT['ash'].scalars.map((s) => [s.key, s.value])).toEqual([
+      ['burn-max-stacks', 'max 4 stacks'],
+      ['burn-duration', '8 seconds'],
+      ['burn-per-stack-damage', '4–7'],
+      ['emission-length', '5.0 seconds'],
+      ['steam-lifetime', '6.0 seconds'],
+      ['range', '2'],
+    ]);
+    expect(BALL_KIT['misfortune']).toMatchObject({ aoe: true, channels: ['on-hit'] });
+    expect(BALL_KIT['misfortune'].scalars.map((s) => [s.key, s.value])).toEqual([
+      ['damage-multiplier', '6.0x'],
+      ['cooldown', '4 second'],
+      ['curse-damage', '20–40'],
+      ['curse-delay', '5'],
+    ]);
+    expect(BALL_KIT['wolfpack'].channels).toEqual(['spawn', 'per-second']);
+    expect(BALL_KIT['mudslide'].scalars.map((s) => s.key)).not.toContain('slow-duration');
   });
 });
 
@@ -55,7 +106,7 @@ describe('resolveProperties', () => {
 
   it('unions scalars; different keys do not collide', () => {
     const r = resolveProperties(ball('poison'), ball('freeze'));
-    expect(r.scalars.map((s) => s.key)).toEqual(['poison-max-stacks', 'freeze-duration']);
+    expect(r.scalars.map((s) => s.key)).toEqual(['poison-max-stacks', 'poison-per-stack-damage', 'freeze-duration']);
     expect(r.collisions).toEqual([]);
   });
 
@@ -98,10 +149,10 @@ describe('resolveProperties', () => {
   });
 
   it('equal values are not a functional collision', () => {
-    // Bomb and Dark both list a 3 second cooldown; Poison and Swamp both cap
-    // poison at 8 stacks. Order cannot change the value.
+    // Bomb and Dark both list a 3 second cooldown; Sniper and Shotgun both
+    // spawn 5–9 baby balls. Order cannot change the value.
     expect(resolveProperties(ball('bomb'), ball('dark')).collisions).toEqual([]);
-    expect(resolveProperties(ball('poison'), ball('swamp')).collisions).toEqual([]);
+    expect(resolveProperties(ball('sniper'), ball('shotgun')).collisions).toEqual([]);
   });
 
   it('marks collisions without direct tier 1–2 evidence as reported', () => {
@@ -111,7 +162,7 @@ describe('resolveProperties', () => {
   });
 
   it('unlisted balls have empty kits', () => {
-    const r = resolveProperties(ball('flash'), ball('iron'));
+    const r = resolveProperties(ball('flash'), ball('ghost'));
     expect(r.channels).toEqual([]);
     expect(r.scalars).toEqual([]);
     expect(r.collisions).toEqual([]);
