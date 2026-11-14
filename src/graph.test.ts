@@ -191,4 +191,14 @@ describe('recipeSlots / recipeHtml (the compact x+(y/z) notation has one home)',
   it('recipeHtml falls back to the raw id when the resolver returns null', () => {
     expect(recipeHtml([['ghost-id']], () => null)).toBe('ghost-id');
   });
+  it('recipeHtml renders non-factorizable recipes as explicit alternatives', () => {
+    // Overgrowth shape: Earthquake+Cell OR Time+Wood — a per-slot cross
+    // product would invent Earthquake+Wood and Time+Cell.
+    const html = recipeHtml([['a', 'b'], ['c', 'd']], (id) => `<img data-id="${id}">`);
+    expect(html).toBe(
+      '<img data-id="a"><span class="plus">+</span><img data-id="b">' +
+      '<span class="or">or</span>' +
+      '<img data-id="c"><span class="plus">+</span><img data-id="d">'
+    );
+  });
 });

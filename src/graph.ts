@@ -126,9 +126,11 @@ export function complexity(item: GraphItem, graph: Graph, seen: Set<string> = ne
 }
 
 /**
- * All multi-recipe entities must factorize into per-slot alternates — i.e.
+ * Whether multi-recipe entities factorize into per-slot alternates — i.e.
  * every cross product of per-column choices is a valid recipe. This is what
  * makes the compact "x+(y/z)" tile notation faithful (user-verified format).
+ * A few DLC recipes genuinely do not factorize (Overgrowth, Swamp); the
+ * renderer falls back to explicit "or"-separated recipes for those.
  */
 export function factorizesIntoSlots(recipes: string[][]): boolean {
   if (recipes.length <= 1) return true;
@@ -146,7 +148,7 @@ export function factorizesIntoSlots(recipes: string[][]): boolean {
  * The compact per-slot notation, grouped: recipes column-wise → per-slot
  * alternate lists (first-occurrence order). This is the data behind
  * "a+(b/c)" / "(a/b)+(c/d)" rendering — meaningful only when
- * factorizesIntoSlots(recipes) holds (the dataset is verified to).
+ * factorizesIntoSlots(recipes) holds.
  * Precondition: recipes is non-empty and rectangular (all rows the same
  * width) — callers guard or guard first via factorizesIntoSlots.
  */
@@ -162,11 +164,18 @@ export function recipeSlots(recipes: string[][]): string[][] {
  * "(a/b)+(c/d)", "a+b+c". `renderComponent` turns a component id into
  * markup (the renderer injects its icon+BASE_URL join); returning null
  * falls back to the raw id. Single-recipe items never show alternates.
+ * Recipes that do not factorize into per-slot alternates are rendered as
+ * explicit "or"-separated alternatives — the compact notation would invent
+ * combinations the game does not have.
  */
 export function recipeHtml(recipes: string[][], renderComponent: (id: string) => string | null): string {
   const img = (id: string) => renderComponent(id) ?? id;
+  const plus = '<span class="plus">+</span>';
+  if (!factorizesIntoSlots(recipes)) {
+    return recipes.map((recipe) => recipe.map(img).join(plus)).join('<span class="or">or</span>');
+  }
   const single = recipes.length === 1;
   return recipeSlots(recipes)
     .map((opts) => (single || opts.length === 1 ? img(opts[0]) : `<span class="alt">${opts.map(img).join('<span class="or">/</span>')}</span>`))
-    .join('<span class="plus">+</span>');
+    .join(plus);
 }
