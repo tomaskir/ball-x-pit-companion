@@ -34,10 +34,17 @@
 import { BALLS, type Ball } from './data/balls';
 import { PASSIVES, type Passive } from './data/passives';
 import { CHARACTERS, type Character } from './data/characters';
-import { EDITIONS, type Edition } from './data/editions';
-import { DEFAULT_EDITIONS, availableRecipes, isEditionEnabled, visibleItems } from './edition-gate';
+import { type Edition } from './data/editions';
+import {
+  DEFAULT_EDITIONS,
+  availableRecipes as filterRecipes,
+  canonicalEditions,
+  gatedGraph,
+  isEditionEnabled,
+  visibleItems,
+} from './edition-gate';
 import { highlightSet } from './graph';
-import { ballMap, passiveMap, isPassive, itemFor, graphFor } from './catalog';
+import { ballMap, passiveMap, isPassive, itemFor } from './catalog';
 import { deriveBuildGraphView, type BuildGraphViewState } from './build-graph';
 import { fusionBalls, isFusable } from './fusion';
 import { deriveFusionPanel, type FusionPanelState } from './fusion-panel';
@@ -196,9 +203,7 @@ export function createViewState({ editions }: ViewStateOptions = {}) {
   /** The content filter. Canonical vocabulary order; an empty list is a
    *  valid "nothing enabled" state. */
   let enabledEditions: Edition[] =
-    editions === undefined
-      ? [...DEFAULT_EDITIONS]
-      : EDITIONS.filter((edition) => editions.includes(edition));
+    editions === undefined ? [...DEFAULT_EDITIONS] : canonicalEditions(editions);
   /** Entries the last action dropped by the edition filter — the loss
    *  notice's count, reset at the start of every dispatch. */
   let editionDroppedCount = 0;
@@ -270,7 +275,13 @@ export function createViewState({ editions }: ViewStateOptions = {}) {
     const fusionRows = new Map<string, FusionRowState>();
     const chars = selectedChars.list();
     const picks = fusionPicks.list();
-    const related = selectedId ? highlightSet(selectedId, graphFor(selectedId)) : new Set<string>();
+    // The highlight walk reads the gated graphs: a hidden component can
+    // never enter a visible item's related chain.
+    const ballGraph = gatedGraph(ballMap, enabledEditions);
+    const passiveGraph = gatedGraph(passiveMap, enabledEditions);
+    const related = selectedId
+      ? highlightSet(selectedId, isPassive(selectedId) ? passiveGraph : ballGraph)
+      : new Set<string>();
     const ballQ = queries.balls.trim().toLowerCase();
     const passiveQ = queries.passives.trim().toLowerCase();
     const charQ = queries.characters.trim().toLowerCase();
@@ -358,10 +369,10 @@ export function createViewState({ editions }: ViewStateOptions = {}) {
     // once here so every screen (and the build graph) reads the same gate.
     const availableRecipeMap = new Map<string, string[][]>();
     for (const ball of BALLS) {
-      availableRecipeMap.set(ball.id, availableRecipes(ball, enabledEditions, (id) => ballMap.get(id)));
+      availableRecipeMap.set(ball.id, filterRecipes(ball, enabledEditions, (id) => ballMap.get(id)));
     }
     for (const passive of PASSIVES) {
-      availableRecipeMap.set(passive.id, availableRecipes(passive, enabledEditions, (id) => passiveMap.get(id)));
+      availableRecipeMap.set(passive.id, filterRecipes(passive, enabledEditions, (id) => passiveMap.get(id)));
     }
     return {
       tiles,
@@ -415,10 +426,9 @@ export function createViewState({ editions }: ViewStateOptions = {}) {
         // nothing. Canonical vocabulary order keeps the list stable.
         case 'toggleEdition': {
           const wasEnabled = enabledEditions.includes(action.edition);
-          const next = new Set(enabledEditions);
-          if (wasEnabled) next.delete(action.edition);
-          else next.add(action.edition);
-          enabledEditions = EDITIONS.filter((edition) => next.has(edition));
+          enabledEditions = wasEnabled
+            ? enabledEditions.filter((edition) => edition !== action.edition)
+            : canonicalEditions([...enabledEditions, action.edition]);
           if (wasEnabled) editionDroppedCount = dropHiddenEntries();
           break;
         }
@@ -478,7 +488,7 @@ export function createViewState({ editions }: ViewStateOptions = {}) {
         // notice fires only for a share restore (`notify`), not a plain
         // startup restore.
         case 'hydrate':
-          enabledEditions = EDITIONS.filter((edition) => action.shared.editions.includes(edition));
+          enabledEditions = canonicalEditions(action.shared.editions);
           plan.dispatch({ type: 'hydrate', plan: action.shared.plan });
           selectedChars.restore(action.shared.chars);
           editionDroppedCount = dropHiddenEntries();

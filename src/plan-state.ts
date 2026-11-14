@@ -2,7 +2,7 @@
 // game upgrades toggle, the planned balls/passives/fused pairs, and the
 // PlanState the renderer paints. One interface:
 // createPlanState() → { dispatch(planAction), derive(selectedChars),
-// snapshot(), has(id), hasPair(a, b), limits() }.
+// snapshot(), has(id), hasPair(a, b), dropHidden(enabled), limits() }.
 // The seam is "selectedChars in, PlanState out": the plan's characters are
 // the shared selectedChars — one selection feeds verdicts, chips, and the
 // plan — and they are owned by view-state.ts. plan-state never mutates
@@ -21,7 +21,8 @@ import { type Ball } from './data/balls';
 import { type Passive } from './data/passives';
 import { type Character } from './data/characters';
 import { type Edition } from './data/editions';
-import { ballMap, passiveMap, isPassive } from './catalog';
+import { ballMap, passiveMap, isPassive, itemFor } from './catalog';
+import { isEditionEnabled } from './edition-gate';
 import { complexity } from './graph';
 import { fusionName, isFusable } from './fusion';
 import { createPickList } from './pick-list';
@@ -297,8 +298,8 @@ export function createPlanState() {
      *  lists; re-enabling an edition does not restore anything. */
     dropHidden(enabled: readonly Edition[]): number {
       const visible = (id: string): boolean => {
-        const item = isPassive(id) ? passiveMap.get(id) : ballMap.get(id);
-        return item !== undefined && enabled.includes(item.edition);
+        const item = itemFor(id);
+        return item !== undefined && isEditionEnabled(enabled, item.edition);
       };
       const before = planBalls.list().length + planPassives.list().length + planFused.list().length;
       planBalls.restore(planBalls.list().filter((ball) => visible(ball.id)).map((ball) => ball.id));

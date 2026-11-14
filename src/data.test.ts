@@ -9,6 +9,7 @@ import { CHARACTERS } from './data/characters';
 import { TAGS } from './data/tags';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { LEVEL_3_EFFECTS } from './data/level-3';
+import { EDITIONS } from './data/editions';
 import { BALL_KIT } from './ball-kit';
 import { pairKey } from './pair';
 import { byId, complexity } from './graph';
@@ -45,7 +46,7 @@ describe('editions (Risen Ballbylon content filter)', () => {
 
   it('every entity carries a known edition', () => {
     for (const items of [BALLS, PASSIVES, CHARACTERS]) {
-      for (const item of items) expect(['base-game', 'dlc-risen-ballbylon']).toContain(item.edition);
+      for (const item of items) expect(EDITIONS).toContain(item.edition);
     }
   });
 

@@ -60,29 +60,27 @@ const DEFAULT_SHARED = normalizeShared({})!;
 const DEFAULT_PLAN_RAW = JSON.stringify({ plan: DEFAULT_SHARED.plan, chars: DEFAULT_SHARED.chars });
 const DEFAULT_EDITIONS_RAW = JSON.stringify(DEFAULT_SHARED.editions);
 
-/** Read the stored plan, tolerating every failure mode: unreadable storage,
- *  unparseable JSON, and JSON of the wrong shape all read as "no stored
- *  plan". Shape normalization is the codec's (it also reads legacy flat
- *  snapshots); deeper id validation stays in plan-state's hydrate. */
-function readStored(storage: PlanStorage): SharedSnapshot | null {
+/** Read and parse one stored slot, tolerating every failure mode: unreadable
+ *  storage, unparseable JSON, and an absent slot all read as null. */
+function readJson(storage: PlanStorage, key: string): unknown {
   try {
-    const raw = storage.getItem(PLAN_KEY);
-    if (!raw) return null;
-    return normalizeShared(JSON.parse(raw));
+    const raw = storage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
   }
 }
 
+/** Read the stored plan; shape normalization is the codec's (it also reads
+ *  legacy flat snapshots), and deeper id validation stays in plan-state's
+ *  hydrate. Garbage reads as "no stored plan". */
+function readStored(storage: PlanStorage): SharedSnapshot | null {
+  return normalizeShared(readJson(storage, PLAN_KEY));
+}
+
 /** Read the stored editions; any failure reads as the default (base-game). */
 function readEditions(storage: PlanStorage): Edition[] {
-  try {
-    const raw = storage.getItem(EDITIONS_KEY);
-    if (!raw) return [...DEFAULT_SHARED.editions];
-    return normalizeEditions(JSON.parse(raw));
-  } catch {
-    return [...DEFAULT_SHARED.editions];
-  }
+  return normalizeEditions(readJson(storage, EDITIONS_KEY));
 }
 
 /** Write one key, skipping when storage already holds the exact value (or

@@ -43,6 +43,7 @@ import { type GraphItem, complexity, componentsOf, factorizesIntoSlots, recipeSl
 import { pairKey, parsePair } from './pair';
 import { ballMap, passiveMap, isPassive } from './catalog';
 import { evolvesInstead } from './fusion';
+import { gatedGraph } from './edition-gate';
 import type { Edition } from './data/editions';
 import { DEPTH_LABELS } from './depth-labels';
 import type { PlanState } from './plan-state';
@@ -440,25 +441,8 @@ export function deriveBuildGraphView(
   // enabled. The gated maps keep the catalog's items and order; only the
   // recipes change, so complexity, closure, and the demand model all read
   // the surviving build paths.
-  const gate = <T extends GraphItem & { name: string; icon: string; edition: Edition }>(
-    graph: Map<string, T>,
-  ): Map<string, T> => {
-    const gated = new Map<string, T>();
-    for (const [id, item] of graph) {
-      gated.set(id, {
-        ...item,
-        recipes: item.recipes.filter((recipe) =>
-          recipe.every((component) => {
-            const resolved = graph.get(component);
-            return resolved !== undefined && editions.includes(resolved.edition);
-          }),
-        ),
-      });
-    }
-    return gated;
-  };
-  const ballGraph = gate(ballMap);
-  const passiveGraph = gate(passiveMap);
+  const ballGraph = gatedGraph(ballMap, editions);
+  const passiveGraph = gatedGraph(passiveMap, editions);
 
   const ballTargets: BuildGraphTargets = { singles: [], pairs: [] };
   for (const e of planState.balls) {
@@ -466,7 +450,9 @@ export function deriveBuildGraphView(
     if (e.kind === 'single') ballTargets.singles.push(e.item.id);
     else {
       const evo = evolvesInstead(e.a, e.b);
-      if (evo) ballTargets.singles.push(evo.id);
+      // An evolved result hidden by the filter cannot be a graph target; the
+      // pair then reads as a fusion of its (visible) components.
+      if (evo && editions.includes(evo.edition)) ballTargets.singles.push(evo.id);
       else ballTargets.pairs.push({ a: e.a.id, b: e.b.id });
     }
   }

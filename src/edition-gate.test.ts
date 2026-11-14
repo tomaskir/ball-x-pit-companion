@@ -7,6 +7,7 @@ import {
   DEFAULT_EDITIONS,
   availableRecipes,
   fusionVisible,
+  gatedGraph,
   isEdition,
   isEditionEnabled,
   isVisible,
@@ -100,5 +101,22 @@ describe('edition gate: fusion visibility', () => {
     expect(fusionVisible(bleed, beast, BASE)).toBe(false);
     expect(fusionVisible(beast, bleed, BASE)).toBe(false);
     expect(fusionVisible(beast, bleed, BOTH)).toBe(true);
+  });
+});
+
+describe('edition gate: gatedGraph', () => {
+  it('keeps every node and order, gating only the recipes', () => {
+    const gated = gatedGraph(ballMap, BASE);
+    expect([...gated.keys()]).toEqual([...ballMap.keys()]);
+    expect(gated.get('blizzard')!.recipes).toEqual([
+      ['freeze', 'wind'],
+      ['freeze', 'lightning'],
+    ]);
+    expect(gated.get('bleed')!.recipes).toEqual([]);
+  });
+
+  it('with every edition enabled the recipes are unchanged', () => {
+    const gated = gatedGraph(ballMap, BOTH);
+    expect(gated.get('blizzard')!.recipes).toEqual(ballMap.get('blizzard')!.recipes);
   });
 });

@@ -12,9 +12,17 @@
 // default — a first visit shows base-game content only — is a domain
 // decision and lives here.
 import { EDITIONS, type Edition } from './data/editions';
+import type { GraphItem } from './graph';
 
 /** A first visit shows base-game content only. */
 export const DEFAULT_EDITIONS: readonly Edition[] = ['base-game'];
+
+/** The enabled list in canonical vocabulary order, deduped. Every state
+ *  transition and the codec use this one ordering rule. */
+export function canonicalEditions(enabled: readonly Edition[]): Edition[] {
+  const set = new Set(enabled);
+  return EDITIONS.filter((edition) => set.has(edition));
+}
 
 /** Whether a raw value names a known edition (the codec's shape guard). */
 export const isEdition = (value: unknown): value is Edition =>
@@ -35,7 +43,7 @@ export const isVisible = (enabled: readonly Edition[], entity: Editioned): boole
 
 /** The entities whose own edition is enabled, in input order. */
 export const visibleItems = <T extends Editioned>(items: readonly T[], enabled: readonly Edition[]): T[] =>
-  items.filter((item) => isEditionEnabled(enabled, item.edition));
+  items.filter((item) => isVisible(enabled, item));
 
 /**
  * A recipe is available iff every component's edition is enabled. An
@@ -65,4 +73,21 @@ export function availableRecipes<T extends { recipes: string[][] }>(
 /** A fusion is visible iff both components' editions are enabled. */
 export function fusionVisible(a: Editioned, b: Editioned, enabled: readonly Edition[]): boolean {
   return enabled.includes(a.edition) && enabled.includes(b.edition);
+}
+
+/**
+ * One namespace's graph with every item's recipes gated: the items and their
+ * order are unchanged, only recipes with a hidden component are removed.
+ * Highlight walks, complexity, and the build graph all read the same gated
+ * shape, so a hidden component can never appear in a visible item's chain.
+ */
+export function gatedGraph<T extends GraphItem & Editioned>(
+  graph: Map<string, T>,
+  enabled: readonly Edition[],
+): Map<string, T> {
+  const gated = new Map<string, T>();
+  for (const [id, item] of graph) {
+    gated.set(id, { ...item, recipes: availableRecipes(item, enabled, (component) => graph.get(component)) });
+  }
+  return gated;
 }

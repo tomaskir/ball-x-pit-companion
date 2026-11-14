@@ -90,13 +90,26 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   table's header cells (`column(row, 'Effect text (wiki)')`) — parsers name
   the columns they read instead of hardcoding indices.
 - **Generated-data contract** — `scripts/generated-data.ts`: `emitData`
-  (parsed + editorial → in-memory data), `renderGenerated` (data → the five
+  (parsed + editorial → in-memory data), `renderGenerated` (data → the six
   file contents), and `validateGenerated` (the one invariant list). The
   editorial maps' own contract lives with the model: `validateEditorial`
   (`scripts/editorial.ts`) checks bidirectional entity coverage, the tag
   vocabulary, verdict-rule sanity, and wildcard uniqueness; `validateGenerated`
   calls it. The `emit-data.ts` CLI runs validate before write;
   `src/data.test.ts` runs the same list against the checked-in data.
+- **Edition** — the content-filter dimension on every ball, passive, and
+  character: `base-game` or `dlc-risen-ballbylon`, authored as a trailing
+  `Edition` cell in the fact base (an absent cell means base-game) and
+  generated into `src/data/editions.ts` from `scripts/editions.ts`. Recipes
+  and level-3 texts carry no edition; they inherit from their components/ball.
+- **Edition filter** — the user's enabled-edition list (`enabledEditions`,
+  default `['base-game']`), persisted under its own `ball-x-pit-editions`
+  key and carried in v2 share links. Hidden content is not painted (not
+  dimmed); toggling an edition off drops hidden selections and plan entries,
+  and re-enabling does not restore them.
+- **Edition gate** — the rule that a recipe is available iff every
+  component's edition is enabled, and a fusion is visible iff both components
+  are enabled (`src/edition-gate.ts`).
 - **Tag** — one of the 30 entries in the synergy vocabulary
   (`src/data/tags.ts`), listed alphabetically: `aim-direction`, `aoe`,
   `attach`, `baby-ball-scaling`, `backstab`, `ball-speed`, `bounce-scaling`,

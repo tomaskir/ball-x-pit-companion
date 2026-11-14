@@ -15,8 +15,8 @@
 // edition filter arrived ({v:2,u,b,p,f,c,e}); v1 links still decode and are
 // treated as base-game only. Legacy flat localStorage snapshots
 // ({ upgradesOn, chars, balls, passives, fused }) still load.
-import { EDITIONS, type Edition } from './data/editions';
-import { DEFAULT_EDITIONS, isEdition } from './edition-gate';
+import { type Edition } from './data/editions';
+import { DEFAULT_EDITIONS, canonicalEditions, isEdition } from './edition-gate';
 import type { PlanFused, PlanSnapshot } from './plan-state';
 
 /** The transport currency: the plan's own fields, the shared character
@@ -89,9 +89,7 @@ const EDITIONS_WIRE = 'e';
  */
 export function normalizeEditions(raw: unknown): Edition[] {
   if (!Array.isArray(raw)) return [...DEFAULT_EDITIONS];
-  const seen = new Set<Edition>();
-  for (const value of raw) if (isEdition(value)) seen.add(value);
-  return EDITIONS.filter((edition) => seen.has(edition));
+  return canonicalEditions(raw.filter(isEdition));
 }
 
 const normalizePlan = (raw: Record<string, unknown>): PlanSnapshot =>

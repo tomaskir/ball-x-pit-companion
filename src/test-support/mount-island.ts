@@ -17,6 +17,7 @@ import { EDITIONS_KEY, PLAN_KEY } from '../plan-session';
 import type { IslandPorts } from '../companion';
 import type { SharedSnapshot } from '../plan-codec';
 import type { Edition } from '../data/editions';
+import { DEFAULT_EDITIONS } from '../edition-gate';
 import { shellDoc } from './styles';
 
 /** The real page shell: index.astro's body markup, parsed by the shared
@@ -154,7 +155,7 @@ export function stubPorts(init: {
       if (!raw) return null;
       const plan = JSON.parse(raw) as Pick<SharedSnapshot, 'plan' | 'chars'>;
       const editionsRaw = store.get(EDITIONS_KEY);
-      const editions = editionsRaw ? (JSON.parse(editionsRaw) as Edition[]) : (['base-game'] as Edition[]);
+      const editions = editionsRaw ? (JSON.parse(editionsRaw) as Edition[]) : [...DEFAULT_EDITIONS];
       return { plan: plan.plan, chars: plan.chars, editions };
     },
     /** How many times the plan key was written — the skip-unchanged pin. */

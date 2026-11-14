@@ -910,3 +910,15 @@ describe('view state: the build graph honors gated recipes', () => {
     expect(vm.buildGraph.balls.nodes.map((n) => n.id)).toContain('water');
   });
 });
+
+describe('view state: the highlight walk honors gated recipes', () => {
+  it('a hidden recipe component is not related; enabling the edition adds it', () => {
+    const view = createViewState();
+    const vm = view.dispatch({ type: 'toggleItem', id: 'blizzard' });
+    expect(vm.tiles.get('freeze')!.related).toBe(true);
+    expect(vm.tiles.get('wind')!.related).toBe(true);
+    expect(vm.tiles.get('water')!.related).toBe(false); // DLC component of a hidden recipe
+    const vm2 = view.dispatch({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' });
+    expect(vm2.tiles.get('water')!.related).toBe(true);
+  });
+});

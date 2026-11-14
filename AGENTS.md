@@ -22,10 +22,11 @@ Not an npm package (`"private": true`). Code is MIT-licensed; game art in
 - `src/companion-core.ts` — pure startup decisions (`sectionFromHash`, `shouldClear`, `themeFromStorage`); the island and shell are their transport.
 - `src/shell.ts` — the **shell adapter**: `createShell({ ports, dispatch, snapshot })` owns every static-shell control (theme, tabs, per-screen search, plan toolbar, share, Esc/empty-space) in one listener registry and returns `{ showSection, destroy }`; `destroy` removes every listener and clears the share flash timer.
 - `src/clear-exempt.ts` — the clear-exemption marker/predicate (`markClearExempt(el)` at each interactive region's creation site, `isClearExempt(target)` for the shell/island); the empty-space clear rule sits with the markup that creates it, not in a selector list.
-- `src/view-state.ts` — all state + derivations; `dispatch(action) → ViewModel`. The test surface.
-- `src/plan-state.ts` — the plan screen's state and derivation: `createPlanState()` → `dispatch` / `derive(selectedChars)` / `snapshot()`, plus the membership queries (`has`, `hasPair`) and `limits()` the rest of the app reads.
-- `src/plan-codec.ts` — the plan persistence codec: `PlanSnapshot ⇄ v1 wire ⇄ SharedSnapshot { plan, chars }`, with the plan's field list declared once (compiler-checked against `keyof PlanSnapshot`). `encodeShared`/`decodeShared`/`normalizeShared`; shape only, deeper id validation stays in `plan-state`'s `hydrate`. `src/share.ts` keeps the URL transport (`planLink`, `takeShareParam`).
-- `src/plan-session.ts` — the persistence lifecycle over injected ports: `restore({ storage, hash }) → { shared, stripUrl }` owns share-beats-stored precedence, the one-shot strip, and corrupt-storage tolerance; `save(storage, shared)` owns serialization and skips unchanged plans. The island keeps the transport.
+- `src/view-state.ts` — all state + derivations; `dispatch(action) → ViewModel`. The test surface. Also owns the content filter's `enabledEditions` (default base-game), the drop-hidden invariant on toggle-off/hydrate, the dropped-entry count, and the edition-filtered collections/recipes every screen paints.
+- `src/edition-gate.ts` — the content filter's pure rules: `DEFAULT_EDITIONS`, `canonicalEditions`, `isEditionEnabled`/`isVisible`, `recipeAvailable`/`availableRecipes` (a recipe needs every component's edition enabled), `fusionVisible` (both components), and `gatedGraph` (a namespace map with gated recipes). The vocabulary itself is generated (`src/data/editions.ts`).
+- `src/plan-state.ts` — the plan screen's state and derivation: `createPlanState()` → `dispatch` / `derive(selectedChars)` / `snapshot()`, plus the membership queries (`has`, `hasPair`), `dropHidden(enabled)` (the filter's no-hidden-live-state rule), and `limits()` the rest of the app reads.
+- `src/plan-codec.ts` — the plan persistence codec: `PlanSnapshot ⇄ v2 wire ⇄ SharedSnapshot { plan, chars, editions }`, with the plan's field list declared once (compiler-checked against `keyof PlanSnapshot`). `encodeShared`/`decodeShared`/`normalizeShared`; v1 links still decode as base-game only; shape only, deeper id validation stays in `plan-state`'s `hydrate`. `src/share.ts` keeps the URL transport (`planLink`, `takeShareParam`).
+- `src/plan-session.ts` — the persistence lifecycle over injected ports: `restore({ storage, hash }) → { shared, editions, stripUrl, fromShare }` owns share-beats-stored precedence, the one-shot strip, and corrupt-storage tolerance; `save(storage, shared)` owns serialization and skips unchanged state. The plan + shared selection persist under `ball-x-pit-plan`, the edition filter under its own `ball-x-pit-editions`. The island keeps the transport.
 - `src/renderer.ts` — all DOM painting behind one instance lifecycle: `createRenderer({ emit })` → `{ build(), paint(vm), destroy() }`. The instance owns the seam, the toast adapter, the reconcile cache, and every painter registry; `paint(vm)` captures the latest view model for the toast's verdict.
 - `src/renderer/` — internal painter factories behind that facade (grids, characters, chips, fusion screen, plan, build graphs, selection box), each created over the instance's seam and reconcile cache: `reconcile.ts` (the content-diff cache), `action-slot.ts` (the once-built click channel: a typed `ToggleAction` refreshed by every repaint), `seam.ts` (the emit callback, the captured view model, and the toast adapter), and `dom.ts`/`labels.ts` (icon, verdict badge, and display-text helpers). No module-level mutable renderer state.
 - `src/toast.ts` — the hover/tap detail popup adapter (`createToast`); created and torn down by the renderer instance.
@@ -37,7 +38,7 @@ Not an npm package (`"private": true`). Code is MIT-licensed; game art in
 - `src/pair.ts` — unordered-pair identity (`pairKey`, `pairKeyOf`, `parsePair`); the one home for the "reverse composition is the same pair" invariant.
 - `src/pick-list.ts` — the sticky pick-list invariant (`createPickList({ hasRoom, resolve, key })` → `{ toggle, restore, list, has }`): re-click deselects, over-capacity adds are no-ops, rejected ids are ignored, restore dedupes first-occurrence-wins without trimming. Consumers: character slots and fusion picks in `view-state`, plan balls/passives/fused pairs in `plan-state`.
 - `src/graph.ts` — pure evolution-graph helpers (depth, highlight walks, recipe notation).
-- `src/build-graph.ts` — pure Plan-screen build-graph derivation + layout: `deriveBuildGraphView(planState, { focus, done, collapsed })` owns the graph's inputs (targets, including Evolves-instead resolution), both namespace graphs, focus validation, the related-set walk, and the row model (row counts, fusion row index, labels); `deriveBuildGraph`/`layoutBuildGraph` are its pure parts. The renderer only paints it.
+- `src/build-graph.ts` — pure Plan-screen build-graph derivation + layout: `deriveBuildGraphView(planState, { focus, done, collapsed, editions })` owns the graph's inputs (targets, including Evolves-instead resolution), both namespace graphs (recipes gated on the enabled editions), focus validation, the related-set walk, and the row model (row counts, fusion row index, labels); `deriveBuildGraph`/`layoutBuildGraph` are its pure parts. The renderer only paints it.
 - `src/depth-labels.ts` — the structural-depth display labels shared by the catalog grids, the fusion screen, and the build-graph row model.
 - `src/catalog.ts` — ball/passive collections indexed; **namespace resolution lives here and nowhere else**.
 - `src/corpus.ts` — the fusion-observation corpus module: curated `fusion-pairs.json` loading (`loadCorpus` → `pair(key)` / `pairKeys()` / `wirePairs()` / `generalRules()`) and raw `.jsonl` validation (`validateCorpus`); the seam both corpus tests and the harvest CLI cross.
@@ -45,11 +46,12 @@ Not an npm package (`"private": true`). Code is MIT-licensed; game art in
 - `src/icon-url.ts` — the base-URL × icon-path join.
 - `src/styles/global.css` — the island's stylesheet; `src/styles.test.ts` pins markup/CSS coupling.
 - `src/test-support/` — shared test harness (`mount-island.ts`) and named pins (`pins.ts`); not production code.
-- `src/data/{balls,passives,characters,tags,level-3}.ts` — **generated** data files.
+- `src/data/{editions,balls,passives,characters,tags,level-3}.ts` — **generated** data files.
 - `scripts/parse-wiki.ts`, `scripts/emit-data.ts` — thin CLIs over the data pipeline.
 - `scripts/fact-bases.ts` — exported pure parsers (`parseRecipes`, `parseGameMechanics`, `parsePairings`, `parseLevel3`, `parseFactBases`); the test surface for the fact bases.
 - `scripts/markdown-table.ts` — the one markdown-table scanner all three parsers share; returns rows keyed by header cell (`column(row, 'Name')`), so parsers never index by position.
 - `scripts/editorial.ts` — the site's editorial synergy model (`TAGS`, `BALL_TAGS`, `PASSIVE_TAGS`, `CHAR_VERDICTS`); the only place it is set, plus `validateEditorial`, its one invariant list (bidirectional entity coverage, tag vocabulary, verdict-rule sanity, wildcard uniqueness), shared by the emit CLI and `src/data.test.ts`.
+- `scripts/editions.ts` — the edition vocabulary (`EDITIONS` ordered list + `Edition` union): the source of truth for the generated `src/data/editions.ts` and the fact-base parser's vocabulary check.
 - `scripts/generated-data.ts` — the generated-data contract (`emitData`, `renderGenerated`, `validateGenerated`, `runEmitData`); validation runs before any write and the same list is asserted in `src/data.test.ts`.
 - `scripts/slug.ts` — shared name→id slugification.
 - `scripts/harvest/validate-observations.ts` — thin CLI over `src/corpus.ts` (prints findings, sets the exit code).
@@ -102,8 +104,9 @@ Hand-edited:
   editorial synergy model is set.
 
 Generated — never edit by hand:
-- `src/data/parsed.json`, `src/data/balls.ts`, `src/data/passives.ts`,
-  `src/data/characters.ts`, `src/data/tags.ts`, `src/data/level-3.ts`.
+- `src/data/parsed.json`, `src/data/editions.ts`, `src/data/balls.ts`,
+  `src/data/passives.ts`, `src/data/characters.ts`, `src/data/tags.ts`,
+  `src/data/level-3.ts`.
 
 `scripts/generated-data.ts` validates on every run (recipes resolve within
 namespace, tags in vocabulary, every character has a verdict entry, base balls
