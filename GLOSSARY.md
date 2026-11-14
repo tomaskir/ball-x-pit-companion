@@ -54,6 +54,23 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
 - **Catalog** — the ball and passive collections, indexed, plus namespace
   resolution. Module: `src/catalog.ts` (`ballMap`, `passiveMap`,
   `isPassive(id)`, `itemFor(id)`, `graphFor(id)`).
+- **Edition** — a release grouping of game content: `base-game` or
+  `dlc-risen-ballbylon`. Every ball, passive, and character carries
+  `edition`; it is authored as the `Edition` column in the fact base (an
+  absent cell means `base-game`) and typed in `src/data/editions.ts`.
+  Recipes and level-3 texts carry no edition of their own — a recipe
+  inherits its components', a level-3 text its ball's.
+- **Edition filter** — the user-controlled set of enabled editions
+  (`enabledEditions` in the view state), persisted under `ball-x-pit-editions`
+  and carried by share links (codec v2; a v1 link means `base-game`).
+  Hidden content is dropped from state, not dimmed: toggling an edition off
+  removes selected characters, fusion picks, plan entries, and fused pairs
+  with a hidden component; re-enabling does not restore. A dropped loss is
+  reported by the header status line.
+- **Edition gate** — a recipe is available iff every component ball's edition
+  is enabled; fusion visibility applies the same rule to both components.
+  The six DLC-era recipe additions are gated by their DLC components, so
+  base recipes survive with the expansion off.
 - **Depth** — evolution tier computed from recipe structure, not wiki labels:
   0 = basic, 1 = evolved (recipe includes a base ball only), 2 = tier-3
   (recipe includes an evolved component). Rule and recursion (tier rule,
