@@ -74,7 +74,11 @@ Other wiki terms used verbatim: **Base Balls** (25), **Baby Ball** (not special)
   a recipe is available iff every component's edition is enabled, and a fusion
   is visible iff both components are enabled. The six DLC-era recipe additions
   are gated by their DLC components, so base recipes survive with the
-  expansion off.
+  expansion off. Two graph shapes read the gate: `gatedGraph` drops a whole
+  recipe when any component is hidden (the build graph's shape — a build path
+  must be fully available), while `visibleGraph` keeps only visible items and
+  narrows each recipe to its visible components (the highlight walk's shape —
+  a visible component still relates to its visible sibling).
 - **Depth** — evolution tier computed from recipe structure, not wiki labels:
   0 = basic, 1 = evolved (recipe includes a base ball only), 2 = tier-3
   (recipe includes an evolved component). Rule and recursion (tier rule,

@@ -1060,7 +1060,7 @@ describe('view state: the build graph honors gated recipes', () => {
   });
 });
 
-describe('view state: the highlight walk honors gated recipes', () => {
+describe('view state: the highlight walk honors the edition filter', () => {
   it('a hidden recipe component is not related; enabling the edition adds it', () => {
     const view = createViewState();
     const vm = view.dispatch({ type: 'toggleItem', id: 'blizzard' });
@@ -1069,6 +1069,21 @@ describe('view state: the highlight walk honors gated recipes', () => {
     expect(vm.tiles.get('water')!.related).toBe(false); // DLC component of a hidden recipe
     const vm2 = view.dispatch({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' });
     expect(vm2.tiles.get('water')!.related).toBe(true);
+  });
+
+  it('a visible component of a partially hidden recipe is still related (DLC-only Baby Armor → Hand Me Downs)', () => {
+    const view = createViewState({ editions: ['dlc-risen-ballbylon'] });
+    const vm = view.dispatch({ type: 'toggleItem', id: 'baby-armor' });
+    // Baby Armor = Hand Me Downs (DLC) + Iron Onesie (base). The hidden
+    // component must not suppress its visible sibling.
+    expect(vm.tiles.get('hand-me-downs')!.related).toBe(true);
+    expect(vm.tiles.get('iron-onesie')!.related).toBe(false); // hidden component
+  });
+
+  it('a visible child of a partially hidden recipe is still related (DLC-only Hand Me Downs → Baby Armor)', () => {
+    const view = createViewState({ editions: ['dlc-risen-ballbylon'] });
+    const vm = view.dispatch({ type: 'toggleItem', id: 'hand-me-downs' });
+    expect(vm.tiles.get('baby-armor')!.related).toBe(true);
   });
 });
 

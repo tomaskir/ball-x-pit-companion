@@ -12,6 +12,7 @@ import {
   isEditionEnabled,
   isVisible,
   recipeAvailable,
+  visibleGraph,
   visibleItems,
 } from './edition-gate';
 import { ballMap, passiveMap } from './catalog';
@@ -118,5 +119,37 @@ describe('edition gate: gatedGraph', () => {
   it('with every edition enabled the recipes are unchanged', () => {
     const gated = gatedGraph(ballMap, BOTH);
     expect(gated.get('blizzard')!.recipes).toEqual(ballMap.get('blizzard')!.recipes);
+  });
+});
+
+describe('edition gate: visibleGraph (the highlight walk)', () => {
+  it('keeps only visible items and narrows recipes to their visible components', () => {
+    const visible = visibleGraph(passiveMap, ['dlc-risen-ballbylon']);
+    expect(visible.has('baby-armor')).toBe(true);
+    expect(visible.has('hand-me-downs')).toBe(true);
+    expect(visible.has('iron-onesie')).toBe(false); // base-game component
+    // The visible half of Baby Armor's recipe survives.
+    expect(visible.get('baby-armor')!.recipes).toEqual([['hand-me-downs']]);
+  });
+
+  it('keeps each recipe’s visible components and drops only fully hidden recipes', () => {
+    const visible = visibleGraph(ballMap, BASE);
+    // Blizzard's freeze+water recipe narrows to [freeze]; water never enters.
+    expect(visible.get('blizzard')!.recipes).toEqual([
+      ['freeze', 'wind'],
+      ['freeze', 'lightning'],
+      ['freeze'],
+    ]);
+  });
+
+  it('drops a recipe whose components are all hidden', () => {
+    type Node = { id: string; depth: 0 | 1; edition: 'base-game' | 'dlc-risen-ballbylon'; recipes: string[][] };
+    const graph = new Map<string, Node>([
+      ['a', { id: 'a', depth: 0, edition: 'base-game', recipes: [] }],
+      ['b', { id: 'b', depth: 0, edition: 'dlc-risen-ballbylon', recipes: [] }],
+      ['c', { id: 'c', depth: 1, edition: 'base-game', recipes: [['a'], ['b']] }],
+    ]);
+    const visible = visibleGraph(graph, BASE);
+    expect(visible.get('c')!.recipes).toEqual([['a']]);
   });
 });

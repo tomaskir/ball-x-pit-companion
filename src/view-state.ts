@@ -43,8 +43,8 @@ import {
   DEFAULT_EDITIONS,
   availableRecipes as filterRecipes,
   canonicalEditions,
-  gatedGraph,
   isEditionEnabled,
+  visibleGraph,
   visibleItems,
 } from './edition-gate';
 import { highlightSet } from './graph';
@@ -294,10 +294,11 @@ export function createViewState({ editions }: ViewStateOptions = {}) {
     const fusionRows = new Map<string, FusionRowState>();
     const chars = selectedChars.list();
     const picks = fusionPicks.list();
-    // The highlight walk reads the gated graphs: a hidden component can
-    // never enter a visible item's related chain.
-    const ballGraph = gatedGraph(ballMap, enabledEditions);
-    const passiveGraph = gatedGraph(passiveMap, enabledEditions);
+    // The highlight walk reads the visible-only graphs: a hidden component
+    // never enters the related chain, but a visible component of a partially
+    // hidden recipe still relates to its visible sibling.
+    const ballGraph = visibleGraph(ballMap, enabledEditions);
+    const passiveGraph = visibleGraph(passiveMap, enabledEditions);
     const related = selectedId
       ? highlightSet(selectedId, isPassive(selectedId) ? passiveGraph : ballGraph)
       : new Set<string>();
