@@ -13,6 +13,7 @@ import { recipeHtml } from '../graph';
 import type { PainterSeam } from './seam';
 import { markClearExempt } from '../clear-exempt';
 import { DEPTH_LABELS } from '../depth-labels';
+import { EMPTY_HINT } from './labels';
 import { icon, verdictBadge } from './dom';
 import type { ViewModel } from '../view-state';
 
@@ -37,9 +38,6 @@ interface GridEls {
   empty: HTMLElement;
   sections: GridSection[];
 }
-
-/** The one empty-screen hint — the content filter leaves nothing to show. */
-const EMPTY_HINT = 'No content matches the current filters.';
 
 export function createGrids({ emitAction, attachToast }: PainterSeam): Grids {
   const tiles = new Map<string, { tile: HTMLElement; item: Item }>();
@@ -101,7 +99,9 @@ export function createGrids({ emitAction, attachToast }: PainterSeam): Grids {
   }
 
   /** Repaint one grid's headings and empty hint from its edition-visible
-   *  collection (the view model derives it; the renderer never re-gates). */
+   *  collection (the view model derives it; the renderer never re-gates).
+   *  The count is the content filter's: hidden content is absent, so a tier
+   *  with no visible item hides its heading. */
   function paintGrid(gridId: string, visible: readonly { depth: 0 | 1 | 2 }[]) {
     const els = grids.get(gridId);
     if (!els) return;

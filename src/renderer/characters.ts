@@ -6,6 +6,7 @@ import { CHARACTERS, type Character } from '../data/characters';
 import { ballMap } from '../catalog';
 import type { PainterSeam } from './seam';
 import { markClearExempt } from '../clear-exempt';
+import { EMPTY_HINT } from './labels';
 import { icon } from './dom';
 import type { ViewModel } from '../view-state';
 
@@ -18,9 +19,6 @@ export interface Characters {
   /** Drop the card registry (destroy()). */
   destroy(): void;
 }
-
-/** The one empty-screen hint — the content filter leaves nothing to show. */
-const EMPTY_HINT = 'No content matches the current filters.';
 
 export function createCharacters({ emitAction, attachToast }: PainterSeam): Characters {
   let charCards: { ch: Character; card: HTMLElement }[] = [];

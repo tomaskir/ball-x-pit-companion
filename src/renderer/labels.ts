@@ -10,3 +10,7 @@ export const PLAN_LIMIT_TITLE = 'Plan limit reached';
 /** The plan toggle's two states, shared by the selection box's buttons and
  *  the fusion panel's composed-pair button. */
 export const PLAN_TOGGLE_LABELS = { add: 'Add to plan', remove: 'Remove from plan' } as const;
+
+/** The content filter's one empty-screen hint — the grids, the character
+ *  screen, and the fusion pick list all paint this same line. */
+export const EMPTY_HINT = 'No content matches the current filters.';

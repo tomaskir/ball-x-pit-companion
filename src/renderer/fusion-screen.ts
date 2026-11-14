@@ -14,7 +14,7 @@ import { markClearExempt } from '../clear-exempt';
 import { bindAction, type ActionSlot } from './action-slot';
 import type { Reconcile } from './reconcile';
 import { DEPTH_LABELS } from '../depth-labels';
-import { PLAN_LIMIT_TITLE, PLAN_TOGGLE_LABELS } from './labels';
+import { EMPTY_HINT, PLAN_LIMIT_TITLE, PLAN_TOGGLE_LABELS } from './labels';
 import { icon } from './dom';
 import type { ViewModel } from '../view-state';
 
@@ -96,9 +96,6 @@ interface FusionSection {
   heading: HTMLElement;
   depth: 0 | 1 | 2;
 }
-
-/** The one empty-screen hint — the content filter leaves nothing to show. */
-const EMPTY_HINT = 'No content matches the current filters.';
 
 export function createFusionScreen({ emitAction, reconcile }: { emitAction: Emit; reconcile: Reconcile }): FusionScreen {
   const fusionRowEls = new Map<string, HTMLElement>();
@@ -230,8 +227,9 @@ export function createFusionScreen({ emitAction, reconcile }: { emitAction: Emit
       if (state.filtered) row.classList.add('filtered');
     }
 
-    // tier headings count the edition-visible balls; an empty tier hides its
-    // heading, and an empty list shows the one filter hint
+    // tier headings count the edition-visible balls (the content filter's
+    // count); an empty tier hides its heading, and an empty list shows the
+    // one filter hint
     let anyVisible = false;
     for (const section of fusionSections) {
       const count = vm.visible.fusionBalls.filter((b) => b.depth === section.depth).length;
