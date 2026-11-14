@@ -109,7 +109,7 @@ describe('regression: tier-2 ball selection includes tier-3 children', () => {
   });
 });
 
-describe('regression: multi-recipe data supports the compact x+(y/z) notation', () => {
+describe('regression: multi-recipe notation is faithful (factorized or explicit alternatives)', () => {
   // The compact notation is only faithful for entities that factorize into
   // per-slot alternates. Risen Ballbylon added two recipes that genuinely do
   // not (Overgrowth and Swamp); those must render as explicit alternatives,

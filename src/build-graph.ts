@@ -24,8 +24,10 @@
 //   that needs it. Being a planned target adds 1; each parent (a model node
 //   whose recipes include the node) adds the parent's own demand × the slot
 //   factor — a single-option recipe slot is mandatory {1,1}, a per-slot
-//   alternate is {0,1}. Min and max aggregate as independent sums, so
-//   alternate paths read as ranges ("0-1", "1-2") and shared bases sum.
+//   alternate is {0,1}. Recipes that do not factorize into slots are counted
+//   per recipe instead (the component's min/max occurrence across recipes).
+//   Min and max aggregate as independent sums, so alternate paths read as
+//   ranges ("0-1", "1-2") and shared bases sum.
 // - `final` marks the planned targets: planned singles ride their own depth
 //   row (a planned base ball is a final node in the base row); only fused
 //   pairs occupy the fusion row.

@@ -57,7 +57,8 @@ export function createToast({ getVerdict }: ToastOptions): ToastAdapter {
     // the toast is interactive (its content is selectable, its outside-tap
     // dismissal is its own) — a click inside it is not empty space
     markClearExempt(el);
-    // recipes are OR-of-ANDs — same compact per-slot notation as the tiles
+    // recipes are OR-of-ANDs — same notation as the tiles (compact per-slot
+    // alternates, or explicit or-separated recipes when they do not factorize)
     const comps = item.recipes.length ? recipeHtml(item.recipes, (id) => {
       const comp = itemFor(id);
       return comp ? `<img src="${icon(comp.icon)}" alt="${comp.name}" title="${comp.name}" width="28" height="28">` : null;

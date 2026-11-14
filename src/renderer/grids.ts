@@ -45,9 +45,10 @@ export function createGrids({ emitAction, attachToast }: PainterSeam): Grids {
         tile.dataset.id = item.id;
         // the tile owns its click — an empty-space clear must not fire for it
         markClearExempt(tile);
-        // evolved/tier-3 tiles show recipe components inline. All multi-recipe
-        // evolutions factorize into per-slot alternates (verified over the whole
-        // dataset), so slots render as x+(y/z); single-slot alternates as (x/z).
+        // evolved/tier-3 tiles show recipe components inline. Multi-recipe
+        // evolutions that factorize into per-slot alternates render as x+(y/z);
+        // single-slot alternates as (x/z). The few that do not factorize
+        // (Overgrowth, Swamp) render as explicit or-separated recipes.
         const comps = item.depth > 0 ? `<span class="comps">${recipeMarkup(item)}</span>` : '';
         tile.innerHTML = `<img src="${icon(item.icon)}" alt="${item.name}" width="48" height="48" loading="lazy"><span class="nm">${item.name}</span>${comps}`;
         tile.addEventListener('click', (e) => {
