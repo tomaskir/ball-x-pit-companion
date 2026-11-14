@@ -179,7 +179,8 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   compact icons side by side (36px) with the composed name — which carries
   the "×" between components — beside them, plus one per-component verdict
   badge on each icon. The **End game upgrades**
-  toggle (on by default) sets the limits: 2/5/5 with it, 1/4/4 without; it
+  toggle (on by default) sets the **global** limits: 2/5/5 with it, 1/4/4
+  without; the selected characters overlay them (see **Slot limit**); it
   lives in the plan toolbar's right edge (Clear and Share left, toggle
   right, one row) as static shell markup in `index.astro` — the shell
   adapter wires its change event through the same dispatch path as the other
@@ -211,6 +212,16 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   embedded into the ViewModel by `src/view-state.ts`; painting in
   `src/renderer.ts` (`createPlan` — build/paint, plus the build graphs —
   see **Build graph**).
+- **Slot limit** — the Plan's per-section capacity: 1 character / 4 balls /
+  4 passives without End game upgrades, 2 / 5 / 5 with them. The selected
+  characters overlay the global limits: The Ballbearer doubles the ball
+  limit and zeroes passives; The Hoary Hoarder keeps 2 ball slots and turns
+  the rest of the equipment slots into passives. The overlay is a formula
+  over the global limits, not a fixed table, so the upgrade toggle still
+  applies. Live adds are hard-blocked at the limit; hydrated over-limit
+  entries are kept and marked red, never trimmed. A hydrated pair of both
+  quirk characters resolves to The Ballbearer's rule (the game's check
+  order). Module: `src/slot-limits.ts`.
 - **Fusion-invalid pair** — a planned fused pair the selected character
   cannot build: The Potager's "cannot fuse balls normally" makes every
   planned pair that actually fuses impossible. Live adds are blocked while
@@ -231,7 +242,8 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   union semantics (the game's active-or-combined-type rule); zero selected
   means no restriction. Loadout gates (status ball, friendly piece, stone
   ally) are informational, not enforced. The Ballbearer's zero passive slots
-  make every passive unavailable.
+  are the plan's passive **slot limit** (see **Slot limit**), not a
+  per-passive availability rule.
 - **Passive-invalid entry** — a planned passive the selected character(s)
   cannot use. Live adds are blocked; already-planned and hydrated entries are
   kept and marked red (`passiveInvalid`), never trimmed; counts include them
