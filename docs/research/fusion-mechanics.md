@@ -204,7 +204,7 @@ model without adding a new application channel:
   so it is a `field` ball. Its own burn is field-bound and does not ride a
   partner's hits. The kit entry fixes the classification (regression-tested).
 - **No DLC corpus wave.** The 370-pair observation corpus is pre-DLC; the new
-  balls' behavior is mechanism-backed from the datamine, not observed.
+  balls' behavior is inferred from the datamine (unverified), not observed.
 
 ---
 
