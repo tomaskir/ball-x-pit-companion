@@ -6,14 +6,17 @@ into a property-stacking ball with no unique identity. Companion to
 terminology distinction is in `../../GLOSSARY.md`.
 
 This file is hand-maintained (evidence accessed 2026-10-01..04 and
-2026-11-09..11, game v1.301, **pre-DLC** — re-verify version-dependent claims
-after the Risen Ballbylon release, 2026-11-12) and is **not parsed by the data
-pipeline** — unlike
-`game-mechanics.md`, no script consumes it. The fusion composer `src/fusion.ts`
-implements the model described here, and `src/corpus.test.ts` gates that
-implementation against the observation corpus (below), so a composer change, a
-corpus refresh, or a change of mind here must keep the tests green. The
-2026-11-11 audit trail behind these claims is
+2026-11-09..11, game v1.301) and is **not parsed by the data pipeline** —
+unlike `game-mechanics.md`, no script consumes it. The *Risen Ballbylon*
+extension (game v1.308, datamined 2026-11-13) widened the carrier gate and
+added the fifth cross-wire branch; its evidence is `risen-fusion.md`, and
+`src/fusion.ts` implements the extended model. The fusion composer
+`src/fusion.ts` implements the model described here, and `src/corpus.test.ts`
+gates that implementation against the observation corpus (below), so a
+composer change, a corpus refresh, or a change of mind here must keep the
+tests green. The corpus is **pre-DLC**, so it gates base-game behavior only;
+the expansion balls' behavior is mechanism-backed from the datamine, not
+observed. The 2026-11-11 audit trail behind these claims is
 `fusion-claim-register.md` (a historical pre-resolution snapshot; see §6 of
 this file for the current counts).
 
@@ -70,7 +73,8 @@ The single most load-bearing finding of the research:
 Consequences:
 
 - A "complete fusion list" is a **derivation**: the unordered pair space is
-  C(90,2) ≈ 4005 minus evolution-reserved pairs (the wiki's own ordered-pair
+  C(114,2) = 6441 over the current catalog (114 fusable balls; the pre-DLC
+  catalog was 90) minus evolution-reserved pairs (the wiki's own ordered-pair
   counts — 7836 vs 7921 — are editor arithmetic; treat any exact count as
   unverified).
 - **Fused-ball numbers (damage/procs/cooldowns of the merged ball) are not
@@ -173,6 +177,34 @@ supersedes the earlier target reading recorded in #6.
   fusions. A newer 2026-09 thread argues for a real cap; no controlled test
   settles it — do not treat the display-cap reading as final
   (`CONTRADICTIONS.md` §8, §13).
+
+### 2f. Field carriers and the AOE flag (Risen Ballbylon extension)
+
+The v1.308 datamine (`risen-fusion.md` §3, §5, §8) extended the cross-wire
+model without adding a new application channel:
+
+- **AOE flag.** The game stores a per-ball `AOETypes` list. The site records
+  it as the optional `aoe` boolean in `BALL_KIT` (`src/ball-kit.ts`). When
+  present it is authoritative and overrides the editorial `aoe` tag; when
+  absent, `aoeRank` falls back to the tag. Rank: `screen-clear` = 2, AOE = 1,
+  otherwise 0. Every Risen Ballbylon ball carries an explicit flag, so the new
+  balls never depend on the heuristic.
+- **Fifth branch — `field-carries-on-hit`.** A ball whose kit channels include
+  `field` (a trail or persistent ground zone) can carry a partner's
+  **damage-riding** on-hit status. It is ranked after the AOE branch, so an
+  AOE carrier keeps its own line; `per-second` alone does not make a carrier
+  (attach balls stay non-carriers). The game's `TouchableTrailObj` /
+  `RadialVFX` route damage with a `HitEffectSrc`, so a trail or field is a
+  real carrier path (mechanism-backed, not observed).
+- **Branch priority** (first match wins): spawn × on-hit status → AOE × on-hit
+  status → field × on-hit status → AOE × kill-on-hit → spawn × spawn-bound
+  status.
+- **Ash is the one text-heuristic failure.** Its L3 text reads like an on-hit
+  burn, but the game data gives it a `kLavaTrail` special and no `HitEffects`,
+  so it is a `field` ball. Its own burn is field-bound and does not ride a
+  partner's hits. The kit entry fixes the classification (regression-tested).
+- **No DLC corpus wave.** The 370-pair observation corpus is pre-DLC; the new
+  balls' behavior is mechanism-backed from the datamine, not observed.
 
 ---
 
@@ -299,9 +331,10 @@ to pairs whose kits do collide.
   fused-specific (abstracted to "X").
 - Whether the save format records directed fusion pairs (NumCombos symmetry)
   is unverified (§4).
-- Corpus coverage is 370 distinct pairs ≈ 9.2% of C(90,2) (977 pair-filed
-  observations; 58 global composition-rule rows have no pair), concentrated
-  on the meta; pair counts from any single harvest session are a floor, not a
-  ceiling.
+- Corpus coverage is 370 distinct pairs ≈ 9.2% of the pre-DLC C(90,2) space
+  (977 pair-filed observations; 58 global composition-rule rows have no pair),
+  concentrated on the meta; pair counts from any single harvest session are a
+  floor, not a ceiling. Against the current 114-ball catalog the corpus covers
+  ≈ 5.7% of C(114,2), and it contains no Risen Ballbylon ball.
 - Demo-era claims (pre-release builds) may describe different builds; several
   contradictions in the register are of this kind.
