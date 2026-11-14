@@ -130,6 +130,36 @@ describe('edition filter persistence', () => {
     expect(planCounts()).toEqual(['0 / 2', '0 / 5', '0 / 5']);
     expect(t.savedPlan()!.plan.balls).toEqual([]);
     expect(t.savedPlan()!.editions).toEqual(['base-game']);
+    // a plain startup restore never fires the loss notice
+    expect(document.getElementById('editionLoss')!.hidden).toBe(true);
+  });
+
+  it('a checkbox click toggles the filter, hides content, and persists the editions', () => {
+    const t = stubPorts();
+    start(t.ports);
+    const beastTile = () => document.querySelector<HTMLElement>('#ballsGrid .tile[data-id="beast"]')!;
+    expect(beastTile().hidden).toBe(true); // base-game only by default
+
+    const dlc = document.querySelector<HTMLInputElement>('.edition-toggle[data-edition="dlc-risen-ballbylon"]')!;
+    dlc.checked = true;
+    dlc.dispatchEvent(new Event('change', { bubbles: true }));
+
+    expect(beastTile().hidden).toBe(false);
+    // the plan is unchanged, so only the editions key is written
+    expect(JSON.parse(t.store.get(EDITIONS_KEY)!)).toEqual(['base-game', 'dlc-risen-ballbylon']);
+    // every screen's group mirrors the one state
+    expect([...document.querySelectorAll<HTMLInputElement>('.edition-toggle')].every((i) => i.checked)).toBe(true);
+  });
+
+  it('a share restore that drops entries shows the header loss notice', () => {
+    const shared: SharedSnapshot = { plan: dlcPlan, chars: [], editions: ['base-game'] };
+    const t = stubPorts({ hash: `#/plan?p=${encodeShared(shared)}` });
+
+    start(t.ports);
+
+    const notice = document.getElementById('editionLoss')!;
+    expect(notice.hidden).toBe(false);
+    expect(notice.textContent).toBe('1 entry removed by edition filter');
   });
 
   it('a share link carries its editions and persists them with the plan', () => {

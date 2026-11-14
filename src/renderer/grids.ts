@@ -1,8 +1,11 @@
 // The Balls/Passives grids: tiles are built once; state changes (selection,
-// search, characters) only repaint classes/badges on the existing DOM —
-// rebuilding would recreate the <img> elements and blink the icons
-// (invariant 2). Internal to the renderer facade; the tile registry belongs to
-// the renderer instance (createGrids), so two renderers never share tiles.
+// search, characters, the edition filter) only repaint classes/attributes on
+// the existing DOM — rebuilding would recreate the <img> elements and blink
+// the icons (invariant 2). The edition filter hides a tile with the hidden
+// attribute (absent, not dimmed) and repaints each tier heading's count; a
+// grid with no visible tile shows the one filter hint. Internal to the
+// renderer facade; the tile registry belongs to the renderer instance
+// (createGrids), so two renderers never share tiles.
 import { BALLS } from '../data/balls';
 import { PASSIVES } from '../data/passives';
 import { itemFor, type Item } from '../catalog';
@@ -23,13 +26,38 @@ export interface Grids {
   destroy(): void;
 }
 
+/** One tier's heading (the edition filter repaints the count and hides the
+ *  heading when the tier has no visible items). */
+interface GridSection {
+  heading: HTMLElement;
+  depth: 0 | 1 | 2;
+}
+
+interface GridEls {
+  empty: HTMLElement;
+  sections: GridSection[];
+}
+
+/** The one empty-screen hint — the content filter leaves nothing to show. */
+const EMPTY_HINT = 'No content matches the current filters.';
+
 export function createGrids({ emitAction, attachToast }: PainterSeam): Grids {
   const tiles = new Map<string, { tile: HTMLElement; item: Item }>();
+  const grids = new Map<string, GridEls>();
 
   function buildGrid(gridId: string, items: Item[]) {
     const wrap = document.getElementById(gridId)!;
     wrap.innerHTML = '';
 
+    // the empty-screen hint is built once and toggled by paint — the content
+    // filter hides every tile without removing any <img>
+    const empty = document.createElement('p');
+    empty.className = 'empty-filter-hint';
+    empty.textContent = EMPTY_HINT;
+    empty.hidden = true;
+    wrap.appendChild(empty);
+
+    const sections: GridSection[] = [];
     for (let depth = 0 as 0 | 1 | 2; depth <= 2; depth++) {
       const tier = items.filter((i) => i.depth === depth);
       if (!tier.length) continue;
@@ -37,6 +65,7 @@ export function createGrids({ emitAction, attachToast }: PainterSeam): Grids {
       head.className = 'tier-heading';
       head.textContent = `${DEPTH_LABELS[depth]} (${tier.length})`;
       wrap.appendChild(head);
+      sections.push({ heading: head, depth });
       const grid = document.createElement('div');
       grid.className = 'tile-grid';
       for (const item of tier) {
@@ -61,18 +90,40 @@ export function createGrids({ emitAction, attachToast }: PainterSeam): Grids {
       }
       wrap.appendChild(grid);
     }
+    grids.set(gridId, { empty, sections });
   }
 
   function build() {
     tiles.clear();
+    grids.clear();
     buildGrid('ballsGrid', BALLS);
     buildGrid('passivesGrid', PASSIVES);
   }
 
+  /** Repaint one grid's headings and empty hint from its edition-visible
+   *  collection (the view model derives it; the renderer never re-gates). */
+  function paintGrid(gridId: string, visible: readonly { depth: 0 | 1 | 2 }[]) {
+    const els = grids.get(gridId);
+    if (!els) return;
+    let anyVisible = false;
+    for (const section of els.sections) {
+      const count = visible.filter((item) => item.depth === section.depth).length;
+      section.heading.textContent = `${DEPTH_LABELS[section.depth]} (${count})`;
+      section.heading.hidden = count === 0;
+      if (count > 0) anyVisible = true;
+    }
+    els.empty.hidden = anyVisible;
+  }
+
   function paint(vm: ViewModel) {
+    paintGrid('ballsGrid', vm.visible.balls);
+    paintGrid('passivesGrid', vm.visible.passives);
+
     for (const { tile, item } of tiles.values()) {
       const t = vm.tiles.get(item.id);
       if (!t) continue;
+      // the edition filter: hidden content is absent, not dimmed
+      tile.hidden = t.hidden;
       tile.classList.remove('selected', 'related', 'dimmed', 'filtered');
       if (t.selected) tile.classList.add('selected');
       else if (t.related) tile.classList.add('related');
@@ -90,6 +141,7 @@ export function createGrids({ emitAction, attachToast }: PainterSeam): Grids {
     paint,
     destroy() {
       tiles.clear();
+      grids.clear();
     },
   };
 }

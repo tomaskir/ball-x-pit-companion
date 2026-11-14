@@ -1,6 +1,7 @@
-// The character cards: built once; selection repaints classes in place.
-// Internal to the renderer facade; the card registry belongs to the renderer
-// instance (createCharacters).
+// The character cards: built once; selection and the edition filter repaint
+// attributes/classes in place (hidden content is absent, not dimmed). An
+// empty grid shows the one filter hint. Internal to the renderer facade; the
+// card registry belongs to the renderer instance (createCharacters).
 import { CHARACTERS, type Character } from '../data/characters';
 import { ballMap } from '../catalog';
 import type { PainterSeam } from './seam';
@@ -18,16 +19,27 @@ export interface Characters {
   destroy(): void;
 }
 
+/** The one empty-screen hint — the content filter leaves nothing to show. */
+const EMPTY_HINT = 'No content matches the current filters.';
+
 export function createCharacters({ emitAction, attachToast }: PainterSeam): Characters {
   let charCards: { ch: Character; card: HTMLElement }[] = [];
+  let empty: HTMLElement | null = null;
 
   function build() {
     const wrap = document.getElementById('charactersGrid')!;
     wrap.innerHTML = '';
     charCards = [];
+    // built once, toggled by paint — hiding a card never removes its <img>
+    empty = document.createElement('p');
+    empty.className = 'empty-filter-hint';
+    empty.textContent = EMPTY_HINT;
+    empty.hidden = true;
+    wrap.appendChild(empty);
     for (const ch of CHARACTERS) {
       const card = document.createElement('div');
       card.className = 'char-card';
+      card.dataset.id = ch.id;
       markClearExempt(card);
       const base = ch.baseBallId ? ballMap.get(ch.baseBallId) : null;
       card.innerHTML = `
@@ -53,9 +65,13 @@ export function createCharacters({ emitAction, attachToast }: PainterSeam): Char
   }
 
   function paint(vm: ViewModel) {
+    let anyVisible = false;
     for (const { ch, card } of charCards) {
       const c = vm.charCards.get(ch.id);
       if (!c) continue;
+      // the edition filter: hidden content is absent, not dimmed
+      card.hidden = c.hidden;
+      if (!c.hidden) anyVisible = true;
       card.classList.toggle('selected', c.selected);
       card.classList.toggle('filtered', c.filtered);
       // Matchmaker pairing restriction: dimmed, not-allowed cursor, and a
@@ -65,6 +81,7 @@ export function createCharacters({ emitAction, attachToast }: PainterSeam): Char
       card.classList.toggle('blocked', c.blocked);
       card.title = c.blockedBy ? `can't pair with ${c.blockedBy}` : '';
     }
+    if (empty) empty.hidden = anyVisible;
   }
 
   return {
@@ -72,6 +89,7 @@ export function createCharacters({ emitAction, attachToast }: PainterSeam): Char
     paint,
     destroy() {
       charCards = [];
+      empty = null;
     },
   };
 }

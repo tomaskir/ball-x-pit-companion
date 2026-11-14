@@ -12,11 +12,12 @@
 //
 // The painters themselves live in internal modules under src/renderer/:
 // grids.ts, characters.ts, chips.ts, fusion-screen.ts, plan.ts,
-// build-graphs.ts, and selection-box.ts, each a factory over the instance's
-// seam (seam.ts — the emit callback, the captured view model, and the toast
-// adapter from src/toast.ts) and reconcile cache (reconcile.ts — the
-// content-diff cache), sharing the action-slot adapter (action-slot.ts — the
-// typed action a built-once handler reports) and the DOM/label helpers
+// build-graphs.ts, selection-box.ts, and edition-filter.ts (the per-screen
+// checkbox groups and the header loss notice), each a factory over the
+// instance's seam (seam.ts — the emit callback, the captured view model, and
+// the toast adapter from src/toast.ts) and reconcile cache (reconcile.ts —
+// the content-diff cache), sharing the action-slot adapter (action-slot.ts —
+// the typed action a built-once handler reports) and the DOM/label helpers
 // (dom.ts, labels.ts). This facade composes them; only createRenderer,
 // Renderer, BuildOptions, FUSION_PANEL_SKELETON, and FUSION_PANEL_SELECTORS
 // are public.
@@ -55,6 +56,7 @@ import { createFusionScreen } from './renderer/fusion-screen';
 import { createPlan } from './renderer/plan';
 import { createBuildGraphs } from './renderer/build-graphs';
 import { createSelectionBoxes } from './renderer/selection-box';
+import { createEditionFilter } from './renderer/edition-filter';
 
 export { FUSION_PANEL_SKELETON, FUSION_PANEL_SELECTORS } from './renderer/fusion-screen';
 
@@ -103,6 +105,7 @@ export function createRenderer(options: BuildOptions): Renderer {
   const plan = createPlan({ emitAction: seam.emitAction, reconcile });
   const graphs = createBuildGraphs({ emitAction: seam.emitAction, reconcile });
   const selection = createSelectionBoxes({ emitAction: seam.emitAction });
+  const editionFilter = createEditionFilter();
   let built = false;
   let destroyed = false;
 
@@ -122,6 +125,7 @@ export function createRenderer(options: BuildOptions): Renderer {
     paint(vm) {
       if (!built || destroyed) return;
       seam.capture(vm);
+      editionFilter.paint(vm);
       grids.paint(vm);
       characters.paint(vm);
       chips.paint(vm);
@@ -141,6 +145,7 @@ export function createRenderer(options: BuildOptions): Renderer {
       plan.destroy();
       graphs.destroy();
       selection.destroy();
+      editionFilter.destroy();
       built = false;
     },
   };

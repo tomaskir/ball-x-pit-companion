@@ -1,6 +1,7 @@
 // The fusion screen: the pick list (built once, never recreate <img> — same
-// invariant as the grids; pick order and filtering repaint classes in place)
-// and the composed panel. The pick list mirrors the game's Fusion Reactor:
+// invariant as the grids; pick order, search, and the edition filter repaint
+// attributes/classes in place — hidden rows are absent, and the tier headings
+// count the edition-visible balls) and the composed panel. The pick list mirrors the game's Fusion Reactor:
 // any two of the fusable upgrade entities. Purely a DOM-row registry — the
 // panel's picks, state, and composed fusion ride the view model
 // (vm.fusionPanel). Internal to the renderer facade; the row/panel registries
@@ -89,8 +90,20 @@ export const FUSION_PANEL_SELECTORS = {
   planRow: '.fusion-plan-row',
 } as const;
 
+/** One tier's pick-list heading (the edition filter repaints the count and
+ *  hides the heading when the tier has no visible balls). */
+interface FusionSection {
+  heading: HTMLElement;
+  depth: 0 | 1 | 2;
+}
+
+/** The one empty-screen hint — the content filter leaves nothing to show. */
+const EMPTY_HINT = 'No content matches the current filters.';
+
 export function createFusionScreen({ emitAction, reconcile }: { emitAction: Emit; reconcile: Reconcile }): FusionScreen {
   const fusionRowEls = new Map<string, HTMLElement>();
+  let fusionSections: FusionSection[] = [];
+  let fusionEmpty: HTMLElement | null = null;
   // Panel skeleton is built once with icon-bearing slots; paint() toggles the
   // pieces in place — never recreating <img> (same invariant as the grids).
   let fusionPanel: {
@@ -123,6 +136,13 @@ export function createFusionScreen({ emitAction, reconcile }: { emitAction: Emit
     const wrap = document.getElementById('fusionList')!;
     wrap.innerHTML = '';
     fusionRowEls.clear();
+    fusionSections = [];
+    // built once, toggled by paint — hiding a row never removes its <img>
+    fusionEmpty = document.createElement('p');
+    fusionEmpty.className = 'empty-filter-hint';
+    fusionEmpty.textContent = EMPTY_HINT;
+    fusionEmpty.hidden = true;
+    wrap.appendChild(fusionEmpty);
     // tier order (structural depth), name within tier — mirroring the Balls page
     const balls = fusionBalls();
     for (let depth = 0 as 0 | 1 | 2; depth <= 2; depth++) {
@@ -132,6 +152,7 @@ export function createFusionScreen({ emitAction, reconcile }: { emitAction: Emit
       head.className = 'fusion-list-heading';
       head.textContent = `${DEPTH_LABELS[depth]} (${tier.length})`;
       wrap.appendChild(head);
+      fusionSections.push({ heading: head, depth });
       for (const ball of tier) {
         const row = document.createElement('button');
         row.className = 'fusion-row';
@@ -202,10 +223,23 @@ export function createFusionScreen({ emitAction, reconcile }: { emitAction: Emit
     for (const [id, state] of vm.fusionRows) {
       const row = fusionRowEls.get(id);
       if (!row) continue;
+      // the edition filter: hidden content is absent, not dimmed
+      row.hidden = state.hidden;
       if (state.slot === 1) row.classList.add('slot-1');
       else if (state.slot === 2) row.classList.add('slot-2');
       if (state.filtered) row.classList.add('filtered');
     }
+
+    // tier headings count the edition-visible balls; an empty tier hides its
+    // heading, and an empty list shows the one filter hint
+    let anyVisible = false;
+    for (const section of fusionSections) {
+      const count = vm.visible.fusionBalls.filter((b) => b.depth === section.depth).length;
+      section.heading.textContent = `${DEPTH_LABELS[section.depth]} (${count})`;
+      section.heading.hidden = count === 0;
+      if (count > 0) anyVisible = true;
+    }
+    if (fusionEmpty) fusionEmpty.hidden = anyVisible;
 
     const p = fusionPanel;
     if (!p) return;
@@ -385,6 +419,8 @@ export function createFusionScreen({ emitAction, reconcile }: { emitAction: Emit
     paint,
     destroy() {
       fusionRowEls.clear();
+      fusionSections = [];
+      fusionEmpty = null;
       fusionPanel = null;
     },
   };

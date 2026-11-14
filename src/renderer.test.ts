@@ -8,7 +8,7 @@
 // pinned behaviorally too: clicking a real tile / char card / chip / fusion
 // row calls emit with the right action type and id.
 // @vitest-environment jsdom
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import { FUSION_PANEL_SKELETON, FUSION_PANEL_SELECTORS } from './renderer';
 import type { createViewState, ViewModel, Action } from './view-state';
 import type { SharedSnapshot } from './plan-codec';
@@ -706,6 +706,150 @@ describe('pairing restrictions in the DOM (jsdom, through paint())', () => {
     }));
     const entries = [...planView().querySelectorAll<HTMLElement>('.plan-section[data-plan="characters"] .plan-entry')];
     expect(entries.every((e) => !e.classList.contains('invalid-pair') && e.title === '')).toBe(true);
+  });
+});
+
+// ---------- edition filter chrome (jsdom, through paint()) ----------
+
+describe('edition filter chrome (jsdom, through paint())', () => {
+  const toggles = () => [...document.querySelectorAll<HTMLInputElement>('.edition-toggle')];
+  const loss = () => document.getElementById('editionLoss')!;
+
+  afterEach(() => vi.useRealTimers());
+
+  it('paints every screen\'s checkbox group from the enabled editions', () => {
+    // the five groups are separate DOM controls but one state: all in sync
+    expect(toggles()).toHaveLength(10);
+    expect(toggles().every((t) => t.checked === (t.dataset.edition === 'base-game'))).toBe(true);
+
+    drive({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' });
+    expect(toggles().every((t) => t.checked)).toBe(true);
+
+    drive({ type: 'toggleEdition', edition: 'base-game' });
+    expect(toggles().every((t) => t.checked === (t.dataset.edition === 'dlc-risen-ballbylon'))).toBe(true);
+  });
+
+  it('shows the loss notice with the dropped count and auto-clears after ~4s', () => {
+    vi.useFakeTimers();
+    drive({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' }, { type: 'toggleChar', id: 'the-conduit' });
+
+    const vm = drive({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' });
+
+    expect(vm.editionDroppedCount).toBe(1);
+    expect(loss().hidden).toBe(false);
+    expect(loss().textContent).toBe('1 entry removed by edition filter');
+    vi.advanceTimersByTime(4000);
+    expect(loss().hidden).toBe(true);
+  });
+
+  it('the next action clears the notice', () => {
+    drive({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' }, { type: 'toggleChar', id: 'the-conduit' });
+    drive({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' });
+    expect(loss().hidden).toBe(false);
+
+    drive({ type: 'search', section: 'balls', query: 'x' });
+
+    expect(loss().hidden).toBe(true);
+  });
+
+  it('never fires on startup or on toggle-on', () => {
+    expect(loss().hidden).toBe(true);
+
+    drive({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' });
+
+    expect(loss().hidden).toBe(true);
+  });
+});
+
+// ---------- edition filter on the item screens (jsdom, through paint()) ----------
+
+describe('edition filter on the item screens (jsdom, through paint())', () => {
+  const tile = (id: string) => document.querySelector<HTMLElement>(`.tile[data-id="${id}"]`)!;
+  const charCard = (id: string) => document.querySelector<HTMLElement>(`.char-card[data-id="${id}"]`)!;
+  const fusionRow = (id: string) => document.querySelector<HTMLElement>(`.fusion-row[data-id="${id}"]`)!;
+  const headings = (root: string) =>
+    [...document.querySelectorAll<HTMLElement>(`${root} .tier-heading, ${root} .fusion-list-heading`)]
+      .map((h) => h.textContent);
+  const emptyHint = (root: string) => document.querySelector<HTMLElement>(`${root} .empty-filter-hint`)!;
+
+  it('hidden content is absent, not dimmed (default: base game only)', () => {
+    // beast is a Risen Ballbylon ball; bleed is base-game
+    expect(tile('beast').hidden).toBe(true);
+    expect(tile('bleed').hidden).toBe(false);
+    expect(tile('ancient-ladle').hidden).toBe(true); // DLC passive
+    expect(tile('archers-effigy').hidden).toBe(false); // base passive
+    expect(charCard('the-conduit').hidden).toBe(true); // DLC character
+    expect(charCard('the-warrior').hidden).toBe(false);
+    expect(fusionRow('beast').hidden).toBe(true);
+    expect(fusionRow('bleed').hidden).toBe(false);
+    // absent means the hidden attribute, never the search-dim class
+    expect(tile('beast').classList.contains('filtered')).toBe(false);
+  });
+
+  it('enabling the expansion reveals its content; disabling hides it again', () => {
+    drive({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' });
+    expect(tile('beast').hidden).toBe(false);
+    expect(charCard('the-conduit').hidden).toBe(false);
+
+    drive({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' });
+    expect(tile('beast').hidden).toBe(true);
+  });
+
+  it('tier headings count the edition-visible items and hide when empty', () => {
+    expect(headings('#ballsGrid')).toEqual(['Basic (22)', 'Evolved (56)', 'Tier-3 (13)']);
+    expect(headings('#passivesGrid')).toEqual(['Basic (54)', 'Evolved (16)', 'Tier-3 (1)']);
+    expect(headings('#fusionList')).toEqual(['Basic (21)', 'Evolved (56)', 'Tier-3 (13)']);
+
+    drive({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' });
+    expect(headings('#ballsGrid')).toEqual(['Basic (26)', 'Evolved (75)', 'Tier-3 (14)']);
+    expect(headings('#passivesGrid')).toEqual(['Basic (77)', 'Evolved (38)', 'Tier-3 (1)']);
+    expect(headings('#fusionList')).toEqual(['Basic (25)', 'Evolved (75)', 'Tier-3 (14)']);
+  });
+
+  it('an empty screen shows the one filter hint; every heading hides', () => {
+    // base-game is the default; unchecking it leaves no edition enabled
+    drive({ type: 'toggleEdition', edition: 'base-game' });
+
+    for (const root of ['#ballsGrid', '#passivesGrid', '#charactersGrid', '#fusionList']) {
+      expect(emptyHint(root).hidden, `${root} hint visible`).toBe(false);
+      expect(emptyHint(root).textContent).toBe('No content matches the current filters.');
+    }
+    for (const h of document.querySelectorAll<HTMLElement>('.tier-heading, .fusion-list-heading')) {
+      expect(h.hidden, `${h.textContent} hidden`).toBe(true);
+    }
+  });
+
+  it('the empty hint clears as soon as one edition is enabled', () => {
+    drive({ type: 'toggleEdition', edition: 'base-game' });
+    expect(emptyHint('#ballsGrid').hidden).toBe(false);
+
+    drive({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' });
+
+    expect(emptyHint('#ballsGrid').hidden).toBe(true);
+  });
+
+  it('the plan screen drops entries the filter hides (all five screens)', () => {
+    drive(
+      { type: 'toggleEdition', edition: 'dlc-risen-ballbylon' },
+      { type: 'togglePlanItem', id: 'beast' },
+    );
+    const ballEntries = () => planView().querySelectorAll('.plan-section[data-plan="balls"] .plan-entry');
+    expect(ballEntries()).toHaveLength(1);
+
+    drive({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' });
+
+    expect(ballEntries()).toHaveLength(0);
+  });
+
+  it('hiding content never recreates the tile <img> elements (invariant 2)', () => {
+    const img = tile('bleed').querySelector('img')!;
+    const heading = document.querySelector<HTMLElement>('#ballsGrid .tier-heading')!;
+
+    drive({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' });
+    drive({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' });
+
+    expect(tile('bleed').querySelector('img')).toBe(img);
+    expect(document.querySelector('#ballsGrid .tier-heading')).toBe(heading);
   });
 });
 
