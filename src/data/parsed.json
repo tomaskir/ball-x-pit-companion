@@ -1955,7 +1955,8 @@
       "depth": 0,
       "recipes": [],
       "effect": "Increase crit chance to 20% when hitting blinded enemies",
-      "edition": "base-game"
+      "edition": "base-game",
+      "requirement": "needs a Blind-applying ball"
     },
     {
       "name": "Silver Bullet",

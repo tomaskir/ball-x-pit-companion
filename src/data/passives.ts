@@ -776,7 +776,8 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/silver-blindfold.png",
     "tags": [
       "crit"
-    ]
+    ],
+    "requirement": "needs a Blind-applying ball"
   },
   {
     "id": "silver-bullet",

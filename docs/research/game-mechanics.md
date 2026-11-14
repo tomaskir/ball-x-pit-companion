@@ -268,7 +268,7 @@ unlock conditions are unknown.
 | Rusted Blade | Whenever bleed is applied, add 2 extra stacks. | — | — | dlc-risen-ballbylon |
 | Sapphire Hilted Dagger | Increase crit chance to 30% when hitting enemies on their left side | — | default | base-game |
 | Shortbow | Increase fire rate by 15% | — | default | base-game |
-| Silver Blindfold | Increase crit chance to 20% when hitting blinded enemies | — | Clear The LIMINALxDESERT | base-game |
+| Silver Blindfold | Increase crit chance to 20% when hitting blinded enemies | needs a Blind-applying ball | Clear The LIMINALxDESERT | base-game |
 | Silver Bullet | Balls deal 20% bonus damage until they hit a wall | — | default | base-game |
 | Silver Revolver | Balls pierce and deal 50% extra damage to the first enemy they hit. | — | — | dlc-risen-ballbylon |
 | Slingshot | 25% chance to launch a baby ball when you pick up a gem | — | default | base-game |
