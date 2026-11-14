@@ -828,7 +828,17 @@ describe('edition filter on the item screens (jsdom, through paint())', () => {
     expect(emptyHint('#ballsGrid').hidden).toBe(true);
   });
 
-  it('the plan screen drops entries the filter hides (all five screens)', () => {
+  it('the fusion list counts only shown rows and shows the hint when the search hides them all', () => {
+    drive({ type: 'search', section: 'fusions', query: 'flash' });
+    expect(headings('#fusionList')).toEqual(['Basic (0)', 'Evolved (1)', 'Tier-3 (0)']);
+    expect(emptyHint('#fusionList').hidden).toBe(true);
+
+    drive({ type: 'search', section: 'fusions', query: 'zzz-no-match' });
+    expect(headings('#fusionList')).toEqual(['Basic (0)', 'Evolved (0)', 'Tier-3 (0)']);
+    expect(emptyHint('#fusionList').hidden).toBe(false);
+  });
+
+  it('the plan screen drops entries the filter hides', () => {
     drive(
       { type: 'toggleEdition', edition: 'dlc-risen-ballbylon' },
       { type: 'togglePlanItem', id: 'beast' },

@@ -1,6 +1,7 @@
 // Shared display text for the internal painters: the plan-limit tooltip
-// (fusion panel and selection box) and the plan toggle's add/remove wording
-// (selection box and fusion panel). The structural-depth labels live in
+// (fusion panel and selection box), the plan toggle's add/remove wording
+// (selection box and fusion panel), and the content filter's empty-screen
+// hint (grids, characters, fusion list). The structural-depth labels live in
 // src/depth-labels.ts (shared with the build graph's row model).
 /** Disabled buttons suppress mouse events, so a title on the button itself
  *  never shows — the title rides the nearest container instead (with

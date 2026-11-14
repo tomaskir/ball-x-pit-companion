@@ -6,8 +6,7 @@ import { CHARACTERS, type Character } from '../data/characters';
 import { ballMap } from '../catalog';
 import type { PainterSeam } from './seam';
 import { markClearExempt } from '../clear-exempt';
-import { EMPTY_HINT } from './labels';
-import { icon } from './dom';
+import { emptyFilterHint, icon } from './dom';
 import type { ViewModel } from '../view-state';
 
 /** One renderer instance's character-card painters. */
@@ -29,10 +28,7 @@ export function createCharacters({ emitAction, attachToast }: PainterSeam): Char
     wrap.innerHTML = '';
     charCards = [];
     // built once, toggled by paint — hiding a card never removes its <img>
-    empty = document.createElement('p');
-    empty.className = 'empty-filter-hint';
-    empty.textContent = EMPTY_HINT;
-    empty.hidden = true;
+    empty = emptyFilterHint();
     wrap.appendChild(empty);
     for (const ch of CHARACTERS) {
       const card = document.createElement('div');

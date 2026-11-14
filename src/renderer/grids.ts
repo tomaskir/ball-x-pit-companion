@@ -13,8 +13,8 @@ import { recipeHtml } from '../graph';
 import type { PainterSeam } from './seam';
 import { markClearExempt } from '../clear-exempt';
 import { DEPTH_LABELS } from '../depth-labels';
-import { EMPTY_HINT } from './labels';
-import { icon, verdictBadge } from './dom';
+import { emptyFilterHint, icon, verdictBadge } from './dom';
+import { paintTierHeadings, type TierHeading } from './tier-headings';
 import type { ViewModel } from '../view-state';
 
 /** One renderer instance's grid painters. */
@@ -27,16 +27,9 @@ export interface Grids {
   destroy(): void;
 }
 
-/** One tier's heading (the edition filter repaints the count and hides the
- *  heading when the tier has no visible items). */
-interface GridSection {
-  heading: HTMLElement;
-  depth: 0 | 1 | 2;
-}
-
 interface GridEls {
   empty: HTMLElement;
-  sections: GridSection[];
+  sections: TierHeading[];
 }
 
 export function createGrids({ emitAction, attachToast }: PainterSeam): Grids {
@@ -49,13 +42,10 @@ export function createGrids({ emitAction, attachToast }: PainterSeam): Grids {
 
     // the empty-screen hint is built once and toggled by paint — the content
     // filter hides every tile without removing any <img>
-    const empty = document.createElement('p');
-    empty.className = 'empty-filter-hint';
-    empty.textContent = EMPTY_HINT;
-    empty.hidden = true;
+    const empty = emptyFilterHint();
     wrap.appendChild(empty);
 
-    const sections: GridSection[] = [];
+    const sections: TierHeading[] = [];
     for (let depth = 0 as 0 | 1 | 2; depth <= 2; depth++) {
       const tier = items.filter((i) => i.depth === depth);
       if (!tier.length) continue;
@@ -105,14 +95,7 @@ export function createGrids({ emitAction, attachToast }: PainterSeam): Grids {
   function paintGrid(gridId: string, visible: readonly { depth: 0 | 1 | 2 }[]) {
     const els = grids.get(gridId);
     if (!els) return;
-    let anyVisible = false;
-    for (const section of els.sections) {
-      const count = visible.filter((item) => item.depth === section.depth).length;
-      section.heading.textContent = `${DEPTH_LABELS[section.depth]} (${count})`;
-      section.heading.hidden = count === 0;
-      if (count > 0) anyVisible = true;
-    }
-    els.empty.hidden = anyVisible;
+    els.empty.hidden = paintTierHeadings(els.sections, visible);
   }
 
   function paint(vm: ViewModel) {

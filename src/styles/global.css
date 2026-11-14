@@ -169,13 +169,9 @@ header h1 span { color: var(--muted); font-style: italic; font-size: 14px; }
   min-width: 200px;
 }
 
-/* Grid-screen toolbars: the search sits left (matching the fusion screen);
-   the edition filter takes the right edge. Scoped to .screen-toolbar — the
-   fusion screen's search sits in a column flex, where auto margins would
-   un-stretch it. */
-
 /* The content filter's controls: one labelled group per screen toolbar,
-   top-right. Native checkboxes in a fieldset (the legend labels the group). */
+   top-right (its auto margin takes the right edge; the search sits left).
+   Native checkboxes in a fieldset (the legend labels the group). */
 .edition-filter {
   display: flex;
   align-items: center;

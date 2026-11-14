@@ -6,7 +6,8 @@
 // markClearExempt(el) on the element it builds (a tile, a character card, a
 // chip, a fusion row, the fusion panel, a selection box, the toast), and
 // index.astro carries the same marker declaratively on its static regions
-// (the header and the per-screen search inputs). The island never keeps a
+// (the header, the per-screen search inputs, and the per-screen edition-filter
+// fieldsets). The island never keeps a
 // copy of the region list — it asks isClearExempt(target), so a new
 // interactive region cannot be forgotten in a selector somewhere else.
 //

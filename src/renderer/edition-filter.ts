@@ -5,7 +5,7 @@
 // (the view model resets the count on every dispatch). Internal to the
 // renderer facade; the notice's timer belongs to the renderer instance, so
 // destroy() cannot leave it running.
-import type { Edition } from '../data/editions';
+import { isEdition } from '../edition-gate';
 import type { ViewModel } from '../view-state';
 
 /** One renderer instance's edition-filter chrome. */
@@ -36,7 +36,8 @@ export function createEditionFilter(): EditionFilter {
   return {
     paint(vm) {
       for (const input of document.querySelectorAll<HTMLInputElement>('.edition-toggle[data-edition]')) {
-        input.checked = vm.enabledEditions.includes(input.dataset.edition as Edition);
+        const edition = input.dataset.edition;
+        input.checked = isEdition(edition) && vm.enabledEditions.includes(edition);
       }
 
       const notice = document.getElementById('editionLoss');

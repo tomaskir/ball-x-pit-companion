@@ -14,8 +14,9 @@ import { markClearExempt } from '../clear-exempt';
 import { bindAction, type ActionSlot } from './action-slot';
 import type { Reconcile } from './reconcile';
 import { DEPTH_LABELS } from '../depth-labels';
-import { EMPTY_HINT, PLAN_LIMIT_TITLE, PLAN_TOGGLE_LABELS } from './labels';
-import { icon } from './dom';
+import { PLAN_LIMIT_TITLE, PLAN_TOGGLE_LABELS } from './labels';
+import { emptyFilterHint, icon } from './dom';
+import { paintTierHeadings, type TierHeading } from './tier-headings';
 import type { ViewModel } from '../view-state';
 
 /** One renderer instance's fusion-screen painters. */
@@ -90,16 +91,9 @@ export const FUSION_PANEL_SELECTORS = {
   planRow: '.fusion-plan-row',
 } as const;
 
-/** One tier's pick-list heading (the edition filter repaints the count and
- *  hides the heading when the tier has no visible balls). */
-interface FusionSection {
-  heading: HTMLElement;
-  depth: 0 | 1 | 2;
-}
-
 export function createFusionScreen({ emitAction, reconcile }: { emitAction: Emit; reconcile: Reconcile }): FusionScreen {
   const fusionRowEls = new Map<string, HTMLElement>();
-  let fusionSections: FusionSection[] = [];
+  let fusionSections: TierHeading[] = [];
   let fusionEmpty: HTMLElement | null = null;
   // Panel skeleton is built once with icon-bearing slots; paint() toggles the
   // pieces in place — never recreating <img> (same invariant as the grids).
@@ -135,10 +129,7 @@ export function createFusionScreen({ emitAction, reconcile }: { emitAction: Emit
     fusionRowEls.clear();
     fusionSections = [];
     // built once, toggled by paint — hiding a row never removes its <img>
-    fusionEmpty = document.createElement('p');
-    fusionEmpty.className = 'empty-filter-hint';
-    fusionEmpty.textContent = EMPTY_HINT;
-    fusionEmpty.hidden = true;
+    fusionEmpty = emptyFilterHint();
     wrap.appendChild(fusionEmpty);
     // tier order (structural depth), name within tier — mirroring the Balls page
     const balls = fusionBalls();
@@ -227,17 +218,12 @@ export function createFusionScreen({ emitAction, reconcile }: { emitAction: Emit
       if (state.filtered) row.classList.add('filtered');
     }
 
-    // tier headings count the edition-visible balls (the content filter's
-    // count); an empty tier hides its heading, and an empty list shows the
-    // one filter hint
-    let anyVisible = false;
-    for (const section of fusionSections) {
-      const count = vm.visible.fusionBalls.filter((b) => b.depth === section.depth).length;
-      section.heading.textContent = `${DEPTH_LABELS[section.depth]} (${count})`;
-      section.heading.hidden = count === 0;
-      if (count > 0) anyVisible = true;
-    }
-    if (fusionEmpty) fusionEmpty.hidden = anyVisible;
+    // tier headings count the balls still shown: edition-visible AND matching
+    // the search (this screen hides non-matching rows, so both narrow the
+    // count). An empty tier hides its heading; an empty list shows the one
+    // filter hint.
+    const shown = vm.visible.fusionBalls.filter((b) => !vm.fusionRows.get(b.id)?.filtered);
+    if (fusionEmpty) fusionEmpty.hidden = paintTierHeadings(fusionSections, shown);
 
     const p = fusionPanel;
     if (!p) return;

@@ -17,7 +17,7 @@
 // full island mount.
 import type { Action, Section } from './view-state';
 import type { SharedSnapshot } from './plan-codec';
-import type { Edition } from './data/editions';
+import { isEdition } from './edition-gate';
 import { planLink } from './share';
 import { isClearExempt } from './clear-exempt';
 import { ESC_EXEMPT_SELECTOR, shouldClear, themeFromStorage } from './companion-core';
@@ -129,7 +129,10 @@ export function createShell({ ports, dispatch, snapshot }: ShellOptions): Shell 
   // path; the renderer paints the checked state from the view model, so the
   // five groups stay in sync without the shell holding filter state.
   for (const input of document.querySelectorAll<HTMLInputElement>('.edition-toggle[data-edition]')) {
-    const edition = input.dataset.edition as Edition;
+    // the markup names a generated vocabulary value; a typo'd attribute is
+    // ignored rather than dispatched as an invalid edition
+    const edition = input.dataset.edition;
+    if (!isEdition(edition)) continue;
     listen(input, 'change', () => dispatch({ type: 'toggleEdition', edition }));
   }
 
