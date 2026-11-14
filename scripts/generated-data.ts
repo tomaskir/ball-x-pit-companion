@@ -91,7 +91,7 @@ export function renderGenerated(data: GeneratedData): { name: string; content: s
   const ts = (body: string): string => body + '\n';
 
   const tagsTs = ts(`// Synergy tag vocabulary — the site's own editorial model (see
-// docs/research/game-mechanics.md §4). Characters carry verdict rules over
+// docs/research/risen-mechanics.md). Characters carry verdict rules over
 // these tags; indicators render from tag overlap.
 export const TAGS: Record<string, string> = ${JSON.stringify(data.tags, null, 2)};
 `);

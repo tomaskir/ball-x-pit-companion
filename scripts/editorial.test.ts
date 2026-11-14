@@ -12,7 +12,7 @@ import {
   PASSIVE_TAGS,
   CHAR_VERDICTS,
 } from './editorial.ts';
-import type { EditorialMaps } from './editorial.ts';
+import type { EditorialMaps, VerdictRule } from './editorial.ts';
 
 const ids = {
   balls: ['iron', 'baby-ball'],
@@ -246,7 +246,7 @@ const S2_PASSIVE_TAGS: Record<string, string[]> = {
   'wrapped-explosive': ['aoe', 'wall-bounce'],
 };
 
-const S2_CHAR_VERDICTS: Record<string, { tag: string; verdict: 'red' | 'green'; note: string }[]> = {
+const S2_CHAR_VERDICTS: Record<string, VerdictRule[]> = {
   'the-conduit': [
     { tag: 'aoe', verdict: 'green', note: 'All ball AOE is centered on you, so area builds land reliably' },
     { tag: 'direct-damage', verdict: 'red', note: 'You must stand near targets for AOE; pure direct damage loses positioning value' },
@@ -290,12 +290,12 @@ describe('S2 editorial model: vocabulary (issue #28)', () => {
   });
 
   it('leaves no single-target reference in any assignment or verdict', () => {
-    const assigned = [
+    const strings = [
       ...Object.values(BALL_TAGS).flat(),
       ...Object.values(PASSIVE_TAGS).flat(),
-      ...Object.values(CHAR_VERDICTS).flat().map((r) => r.tag),
+      ...Object.values(CHAR_VERDICTS).flat().flatMap((r) => [r.tag, r.note ?? '']),
     ];
-    expect(assigned.filter((tag) => tag === 'single-target')).toEqual([]);
+    expect(strings.filter((s) => s.includes('single-target'))).toEqual([]);
   });
 });
 

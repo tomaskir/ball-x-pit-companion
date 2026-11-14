@@ -70,6 +70,11 @@ describe('one application-channel classification per ball', () => {
     expect(statusChannel(ball('timestop'))).toBe('field');
   });
 
+  it('classifies Ash as a field effect, not the text heuristic on-hit', () => {
+    expect(channelsOf(ball('ash'))).toEqual(['field']);
+    expect(statusChannel(ball('ash'))).toBe('field');
+  });
+
   it('reads the kit table first and falls back to the text heuristic', () => {
     for (const [id, kit] of Object.entries(BALL_KIT)) {
       expect(channelsOf(ball(id)), `${id}: kit channels`).toEqual(kit.channels);

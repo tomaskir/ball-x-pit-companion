@@ -52,8 +52,8 @@ const SPAWN_BOUND_IDS: ReadonlySet<string> = new Set(['blizzard']);
  *  debuff's tick. */
 const CHANNEL_OVERRIDES: Readonly<Record<string, StatusChannel>> = {
   berserk: 'hit',
-  // R7: the text heuristic reads Ash as an on-hit status, but it leaves a
-  // damaging field.
+  // The text heuristic reads Ash as an on-hit status, but its lava trail
+  // leaves a damaging field (docs/research/risen-fusion.md).
   ash: 'field',
 };
 

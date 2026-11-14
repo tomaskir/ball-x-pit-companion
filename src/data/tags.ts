@@ -1,5 +1,5 @@
 // Synergy tag vocabulary — the site's own editorial model (see
-// docs/research/game-mechanics.md §4). Characters carry verdict rules over
+// docs/research/risen-mechanics.md). Characters carry verdict rules over
 // these tags; indicators render from tag overlap.
 export const TAGS: Record<string, string> = {
   "aim-direction": "Effect depends on the direction the player is aiming",

@@ -54,7 +54,7 @@ export const CHARACTERS: Character[] = [
       {
         "tag": "direct-damage",
         "verdict": "red",
-        "note": "Scattered aim degrades aimed single-target play"
+        "note": "Scattered aim degrades aimed direct-damage play"
       }
     ],
     "cannotPair": [

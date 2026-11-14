@@ -580,5 +580,5 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   datamine. Provenance and the rights-holder disclaimer live in
   `public/icons/CREDITS.md`.
 - **Counts** (pinned by `src/data.test.ts`, pre-DLC v1.301): 91 balls (21
-  base + Baby Ball + 69 evolved), 71 passives (54 + 17), 23 characters, 17
-  tags.
+  base + Baby Ball + 69 evolved), 71 passives (54 + 17), 23 characters; 30
+  tags (current vocabulary).

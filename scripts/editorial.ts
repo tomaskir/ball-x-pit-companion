@@ -1,8 +1,8 @@
 // The site's editorial synergy model — the one module where the tag
 // vocabulary, per-entity tag assignments, and per-character verdict rules are
 // set, plus validateEditorial, its one invariant list. These are content
-// decisions, not game data (see docs/research/game-mechanics.md §4);
-// emit-data.ts only serializes them.
+// decisions, not game data (see docs/research/risen-mechanics.md and the
+// vocabulary review in issue #28); emit-data.ts only serializes them.
 
 export interface VerdictRule {
   tag: string;
@@ -308,7 +308,7 @@ export const CHAR_VERDICTS: Record<string, VerdictRule[]> = {
   'the-warrior': [],
   'the-itchy-finger': [
     { tag: 'spawns-baby-balls', verdict: 'green', note: 'More shots per second' },
-    { tag: 'direct-damage', verdict: 'red', note: 'Scattered aim degrades aimed single-target play' },
+    { tag: 'direct-damage', verdict: 'red', note: 'Scattered aim degrades aimed direct-damage play' },
   ],
   'the-repentant': [
     { tag: 'bounce-scaling', verdict: 'green', note: 'Balls gain +5% damage per bounce and return from the back wall' },
