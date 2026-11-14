@@ -338,6 +338,7 @@ re-checked both against `level3-candidates.json`. The result:
 | Numeric difference explained by a display divisor | 19 | Keep the wiki text (already in display units) |
 | Prose-only difference (extract omits `%`) | 3 | Keep the wiki text |
 | Genuine value discrepancy | 2 | Take the datamined value |
+| **Total** | **90** | |
 
 The two corrections:
 

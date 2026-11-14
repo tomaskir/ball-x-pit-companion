@@ -432,15 +432,25 @@ describe('parseFactBases: existing-row refresh (T20 / #46)', () => {
     expect(level3['vampire-lord']).not.toContain('3 stacks');
   });
 
-  it('keeps the wiki display values for divisor-only rows (no blanket ÷10)', () => {
-    // The datamined raw values are game units: Blizzard 13, Charm 50,
-    // Dark 500, Heart Swallower 700, Freeze 80, Vampire 60.
-    expect(level3.blizzard).toContain('1.3 seconds');
-    expect(level3.charm).toContain('5% chance');
-    expect(level3.dark).toContain('5.0x damage');
-    expect(level3['heart-swallower']).toContain('70% chance');
-    expect(level3.freeze).toContain('8.0 seconds');
-    expect(level3.vampire).toContain('6% chance');
+  it('keeps the wiki display values for all 19 divisor-only rows (no blanket ÷10)', () => {
+    // Each datamined raw value is the same quantity in game units (R9 §6);
+    // a blanket ÷10 would corrupt the ÷1 and ÷100 fields.
+    const display: [id: string, fragment: string][] = [
+      ['blizzard', '1.3 seconds'], ['catapult', '1.5 seconds'],
+      ['charm', '5% chance'], ['dark', '5.0x damage'],
+      ['flesh-mound', '0.6 seconds'], ['flicker', '1.2 seconds'],
+      ['freeze', '8.0 seconds'], ['freeze-ray', '13.0 seconds'],
+      ['glacier', '3.0 seconds'], ['heart-swallower', '70% chance'],
+      ['incubus', '5% chance'], ['lightning-rod', '2.5 seconds'],
+      ['petrify', '2.0 seconds'], ['soul-sucker', '50% chance'],
+      ['succubus', '5% chance'], ['time', '3.0 seconds'],
+      ['timestop', '6.0 seconds'], ['vampire', '6% chance'],
+      ['wraith', '1.8 seconds'],
+    ];
+    expect(display).toHaveLength(19);
+    for (const [id, fragment] of display) {
+      expect(level3[id], `missing level-3 text for ${id}`).toContain(fragment);
+    }
   });
 
   it('keeps the wiki prose for the three extract-omits-% rows', () => {
