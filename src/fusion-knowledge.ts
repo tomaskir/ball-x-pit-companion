@@ -50,7 +50,12 @@ const SPAWN_BOUND_IDS: ReadonlySet<string> = new Set(['blizzard']);
 /** Text-derived channel exceptions. Berserk is applied on hit (40% at L3),
  *  not a field aura — the "every second" phrase describes the berserk
  *  debuff's tick. */
-const CHANNEL_OVERRIDES: Readonly<Record<string, StatusChannel>> = { berserk: 'hit' };
+const CHANNEL_OVERRIDES: Readonly<Record<string, StatusChannel>> = {
+  berserk: 'hit',
+  // R7: the text heuristic reads Ash as an on-hit status, but it leaves a
+  // damaging field.
+  ash: 'field',
+};
 
 /** Statuses the corpus shows a field-aura carrier applying. The trigger
  *  matrix says AOE applies statuses on the damage event, not the hit event,

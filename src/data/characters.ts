@@ -52,7 +52,7 @@ export const CHARACTERS: Character[] = [
         "note": "More shots per second"
       },
       {
-        "tag": "single-target",
+        "tag": "direct-damage",
         "verdict": "red",
         "note": "Scattered aim degrades aimed single-target play"
       }
@@ -113,7 +113,7 @@ export const CHARACTERS: Character[] = [
         "note": "Mirrored copies double spawns"
       },
       {
-        "tag": "single-target",
+        "tag": "direct-damage",
         "verdict": "red",
         "note": "Balls deal half damage"
       }
@@ -182,7 +182,7 @@ export const CHARACTERS: Character[] = [
         "note": "Base crit chance 10%; backstabs reward Assassin line"
       },
       {
-        "tag": "single-target",
+        "tag": "direct-damage",
         "verdict": "green",
         "note": "Backstab synergy"
       }
@@ -275,7 +275,7 @@ export const CHARACTERS: Character[] = [
     "sprite": "icons/character-sprites/the-empty-nester.png",
     "verdicts": [
       {
-        "tag": "single-target",
+        "tag": "direct-damage",
         "verdict": "green",
         "note": "Multiple instances of one special ball per shot"
       },
@@ -343,7 +343,7 @@ export const CHARACTERS: Character[] = [
         "note": "Status damage ×4"
       },
       {
-        "tag": "single-target",
+        "tag": "direct-damage",
         "verdict": "red",
         "note": "No direct hit damage"
       },
@@ -477,7 +477,7 @@ export const CHARACTERS: Character[] = [
     "sprite": "icons/character-sprites/the-tiptoer.png",
     "verdicts": [
       {
-        "tag": "single-target",
+        "tag": "direct-damage",
         "verdict": "green",
         "note": "Stealth keeps you safe while picking targets"
       }
@@ -524,7 +524,7 @@ export const CHARACTERS: Character[] = [
     "sprite": "icons/character-sprites/the-ballbearer.png",
     "verdicts": [
       {
-        "tag": "single-target",
+        "tag": "direct-damage",
         "verdict": "green",
         "note": "Twice as many ball slots"
       },
@@ -592,7 +592,18 @@ export const CHARACTERS: Character[] = [
     "quirk": "Area-of-effect damage from balls is centered on the player.",
     "icon": "icons/character-portraits/the-conduit.png",
     "sprite": "icons/character-sprites/the-conduit.png",
-    "verdicts": [],
+    "verdicts": [
+      {
+        "tag": "aoe",
+        "verdict": "green",
+        "note": "All ball AOE is centered on you, so area builds land reliably"
+      },
+      {
+        "tag": "direct-damage",
+        "verdict": "red",
+        "note": "You must stand near targets for AOE; pure direct damage loses positioning value"
+      }
+    ],
     "cannotPair": [
       "the-false-messiah"
     ]
@@ -604,7 +615,18 @@ export const CHARACTERS: Character[] = [
     "quirk": "All equipped special balls are fused into one ball when shot. Cannot fuse balls normally, and has no baby balls.",
     "icon": "icons/character-portraits/the-potager.png",
     "sprite": "icons/character-sprites/the-potager.png",
-    "verdicts": [],
+    "verdicts": [
+      {
+        "tag": "fused-ball",
+        "verdict": "green",
+        "note": "Fusing every special ball into one stacks their effects"
+      },
+      {
+        "tag": "spawns-baby-balls",
+        "verdict": "red",
+        "note": "Cannot fuse normally and has no baby balls"
+      }
+    ],
     "cannotPair": [
       "the-empty-nester",
       "the-false-messiah",
@@ -618,7 +640,18 @@ export const CHARACTERS: Character[] = [
     "quirk": "Balls return to you after reaching your aim cursor, piercing enemies there and back.",
     "icon": "icons/character-portraits/the-recollector.png",
     "sprite": "icons/character-sprites/the-recollector.png",
-    "verdicts": [],
+    "verdicts": [
+      {
+        "tag": "return-trajectory",
+        "verdict": "green",
+        "note": "Return trajectory doubles hits on the same target"
+      },
+      {
+        "tag": "pass-through",
+        "verdict": "green",
+        "note": "Balls pierce on the way out and back"
+      }
+    ],
     "cannotPair": [
       "the-cohabitants",
       "the-embedded",
@@ -643,7 +676,18 @@ export const CHARACTERS: Character[] = [
     "quirk": "After hitting the right wall, balls deal double damage. After hitting the left wall, balls deal half damage and go through enemies.",
     "icon": "icons/character-portraits/the-right-hand-man.png",
     "sprite": "icons/character-sprites/the-right-hand-man.png",
-    "verdicts": [],
+    "verdicts": [
+      {
+        "tag": "wall-bounce",
+        "verdict": "green",
+        "note": "Right-wall hits deal double damage"
+      },
+      {
+        "tag": "pass-through",
+        "verdict": "green",
+        "note": "Left-wall hits pierce, at half damage"
+      }
+    ],
     "cannotPair": [
       "the-false-messiah",
       "the-recollector"
@@ -656,7 +700,13 @@ export const CHARACTERS: Character[] = [
     "quirk": "Balls can briefly orbit around the aim cursor when on a return trajectory.",
     "icon": "icons/character-portraits/the-scandalmonger.png",
     "sprite": "icons/character-sprites/the-scandalmonger.png",
-    "verdicts": [],
+    "verdicts": [
+      {
+        "tag": "orbit",
+        "verdict": "green",
+        "note": "Returning balls orbit the cursor, covering an area"
+      }
+    ],
     "cannotPair": [
       "the-carouser",
       "the-false-messiah",
@@ -672,7 +722,18 @@ export const CHARACTERS: Character[] = [
     "quirk": "Balls only bounce in perfect diagonals.",
     "icon": "icons/character-portraits/the-scrupulous-scoundrel.png",
     "sprite": "icons/character-sprites/the-scrupulous-scoundrel.png",
-    "verdicts": [],
+    "verdicts": [
+      {
+        "tag": "diagonal",
+        "verdict": "green",
+        "note": "Perfect-diagonal bounces are predictable and repeatable"
+      },
+      {
+        "tag": "wall-bounce",
+        "verdict": "green",
+        "note": "Balls bounce off walls in perfect diagonals"
+      }
+    ],
     "cannotPair": [
       "the-false-messiah",
       "the-physicist",
@@ -686,7 +747,13 @@ export const CHARACTERS: Character[] = [
     "quirk": "Can aim and shoot in any direction (including behind you).",
     "icon": "icons/character-portraits/the-sentinel.png",
     "sprite": "icons/character-sprites/the-sentinel.png",
-    "verdicts": [],
+    "verdicts": [
+      {
+        "tag": "aim-direction",
+        "verdict": "green",
+        "note": "Aim any direction, including behind you"
+      }
+    ],
     "cannotPair": [
       "the-falconer",
       "the-false-messiah",
@@ -703,7 +770,18 @@ export const CHARACTERS: Character[] = [
     "quirk": "Balls teleport to the opposite side of the screen the first time hitting a wall.",
     "icon": "icons/character-portraits/the-wallbreaker.png",
     "sprite": "icons/character-sprites/the-wallbreaker.png",
-    "verdicts": [],
+    "verdicts": [
+      {
+        "tag": "teleport",
+        "verdict": "green",
+        "note": "First wall hit teleports the ball across the screen"
+      },
+      {
+        "tag": "wall-bounce",
+        "verdict": "green",
+        "note": "First wall hit triggers the teleport"
+      }
+    ],
     "cannotPair": [
       "the-false-messiah",
       "the-recollector"

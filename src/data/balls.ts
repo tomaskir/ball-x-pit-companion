@@ -24,7 +24,9 @@ export const BALLS: Ball[] = [
     "recipes": [],
     "onHit": "Attach",
     "icon": "icons/balls/beast.png",
-    "tags": []
+    "tags": [
+      "attach"
+    ]
   },
   {
     "id": "bleed",
@@ -96,7 +98,7 @@ export const BALLS: Ball[] = [
     "onHit": "Destroy",
     "icon": "icons/balls/dark.png",
     "tags": [
-      "single-target",
+      "direct-damage",
       "destroy-on-hit"
     ]
   },
@@ -145,7 +147,10 @@ export const BALLS: Ball[] = [
     "recipes": [],
     "onHit": "Pass Through",
     "icon": "icons/balls/force.png",
-    "tags": []
+    "tags": [
+      "pass-through",
+      "direct-damage"
+    ]
   },
   {
     "id": "freeze",
@@ -180,7 +185,7 @@ export const BALLS: Ball[] = [
     "onHit": "—",
     "icon": "icons/balls/iron.png",
     "tags": [
-      "single-target"
+      "direct-damage"
     ]
   },
   {
@@ -252,7 +257,7 @@ export const BALLS: Ball[] = [
     "onHit": "—",
     "icon": "icons/balls/stone.png",
     "tags": [
-      "single-target"
+      "direct-damage"
     ]
   },
   {
@@ -288,7 +293,10 @@ export const BALLS: Ball[] = [
     "recipes": [],
     "onHit": "Spawn, AOE",
     "icon": "icons/balls/water.png",
-    "tags": []
+    "tags": [
+      "spawns-baby-balls",
+      "aoe"
+    ]
   },
   {
     "id": "wind",
@@ -311,7 +319,9 @@ export const BALLS: Ball[] = [
     "recipes": [],
     "onHit": "AOE",
     "icon": "icons/balls/wood.png",
-    "tags": []
+    "tags": [
+      "aoe"
+    ]
   },
   {
     "id": "baby-ball",
@@ -354,7 +364,11 @@ export const BALLS: Ball[] = [
     ],
     "onHit": "Pass Through",
     "icon": "icons/balls/ash.png",
-    "tags": []
+    "tags": [
+      "pass-through",
+      "status-effect",
+      "field"
+    ]
   },
   {
     "id": "assassin",
@@ -374,8 +388,9 @@ export const BALLS: Ball[] = [
     "onHit": "Pass Through",
     "icon": "icons/balls/assassin.png",
     "tags": [
-      "single-target",
-      "pass-through"
+      "direct-damage",
+      "pass-through",
+      "backstab"
     ]
   },
   {
@@ -534,7 +549,10 @@ export const BALLS: Ball[] = [
     ],
     "onHit": "Pass Through",
     "icon": "icons/balls/bullet.png",
-    "tags": []
+    "tags": [
+      "pass-through",
+      "direct-damage"
+    ]
   },
   {
     "id": "catapult",
@@ -568,7 +586,7 @@ export const BALLS: Ball[] = [
     "icon": "icons/balls/drill.png",
     "tags": [
       "pass-through",
-      "single-target"
+      "direct-damage"
     ]
   },
   {
@@ -733,7 +751,10 @@ export const BALLS: Ball[] = [
     ],
     "onHit": "Destroy",
     "icon": "icons/balls/fruit.png",
-    "tags": []
+    "tags": [
+      "destroy-on-hit",
+      "lifesteal"
+    ]
   },
   {
     "id": "gale",
@@ -748,7 +769,10 @@ export const BALLS: Ball[] = [
     ],
     "onHit": "AOE",
     "icon": "icons/balls/gale.png",
-    "tags": []
+    "tags": [
+      "aoe",
+      "knock-up"
+    ]
   },
   {
     "id": "glacier",
@@ -803,7 +827,10 @@ export const BALLS: Ball[] = [
     ],
     "onHit": "Spawn",
     "icon": "icons/balls/hedgehog.png",
-    "tags": []
+    "tags": [
+      "spawns-baby-balls",
+      "status-effect"
+    ]
   },
   {
     "id": "hemorrhage",
@@ -895,7 +922,9 @@ export const BALLS: Ball[] = [
     ],
     "onHit": "AOE",
     "icon": "icons/balls/ironwood.png",
-    "tags": []
+    "tags": [
+      "aoe"
+    ]
   },
   {
     "id": "ivy",
@@ -910,7 +939,10 @@ export const BALLS: Ball[] = [
     ],
     "onHit": "AOE",
     "icon": "icons/balls/ivy.png",
-    "tags": []
+    "tags": [
+      "status-effect",
+      "aoe"
+    ]
   },
   {
     "id": "kaiju",
@@ -925,7 +957,10 @@ export const BALLS: Ball[] = [
     ],
     "onHit": "AOE",
     "icon": "icons/balls/kaiju.png",
-    "tags": []
+    "tags": [
+      "aoe",
+      "direct-damage"
+    ]
   },
   {
     "id": "landslide",
@@ -1002,7 +1037,8 @@ export const BALLS: Ball[] = [
     "onHit": "—",
     "icon": "icons/balls/leech.png",
     "tags": [
-      "status-effect"
+      "status-effect",
+      "attach"
     ]
   },
   {
@@ -1116,7 +1152,11 @@ export const BALLS: Ball[] = [
     ],
     "onHit": "Destroy, AOE",
     "icon": "icons/balls/misfortune.png",
-    "tags": []
+    "tags": [
+      "destroy-on-hit",
+      "status-effect",
+      "aoe"
+    ]
   },
   {
     "id": "mosquito-king",
@@ -1190,7 +1230,12 @@ export const BALLS: Ball[] = [
     ],
     "onHit": "Destroy, AOE",
     "icon": "icons/balls/mudslide.png",
-    "tags": []
+    "tags": [
+      "destroy-on-hit",
+      "aoe",
+      "status-effect",
+      "field"
+    ]
   },
   {
     "id": "nosferatu",
@@ -1387,7 +1432,10 @@ export const BALLS: Ball[] = [
     ],
     "onHit": "Destroy",
     "icon": "icons/balls/rot.png",
-    "tags": []
+    "tags": [
+      "destroy-on-hit",
+      "direct-damage"
+    ]
   },
   {
     "id": "sacrifice",
@@ -1481,7 +1529,10 @@ export const BALLS: Ball[] = [
     ],
     "onHit": "Pass Through",
     "icon": "icons/balls/siren.png",
-    "tags": []
+    "tags": [
+      "pass-through",
+      "status-effect"
+    ]
   },
   {
     "id": "sniper",
@@ -1554,7 +1605,10 @@ export const BALLS: Ball[] = [
     ],
     "onHit": "AOE",
     "icon": "icons/balls/stalagmite.png",
-    "tags": []
+    "tags": [
+      "aoe",
+      "knock-up"
+    ]
   },
   {
     "id": "steam",
@@ -1569,7 +1623,11 @@ export const BALLS: Ball[] = [
     ],
     "onHit": "Pass Through",
     "icon": "icons/balls/steam.png",
-    "tags": []
+    "tags": [
+      "pass-through",
+      "aoe",
+      "field"
+    ]
   },
   {
     "id": "steel",
@@ -1585,7 +1643,7 @@ export const BALLS: Ball[] = [
     "onHit": "—",
     "icon": "icons/balls/steel.png",
     "tags": [
-      "single-target",
+      "direct-damage",
       "bounce-scaling"
     ]
   },
@@ -1682,7 +1740,10 @@ export const BALLS: Ball[] = [
     ],
     "onHit": "Attach, AOE",
     "icon": "icons/balls/thunderbird.png",
-    "tags": []
+    "tags": [
+      "attach",
+      "aoe"
+    ]
   },
   {
     "id": "time-bomb",
@@ -1734,7 +1795,11 @@ export const BALLS: Ball[] = [
     ],
     "onHit": "Pass Through, Destroy, AOE",
     "icon": "icons/balls/tsunami.png",
-    "tags": []
+    "tags": [
+      "pass-through",
+      "aoe",
+      "destroy-on-hit"
+    ]
   },
   {
     "id": "tumor",
@@ -1853,7 +1918,8 @@ export const BALLS: Ball[] = [
     "onHit": "—",
     "icon": "icons/balls/warp.png",
     "tags": [
-      "ball-speed"
+      "ball-speed",
+      "teleport"
     ]
   },
   {
@@ -1869,7 +1935,9 @@ export const BALLS: Ball[] = [
     ],
     "onHit": "Spawn",
     "icon": "icons/balls/water-bug.png",
-    "tags": []
+    "tags": [
+      "spawns-baby-balls"
+    ]
   },
   {
     "id": "waterfall",
@@ -1884,7 +1952,11 @@ export const BALLS: Ball[] = [
     ],
     "onHit": "Destroy, AOE",
     "icon": "icons/balls/waterfall.png",
-    "tags": []
+    "tags": [
+      "destroy-on-hit",
+      "aoe",
+      "field"
+    ]
   },
   {
     "id": "werewolf",
@@ -1899,7 +1971,10 @@ export const BALLS: Ball[] = [
     ],
     "onHit": "Attach",
     "icon": "icons/balls/werewolf.png",
-    "tags": []
+    "tags": [
+      "attach",
+      "lifesteal"
+    ]
   },
   {
     "id": "wolfpack",
@@ -1914,7 +1989,10 @@ export const BALLS: Ball[] = [
     ],
     "onHit": "Attach, Spawn",
     "icon": "icons/balls/wolfpack.png",
-    "tags": []
+    "tags": [
+      "attach",
+      "spawns-allies"
+    ]
   },
   {
     "id": "wraith",

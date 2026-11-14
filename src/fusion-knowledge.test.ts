@@ -31,9 +31,10 @@ describe('one application-channel classification per ball', () => {
     'on-hit': [
       'banished-flame', 'berserk', 'bleed', 'black-hole', 'bomb', 'burn',
       'charm', 'dark', 'elemental', 'flash', 'freeze', 'freeze-ray',
-      'frozen-flame', 'heart-swallower', 'hemorrhage', 'incubus', 'laser-beam',
-      'light', 'lovestruck', 'maggot', 'noxious', 'nuclear-bomb', 'overgrowth',
-      'phantom', 'poison', 'radiation-beam', 'sacrifice', 'sandstorm',
+      'frozen-flame', 'heart-swallower', 'hedgehog', 'hemorrhage', 'incubus',
+      'ivy', 'laser-beam', 'light', 'lovestruck', 'maggot', 'misfortune',
+      'mudslide', 'noxious', 'nuclear-bomb', 'overgrowth', 'phantom', 'poison',
+      'radiation-beam', 'sacrifice', 'sandstorm', 'siren',
       'soul-sucker', 'succubus', 'tumor', 'vampire-lord', 'venom', 'virus',
       'wind', 'wraith', 'x-ray', 'zombie',
     ],
@@ -42,7 +43,7 @@ describe('one application-channel classification per ball', () => {
       'mosquito-king', 'mosquito-kingdom', 'mosquito-swarm', 'swamp', 'time',
       'time-bomb', 'voluptuous-egg-sac',
     ],
-    'field': ['banshee', 'petrify', 'timestop'],
+    'field': ['ash', 'banshee', 'petrify', 'timestop'],
     'per-second+field': ['brimstone', 'inferno', 'satan', 'sun'],
     'per-second+spawn': ['leech'],
   };
