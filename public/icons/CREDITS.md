@@ -16,7 +16,7 @@ not committed.
 | `balls/` | 115 | 25 base balls + Baby Ball + 89 evolved balls |
 | `passives/` | 116 | 77 base passives + 39 evolved passives |
 | `character-sprites/` | 31 | All 31 playable characters (base-game `The_<Name>_mini.png` wiki files; DLC 51×54 generated sprites) |
-| `character-portraits/` | 31 | Full character portraits (base-game wiki files 230–345 px; DLC extractions ~95–115 px) |
+| `character-portraits/` | 31 | Full character portraits (base-game wiki files 230–345 px; DLC extractions ~90–115 px) |
 
 Total: **293 PNG files** (231 entity icons + 31 character sprites + 31
 character portraits).

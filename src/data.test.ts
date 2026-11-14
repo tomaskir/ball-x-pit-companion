@@ -16,6 +16,7 @@ import { validateGenerated } from '../scripts/generated-data.ts';
 import { EDITORIAL, WILDCARD } from '../scripts/editorial.ts';
 
 const ballIds = new Set(BALLS.map((b) => b.id));
+const iconDir = new URL('./../public/icons/', import.meta.url).pathname;
 
 describe('fact-base counts (ticket 02, game v1.301)', () => {
   it('has 91 balls (21 base + Baby Ball + 69 evolved)', () => {
@@ -78,15 +79,13 @@ describe('complexity (graph.complexity against the real ball graph)', () => {
 });
 
 describe('icon assets self-hosted (ticket 04)', () => {
-  const iconDir = new URL('./../public/icons/', import.meta.url).pathname;
-
   it('every ball/passive/character icon file exists on disk', () => {
     for (const b of BALLS) expect(existsSync(`${iconDir}balls/${b.id}.png`)).toBe(true);
     for (const p of PASSIVES) expect(existsSync(`${iconDir}passives/${p.id}.png`)).toBe(true);
     for (const c of CHARACTERS) expect(existsSync(`${iconDir}character-portraits/${c.id}.png`)).toBe(true);
   });
 
-  it('icon counts on disk match data (115/116/31/31)', () => {
+  it('icon counts on disk (115/116/31/31)', () => {
     expect(readdirSync(`${iconDir}balls`)).toHaveLength(115);
     expect(readdirSync(`${iconDir}passives`)).toHaveLength(116);
     expect(readdirSync(`${iconDir}character-sprites`)).toHaveLength(31);
@@ -94,12 +93,11 @@ describe('icon assets self-hosted (ticket 04)', () => {
   });
 });
 
-describe('Risen Ballbylon icons (ticket 38)', () => {
-  const iconDir = new URL('./../public/icons/', import.meta.url).pathname;
+describe('Risen Ballbylon icons (DLC v1.308)', () => {
   const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
-  // The DLC catalog rows land in T10; pin the files on disk independently so
-  // the onboarding is verified before the data merge.
+  // The DLC catalog rows land with the edition data merge; pin the files on
+  // disk independently so the onboarding is verified before that merge.
   const dlcBalls = [
     'ash', 'beast', 'bullet', 'force', 'fruit', 'gale', 'hedgehog', 'ironwood',
     'ivy', 'kaiju', 'misfortune', 'mudslide', 'rot', 'siren', 'stalagmite',
@@ -142,6 +140,14 @@ describe('Risen Ballbylon icons (ticket 38)', () => {
         expect(bytes.length, `${dir}/${file} is non-empty`).toBeGreaterThan(0);
         expect(bytes.subarray(0, 8), `${dir}/${file} has the PNG signature`).toEqual(PNG_SIGNATURE);
       }
+    }
+  });
+
+  it('DLC character sprites are the generated 51x54 frames, not the 16x16 source frames', () => {
+    for (const id of dlcCharacters) {
+      const bytes = readFileSync(`${iconDir}character-sprites/${id}.png`);
+      const dimensions = [bytes.readUInt32BE(16), bytes.readUInt32BE(20)];
+      expect(dimensions, `${id} is 51x54`).toEqual([51, 54]);
     }
   });
 });

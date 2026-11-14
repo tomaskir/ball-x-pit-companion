@@ -574,8 +574,10 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   are documented in `AGENTS.md` § Data flow. The six `src/data` outputs are
   generated — edit the fact bases or `scripts/editorial.ts`, never the
   generated files.
-- **Icons** — 208 PNGs in `public/icons/`, downloaded from the wiki's
-  MediaWiki API; provenance and the rights-holder disclaimer live in
+- **Icons** — 293 PNGs in `public/icons/` (115 ball icons, 116 passive
+  icons, 31 character sprites, 31 character portraits). Base-game art is from
+  the wiki's MediaWiki API; the *Risen Ballbylon* art is from the v1.308
+  datamine. Provenance and the rights-holder disclaimer live in
   `public/icons/CREDITS.md`.
 - **Counts** (pinned by `src/data.test.ts`, pre-DLC v1.301): 91 balls (21
   base + Baby Ball + 69 evolved), 71 passives (54 + 17), 23 characters, 17
