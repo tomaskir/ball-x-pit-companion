@@ -243,13 +243,16 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   means no restriction. Loadout gates (status ball, friendly piece, stone
   ally) are informational, not enforced. The Ballbearer's zero passive slots
   are the plan's passive **slot limit** (see **Slot limit**), not a
-  per-passive availability rule.
+  per-passive availability rule. Module: `src/passive-availability.ts`
+  (`passiveAvailability` → `{ blocked, characterSpecific,
+  characterLockReason, zeroSlots, unavailable, reason }`).
 - **Passive-invalid entry** — a planned passive the selected character(s)
   cannot use. Live adds are blocked; already-planned and hydrated entries are
   kept and marked red (`passiveInvalid`), never trimmed; counts include them
   and the build graph excludes them. The mark is derived from the selection,
   so persistence and share links need no new field. Painted by the Plan
-  screen.
+  screen; derived in `src/plan-state.ts` from
+  `src/passive-availability.ts`.
 - **Build graph** — the Plan screen's layered "how do I build this" view
   (one collapsible panel per namespace, under the plan sections): every
   planned item plus its full component ancestry as ONE deduped graph —
