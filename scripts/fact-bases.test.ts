@@ -12,6 +12,7 @@ import {
 } from './fact-bases.ts';
 import { parseMarkdownTable, column } from './markdown-table.ts';
 import { slug } from './slug.ts';
+import { pairKey } from '../src/pair.ts';
 
 describe('parseRecipes: OR-of-ANDs grammar', () => {
   it('expands a parenthesized slot alternate', () => {
@@ -157,24 +158,7 @@ describe('parsePairings: one symmetric expansion', () => {
 });
 
 describe('parsePairings: Risen Ballbylon rows (S5, research #32)', () => {
-  // The pairing table names the 8 DLC characters before their roster rows
-  // land in game-mechanics.md (T10). Parse the real table against the real
-  // roster plus those names; once the roster includes them the dedupe is a
-  // no-op. The integration test below is authoritative for the full roster.
-  const dlcNames = [
-    'The Conduit', 'The Potager', 'The Recollector', 'The Right Hand Man',
-    'The Scandalmonger', 'The Scrupulous Scoundrel', 'The Sentinel',
-    'The Wallbreaker',
-  ];
-  const { characters } = parseGameMechanics(realMechanics());
-  const roster = [
-    ...characters,
-    ...dlcNames
-      .filter((name) => !characters.some((c) => c.name === name))
-      .map((name) => ({ name })),
-  ];
-  const md = readFileSync(new URL('../docs/research/character-pairings.md', import.meta.url), 'utf8');
-  const byName = new Map(parsePairings(md, roster).map((c) => [c.name, c]));
+  const byName = new Map(realPairings().map((c) => [c.name, c]));
 
   it('expands the Recollector row in both directions', () => {
     const partners = [
@@ -211,11 +195,10 @@ describe('parsePairings: Risen Ballbylon rows (S5, research #32)', () => {
   });
 });
 
-describe('parsePairings: existing-roster corrections (S5, research #32 §5 / #49)', () => {
-  const { characters } = parseGameMechanics(realMechanics());
-  const md = readFileSync(new URL('../docs/research/character-pairings.md', import.meta.url), 'utf8');
-  const out = parsePairings(md, characters);
-  const byName = new Map(out.map((c) => [c.name, c]));
+describe('parsePairings: existing-roster corrections (S5, risen-matchmaker-pairs.md §5)', () => {
+  const parsed = realPairings();
+  const byName = new Map(parsed.map((c) => [c.name, c]));
+  const nonMessiahPairs = 43;
 
   it('adds the four pre-DLC pairs the community table missed, both directions', () => {
     const pairs: Array<[string, string]> = [
@@ -237,22 +220,22 @@ describe('parsePairings: existing-roster corrections (S5, research #32 §5 / #49
 
   it('keeps the False Messiah no-partner rule and the symmetric closure', () => {
     const messiah = byName.get('The False Messiah')!;
-    expect(messiah.cannotPair).toHaveLength(out.length - 1);
-    for (const c of out) {
+    expect(messiah.cannotPair).toHaveLength(parsed.length - 1);
+    for (const c of parsed) {
       if (c.name === 'The False Messiah') continue;
       expect(c.cannotPair).toContain('The False Messiah');
     }
   });
 
-  it('models exactly the 43 non-Messiah forbidden pairs of the v1.308 matrix', () => {
+  it(`models exactly the ${nonMessiahPairs} non-Messiah forbidden pairs of the v1.308 matrix`, () => {
     const pairs = new Set(
-      out
+      parsed
         .filter((c) => c.name !== 'The False Messiah')
         .flatMap((c) => c.cannotPair
           .filter((p) => p !== 'The False Messiah')
-          .map((p) => [c.name, p].sort().join('\u0000'))),
+          .map((p) => pairKey(c.name, p))),
     );
-    expect(pairs.size).toBe(43);
+    expect(pairs.size).toBe(nonMessiahPairs);
   });
 });
 
@@ -421,6 +404,13 @@ function mechanicsTables(opts: { evolvedRows?: string[]; evolvedPassiveRows?: st
       '| The Warrior | Iron | Quirk. | default | | base-game |',
     ]),
   ].join('\n');
+}
+
+/** The real roster paired against the real pairing table. */
+function realPairings() {
+  const { characters } = parseGameMechanics(realMechanics());
+  const md = readFileSync(new URL('../docs/research/character-pairings.md', import.meta.url), 'utf8');
+  return parsePairings(md, characters);
 }
 
 describe('parseFactBases: DLC level-3 normalization (T11 / #37)', () => {

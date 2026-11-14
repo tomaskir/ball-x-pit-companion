@@ -86,7 +86,8 @@ incompatible partners and rejecting them with a message.
 | The Wallbreaker | The Recollector | S5 |
 | The False Messiah | *all* — cannot be a second character, and takes no partner (outside the vote mechanic) | S3 |
 
-No restrictions (any partner): **The Warrior, The Conduit, The Tiptoer.**
+No restrictions (any partner): **The Warrior, The Cogitator, The Radical, The
+Conduit, The Tiptoer.**
 
 That is 43 forbidden pairs over the 30 pairable characters, plus the False
 Messiah's special rule. The Risen Ballbylon rows and the corrected pre-DLC
@@ -114,9 +115,8 @@ community-sourced model (S1/S2), confirmed by S5's full matrix.
    Tiptoer, The Hoary Hoarder and The Ballbearer were never retrievable
    (snippet truncation + Cloudflare gate). The v1.308 decode (S5) supplies
    them: The Carouser cannot pair with The Tactician and The Scandalmonger,
-   The Hoary Hoarder with The Ballbearer, and The Ballbearer with The Hoary
-   Hoarder; The Tiptoer is unrestricted. Re-verify against S1 when the page
-   is reachable.
+   The Hoary Hoarder and The Ballbearer cannot pair, and The Tiptoer is
+   unrestricted. Re-verify against S1 when the page is reachable.
 5. **False Messiah nuance.** S3 notes Messiah *can* gain a second character
    by enabling the character-choice vote (flagged as possibly unintended).
    The site models the normal path: Messiah pairs with nobody, in either
@@ -129,10 +129,11 @@ community-sourced model (S1/S2), confirmed by S5's full matrix.
    the *what*, not a theory of the *why*.
 7. **Pre-DLC rows vs. the v1.308 datamine.** S5's full matrix confirmed 16 of
    the original 17 pre-DLC pairs and corrected the table (#49): The
-   Cogitator × The Radical is not enforced by the code and was removed, and
-   four pairs the community table missed were added — Tunneller ×
-   Shieldbearer, Tunneller × Flagellant, Tactician × Carouser, Ballbearer ×
-   Hoary Hoarder. See `docs/research/risen-matchmaker-pairs.md` §5.
+   Cogitator × The Radical is not enforced by the code and was removed
+   (leaving both characters unrestricted), and four pairs the community
+   table missed were added — Tunneller × Shieldbearer, Tunneller ×
+   Flagellant, Tactician × Carouser, Ballbearer × Hoary Hoarder. See
+   `docs/research/risen-matchmaker-pairs.md` §5.
 
 ## Maintenance
 
