@@ -11,11 +11,11 @@
 // the reported fusion facts in `fusion-knowledge.ts` (`FUSION_FACTS`), so a
 // research landing edits one table.
 //
-// Each ball's kit — its level-3 scalars and its application channels — lives
-// in one hand-maintained table, `BALL_KIT` in ball-kit.ts. This module only
-// resolves two kits; the cross-wire model reads the same table through
-// `channelsOf` / `statusChannel` in fusion-knowledge.ts, so the two cannot
-// drift.
+// Each ball's kit — its level-3 scalars, its application channels, and the
+// game's AOE flag — lives in one hand-maintained table, `BALL_KIT` in
+// ball-kit.ts. This module only resolves two kits; the cross-wire model reads
+// the same table through `channelsOf` / `statusChannel` and the AOE rank
+// through `aoeRank` in fusion-knowledge.ts, so the models cannot drift.
 //
 // Evidence bar (decision #7): a pair or rule enters the model with tier 1–2
 // evidence — game files, in-game tooltips, controlled tests, or multiple

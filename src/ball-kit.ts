@@ -1,17 +1,18 @@
 // The per-ball fusion kit: the one hand-maintained table carrying each ball's
-// level-3 scalar properties and its application channels together. Two readers
-// consume it — the order model (`resolveProperties` in fusion-properties.ts)
-// unions kits, and the cross-wire model (`channelsOf` / `statusChannel` in
-// fusion-knowledge.ts) classifies application channels. Keeping both columns
-// in one entry means adding a ball or changing a channel is a one-table edit;
-// no test has to keep two tables aligned.
+// level-3 scalar properties, its application channels, and the game's AOE flag
+// together. Three readers consume it — the order model (`resolveProperties` in
+// fusion-properties.ts) unions kits, the cross-wire model (`channelsOf` /
+// `statusChannel` in fusion-knowledge.ts) classifies application channels, and
+// the AOE carrier rank (`aoeRank`) reads the flag. Keeping the columns in one
+// entry means adding a ball or changing a channel is a one-table edit; no test
+// has to keep two tables aligned.
 //
 // Values are level-3 and are hand-maintained here so the model is testable and
 // independent of the catalog's level-1 text. Every value not marked
 // `source: 'reported'` must appear verbatim in the generated level-3 overlay
 // (src/data/level-3.ts); data.test.ts enforces that. Base-game rows are v1.301
 // wiki text; Risen Ballbylon rows are the v1.308 datamined L3 display values
-// (docs/research/risen-fusion.md, S3 #29).
+// (docs/research/risen-fusion.md).
 //
 // An empty `channels` array is an explicit "no application channel" (the
 // bonus-damage stat balls), not a missing entry. A ball absent from this table
@@ -68,7 +69,7 @@ const mosquitoSpawn = property('mosquito-spawn', 'Mosquito spawn');
 const bleedMax = property('bleed-max-stacks', 'Bleed max stacks');
 const range = property('range', 'Range');
 
-// Risen Ballbylon scalar vocabulary (S3 #29).
+// Risen Ballbylon scalar vocabulary (docs/research/risen-fusion.md §6).
 const damagePerSecond = property('damage-per-second', 'Damage per second');
 const aoeDamage = property('aoe-damage', 'AOE damage');
 const charmChance = property('charm-chance', 'Charm chance');
@@ -206,7 +207,7 @@ export const BALL_KIT: Record<string, BallKit> = {
   },
   // Elemental's L3 text names the statuses but states no slow values; the
   // game's kSlowPct/kSlowLen are recorded as reported.
-  'elemental': { scalars: [slowPct('40%', 'reported'), slowDuration('5 seconds', 'reported')], channels: ['on-hit'] },
+  'elemental': { aoe: true, scalars: [slowPct('40%', 'reported'), slowDuration('5 seconds', 'reported')], channels: ['on-hit'] },
 
   // --- curse (Banshee × Incubus/Phantom/Sacrifice) ---
   'banshee': { scalars: [curseDamage('250–400'), curseDelay('6')], channels: ['field'] },
@@ -215,13 +216,16 @@ export const BALL_KIT: Record<string, BallKit> = {
   // --- earthquake damage (Earthquake × Glacier/Magma/Swamp) ---
   // The entries below exist for the new scalar keys; their `channels` mirror
   // the pre-existing text classification so the wire model does not drift.
-  'earthquake': { scalars: [earthquakeDamage('9–17')], channels: [] },
+  'earthquake': { aoe: true, scalars: [earthquakeDamage('9–17')], channels: [] },
   'storm': { scalars: [lightningDamage('1–80')], channels: [] },
-  'lightning': { scalars: [lightningDamage('1–30')], channels: [] },
-  'lightning-bug': { scalars: [lightningDamage('1–100')], channels: [] },
+  'lightning': { aoe: true, scalars: [lightningDamage('1–30')], channels: [] },
+  'lightning-bug': { aoe: true, scalars: [lightningDamage('1–100')], channels: [] },
   'lightning-rod': { scalars: [lightningDamage('1–40')], channels: ['spawn'] },
 
-  // --- spawn counts (Egg Sac × Catapult/Sniper/Maggot/Shotgun) ---
+  // --- spawn counts and birth chances (Egg Sac × Catapult/Sniper/Maggot/
+  // Shotgun; Brood Mother and Spider Queen collide with Water Bug) ---
+  'brood-mother': { scalars: [birthChance('45%')], channels: [] },
+  'spider-queen': { scalars: [birthChance('45%')], channels: [] },
   'catapult': { scalars: [spawnCount('4–6')], channels: [] },
   'sniper': { scalars: [spawnCount('5–9')], channels: [] },
   'maggot': { scalars: [spawnCount('2–3')], channels: ['on-hit'] },

@@ -81,6 +81,14 @@ describe('crossWire', () => {
     });
   });
 
+  it('field + status: the trail/field applies the status (Ash × Overgrowth)', () => {
+    expect(crossWire(ball('ash'), ball('overgrowth'))).toEqual({
+      line: 'The trail or field from Ash inflicts the status effect of Overgrowth.',
+      disputed: false,
+      spawnerId: null,
+    });
+  });
+
   it('no cross-wire when neither channel carries (Flash × Glacier)', () => {
     // Glacier's freeze lives on spawned spikes, not a status on the ball;
     // Flash carries no status and Glacier is not a status ball.

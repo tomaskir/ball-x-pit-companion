@@ -93,17 +93,18 @@ const KILL_EFFECT_IDS: ReadonlySet<string> = new Set(['black-hole', 'reaper']);
  *  text lists a cooldown). Order resolution itself lives in the property
  *  resolver (fusion-properties.ts); this set remains for the fixed
  *  hit-once-dominates-pass-through caveat. Risen Ballbylon adds the three
- *  balls whose L3 text states a cooldown (R7 §7). */
+ *  balls whose L3 text states a cooldown (docs/research/risen-fusion.md §7). */
 const COOLDOWN_CLASS_IDS: ReadonlySet<string> = new Set(['black-hole', 'bomb', 'dark', 'egg-sac', 'misfortune', 'nuclear-bomb', 'rot', 'timestop', 'voluptuous-egg-sac', 'water']);
 
 /** Fixed composition caveats from the corpus (general_rules_notes): reported
  *  interactions beyond naive text concatenation. Risen Ballbylon adds the
- *  balls whose L3 text says they destroy themselves on hit (R7 §7). */
+ *  balls whose L3 text says they destroy themselves on hit
+ *  (docs/research/risen-fusion.md §7). */
 const DESTROY_CLASS_IDS: ReadonlySet<string> = new Set(['dark', 'egg-sac', 'time', 'armageddon', 'black-hole', 'bomb', 'fireworks', 'landslide', 'misfortune', 'mosquito-swarm', 'mudslide', 'nuclear-bomb', 'rot', 'timestop', 'tsunami', 'voluptuous-egg-sac', 'waterfall']);
 
 /** Pass-through class. Risen Ballbylon's `kGhost` special is the game's
  *  authoritative pierce marker; the new ids plus the two existing gaps
- *  (Phantom, Storm) land here (R7 §7). */
+ *  (Phantom, Storm) land here (docs/research/risen-fusion.md §7). */
 const PIERCE_IDS: ReadonlySet<string> = new Set(['ash', 'assassin', 'bullet', 'drill', 'erosion', 'force', 'gale', 'ghost', 'noxious', 'phantom', 'sandstorm', 'siren', 'sniper', 'soul-sucker', 'steam', 'storm', 'tsunami', 'wind', 'wraith']);
 
 /** Pairs whose kill cross-wire is corpus-contradicted (both polarities
@@ -198,7 +199,7 @@ const aoeCarrier = (b: Ball): boolean => aoeRank(b) > 0 && !AOE_EXCLUDED_IDS.has
 
 /** A field/trail carrier: a ball whose recorded (or text-derived) application
  *  channel includes `field`. Attach balls map to `per-second` and stay
- *  non-carriers (S3 #29). */
+ *  non-carriers (docs/research/risen-fusion.md §5). */
 const fieldCarrier = (b: Ball): boolean => channelsOf(b).includes('field');
 
 /** AOE carriers with no damage rolls cannot carry a kill-on-hit effect.
@@ -245,19 +246,23 @@ export interface Wire {
  *  damage-riding statuses. Freeze Ray × Sun is the evidenced negative.
  *  Private: `wireFor` is the seam, so rank and branch priority are tested
  *  with the capability that production actually calls. */
+/** The shared gate for an on-hit status: the partner applies it on hit and
+ *  the carrier is not the debuff-only exclusion (Satan). */
+const carriesOnHitStatus = (carrier: Ball, status: Ball): boolean =>
+  statusChannel(status) === 'hit' && !AOE_EXCLUDED_IDS.has(carrier.id);
+
 function canCarry(carrier: Ball, status: Ball): boolean {
-  if (!aoeCarrier(carrier) || statusChannel(status) !== 'hit') return false;
+  if (!aoeCarrier(carrier) || !carriesOnHitStatus(carrier, status)) return false;
   return !(statusChannel(carrier) === 'field' && !isDamageRidingStatus(status));
 }
 
 /** Can a field/trail carrier apply the partner's on-hit status? Only the
  *  corpus-evidenced damage-riding statuses: a trail/field applies statuses on
- *  the damage event, not the hit event (S3 #29, preserving Freeze Ray × Sun).
- *  Satan stays excluded — his judgment is debuff-only, so the field branch
- *  must not bypass the corpus negative (hemorrhage + satan). */
+ *  the damage event, not the hit event (preserving Freeze Ray × Sun). Satan
+ *  stays excluded — his judgment is debuff-only, so the field branch must not
+ *  bypass the corpus negative (hemorrhage + satan). */
 function canCarryField(carrier: Ball, status: Ball): boolean {
-  if (!fieldCarrier(carrier) || AOE_EXCLUDED_IDS.has(carrier.id)) return false;
-  return statusChannel(status) === 'hit' && isDamageRidingStatus(status);
+  return fieldCarrier(carrier) && carriesOnHitStatus(carrier, status) && isDamageRidingStatus(status);
 }
 
 /** Can a spawn carrier's babies inherit the partner's status? Only the two
@@ -292,10 +297,11 @@ export function wireFor(a: Ball, b: Ball): Wire | null {
     //    Only the higher-ranked carrier may carry.
     ?? directional(a, b, 'aoe-carries-on-hit', (carrier, status) =>
       aoeRank(carrier) > aoeRank(status) && canCarry(carrier, status))
-    // 3. field/trail carrier + partner's damage-riding on-hit status (S3 #29:
-    //    TouchableTrailObj/RadialVFX route damage with a HitEffectSrc, so a
-    //    trail or field is a real carrier path). Ranked after the AOE branch
-    //    so an AOE carrier keeps its line; only damage-riding statuses pass.
+    // 3. field/trail carrier + partner's damage-riding on-hit status
+    //    (docs/research/risen-fusion.md §8: TouchableTrailObj/RadialVFX route
+    //    damage with a HitEffectSrc, so a trail or field is a real carrier
+    //    path). Ranked after the AOE branch so an AOE carrier keeps its line;
+    //    only damage-riding statuses pass.
     ?? directional(a, b, 'field-carries-on-hit', canCarryField)
     // 4. AOE carrier + partner's kill-on-hit (Black Hole × Sun — the corpus
     //    meta pair; kamigame: "Black Hole's effect rides on Flash's

@@ -358,12 +358,20 @@ describe('the kit aoe flag (game AOETypes, editorial-tag fallback)', () => {
   });
 
   it('the flag is recorded exactly where the game AOETypes are non-empty', () => {
-    // Existing kit balls with AOETypes: bomb, nuclear-bomb, magma, freeze-ray,
-    // glacier, swamp, radiation-beam, x-ray.
-    for (const id of ['bomb', 'nuclear-bomb', 'magma', 'freeze-ray', 'glacier', 'swamp', 'radiation-beam', 'x-ray']) {
-      expect(BALL_KIT[id].aoe, id).toBe(true);
-    }
-    // Balls without a kit keep the editorial-tag fallback (Sun, Flash…).
+    const flagged = Object.entries(BALL_KIT)
+      .filter(([, kit]) => kit.aoe === true)
+      .map(([id]) => id)
+      .sort();
+    // Existing kit balls with non-empty AOETypes (bomb, earthquake, elemental,
+    // freeze-ray, glacier, lightning, lightning-bug, magma, nuclear-bomb,
+    // radiation-beam, swamp, x-ray) plus the five new AOE balls.
+    expect(flagged).toEqual([
+      'bomb', 'earthquake', 'elemental', 'freeze-ray', 'glacier', 'ironwood',
+      'lightning', 'lightning-bug', 'magma', 'misfortune', 'nuclear-bomb',
+      'radiation-beam', 'stalagmite', 'swamp', 'water', 'wood', 'x-ray',
+    ]);
+    // A kit that omits the flag keeps the editorial-tag fallback (Sun has a
+    // kit but no game AOETypes; its `aoe` tag still makes it a carrier).
     expect(BALL_KIT['sun'].aoe).toBeUndefined();
   });
 });
