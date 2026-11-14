@@ -16,7 +16,7 @@ import { composeKey, pairKeyOf } from '../pair';
 import type { Emit } from './seam';
 import type { Reconcile } from './reconcile';
 import { icon, verdictBadge } from './dom';
-import { POTAGER_FUSION_TITLE } from './labels';
+import { PAIR_INVALID_TITLE, POTAGER_FUSION_TITLE } from './labels';
 import type { Verdict } from '../synergy';
 import type { PlanBallEntry } from '../plan-state';
 import type { ViewModel } from '../view-state';
@@ -225,7 +225,7 @@ export function createPlan({ emitAction, reconcile }: { emitAction: Emit; reconc
       // The Potager cannot fuse: a planned fusing pair is kept and marked
       // red, with the same tooltip as the fusion screen's blocked button
       entry.classList.toggle('fusion-invalid', !!e.fusionInvalid);
-      entry.title = e.fusionInvalid ? POTAGER_FUSION_TITLE : e.pairInvalid ? "these two can't team up in a run" : '';
+      entry.title = e.fusionInvalid ? POTAGER_FUSION_TITLE : e.pairInvalid ? PAIR_INVALID_TITLE : '';
       entry.querySelectorAll('.ind').forEach((b) => b.remove());
       if (e.verdict) entry.appendChild(verdictBadge(e.verdict));
     };

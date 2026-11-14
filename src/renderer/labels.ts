@@ -12,6 +12,9 @@ export const PLAN_LIMIT_TITLE = 'Plan limit reached';
  *  tooltip and the plan's fusion-invalid entry tooltip. */
 export const POTAGER_FUSION_TITLE = "The Potager can't fuse balls";
 
+/** A hydrated Matchmaker-forbidden character pair's plan-entry tooltip. */
+export const PAIR_INVALID_TITLE = "these two can't team up in a run";
+
 /** The plan toggle's two states, shared by the selection box's buttons and
  *  the fusion panel's composed-pair button. */
 export const PLAN_TOGGLE_LABELS = { add: 'Add to plan', remove: 'Remove from plan' } as const;

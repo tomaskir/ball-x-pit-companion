@@ -462,6 +462,19 @@ describe('view state: character slot quirks (integration)', () => {
     expect(vm.plan.limits).toEqual({ chars: 2, balls: 2, passives: 8 });
   });
 
+  it('the quirk-aware over-limit hint rides the view model', () => {
+    const view = createViewState();
+    const vm = view.dispatch({
+      type: 'hydrate',
+      shared: {
+        plan: { upgradesOn: true, balls: ['flash', 'glacier', 'maggot'], passives: [], fused: [] },
+        chars: ['the-hoary-hoarder'],
+        editions: ['base-game'],
+      },
+    });
+    expect(vm.plan.hint).toBe('The Hoary Hoarder has 2 ball slots — remove the highlighted balls');
+  });
+
   it('the selection box disables a passive add under The Ballbearer', () => {
     const view = createViewState();
     view.dispatch({ type: 'toggleChar', id: 'the-ballbearer' });

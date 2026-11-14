@@ -1,7 +1,7 @@
-// Tests for the slot-limits module through its one interface:
+// Tests for the slot-limits module through its interface:
 // globalLimits(upgradesOn) and limitsFor(upgradesOn, selectedChars). The
-// formula table and the forced double-quirk pair are the contract (spec #53);
-// the map pin keeps the hand-authored quirk table honest.
+// formula table and the forced double-quirk pair are the contract; the map
+// pin keeps the hand-authored quirk table honest.
 import { describe, it, expect } from 'vitest';
 import { SLOT_RULES, globalLimits, limitsFor } from './slot-limits';
 import { CHARACTERS } from './data/characters';

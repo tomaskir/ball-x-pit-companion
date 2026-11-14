@@ -147,6 +147,13 @@ describe('global stylesheet', () => {
     expectSlotHighlightsIdentical();
   });
 
+  it('the plan invalid marks are styled', () => {
+    const css = globalCss();
+    for (const selector of ['.plan-entry.invalid-pair', '.plan-entry.fusion-invalid']) {
+      expect(rulesFor(css, selector).length, `${selector} has a rule`).toBeGreaterThan(0);
+    }
+  });
+
   it('the fusion order presentation classes are styled', () => {
     // the result rows, exceptions section, warning line, and swap button are
     // built by the renderer — each class the skeleton/paint uses has a rule

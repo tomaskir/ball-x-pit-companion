@@ -36,7 +36,7 @@ import { evolvesInstead, fusionName, isFusable } from './fusion';
 import { createPickList } from './pick-list';
 import { verdictFor, type Item, type Verdict } from './synergy';
 import { pairKey } from './pair';
-import { globalLimits, limitsFor, type PlanLimits } from './slot-limits';
+import { globalLimits, limitsFor, selectedSlotRule, type PlanLimits } from './slot-limits';
 
 export type { PlanLimits };
 /** A planned fused pair — compose order (a first) for display, sorted ids
@@ -128,11 +128,9 @@ export type PlanAction =
  *  constant for the live block and the derived mark. */
 const POTAGER_ID = 'the-potager';
 
-/** The Ballbearer's zero passive slots drive the quirk-aware hint copy. */
-const BALLBEARER_ID = 'the-ballbearer';
-
-/** The Hoary Hoarder's two ball slots drive the quirk-aware hint copy. */
-const HOARDER_ID = 'the-hoary-hoarder';
+/** The generic over-limit hint — used when no slot quirk is responsible (the
+ *  End game upgrades toggle can help). */
+const OVER_LIMIT_HINT = 'Over the limit — remove the highlighted picks or re-enable End game upgrades.';
 
 /** Whether any selected character is The Potager — the fusion block applies
  *  with one or two selected characters. */
@@ -221,8 +219,7 @@ export function createPlanState() {
    *  the displayed tail is what gets flagged). Verdicts ride along so the
    *  renderer paints them without re-deriving. */
   const derive = (selectedChars: readonly Character[]): PlanState => {
-    currentChars = selectedChars;
-    const limits = activeLimits();
+    const limits = limitsFor(upgradesOn, selectedChars);
     const planBallItems = planBalls.list();
     const planFusedPairs = planFused.list();
     const planPassiveItems = planPassives.list();
@@ -258,18 +255,13 @@ export function createPlanState() {
     const ballsOver = ballSlots > limits.balls;
     const passivesOver = planPassiveItems.length > limits.passives;
     const overLimit = selectedChars.length > limits.chars || ballsOver || passivesOver;
-    const ballbearer = selectedChars.some((c) => c.id === BALLBEARER_ID);
-    const hoarder = selectedChars.some((c) => c.id === HOARDER_ID);
-    // Quirk-aware copy: re-enabling End game upgrades cannot help The
-    // Ballbearer's passives (0 either way) or The Hoary Hoarder's balls
-    // (2 either way), so those hints name the quirk instead.
-    const hint = passivesOver && ballbearer
-      ? 'The Ballbearer has no passive slots — remove the highlighted passives'
-      : ballsOver && hoarder
-        ? 'The Hoary Hoarder has 2 ball slots — remove the highlighted balls'
-        : overLimit
-          ? 'Over the limit — remove the highlighted picks or re-enable End game upgrades.'
-          : '';
+    // Quirk-aware copy: re-enabling End game upgrades cannot help the
+    // section a quirk owns, so that hint names the quirk instead.
+    const slotRule = selectedSlotRule(selectedChars);
+    const quirkOver = slotRule?.overLimitHint.section === 'passives' ? passivesOver
+      : slotRule?.overLimitHint.section === 'balls' ? ballsOver
+      : false;
+    const hint = slotRule && quirkOver ? slotRule.overLimitHint.text : overLimit ? OVER_LIMIT_HINT : '';
     const fusionInvalid = balls.some((e) => e.kind === 'fused' && e.fusionInvalid);
     return {
       upgradesOn,
@@ -288,7 +280,7 @@ export function createPlanState() {
       hint,
       fusionBlocked: potager,
       fusionInvalidHint: fusionInvalid ? "The Potager can't fuse balls — remove the highlighted pairs" : '',
-      passivesEmptyHint: ballbearer ? 'The Ballbearer has no passive slots.' : null,
+      passivesEmptyHint: slotRule?.passivesEmptyHint ?? null,
     };
   };
 

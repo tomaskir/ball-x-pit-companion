@@ -7,9 +7,10 @@
 // deriveFusionPanel(picks, plan) → { panel, hint }. The seam is "picks + the
 // plan facts in, panel state out": the module resolves the picks through the
 // catalog, composes through src/fusion.ts, and reads only the plan facts it
-// needs (pair membership for `planned`, ball slots for `planFull`). It never
-// imports view-state (no runtime cycle); view-state embeds the result in the
-// ViewModel, so the renderer's named-state contract is unchanged.
+// needs (pair membership for `planned`, ball slots for `planFull`, and The
+// Potager selection for `fusionBlocked`). It never imports view-state (no
+// runtime cycle); view-state embeds the result in the ViewModel, so the
+// renderer's named-state contract is unchanged.
 import { ballMap } from './catalog';
 import { fuse, type FusionResult } from './fusion';
 import { type FusionException } from './fusion-knowledge';

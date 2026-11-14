@@ -1,6 +1,9 @@
 // Slot-limits module: the Plan's per-section capacity, global or overlaid by
-// the selected characters' slot quirks. One interface:
-// globalLimits(upgradesOn) and limitsFor(upgradesOn, selectedChars).
+// the selected characters' slot quirks. The interface is the two limit
+// functions — globalLimits(upgradesOn) and limitsFor(upgradesOn,
+// selectedChars) — plus the quirk table they read (SLOT_RULES /
+// selectedSlotRule), which also carries each quirk's explanation copy so the
+// quirk ids and their reasons have one home.
 //
 // The global limits are the site's binary End game upgrades toggle: 1
 // character / 4 balls / 4 passives without it, 2 / 5 / 5 with it. The
@@ -36,12 +39,18 @@ const GLOBAL: { on: PlanLimits; off: PlanLimits } = {
 };
 
 /** One character's slot-quirk overlay: a pure transform of the global limits
- *  (so the upgrade toggle still applies underneath). */
+ *  (so the upgrade toggle still applies underneath) plus the copy explaining
+ *  it. The quirk's id is the map key, not a field. */
 export interface SlotRule {
-  /** The character id the rule belongs to (a hand-authored code-level fact,
-   *  like the kit tables; the research file is not parsed). */
-  id: string;
   apply(global: PlanLimits): PlanLimits;
+  /** The section whose capacity the quirk changes surprisingly, and the
+   *  over-limit hint naming it — End game upgrades cannot help that section
+   *  (The Ballbearer's passives are 0 either way; The Hoary Hoarder's balls
+   *  are 2 either way). */
+  overLimitHint: { section: 'balls' | 'passives'; text: string };
+  /** Override for the passives section's empty hint, when the quirk zeroes
+   *  the section. */
+  passivesEmptyHint?: string;
 }
 
 /** The hand-authored quirk table. Insertion order is precedence: the first
@@ -49,12 +58,19 @@ export interface SlotRule {
  *  the illegal double-quirk pair. */
 export const SLOT_RULES: ReadonlyMap<string, SlotRule> = new Map<string, SlotRule>([
   ['the-ballbearer', {
-    id: 'the-ballbearer',
     apply: (global) => ({ ...global, balls: global.balls * 2, passives: 0 }),
+    overLimitHint: {
+      section: 'passives',
+      text: 'The Ballbearer has no passive slots — remove the highlighted passives',
+    },
+    passivesEmptyHint: 'The Ballbearer has no passive slots.',
   }],
   ['the-hoary-hoarder', {
-    id: 'the-hoary-hoarder',
     apply: (global) => ({ ...global, balls: 2, passives: global.passives - 2 + global.balls }),
+    overLimitHint: {
+      section: 'balls',
+      text: 'The Hoary Hoarder has 2 ball slots — remove the highlighted balls',
+    },
   }],
 ]);
 
@@ -62,16 +78,26 @@ export const SLOT_RULES: ReadonlyMap<string, SlotRule> = new Map<string, SlotRul
  *  the character cap (the quirk map never changes `chars`). */
 export const globalLimits = (upgradesOn: boolean): PlanLimits => ({ ...(upgradesOn ? GLOBAL.on : GLOBAL.off) });
 
+/** The selected characters' quirk rule, if any. First matching rule wins
+ *  (see SLOT_RULES), so the double-quirk pair resolves to The Ballbearer.
+ *  The structural `{ id }` input keeps this module free of generated-data
+ *  imports. */
+export function selectedSlotRule(
+  selectedChars: readonly { id: string }[],
+): SlotRule | null {
+  const selected = new Set(selectedChars.map((character) => character.id));
+  for (const [id, rule] of SLOT_RULES) {
+    if (selected.has(id)) return rule;
+  }
+  return null;
+}
+
 /** The active limits: the globals overlaid by the selected characters' slot
- *  quirks. First matching rule wins (see SLOT_RULES). */
+ *  quirks. */
 export function limitsFor(
   upgradesOn: boolean,
   selectedChars: readonly { id: string }[],
 ): PlanLimits {
   const global = globalLimits(upgradesOn);
-  const selected = new Set(selectedChars.map((character) => character.id));
-  for (const [id, rule] of SLOT_RULES) {
-    if (selected.has(id)) return rule.apply(global);
-  }
-  return global;
+  return selectedSlotRule(selectedChars)?.apply(global) ?? global;
 }

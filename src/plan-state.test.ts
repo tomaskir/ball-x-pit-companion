@@ -514,6 +514,13 @@ describe('plan state: The Potager and planned fused pairs (fusionInvalid)', () =
     expect(plan.fusionInvalidHint).toBe('');
   });
 
+  it('the block applies when The Potager is one of two selected characters', () => {
+    const state = createPlanState();
+    const pair = chars('the-warrior', 'the-potager');
+    state.dispatch({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' }, pair);
+    expect(fusedOf(state.derive(pair))).toHaveLength(0);
+  });
+
   it('no Potager: pairs are valid and the hint is empty', () => {
     const state = createPlanState();
     state.dispatch({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' }, chars('the-warrior'));
