@@ -95,14 +95,19 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   vocabulary, verdict-rule sanity, and wildcard uniqueness; `validateGenerated`
   calls it. The `emit-data.ts` CLI runs validate before write;
   `src/data.test.ts` runs the same list against the checked-in data.
-- **Tag** — one of the 17 entries in the synergy vocabulary
-  (`src/data/tags.ts`): `aoe`, `single-target`, `spawns-baby-balls`,
-  `spawns-allies`, `status-effect`, `pass-through`, `destroy-on-hit`,
-  `lifesteal`, `self-damage`, `ball-speed`, `bounce-scaling`, `crit`,
-  `wall-bounce`, `baby-ball-scaling`, `screen-clear`, `clone`,
-  `friendly-fire-risk`. The vocabulary is the site's own editorial model —
-  the game defines no tag system — so tag assignments and verdicts are
-  content decisions, not game data.
+- **Tag** — one of the 30 entries in the synergy vocabulary
+  (`src/data/tags.ts`), listed alphabetically: `aim-direction`, `aoe`,
+  `attach`, `baby-ball-scaling`, `backstab`, `ball-speed`, `bounce-scaling`,
+  `clone`, `crit`, `destroy-on-hit`, `diagonal`, `direct-damage`, `field`,
+  `friendly-fire-risk`, `fused-ball`, `knock-up`, `lifesteal`, `orbit`,
+  `pass-through`, `playfield-loop`, `return-trajectory`, `screen-clear`,
+  `self-damage`, `shield`, `spawns-allies`, `spawns-baby-balls`,
+  `status-effect`, `status-scaling`, `teleport`, `wall-bounce`. The
+  vocabulary is the site's own editorial model — the game defines no tag
+  system — so tag assignments and verdicts are content decisions, not game
+  data. `direct-damage` was `single-target` before the Risen Ballbylon
+  vocabulary review; `playfield-loop` (loops around the field) is distinct
+  from `orbit` (circles the player/cursor).
 - **Synergy verdict** — red/green indicator for an item against the selected
   characters, from tag overlap. Rules: characters carry
   `{ tag, verdict, note }`; the `*passives` wildcard matches every passive
