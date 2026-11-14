@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * CLI over generated-data.ts: emits src/data/{tags,balls,passives,characters,
- * level-3}.ts from parsed.json (produced by parse-wiki.ts) + the editorial
- * maps in editorial.ts. Validation runs before any write, so a failing
- * invariant leaves the generated files untouched. Run:
+ * CLI over generated-data.ts: emits src/data/{editions,tags,balls,passives,
+ * characters,level-3}.ts from parsed.json (produced by parse-wiki.ts) + the
+ * editorial maps in editorial.ts. Validation runs before any write, so a
+ * failing invariant leaves the generated files untouched. Run:
  *   node --experimental-strip-types scripts/emit-data.ts
  */
 import { readFileSync, writeFileSync } from 'node:fs';

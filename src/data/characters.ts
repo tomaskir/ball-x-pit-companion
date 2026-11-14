@@ -2,11 +2,13 @@
 // ballxpit.wiki.gg (2026-09-13, game v1.301); Risen Ballbylon rows datamined
 // from v1.308. Verdict rules are the site's editorial synergy model derived
 // from quirk text — not playtested (flagged in docs/research/game-mechanics.md).
-// Unlisted tags are neutral.
+// Unlisted tags are neutral. edition is the content-filter dimension.
 // The wildcard tag "*passives" matches every passive (The Ballbearer).
 // cannotPair is game data: the Matchmaker's forbidden two-character pairs
 // (docs/research/character-pairings.md) — symmetric; the False Messiah
 // cannot pair with anyone.
+import type { Edition } from './editions';
+
 export interface VerdictRule {
   tag: string;
   verdict: 'red' | 'green';
@@ -16,6 +18,7 @@ export interface VerdictRule {
 export interface Character {
   id: string;
   name: string;
+  edition: Edition;
   baseBallId: string | null;
   quirk: string;
   icon: string;
@@ -29,6 +32,7 @@ export const CHARACTERS: Character[] = [
   {
     "id": "the-warrior",
     "name": "The Warrior",
+    "edition": "base-game",
     "baseBallId": "bleed",
     "quirk": "Default character, no special gameplay quirks.",
     "icon": "icons/character-portraits/the-warrior.png",
@@ -41,6 +45,7 @@ export const CHARACTERS: Character[] = [
   {
     "id": "the-itchy-finger",
     "name": "The Itchy Finger",
+    "edition": "base-game",
     "baseBallId": "burn",
     "quirk": "Scattered aim, shoots twice as fast, auto-launches balls; full speed while shooting.",
     "icon": "icons/character-portraits/the-itchy-finger.png",
@@ -65,6 +70,7 @@ export const CHARACTERS: Character[] = [
   {
     "id": "the-repentant",
     "name": "The Repentant",
+    "edition": "base-game",
     "baseBallId": "freeze",
     "quirk": "Balls deal +5% damage per bounce; on hitting the back wall they return, damaging enemies passed through.",
     "icon": "icons/character-portraits/the-repentant.png",
@@ -92,6 +98,7 @@ export const CHARACTERS: Character[] = [
   {
     "id": "the-cohabitants",
     "name": "The Cohabitants",
+    "edition": "base-game",
     "baseBallId": "brood-mother",
     "quirk": "Each launched ball is mirrored by a copy; balls deal half damage.",
     "icon": "icons/character-portraits/the-cohabitants.png",
@@ -130,6 +137,7 @@ export const CHARACTERS: Character[] = [
   {
     "id": "the-cogitator",
     "name": "The Cogitator",
+    "edition": "base-game",
     "baseBallId": "laser-vertical",
     "quirk": "Automatically chooses upgrades.",
     "icon": "icons/character-portraits/the-cogitator.png",
@@ -142,6 +150,7 @@ export const CHARACTERS: Character[] = [
   {
     "id": "the-embedded",
     "name": "The Embedded",
+    "edition": "base-game",
     "baseBallId": "poison",
     "quirk": "Balls always pierce enemies until they hit a wall.",
     "icon": "icons/character-portraits/the-embedded.png",
@@ -171,6 +180,7 @@ export const CHARACTERS: Character[] = [
   {
     "id": "the-shade",
     "name": "The Shade",
+    "edition": "base-game",
     "baseBallId": "dark",
     "quirk": "Balls shoot from the back; base crit chance 10%.",
     "icon": "icons/character-portraits/the-shade.png",
@@ -197,6 +207,7 @@ export const CHARACTERS: Character[] = [
   {
     "id": "the-shieldbearer",
     "name": "The Shieldbearer",
+    "edition": "base-game",
     "baseBallId": "iron",
     "quirk": "Large shield bounces back balls that hit it.",
     "icon": "icons/character-portraits/the-shieldbearer.png",
@@ -221,6 +232,7 @@ export const CHARACTERS: Character[] = [
   {
     "id": "the-spendthrift",
     "name": "The Spendthrift",
+    "edition": "base-game",
     "baseBallId": "vampire",
     "quirk": "Shoots all balls at once in a wide arc.",
     "icon": "icons/character-portraits/the-spendthrift.png",
@@ -243,6 +255,7 @@ export const CHARACTERS: Character[] = [
   {
     "id": "the-juggler",
     "name": "The Juggler",
+    "edition": "base-game",
     "baseBallId": "lightning",
     "quirk": "Lobs balls at a target position; no bouncing until landing.",
     "icon": "icons/character-portraits/the-juggler.png",
@@ -269,6 +282,7 @@ export const CHARACTERS: Character[] = [
   {
     "id": "the-empty-nester",
     "name": "The Empty Nester",
+    "edition": "base-game",
     "baseBallId": "ghost",
     "quirk": "No baby balls. Each shot shoots multiple instances of one equipped special ball.",
     "icon": "icons/character-portraits/the-empty-nester.png",
@@ -303,6 +317,7 @@ export const CHARACTERS: Character[] = [
   {
     "id": "the-flagellant",
     "name": "The Flagellant",
+    "edition": "base-game",
     "baseBallId": "egg-sac",
     "quirk": "Balls bounce normally off the bottom of the screen.",
     "icon": "icons/character-portraits/the-flagellant.png",
@@ -327,6 +342,7 @@ export const CHARACTERS: Character[] = [
   {
     "id": "the-makeshift-sisyphus",
     "name": "The Makeshift Sisyphus",
+    "edition": "base-game",
     "baseBallId": "earthquake",
     "quirk": "No baby balls. No direct hit damage; AOE and status damage ×4.",
     "icon": "icons/character-portraits/the-makeshift-sisyphus.png",
@@ -368,6 +384,7 @@ export const CHARACTERS: Character[] = [
   {
     "id": "the-physicist",
     "name": "The Physicist",
+    "edition": "base-game",
     "baseBallId": "light",
     "quirk": "Balls are affected by gravity toward the back of the screen.",
     "icon": "icons/character-portraits/the-physicist.png",
@@ -385,6 +402,7 @@ export const CHARACTERS: Character[] = [
   {
     "id": "the-tactician",
     "name": "The Tactician",
+    "edition": "base-game",
     "baseBallId": "iron",
     "quirk": "Battles become turn-based.",
     "icon": "icons/character-portraits/the-tactician.png",
@@ -402,6 +420,7 @@ export const CHARACTERS: Character[] = [
   {
     "id": "the-radical",
     "name": "The Radical",
+    "edition": "base-game",
     "baseBallId": "wind",
     "quirk": "Plays the game and chooses upgrades automatically (AI plays).",
     "icon": "icons/character-portraits/the-radical.png",
@@ -414,6 +433,7 @@ export const CHARACTERS: Character[] = [
   {
     "id": "the-falconer",
     "name": "The Falconer",
+    "edition": "base-game",
     "baseBallId": "lightning",
     "quirk": "Balls shot from two falcons on the sides of the screen.",
     "icon": "icons/character-portraits/the-falconer.png",
@@ -435,6 +455,7 @@ export const CHARACTERS: Character[] = [
   {
     "id": "the-carouser",
     "name": "The Carouser",
+    "edition": "base-game",
     "baseBallId": "charm",
     "quirk": "Balls can briefly orbit the player on return trajectory.",
     "icon": "icons/character-portraits/the-carouser.png",
@@ -449,6 +470,7 @@ export const CHARACTERS: Character[] = [
   {
     "id": "the-tunneller",
     "name": "The Tunneller",
+    "edition": "base-game",
     "baseBallId": "earthquake",
     "quirk": "Balls wrap around top and bottom of the screen.",
     "icon": "icons/character-portraits/the-tunneller.png",
@@ -471,6 +493,7 @@ export const CHARACTERS: Character[] = [
   {
     "id": "the-tiptoer",
     "name": "The Tiptoer",
+    "edition": "base-game",
     "baseBallId": "laser-horizontal",
     "quirk": "Undetectable by enemies (except bosses/minibosses); drastically less health.",
     "icon": "icons/character-portraits/the-tiptoer.png",
@@ -489,6 +512,7 @@ export const CHARACTERS: Character[] = [
   {
     "id": "the-hoary-hoarder",
     "name": "The Hoary Hoarder",
+    "edition": "base-game",
     "baseBallId": null,
     "quirk": "Only 2 ball slots; remaining equipment slots become passive slots.",
     "icon": "icons/character-portraits/the-hoary-hoarder.png",
@@ -518,6 +542,7 @@ export const CHARACTERS: Character[] = [
   {
     "id": "the-ballbearer",
     "name": "The Ballbearer",
+    "edition": "base-game",
     "baseBallId": "stone",
     "quirk": "Twice as many ball slots, but no passive slots.",
     "icon": "icons/character-portraits/the-ballbearer.png",
@@ -547,6 +572,7 @@ export const CHARACTERS: Character[] = [
   {
     "id": "the-false-messiah",
     "name": "The False Messiah",
+    "edition": "base-game",
     "baseBallId": "bleed",
     "quirk": "Twitch audience votes on choices and random events.",
     "icon": "icons/character-portraits/the-false-messiah.png",
@@ -588,6 +614,7 @@ export const CHARACTERS: Character[] = [
   {
     "id": "the-conduit",
     "name": "The Conduit",
+    "edition": "dlc-risen-ballbylon",
     "baseBallId": "lightning",
     "quirk": "Area-of-effect damage from balls is centered on the player.",
     "icon": "icons/character-portraits/the-conduit.png",
@@ -611,6 +638,7 @@ export const CHARACTERS: Character[] = [
   {
     "id": "the-potager",
     "name": "The Potager",
+    "edition": "dlc-risen-ballbylon",
     "baseBallId": "wood",
     "quirk": "All equipped special balls are fused into one ball when shot. Cannot fuse balls normally, and has no baby balls.",
     "icon": "icons/character-portraits/the-potager.png",
@@ -636,6 +664,7 @@ export const CHARACTERS: Character[] = [
   {
     "id": "the-recollector",
     "name": "The Recollector",
+    "edition": "dlc-risen-ballbylon",
     "baseBallId": "time",
     "quirk": "Balls return to you after reaching your aim cursor, piercing enemies there and back.",
     "icon": "icons/character-portraits/the-recollector.png",
@@ -672,6 +701,7 @@ export const CHARACTERS: Character[] = [
   {
     "id": "the-right-hand-man",
     "name": "The Right Hand Man",
+    "edition": "dlc-risen-ballbylon",
     "baseBallId": "stone",
     "quirk": "After hitting the right wall, balls deal double damage. After hitting the left wall, balls deal half damage and go through enemies.",
     "icon": "icons/character-portraits/the-right-hand-man.png",
@@ -696,6 +726,7 @@ export const CHARACTERS: Character[] = [
   {
     "id": "the-scandalmonger",
     "name": "The Scandalmonger",
+    "edition": "dlc-risen-ballbylon",
     "baseBallId": "beast",
     "quirk": "Balls can briefly orbit around the aim cursor when on a return trajectory.",
     "icon": "icons/character-portraits/the-scandalmonger.png",
@@ -718,6 +749,7 @@ export const CHARACTERS: Character[] = [
   {
     "id": "the-scrupulous-scoundrel",
     "name": "The Scrupulous Scoundrel",
+    "edition": "dlc-risen-ballbylon",
     "baseBallId": "force",
     "quirk": "Balls only bounce in perfect diagonals.",
     "icon": "icons/character-portraits/the-scrupulous-scoundrel.png",
@@ -743,6 +775,7 @@ export const CHARACTERS: Character[] = [
   {
     "id": "the-sentinel",
     "name": "The Sentinel",
+    "edition": "dlc-risen-ballbylon",
     "baseBallId": "force",
     "quirk": "Can aim and shoot in any direction (including behind you).",
     "icon": "icons/character-portraits/the-sentinel.png",
@@ -766,6 +799,7 @@ export const CHARACTERS: Character[] = [
   {
     "id": "the-wallbreaker",
     "name": "The Wallbreaker",
+    "edition": "dlc-risen-ballbylon",
     "baseBallId": "earthquake",
     "quirk": "Balls teleport to the opposite side of the screen the first time hitting a wall.",
     "icon": "icons/character-portraits/the-wallbreaker.png",

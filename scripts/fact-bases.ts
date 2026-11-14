@@ -15,6 +15,7 @@
 import { slug } from './slug.ts';
 import { resolveDepths } from '../src/graph.ts';
 import { parseMarkdownTable, column, type TableRow } from './markdown-table.ts';
+import { EDITIONS, type Edition } from './editions.ts';
 
 export interface ParsedBall {
   name: string;
@@ -22,6 +23,7 @@ export interface ParsedBall {
   recipes: string[][];
   onhit: string;
   effect: string;
+  edition: Edition;
 }
 
 export interface ParsedPassive {
@@ -29,6 +31,7 @@ export interface ParsedPassive {
   depth: 0 | 1 | 2;
   recipes: string[][];
   effect: string;
+  edition: Edition;
 }
 
 export interface ParsedCharacter {
@@ -37,6 +40,7 @@ export interface ParsedCharacter {
   quirk: string;
   /** Matchmaker-forbidden partners (display names, symmetric). */
   cannotPair?: string[];
+  edition: Edition;
 }
 
 export interface ParsedFactBases {
@@ -54,6 +58,20 @@ export interface FactBaseSources {
 
 /** Strip the wiki's bold markers and surrounding whitespace. */
 const clean = (s: string): string => s.replace(/\*\*/g, '').trim();
+
+const EDITION_VOCABULARY = new Set<string>(EDITIONS);
+
+/**
+ * Read a row's Edition cell. An absent (or blank) cell means base-game: the
+ * column was added with the expansion onboarding, and the pre-expansion rows
+ * never carried one. An unknown value is a content error, not a default.
+ */
+function editionOf(row: TableRow): Edition {
+  const raw = (row['Edition'] ?? '').trim();
+  if (raw === '') return 'base-game';
+  if (!EDITION_VOCABULARY.has(raw)) throw new Error(`unknown edition "${raw}"`);
+  return raw as Edition;
+}
 
 /**
  * Resolve structural depth for a namespace's evolved entities. Depth
@@ -167,9 +185,10 @@ export function parseGameMechanics(md: string): {
       recipes: [],
       onhit: clean(column(row, 'On-hit effect')),
       effect: clean(column(row, 'Effect text (wiki)')),
+      edition: editionOf(row),
     });
   }
-  balls.push({ name: 'Baby Ball', depth: 0, recipes: [], onhit: '', effect: 'Base attack ball, no special abilities. All characters start with a few except The Empty Nester and The Makeshift Sisyphus.' });
+  balls.push({ name: 'Baby Ball', depth: 0, recipes: [], onhit: '', effect: 'Base attack ball, no special abilities. All characters start with a few except The Empty Nester and The Makeshift Sisyphus.', edition: 'base-game' });
 
   // Evolved balls (depth 1|2): table 1.2 — columns: Ball | Depth | Recipe(s) | On-hit | Status effects | Effect text
   // Depth is computed from recipe structure, not the wiki's loose Evo/Tier-3
@@ -187,16 +206,17 @@ export function parseGameMechanics(md: string): {
     recipes,
     onhit: clean(column(row, 'On-hit')),
     effect: clean(column(row, 'Effect text (wiki)')),
+    edition: editionOf(row),
   }));
   for (const ent of withStructuralDepth(evo)) {
-    balls.push({ name: ent.name, depth: ent.depth, recipes: ent.recipes, onhit: ent.onhit, effect: ent.effect });
+    balls.push({ name: ent.name, depth: ent.depth, recipes: ent.recipes, onhit: ent.onhit, effect: ent.effect, edition: ent.edition });
   }
 
   // ---------- passives ----------
   const passives: ParsedPassive[] = [];
   // Base passives (depth 0): Passive | Effect text | Appearance requirement | Unlock
   for (const row of parseMarkdownTable(md, /^\| Passive \| Effect text \(wiki\) \|/, 'passive table')) {
-    passives.push({ name: clean(column(row, 'Passive')), depth: 0, recipes: [], effect: clean(column(row, 'Effect text (wiki)')) });
+    passives.push({ name: clean(column(row, 'Passive')), depth: 0, recipes: [], effect: clean(column(row, 'Effect text (wiki)')), edition: editionOf(row) });
   }
   // Evolved passives (depth 1|2): Passive | Recipe | Effect text — same
   // structural depth computation as balls.
@@ -210,9 +230,10 @@ export function parseGameMechanics(md: string): {
     name: clean(column(row, 'Passive')),
     recipes,
     effect: clean(column(row, 'Effect text (wiki)')),
+    edition: editionOf(row),
   }));
   for (const ent of withStructuralDepth(evoPas)) {
-    passives.push({ name: ent.name, depth: ent.depth, recipes: ent.recipes, effect: ent.effect });
+    passives.push({ name: ent.name, depth: ent.depth, recipes: ent.recipes, effect: ent.effect, edition: ent.edition });
   }
 
   // ---------- characters ----------
@@ -224,6 +245,7 @@ export function parseGameMechanics(md: string): {
       name: clean(column(row, 'Character')),
       baseBall: baseBall.trim() === '*none*' ? null : clean(baseBall),
       quirk: clean(column(row, 'Ability (wiki text, abridged)')),
+      edition: editionOf(row),
     });
   }
 

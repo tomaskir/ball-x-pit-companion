@@ -1,10 +1,11 @@
 // The generated-data contract: one place that turns parsed fact bases into
-// the in-memory data, renders the five generated files, and validates the
+// the in-memory data, renders the six generated files, and validates the
 // result. emit-data.ts is a thin CLI over this module, and src/data.test.ts
 // runs the same validateGenerated list against the checked-in data — the
 // invariants are written once, not copied.
 import { slug } from './slug.ts';
 import { WILDCARD, validateEditorial } from './editorial.ts';
+import { EDITIONS, type Edition } from './editions.ts';
 import type { ParsedFactBases } from './fact-bases.ts';
 import type { EditorialMaps, VerdictRule } from './editorial.ts';
 
@@ -12,6 +13,7 @@ export interface GeneratedBall {
   id: string;
   name: string;
   depth: 0 | 1 | 2;
+  edition: Edition;
   effects: string;
   recipes: string[][];
   onHit: string;
@@ -23,6 +25,7 @@ export interface GeneratedPassive {
   id: string;
   name: string;
   depth: 0 | 1 | 2;
+  edition: Edition;
   effects: string;
   recipes: string[][];
   icon: string;
@@ -32,6 +35,7 @@ export interface GeneratedPassive {
 export interface GeneratedCharacter {
   id: string;
   name: string;
+  edition: Edition;
   baseBallId: string | null;
   quirk: string;
   icon: string;
@@ -57,6 +61,7 @@ export function emitData(parsed: ParsedFactBases, editorial: EditorialMaps): Gen
       id: slug(b.name),
       name: b.name,
       depth: b.depth,
+      edition: b.edition,
       effects: b.effect,
       recipes: b.recipes,
       onHit: b.onhit,
@@ -67,6 +72,7 @@ export function emitData(parsed: ParsedFactBases, editorial: EditorialMaps): Gen
       id: slug(p.name),
       name: p.name,
       depth: p.depth,
+      edition: p.edition,
       effects: p.effect,
       recipes: p.recipes,
       icon: `icons/passives/${slug(p.name)}.png`, // prefix with import.meta.env.BASE_URL at runtime
@@ -75,6 +81,7 @@ export function emitData(parsed: ParsedFactBases, editorial: EditorialMaps): Gen
     characters: parsed.characters.map((c) => ({
       id: slug(c.name),
       name: c.name,
+      edition: c.edition,
       baseBallId: c.baseBall === null ? null : slug(c.baseBall),
       quirk: c.quirk,
       icon: `icons/character-portraits/${slug(c.name)}.png`, // prefix with import.meta.env.BASE_URL at runtime
@@ -86,9 +93,17 @@ export function emitData(parsed: ParsedFactBases, editorial: EditorialMaps): Gen
   };
 }
 
-/** Render the generated data as the five src/data/*.ts files, in write order. */
+/** Render the generated data as the six src/data/*.ts files, in write order. */
 export function renderGenerated(data: GeneratedData): { name: string; content: string }[] {
   const ts = (body: string): string => body + '\n';
+
+  const editionsTs = ts(`// Edition vocabulary — the content filter's dimension. Ordered: the
+// filter's checkbox order. An entity's Edition cell in the fact bases names
+// one of these; an absent cell means base-game. Generated — do not edit by
+// hand.
+export const EDITIONS = ${JSON.stringify(EDITIONS)} as const;
+export type Edition = (typeof EDITIONS)[number];
+`);
 
   const tagsTs = ts(`// Synergy tag vocabulary — the site's own editorial model (see
 // docs/research/risen-mechanics.md). Characters carry verdict rules over
@@ -100,12 +115,16 @@ export const TAGS: Record<string, string> = ${JSON.stringify(data.tags, null, 2)
 // ballxpit.wiki.gg (2026-09-13, game v1.301), effect text verbatim; Risen
 // Ballbylon rows datamined from v1.308, normalized to display units.
 // recipes: OR-of-ANDs of component ids. depth: 0 = basic, 1 = evolved
-// (level-2), 2 = tier-3. Tags are the site's editorial synergy model, not
-// game data.
+// (level-2), 2 = tier-3. edition is the content-filter dimension (absent
+// fact-base cell = base-game). Tags are the site's editorial synergy model,
+// not game data.
+import type { Edition } from './editions';
+
 export interface Ball {
   id: string;
   name: string;
   depth: 0 | 1 | 2;
+  edition: Edition;
   effects: string;
   recipes: string[][];
   onHit: string;
@@ -120,11 +139,14 @@ export const BALLS: Ball[] = ${JSON.stringify(data.balls, null, 2)};
 // ballxpit.wiki.gg (2026-09-13, game v1.301), effect text verbatim; Risen
 // Ballbylon rows datamined from v1.308, normalized to display units.
 // Same shape as Ball; own id namespace. Ball and passive graphs never
-// cross-reference.
+// cross-reference. edition is the content-filter dimension.
+import type { Edition } from './editions';
+
 export interface Passive {
   id: string;
   name: string;
   depth: 0 | 1 | 2;
+  edition: Edition;
   effects: string;
   recipes: string[][];
   icon: string;
@@ -138,11 +160,13 @@ export const PASSIVES: Passive[] = ${JSON.stringify(data.passives, null, 2)};
 // ballxpit.wiki.gg (2026-09-13, game v1.301); Risen Ballbylon rows datamined
 // from v1.308. Verdict rules are the site's editorial synergy model derived
 // from quirk text — not playtested (flagged in docs/research/game-mechanics.md).
-// Unlisted tags are neutral.
+// Unlisted tags are neutral. edition is the content-filter dimension.
 // The wildcard tag "*passives" matches every passive (The Ballbearer).
 // cannotPair is game data: the Matchmaker's forbidden two-character pairs
 // (docs/research/character-pairings.md) — symmetric; the False Messiah
 // cannot pair with anyone.
+import type { Edition } from './editions';
+
 export interface VerdictRule {
   tag: string;
   verdict: 'red' | 'green';
@@ -152,6 +176,7 @@ export interface VerdictRule {
 export interface Character {
   id: string;
   name: string;
+  edition: Edition;
   baseBallId: string | null;
   quirk: string;
   icon: string;
@@ -173,6 +198,7 @@ export const LEVEL_3_EFFECTS: Record<string, string> = ${JSON.stringify(data.lev
 `);
 
   return [
+    { name: 'editions.ts', content: editionsTs },
     { name: 'tags.ts', content: tagsTs },
     { name: 'balls.ts', content: ballsTs },
     { name: 'passives.ts', content: passivesTs },
@@ -191,6 +217,12 @@ export function validateGenerated(data: GeneratedData, editorial: EditorialMaps)
   const passiveIds = new Set(data.passives.map((p) => p.id));
   const charIds = new Set(data.characters.map((c) => c.id));
   const vocab = new Set(Object.keys(data.tags));
+  const editions = new Set<string>(EDITIONS);
+
+  // every entity's edition is in the vocabulary (the content filter's gate)
+  for (const b of data.balls) if (!editions.has(b.edition)) findings.push(`ball ${b.id}: unknown edition ${b.edition}`);
+  for (const p of data.passives) if (!editions.has(p.edition)) findings.push(`passive ${p.id}: unknown edition ${p.edition}`);
+  for (const ch of data.characters) if (!editions.has(ch.edition)) findings.push(`character ${ch.id}: unknown edition ${ch.edition}`);
 
   // recipes resolve within their own namespace (the graphs never cross)
   for (const b of data.balls)
@@ -279,6 +311,6 @@ export function runEmitData(
     return 1;
   }
   for (const { name, content } of renderGenerated(data)) write(name, content);
-  log('emitted tags.ts, balls.ts, passives.ts, characters.ts, level-3.ts — all checks pass');
+  log('emitted editions.ts, tags.ts, balls.ts, passives.ts, characters.ts, level-3.ts — all checks pass');
   return 0;
 }

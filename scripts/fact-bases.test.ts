@@ -316,6 +316,57 @@ describe('parseGameMechanics: reads columns by header name', () => {
   }
 });
 
+describe('parseGameMechanics: the Edition column', () => {
+  /** A minimal mechanics doc whose base-ball Edition cell is the variable. */
+  const minimal = (editionCell: string): string => [
+    '| Ball | On-hit effect | Status trigger(s) | Status effect | Effect text (wiki) | Character(s) | Unlock | Edition |',
+    '|---|---|---|---|---|---|---|---|',
+    `| Iron | — | On-Hit | — | Deals double damage. | — | default | ${editionCell} |`,
+    '',
+    '| Ball | Depth | Recipe(s) | On-hit | Status effects | Effect text (wiki) | Edition |',
+    '|---|---|---|---|---|---|---|',
+    '',
+    '| Passive | Effect text (wiki) | Appearance requirement | Unlock | Edition |',
+    '|---|---|---|---|---|',
+    '',
+    '| Passive | Recipe | Effect text (wiki) | Edition |',
+    '|---|---|---|---|',
+    '',
+    '| Character | Base ball | Ability (wiki text, abridged) | Unlock | Synergy-relevant facts | Edition |',
+    '|---|---|---|---|---|---|',
+    '| The Warrior | Iron | Quirk. | default | | base-game |',
+  ].join('\n');
+
+  it('reads the Edition cell', () => {
+    const { balls } = parseGameMechanics(minimal('dlc-risen-ballbylon'));
+    expect(balls.find((b) => b.name === 'Iron')!.edition).toBe('dlc-risen-ballbylon');
+  });
+
+  it('an absent (blank) cell means base-game', () => {
+    const { balls } = parseGameMechanics(minimal(''));
+    expect(balls.find((b) => b.name === 'Iron')!.edition).toBe('base-game');
+  });
+
+  it('an unknown edition is a content error', () => {
+    expect(() => parseGameMechanics(minimal('future-edition'))).toThrow('unknown edition "future-edition"');
+  });
+
+  it('parses the real roster editions', () => {
+    const parsed = parseFactBases(realSources());
+    const ball = (name: string) => parsed.balls.find((b) => b.name === name)!;
+    const passive = (name: string) => parsed.passives.find((p) => p.name === name)!;
+    const character = (name: string) => parsed.characters.find((c) => c.name === name)!;
+    expect(ball('Beast').edition).toBe('dlc-risen-ballbylon');
+    expect(ball('Ash').edition).toBe('dlc-risen-ballbylon');
+    expect(ball('Bleed').edition).toBe('base-game');
+    expect(ball('Baby Ball').edition).toBe('base-game');
+    expect(passive('Ancient Ladle').edition).toBe('dlc-risen-ballbylon');
+    expect(passive('Wagon Wheel').edition).toBe('base-game');
+    expect(character('The Potager').edition).toBe('dlc-risen-ballbylon');
+    expect(character('The Warrior').edition).toBe('base-game');
+  });
+});
+
 describe('parseFactBases: the real fact bases parse without the CLI', () => {
   const parsed = parseFactBases(realSources());
 

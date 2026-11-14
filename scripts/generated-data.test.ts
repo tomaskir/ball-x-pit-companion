@@ -19,14 +19,14 @@ const editorial: EditorialMaps = {
 
 const parsed: ParsedFactBases = {
   balls: [
-    { name: 'Iron', depth: 0, recipes: [], onhit: 'Hit', effect: 'Deals double damage.' },
-    { name: 'Baby Ball', depth: 0, recipes: [], onhit: '', effect: 'Base attack ball, no special abilities.' },
+    { name: 'Iron', depth: 0, recipes: [], onhit: 'Hit', effect: 'Deals double damage.', edition: 'base-game' },
+    { name: 'Baby Ball', depth: 0, recipes: [], onhit: '', effect: 'Base attack ball, no special abilities.', edition: 'base-game' },
   ],
-  passives: [{ name: 'Magnet', depth: 0, recipes: [], effect: 'Attracts pickups.' }],
+  passives: [{ name: 'Magnet', depth: 0, recipes: [], effect: 'Attracts pickups.', edition: 'base-game' }],
   characters: [
-    { name: 'Alpha', baseBall: 'Iron', quirk: 'Quirk A', cannotPair: ['The False Messiah'] },
-    { name: 'Beta', baseBall: null, quirk: 'Quirk B', cannotPair: ['The False Messiah'] },
-    { name: 'The False Messiah', baseBall: null, quirk: 'Quirk C', cannotPair: ['Alpha', 'Beta'] },
+    { name: 'Alpha', baseBall: 'Iron', quirk: 'Quirk A', cannotPair: ['The False Messiah'], edition: 'base-game' },
+    { name: 'Beta', baseBall: null, quirk: 'Quirk B', cannotPair: ['The False Messiah'], edition: 'base-game' },
+    { name: 'The False Messiah', baseBall: null, quirk: 'Quirk C', cannotPair: ['Alpha', 'Beta'], edition: 'base-game' },
   ],
   level3: { iron: 'Deals double damage.' },
 };
@@ -36,10 +36,13 @@ const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value));
 describe('emitData: parsed + editorial → generated shape', () => {
   const data = emitData(parsed, editorial);
 
-  it('maps ids, icons, tags, verdicts, and sorted cannotPair', () => {
+  it('maps ids, icons, tags, verdicts, editions, and sorted cannotPair', () => {
     expect(data.balls.map((b) => b.id)).toEqual(['iron', 'baby-ball']);
     expect(data.balls[0].icon).toBe('icons/balls/iron.png');
     expect(data.balls[0].tags).toEqual(['aoe']);
+    expect(data.balls[0].edition).toBe('base-game');
+    expect(data.passives[0].edition).toBe('base-game');
+    expect(data.characters[0].edition).toBe('base-game');
     expect(data.characters[0].verdicts).toEqual([]);
     expect(data.characters[2].cannotPair).toEqual(['alpha', 'beta']);
   });
@@ -51,6 +54,17 @@ describe('emitData: parsed + editorial → generated shape', () => {
 
 describe('validateGenerated: one invariant list', () => {
   const valid = () => emitData(clone(parsed), editorial);
+
+  it('reports an unknown edition on every entity kind', () => {
+    const data = valid();
+    data.balls[0].edition = 'future-edition' as 'base-game';
+    data.passives[0].edition = 'future-edition' as 'base-game';
+    data.characters[0].edition = 'future-edition' as 'base-game';
+    const findings = validateGenerated(data, editorial);
+    expect(findings).toContain('ball iron: unknown edition future-edition');
+    expect(findings).toContain('passive magnet: unknown edition future-edition');
+    expect(findings).toContain('character alpha: unknown edition future-edition');
+  });
 
   it('reports an unresolved recipe component within the namespace', () => {
     const data = valid();
@@ -139,7 +153,7 @@ describe('runEmitData: validate before write', () => {
     const written = new Map<string, string>();
     const code = runEmitData(parsed, editorial, (name, content) => written.set(name, content), () => {}, () => {});
     expect(code).toBe(0);
-    expect([...written.keys()]).toEqual(['tags.ts', 'balls.ts', 'passives.ts', 'characters.ts', 'level-3.ts']);
+    expect([...written.keys()]).toEqual(['editions.ts', 'tags.ts', 'balls.ts', 'passives.ts', 'characters.ts', 'level-3.ts']);
   });
 
   it('writes nothing and exits non-zero when an invariant fails', () => {

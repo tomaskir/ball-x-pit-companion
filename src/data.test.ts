@@ -12,6 +12,7 @@ import { LEVEL_3_EFFECTS } from './data/level-3';
 import { BALL_KIT } from './ball-kit';
 import { pairKey } from './pair';
 import { byId, complexity } from './graph';
+import { ballMap } from './catalog';
 import { validateGenerated } from '../scripts/generated-data.ts';
 import { EDITORIAL, WILDCARD } from '../scripts/editorial.ts';
 
@@ -32,6 +33,31 @@ describe('fact-base counts (ticket 02; base game v1.301 + Risen Ballbylon v1.308
   });
   it('has 89 evolved balls (depth > 0)', () => {
     expect(BALLS.filter((b) => b.depth > 0)).toHaveLength(89);
+  });
+});
+
+describe('editions (Risen Ballbylon content filter)', () => {
+  it('has 24 DLC balls, 45 DLC passives, and 8 DLC characters', () => {
+    expect(BALLS.filter((b) => b.edition === 'dlc-risen-ballbylon')).toHaveLength(24);
+    expect(PASSIVES.filter((p) => p.edition === 'dlc-risen-ballbylon')).toHaveLength(45);
+    expect(CHARACTERS.filter((c) => c.edition === 'dlc-risen-ballbylon')).toHaveLength(8);
+  });
+
+  it('every entity carries a known edition', () => {
+    for (const items of [BALLS, PASSIVES, CHARACTERS]) {
+      for (const item of items) expect(['base-game', 'dlc-risen-ballbylon']).toContain(item.edition);
+    }
+  });
+
+  it('level-3 texts inherit their ball\'s edition (the overlay has no edition field)', () => {
+    // The overlay is keyed by ball id; a DLC ball's text is therefore DLC.
+    for (const id of Object.keys(LEVEL_3_EFFECTS)) {
+      expect(ballIds.has(id), id).toBe(true);
+    }
+    expect(ballMap.get('beast')!.edition).toBe('dlc-risen-ballbylon');
+    expect(LEVEL_3_EFFECTS.beast).toBeTruthy();
+    expect(ballMap.get('bleed')!.edition).toBe('base-game');
+    expect(LEVEL_3_EFFECTS.bleed).toBeTruthy();
   });
 });
 
