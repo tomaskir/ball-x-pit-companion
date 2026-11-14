@@ -91,6 +91,49 @@ export function parseRecipes(cell: string): string[][] {
   return recipes;
 }
 
+/** One entity plus the recipes accumulated across its adjacent duplicate rows. */
+interface RecipeGroup {
+  row: ReturnType<typeof parseMarkdownTable>[number];
+  recipes: string[][];
+}
+
+/**
+ * Collapse adjacent rows that share `nameColumn` into one entity. The S4
+ * onboarding contract writes recipes that share no component as adjacent
+ * duplicate rows (one row per recipe, every non-recipe cell repeated
+ * verbatim); this unions their recipes in row order, dedupes identical
+ * recipes, and throws when any other cell differs. A repeated name that is
+ * not adjacent is a separate row — downstream validation catches it.
+ */
+function groupRecipeRows(
+  rows: ReturnType<typeof parseMarkdownTable>,
+  nameColumn: string,
+  recipeColumn: string,
+  label: string,
+): RecipeGroup[] {
+  const groups: RecipeGroup[] = [];
+  for (const row of rows) {
+    const name = clean(column(row, nameColumn));
+    const last = groups[groups.length - 1];
+    if (last && clean(column(last.row, nameColumn)) === name) {
+      for (const key of Object.keys(row)) {
+        if (key === recipeColumn) continue;
+        if (last.row[key] !== row[key]) {
+          throw new Error(`${label}: duplicate row for ${name} differs in "${key}"`);
+        }
+      }
+      for (const recipe of parseRecipes(column(row, recipeColumn))) {
+        if (!last.recipes.some((existing) => existing.join('\u0000') === recipe.join('\u0000'))) {
+          last.recipes.push(recipe);
+        }
+      }
+    } else {
+      groups.push({ row, recipes: parseRecipes(column(row, recipeColumn)) });
+    }
+  }
+  return groups;
+}
+
 /** Parse the game-mechanics fact base: balls, passives, characters. */
 export function parseGameMechanics(md: string): {
   balls: ParsedBall[];
@@ -117,9 +160,14 @@ export function parseGameMechanics(md: string): {
   // labels (which put e.g. Tumor — built from evolved Radiation Beam — in "Evo"):
   //   depth 1 (Tier-2) = recipe includes an evolved ball as a component
   //   depth 2 (Tier-3) = recipe includes a tier-2 ball as a component
-  const evo = parseMarkdownTable(md, /^\| Ball \| Depth \|/, 'evolved ball table').map((row) => ({
+  const evo = groupRecipeRows(
+    parseMarkdownTable(md, /^\| Ball \| Depth \|/, 'evolved ball table'),
+    'Ball',
+    'Recipe(s)',
+    'evolved ball table',
+  ).map(({ row, recipes }) => ({
     name: clean(column(row, 'Ball')),
-    recipes: parseRecipes(column(row, 'Recipe(s)')),
+    recipes,
     onhit: clean(column(row, 'On-hit')),
     effect: clean(column(row, 'Effect text (wiki)')),
   }));
@@ -135,9 +183,14 @@ export function parseGameMechanics(md: string): {
   }
   // Evolved passives (depth 1|2): Passive | Recipe | Effect text — same
   // structural depth computation as balls.
-  const evoPas = parseMarkdownTable(md, /^\| Passive \| Recipe \|/, 'evolved passive table').map((row) => ({
+  const evoPas = groupRecipeRows(
+    parseMarkdownTable(md, /^\| Passive \| Recipe \|/, 'evolved passive table'),
+    'Passive',
+    'Recipe',
+    'evolved passive table',
+  ).map(({ row, recipes }) => ({
     name: clean(column(row, 'Passive')),
-    recipes: parseRecipes(column(row, 'Recipe')),
+    recipes,
     effect: clean(column(row, 'Effect text (wiki)')),
   }));
   for (const ent of withStructuralDepth(evoPas)) {

@@ -50,6 +50,72 @@ describe('parseRecipes: OR-of-ANDs grammar', () => {
       ['sun', 'time'],
     ]);
   });
+
+  it('expands a three-way slot alternate', () => {
+    expect(parseRecipes('Freeze + (Wind or Lightning or Water)')).toEqual([
+      ['freeze', 'wind'],
+      ['freeze', 'lightning'],
+      ['freeze', 'water'],
+    ]);
+  });
+});
+
+describe('parseGameMechanics: adjacent duplicate rows are one entity', () => {
+  it('unions the recipes of consecutive rows in row order', () => {
+    const { balls } = parseGameMechanics(mechanicsWithEvolvedRows(
+      '| Overgrowth | Evo | Earthquake + Cell | — | Overgrowth | Applies 1 stack. | base-game |',
+      '| Overgrowth | Evo | Time + Wood | — | Overgrowth | Applies 1 stack. | base-game |',
+    ));
+    expect(balls.find((b) => b.name === 'Overgrowth')!.recipes).toEqual([
+      ['earthquake', 'cell'],
+      ['time', 'wood'],
+    ]);
+  });
+
+  it('dedupes an identical recipe repeated across rows', () => {
+    const { balls } = parseGameMechanics(mechanicsWithEvolvedRows(
+      '| Overgrowth | Evo | Earthquake + Cell | — | Overgrowth | Applies 1 stack. | base-game |',
+      '| Overgrowth | Evo | Earthquake + Cell | — | Overgrowth | Applies 1 stack. | base-game |',
+    ));
+    expect(balls.find((b) => b.name === 'Overgrowth')!.recipes).toEqual([
+      ['earthquake', 'cell'],
+    ]);
+  });
+
+  it('throws when a non-recipe cell differs across the group', () => {
+    expect(() => parseGameMechanics(mechanicsWithEvolvedRows(
+      '| Overgrowth | Evo | Earthquake + Cell | — | Overgrowth | Applies 1 stack. | base-game |',
+      '| Overgrowth | Tier-3 | Time + Wood | — | Overgrowth | Applies 1 stack. | base-game |',
+    ))).toThrow('duplicate row for Overgrowth differs in "Depth"');
+  });
+
+  it('groups adjacent evolved-passive rows the same way', () => {
+    const { passives } = parseGameMechanics(mechanicsWithEvolvedPassiveRows(
+      '| Test Passive | Alpha + Beta | Effect. | base-game |',
+      '| Test Passive | Gamma + Delta | Effect. | base-game |',
+    ));
+    expect(passives.find((p) => p.name === 'Test Passive')!.recipes).toEqual([
+      ['alpha', 'beta'],
+      ['gamma', 'delta'],
+    ]);
+  });
+
+  it('treats a repeated non-adjacent name as a separate entity', () => {
+    const { balls } = parseGameMechanics(mechanicsWithEvolvedRows(
+      '| Overgrowth | Evo | Earthquake + Cell | — | Overgrowth | Applies 1 stack. | base-game |',
+      '| Other | Evo | Time + Wood | — | Overgrowth | Applies 1 stack. | base-game |',
+      '| Overgrowth | Evo | Time + Wood | — | Overgrowth | Applies 1 stack. | base-game |',
+    ));
+    expect(balls.filter((b) => b.name === 'Overgrowth')).toHaveLength(2);
+  });
+
+  function mechanicsWithEvolvedRows(...rows: string[]): string {
+    return mechanicsTables({ evolvedRows: rows });
+  }
+
+  function mechanicsWithEvolvedPassiveRows(...rows: string[]): string {
+    return mechanicsTables({ evolvedPassiveRows: rows });
+  }
 });
 
 describe('parsePairings: one symmetric expansion', () => {
@@ -188,6 +254,27 @@ describe('parseFactBases: the real fact bases parse without the CLI', () => {
     expect(byName.get('The False Messiah')!.cannotPair).toHaveLength(22);
   });
 });
+
+/** A minimal mechanics doc whose evolved tables are the variables. */
+function mechanicsTables(opts: { evolvedRows?: string[]; evolvedPassiveRows?: string[] } = {}): string {
+  const separator = (header: string) => `|${header.split('|').slice(1, -1).map(() => '---').join('|')}|`;
+  const table = (header: string, rows: string[]) => [header, separator(header), ...rows].join('\n');
+  return [
+    table('| Ball | On-hit effect | Status trigger(s) | Status effect | Effect text (wiki) | Character(s) | Unlock | Edition |', [
+      '| Iron | — | On-Hit | — | Deals double damage. | — | default | base-game |',
+    ]),
+    '',
+    table('| Ball | Depth | Recipe(s) | On-hit | Status effects | Effect text (wiki) | Edition |', opts.evolvedRows ?? []),
+    '',
+    table('| Passive | Effect text (wiki) | Appearance requirement | Unlock | Edition |', []),
+    '',
+    table('| Passive | Recipe | Effect text (wiki) | Edition |', opts.evolvedPassiveRows ?? []),
+    '',
+    table('| Character | Base ball | Ability (wiki text, abridged) | Unlock | Synergy-relevant facts | Edition |', [
+      '| The Warrior | Iron | Quirk. | default | | base-game |',
+    ]),
+  ].join('\n');
+}
 
 function realSources() {
   return {
