@@ -42,6 +42,16 @@ is reconstructed from community sources.
   the Warrior with the False Messiah." This corrects the *error message*, not
   the pairing: the False Messiah still takes no partner (S3; the generated
   `cannotPair` data and `src/data.test.ts` pin the full exclusion).
+- **S5 — Datamined IL2CPP, BALL x PIT v1.308 (Risen Ballbylon)**,
+  `game-data/BALLxPIT/GameAssembly.dll` + `global-metadata.dat`, extracted
+  2026-11-13. Pair gate: `CharInfo.CanCombine` (RVA `0x4C3C70`), backed by
+  `CharInfo.CanCombineChars` (`0x4C3A20`), `CharInfo.CanCombineProp` /
+  `CanCombinePropInternal` (`0x4C3C10` / `0x4C3B10`). Called from
+  `CharSelectUI.OnSelectClicked` (`0x5103F0`), `CharSelectUI.Activate`
+  (`0x50D700`), `CharSelectUI.GoToLevelSelect` (`0x50EA80`), and
+  `CharSelectItem.Init` (`0x50CF30`). Rejection text:
+  `error_invalid_fusion` — "This character is not compatible with your main
+  selected character." Findings: `docs/research/risen-matchmaker-pairs.md`.
 
 ## The pair list (site model, current roster)
 
@@ -66,13 +76,23 @@ incompatible partners and rejecting them with a message.
 | The Radical | The Cogitator | S1 |
 | The Falconer | The Cohabitants, The Shade | S1 |
 | The Tunneller | The Repentant | S1 (v2.0 only) |
+| The Potager | The Spendthrift, The Empty Nester | S5 |
+| The Recollector | The Cohabitants, The Embedded, The Flagellant, The Juggler, The Physicist, The Repentant, The Right Hand Man, The Scrupulous Scoundrel, The Sentinel, The Shieldbearer, The Spendthrift, The Tunneller, The Wallbreaker | S5 |
+| The Right Hand Man | The Recollector | S5 |
+| The Scandalmonger | The Carouser, The Physicist, The Sentinel, The Tactician | S5 |
+| The Scrupulous Scoundrel | The Physicist, The Recollector | S5 |
+| The Sentinel | The Falconer, The Juggler, The Recollector, The Scandalmonger, The Shade | S5 |
+| The Wallbreaker | The Recollector | S5 |
 | The False Messiah | *all* — cannot be a second character, and takes no partner (outside the vote mechanic) | S3 |
 
-No restrictions (any partner): **The Warrior, The Embedded, The Empty
-Nester, The Carouser, The Tiptoer, The Hoary Hoarder, The Ballbearer.**
+No restrictions (any partner): **The Warrior, The Conduit, The Tiptoer, The
+Hoary Hoarder, The Ballbearer.**
 
-That is 17 forbidden pairs over the 22 pairable characters, plus the False
-Messiah's special rule.
+That is 40 forbidden pairs over the 30 pairable characters, plus the False
+Messiah's special rule. The Risen Ballbylon rows are the v1.308 datamine
+(S5); the pre-DLC rows remain the community-sourced model (S1/S2). The
+datamine also disagrees with several pre-DLC rows — those corrections are
+tracked separately (#49) and are not applied here.
 
 ## Contradictions and caveats
 
@@ -107,11 +127,21 @@ Messiah's special rule.
    Shieldbearer/Physicist all rewrite ball return trajectories; Cohabitants/
    Falconer/Spendthrift/Juggler all rewrite launching), but the site records
    the *what*, not a theory of the *why*.
+7. **Pre-DLC rows vs. the v1.308 datamine.** S5's full matrix confirms 16 of
+   the 17 pre-DLC pairs but flags one row the code does not enforce (The
+   Cogitator × The Radical) and four pre-DLC pairs the current table omits
+   (Tunneller × Shieldbearer, Tunneller × Flagellant, Tactician × Carouser,
+   Ballbearer × Hoary Hoarder). Those are existing-roster corrections, not
+   Risen Ballbylon rows; they are tracked in #49 and deliberately not applied
+   here. See `docs/research/risen-matchmaker-pairs.md` §5.
 
 ## Maintenance
 
 New characters and patch notes are the risk points. When the wiki grows a
 character or the game ships an update, re-check S1's latest revision (the
 FAQ is versioned; the Risen Ballbylon mirrors carry the same FAQ id) and this
-file's table together. `npm test` pins the emitted pair list's shape
-(symmetry, id resolution, the False Messiah rule) in `src/data.test.ts`.
+file's table together. For the DLC roster, re-run the S5 decode: the prop
+matrix is the bulk of the relation, so changing a character's `Props` list
+changes the pair list without any edit to the explicit matrix. `npm test`
+pins the emitted pair list's shape (symmetry, id resolution, the False
+Messiah rule) in `src/data.test.ts`.
