@@ -155,54 +155,54 @@ describe('parsePairings: one symmetric expansion', () => {
   });
 });
 
-describe('parsePairings: Risen Ballbylon rows (R6 / S5)', () => {
-  // The 8 DLC characters plus the base-game partners their rows name. The
-  // roster comes from game-mechanics.md in the real pipeline; this fixture
-  // pins the pairing expansion before that onboarding lands.
-  const names = [
-    'The Potager', 'The Spendthrift', 'The Empty Nester',
-    'The Recollector', 'The Cohabitants', 'The Embedded', 'The Flagellant',
-    'The Juggler', 'The Physicist', 'The Repentant', 'The Right Hand Man',
-    'The Scrupulous Scoundrel', 'The Sentinel', 'The Shieldbearer',
-    'The Tunneller', 'The Wallbreaker',
-    'The Scandalmonger', 'The Carouser', 'The Tactician', 'The Falconer',
-    'The Shade', 'The Conduit', 'The False Messiah',
+describe('parsePairings: Risen Ballbylon rows (S5, research #32)', () => {
+  // The pairing table names the 8 DLC characters before their roster rows
+  // land in game-mechanics.md (T10). Parse the real table against the real
+  // roster plus those names; once the roster includes them the dedupe is a
+  // no-op. The integration test below is authoritative for the full roster.
+  const dlcNames = [
+    'The Conduit', 'The Potager', 'The Recollector', 'The Right Hand Man',
+    'The Scandalmonger', 'The Scrupulous Scoundrel', 'The Sentinel',
+    'The Wallbreaker',
   ];
-  const characters = names.map((name) => ({ name }));
-  const md = [
-    '| Character | Cannot pair with | Sources |',
-    '|---|---|---|',
-    '| The Potager | The Spendthrift, The Empty Nester | S5 |',
-    '| The Recollector | The Cohabitants, The Embedded, The Flagellant, The Juggler, The Physicist, The Repentant, The Right Hand Man, The Scrupulous Scoundrel, The Sentinel, The Shieldbearer, The Spendthrift, The Tunneller, The Wallbreaker | S5 |',
-    '| The Right Hand Man | The Recollector | S5 |',
-    '| The Scandalmonger | The Carouser, The Physicist, The Sentinel, The Tactician | S5 |',
-    '| The Scrupulous Scoundrel | The Physicist, The Recollector | S5 |',
-    '| The Sentinel | The Falconer, The Juggler, The Recollector, The Scandalmonger, The Shade | S5 |',
-    '| The Wallbreaker | The Recollector | S5 |',
-    '| The False Messiah | *all* — cannot be a second character | S3 |',
-  ].join('\n');
-
-  const byName = new Map(parsePairings(md, characters).map((c) => [c.name, c]));
+  const { characters } = parseGameMechanics(realMechanics());
+  const roster = [
+    ...characters,
+    ...dlcNames
+      .filter((name) => !characters.some((c) => c.name === name))
+      .map((name) => ({ name })),
+  ];
+  const md = readFileSync(new URL('../docs/research/character-pairings.md', import.meta.url), 'utf8');
+  const byName = new Map(parsePairings(md, roster).map((c) => [c.name, c]));
 
   it('expands the Recollector row in both directions', () => {
-    expect(byName.get('The Recollector')!.cannotPair).toEqual(expect.arrayContaining([
+    const partners = [
       'The Cohabitants', 'The Embedded', 'The Flagellant', 'The Juggler',
       'The Physicist', 'The Repentant', 'The Right Hand Man',
       'The Scrupulous Scoundrel', 'The Sentinel', 'The Shieldbearer',
       'The Spendthrift', 'The Tunneller', 'The Wallbreaker',
-    ]));
-    for (const partner of ['The Cohabitants', 'The Wallbreaker', 'The Juggler']) {
+    ];
+    expect(byName.get('The Recollector')!.cannotPair).toEqual(expect.arrayContaining(partners));
+    for (const partner of partners) {
       expect(byName.get(partner)!.cannotPair).toContain('The Recollector');
     }
   });
 
-  it('expands the short DLC rows symmetrically', () => {
-    expect(byName.get('The Potager')!.cannotPair).toEqual(expect.arrayContaining(['The Spendthrift', 'The Empty Nester']));
-    expect(byName.get('The Spendthrift')!.cannotPair).toContain('The Potager');
-    expect(byName.get('The Scandalmonger')!.cannotPair).toEqual(expect.arrayContaining(['The Carouser', 'The Physicist', 'The Sentinel', 'The Tactician']));
-    expect(byName.get('The Tactician')!.cannotPair).toContain('The Scandalmonger');
-    expect(byName.get('The Sentinel')!.cannotPair).toEqual(expect.arrayContaining(['The Falconer', 'The Juggler', 'The Shade']));
-    expect(byName.get('The Shade')!.cannotPair).toContain('The Sentinel');
+  it('expands every other DLC row in both directions', () => {
+    const rows: Array<[string, string[]]> = [
+      ['The Potager', ['The Spendthrift', 'The Empty Nester']],
+      ['The Right Hand Man', ['The Recollector']],
+      ['The Scandalmonger', ['The Carouser', 'The Physicist', 'The Sentinel', 'The Tactician']],
+      ['The Scrupulous Scoundrel', ['The Physicist', 'The Recollector']],
+      ['The Sentinel', ['The Falconer', 'The Juggler', 'The Recollector', 'The Scandalmonger', 'The Shade']],
+      ['The Wallbreaker', ['The Recollector']],
+    ];
+    for (const [name, partners] of rows) {
+      expect(byName.get(name)!.cannotPair).toEqual(expect.arrayContaining(partners));
+      for (const partner of partners) {
+        expect(byName.get(partner)!.cannotPair).toContain(name);
+      }
+    }
   });
 
   it('leaves The Conduit unrestricted except for the False Messiah rule', () => {
