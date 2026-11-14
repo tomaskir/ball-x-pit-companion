@@ -93,14 +93,18 @@ node --experimental-strip-types scripts/emit-data.ts    # parsed.json + tag maps
 ## Data flow — what is hand-edited vs generated
 
 Hand-edited:
-- `docs/research/game-mechanics.md` — wiki-sourced fact base (fetched 2026-09-13,
-  game v1.301). Effect text is verbatim from ballxpit.wiki.gg.
+- `docs/research/game-mechanics.md` — the fact base the parser consumes. Base
+  game is wiki-sourced (fetched 2026-09-13, game v1.301); the *Risen
+  Ballbylon* rows are the v1.308 datamine (extracted 2026-11-13). Base effect
+  text is verbatim from ballxpit.wiki.gg; DLC text is normalized to display
+  units.
 - `docs/research/character-pairings.md` — the Matchmaker pairing-restriction
   fact base (game data, also parsed; sources and contradictions documented
   in the file).
 - `docs/research/level-3-effects.md` — the level-3 effect-text fact base
-  (wiki per-level tables, v1.301 pre-DLC; parsed into `src/data/level-3.ts`).
-  The fusion composer consumes it; the catalog stays level-1.
+  (base-game wiki per-level tables, v1.301, plus the 24 DLC rows from the
+  v1.308 datamine; parsed into `src/data/level-3.ts`). The fusion composer
+  consumes it; the catalog stays level-1.
 - Tag/verdict assignments live **inside `scripts/editorial.ts`** (`TAGS`,
   `BALL_TAGS`, `PASSIVE_TAGS`, `CHAR_VERDICTS`) — this is the only place the
   editorial synergy model is set.
@@ -112,7 +116,7 @@ Generated — never edit by hand:
 
 `scripts/generated-data.ts` validates on every run (recipes resolve within
 namespace, tags in vocabulary, every character has a verdict entry, base balls
-resolve, pairings are symmetric, level-3 texts cover all 90 fusable balls)
+resolve, pairings are symmetric, level-3 texts cover all 114 fusable balls)
 **before** writing any file, and the CLI exits non-zero on violation.
 `src/data.test.ts` runs the same `validateGenerated` list against the
 checked-in data, so the invariants are written once.
@@ -153,7 +157,7 @@ checked-in data, so the invariants are written once.
   composer against `docs/research/fusion-observations/fusion-pairs.json`,
   `src/corpus-schema.test.ts` gates the corpus's own schema (via
   `src/corpus.ts`), and `data.test.ts` pins the
-  level-3 overlay to the catalog (90 fusable balls) and the property table's
+  level-3 overlay to the catalog (114 fusable balls) and the property table's
   scalar values to the level-3 text. Changing the composer, the corpus, the
   property table, or the wiki effect text must keep all of them green — a
   disagreement is a content decision, not a test to relax. The distilled
@@ -183,11 +187,14 @@ checked-in data, so the invariants are written once.
 
 ## Content caveats
 
-- Game data is wiki-as-of-2026-09-13 (pre-DLC game v1.301); the wiki pages
-  carry `{{Stub}}` notices. The overview catalog is level-1 text; fusion
+- Base-game data is wiki-as-of-2026-09-13 (game v1.301); the wiki pages carry
+  `{{Stub}}` notices. The *Risen Ballbylon* rows are the v1.308 datamine
+  (extracted 2026-11-13). The overview catalog is level-1 text; fusion
   consumes the level-3 overlay (`src/data/level-3.ts`). Re-verify numbers on
   game patches — see the uncertainty summary at the end of
   `docs/research/game-mechanics.md`.
+- The fusion observation corpus predates the expansion balls (no DLC corpus
+  wave); the composer's new-ball behavior is datamined (`docs/research/risen-fusion.md`).
 - The synergy tag list and per-character verdicts are this site's **editorial
   model**, not game data — playtest-unverified. Changes there are content
   decisions, not just code.
