@@ -5,6 +5,10 @@
 import { describe, it, expect } from 'vitest';
 import { createViewState } from './view-state';
 import { ballMap } from './catalog';
+import { BALLS } from './data/balls';
+import { PASSIVES } from './data/passives';
+import { CHARACTERS } from './data/characters';
+import { fusionBalls } from './fusion';
 
 describe('view state: item selection (ticket 05 semantics through one interface)', () => {
   it('selecting an evolved ball marks it selected, components+descendants related, the rest dimmed', () => {
@@ -883,6 +887,51 @@ describe('view state: edition filter state and derived collections', () => {
     expect(vm.enabledEditions).toEqual([]);
     expect([...vm.tiles.values()].every((t) => t.hidden)).toBe(true);
     expect(vm.visible.balls).toHaveLength(0);
+  });
+
+  /** The expansion-only state: base off, Risen Ballbylon on. */
+  const expansionOnly = () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleEdition', edition: 'base-game' });
+    view.dispatch({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' });
+    return view;
+  };
+  /** The data's DLC subset — the expected visible collection, not a literal
+   *  count (the counts themselves are pinned in src/data.test.ts). */
+  const dlcOnly = <T extends { edition: string }>(items: readonly T[]): T[] =>
+    items.filter((item) => item.edition === 'dlc-risen-ballbylon');
+
+  it('the expansion-only combination shows exactly the DLC content', () => {
+    const vm = expansionOnly().derive();
+    expect(vm.enabledEditions).toEqual(['dlc-risen-ballbylon']);
+    expect(vm.visible.balls).toEqual(dlcOnly(BALLS));
+    expect(vm.visible.passives).toEqual(dlcOnly(PASSIVES));
+    expect(vm.visible.characters).toEqual(dlcOnly(CHARACTERS));
+    expect(vm.visible.fusionBalls).toEqual(dlcOnly(fusionBalls()));
+    expect(vm.tiles.get('bleed')!.hidden).toBe(true); // base ball absent
+    expect(vm.tiles.get('ash')!.hidden).toBe(false); // DLC ball shown
+    expect(vm.fusionRows.get('beast')!.hidden).toBe(false); // DLC fusion row shown
+  });
+
+  it('the expansion-only combination gates recipes whose components are base-game', () => {
+    // Ash (DLC) = Wood (DLC) + Burn (base-game): the recipe is gated while
+    // the ball itself stays visible, so the build graph shows the target
+    // alone.
+    const vm = expansionOnly().dispatch({ type: 'togglePlanItem', id: 'ash' });
+    expect(vm.availableRecipes.get('ash')).toEqual([]);
+    expect(vm.buildGraph.balls.nodes.map((n) => n.id)).toEqual(['ash']);
+  });
+
+  it('turning base-game off drops live base plan entries and reports the loss', () => {
+    // The mirror of the DLC-off drop: the base edition's own entries leave
+    // when its checkbox is unchecked, leaving the expansion-only set.
+    const view = createViewState();
+    view.dispatch({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' });
+    view.dispatch({ type: 'togglePlanItem', id: 'bleed' }); // base ball
+    view.dispatch({ type: 'togglePlanItem', id: 'ash' }); // DLC ball
+    const vm = view.dispatch({ type: 'toggleEdition', edition: 'base-game' });
+    expect(vm.plan.balls.map((e) => (e.kind === 'single' ? e.item.id : ''))).toEqual(['ash']);
+    expect(vm.editionDroppedCount).toBe(1);
   });
 });
 
