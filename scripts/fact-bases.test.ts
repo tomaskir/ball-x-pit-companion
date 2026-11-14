@@ -62,8 +62,11 @@ describe('parseRecipes: OR-of-ANDs grammar', () => {
 });
 
 describe('parseGameMechanics: adjacent duplicate rows are one entity', () => {
+  const evolved = (...rows: string[]) => mechanicsTables({ evolvedRows: rows });
+  const evolvedPassives = (...rows: string[]) => mechanicsTables({ evolvedPassiveRows: rows });
+
   it('unions the recipes of consecutive rows in row order', () => {
-    const { balls } = parseGameMechanics(mechanicsWithEvolvedRows(
+    const { balls } = parseGameMechanics(evolved(
       '| Overgrowth | Evo | Earthquake + Cell | — | Overgrowth | Applies 1 stack. | base-game |',
       '| Overgrowth | Evo | Time + Wood | — | Overgrowth | Applies 1 stack. | base-game |',
     ));
@@ -74,7 +77,7 @@ describe('parseGameMechanics: adjacent duplicate rows are one entity', () => {
   });
 
   it('dedupes an identical recipe repeated across rows', () => {
-    const { balls } = parseGameMechanics(mechanicsWithEvolvedRows(
+    const { balls } = parseGameMechanics(evolved(
       '| Overgrowth | Evo | Earthquake + Cell | — | Overgrowth | Applies 1 stack. | base-game |',
       '| Overgrowth | Evo | Earthquake + Cell | — | Overgrowth | Applies 1 stack. | base-game |',
     ));
@@ -84,14 +87,14 @@ describe('parseGameMechanics: adjacent duplicate rows are one entity', () => {
   });
 
   it('throws when a non-recipe cell differs across the group', () => {
-    expect(() => parseGameMechanics(mechanicsWithEvolvedRows(
+    expect(() => parseGameMechanics(evolved(
       '| Overgrowth | Evo | Earthquake + Cell | — | Overgrowth | Applies 1 stack. | base-game |',
       '| Overgrowth | Tier-3 | Time + Wood | — | Overgrowth | Applies 1 stack. | base-game |',
     ))).toThrow('duplicate row for Overgrowth differs in "Depth"');
   });
 
   it('groups adjacent evolved-passive rows the same way', () => {
-    const { passives } = parseGameMechanics(mechanicsWithEvolvedPassiveRows(
+    const { passives } = parseGameMechanics(evolvedPassives(
       '| Test Passive | Alpha + Beta | Effect. | base-game |',
       '| Test Passive | Gamma + Delta | Effect. | base-game |',
     ));
@@ -102,21 +105,13 @@ describe('parseGameMechanics: adjacent duplicate rows are one entity', () => {
   });
 
   it('treats a repeated non-adjacent name as a separate entity', () => {
-    const { balls } = parseGameMechanics(mechanicsWithEvolvedRows(
+    const { balls } = parseGameMechanics(evolved(
       '| Overgrowth | Evo | Earthquake + Cell | — | Overgrowth | Applies 1 stack. | base-game |',
       '| Other | Evo | Time + Wood | — | Overgrowth | Applies 1 stack. | base-game |',
       '| Overgrowth | Evo | Time + Wood | — | Overgrowth | Applies 1 stack. | base-game |',
     ));
     expect(balls.filter((b) => b.name === 'Overgrowth')).toHaveLength(2);
   });
-
-  function mechanicsWithEvolvedRows(...rows: string[]): string {
-    return mechanicsTables({ evolvedRows: rows });
-  }
-
-  function mechanicsWithEvolvedPassiveRows(...rows: string[]): string {
-    return mechanicsTables({ evolvedPassiveRows: rows });
-  }
 });
 
 describe('parsePairings: one symmetric expansion', () => {
@@ -216,7 +211,6 @@ describe('parseGameMechanics: reads columns by header name', () => {
 
   /** A minimal mechanics doc; the base-ball and character tables are the variables. */
   function mechanicsDoc(baseHeader: string, baseRow: string, charHeader: string, charRow: string): string {
-    const separator = (header: string) => `|${header.split('|').slice(1, -1).map(() => '---').join('|')}|`;
     return [
       baseHeader,
       separator(baseHeader),
@@ -245,7 +239,7 @@ describe('parseFactBases: the real fact bases parse without the CLI', () => {
     expect(parsed.balls).toHaveLength(115);
     expect(parsed.passives).toHaveLength(116);
     expect(parsed.characters).toHaveLength(31);
-    // T11 adds the 24 DLC level-3 texts; T14 owns the final count.
+    // The level-3 overlay is extended separately; this pins the current fact base.
     expect(Object.keys(parsed.level3)).toHaveLength(90);
   });
 
@@ -305,9 +299,12 @@ describe('game-mechanics.md: every entity row carries an Edition cell', () => {
   }
 });
 
+/** The markdown separator row for a header line. */
+const separator = (header: string): string =>
+  `|${header.split('|').slice(1, -1).map(() => '---').join('|')}|`;
+
 /** A minimal mechanics doc whose evolved tables are the variables. */
 function mechanicsTables(opts: { evolvedRows?: string[]; evolvedPassiveRows?: string[] } = {}): string {
-  const separator = (header: string) => `|${header.split('|').slice(1, -1).map(() => '---').join('|')}|`;
   const table = (header: string, rows: string[]) => [header, separator(header), ...rows].join('\n');
   return [
     table('| Ball | On-hit effect | Status trigger(s) | Status effect | Effect text (wiki) | Character(s) | Unlock | Edition |', [

@@ -24,8 +24,9 @@ IL2CPP), extracted 2026-11-13 from `game-data/BALLxPIT/`; the decoded package
 (`game-data/extracted/`) is not committed. DLC rows below are the v1.308
 datamine; all other rows are wiki v1.301.
 
-**Terminology note**: the wiki distinguishes **Base Balls** (25, offered on level-up),
-**Evolved Balls** (89, made from 2+ specific level-3 balls in the Fusion Reactor), and
+**Terminology note**: the datamined catalog distinguishes **Base Balls** (25,
+offered on level-up), **Evolved Balls** (89, made from 2+ specific level-3 balls
+in the Fusion Reactor), and
 **Fused Balls** (any other 2-ball combo). This fact base covers the named
 evolutions only; property-stacking fusions are modeled separately by the
 site's editorial composer (`docs/research/fusion-mechanics.md`, `src/fusion.ts`).
@@ -81,8 +82,8 @@ evolved ball that also feeds a further evolution; **Tier-3** = evolution requiri
 evolved balls as components. Recipes are order-independent; "(X or Y)" marks an
 alternate component. Rows for the 20 DLC evolved balls and the 6 changed recipes
 (Blizzard, Venom, Overgrowth, Spider Queen, Storm, Swamp) are from the v1.308
-datamine; all other rows are wiki v1.301. Recipes that share no component use
-adjacent duplicate rows (Overgrowth, Swamp, Mudslide).
+datamine; all other rows are wiki v1.301. Recipes that cannot be factorized
+into a slot alternate use adjacent duplicate rows (Overgrowth, Swamp).
 
 | Ball | Depth | Recipe(s) | On-hit | Status effects | Effect text (wiki) | Edition |
 |---|---|---|---|---|---|---|
@@ -132,8 +133,7 @@ adjacent duplicate rows (Overgrowth, Swamp, Mudslide).
 | Mosquito King | Evo (int → Nosferatu, Mosquito Kingdom) | Vampire + Brood Mother | Spawn | Mosquito Spawn, Lifesteal | Spawns a mosquito each time it hits an enemy. Mosquitos attack a random enemy, dealing 80–120 damage each. If a mosquito kills an enemy, they steal 1 health. | base-game |
 | Mosquito Kingdom | Tier-3 | Mosquito King + Mosquito Swarm | Spawn | Mosquito Spawn, Lifesteal | Spawns 1–2 mosquitos each time it hits an enemy. Mosquitos attack a random enemy, dealing 100–150 damage each. If a mosquito kills an enemy, they steal 2 health. | base-game |
 | Mosquito Swarm | Evo (int → Mosquito Kingdom) | Vampire + Egg Sac | Destroy, Spawn | Mosquito Spawn, Lifesteal | Explodes into 3–6 mosquitos. Mosquitos attack random enemies, dealing 80–120 damage each. If a mosquito kills an enemy, they steal 1 health. | base-game |
-| Mudslide | Tier-3 | Landslide + Water | Destroy, AOE | Slow, Field | Creates a mudslide and destroys self upon hitting an enemy. The landslide lasts for 5 seconds and deals 30–40 damage per second to enemies and slowing them within a 2 tile radius. | dlc-risen-ballbylon |
-| Mudslide | Tier-3 | Sandstorm + Water | Destroy, AOE | Slow, Field | Creates a mudslide and destroys self upon hitting an enemy. The landslide lasts for 5 seconds and deals 30–40 damage per second to enemies and slowing them within a 2 tile radius. | dlc-risen-ballbylon |
+| Mudslide | Tier-3 | (Landslide or Sandstorm) + Water | Destroy, AOE | Slow, Field | Creates a mudslide and destroys self upon hitting an enemy. The landslide lasts for 5 seconds and deals 30–40 damage per second to enemies and slowing them within a 2 tile radius. | dlc-risen-ballbylon |
 | Nosferatu | **Tier-3 (3-way)** | Vampire Lord + Spider Queen + Mosquito King | Spawn | Vampire Bat Spawn | Spawns a vampire bat each bounce. Vampire bats fly towards a random enemy, dealing 132–176 damage on hit, turning into a Vampire Lord. | base-game |
 | Noxious | Evo | Wind + (Poison or Dark) | Pass Through | Poison | Passes through enemies and applies 3 stacks of poison to nearby enemies within a 2 tile radius. Poison lasts for 4 seconds and each stack deals 1–3 damage per second. | base-game |
 | Nuclear Bomb | Evo | Bomb + Poison | Destroy, AOE | Radiation (full-screen AOE) | Explodes when hitting an enemy, dealing 300–500 damage to nearby enemies and applying 1 stack of radiation to everyone present indefinitely (max 5 stacks). Each stack of radiation increases damage received by 10%. Has a 3 second cooldown. | base-game |

@@ -5,15 +5,16 @@
 // without running the CLI.
 //
 // Inputs (hand-maintained):
-// - docs/research/game-mechanics.md — balls, passives, characters. Effect
-//   text is taken verbatim from the wiki tables.
+// - docs/research/game-mechanics.md — balls, passives, characters. Base-roster
+//   effect text is verbatim from the wiki; DLC rows are the v1.308 datamine
+//   normalized to display values.
 // - docs/research/character-pairings.md — the Matchmaker pairing
 //   restrictions (game data) into each character's `cannotPair`.
 // - docs/research/level-3-effects.md — level-3 effect text for the fusion
 //   composer (`level3`; Baby Ball has no per-level table and is omitted).
 import { slug } from './slug.ts';
 import { resolveDepths } from '../src/graph.ts';
-import { parseMarkdownTable, column } from './markdown-table.ts';
+import { parseMarkdownTable, column, type TableRow } from './markdown-table.ts';
 
 export interface ParsedBall {
   name: string;
@@ -93,20 +94,24 @@ export function parseRecipes(cell: string): string[][] {
 
 /** One entity plus the recipes accumulated across its adjacent duplicate rows. */
 interface RecipeGroup {
-  row: ReturnType<typeof parseMarkdownTable>[number];
+  row: TableRow;
   recipes: string[][];
 }
 
+/** Identity key for a recipe: its component slugs in order. */
+const recipeKey = (recipe: string[]): string => recipe.join('\u0000');
+
 /**
- * Collapse adjacent rows that share `nameColumn` into one entity. The S4
- * onboarding contract writes recipes that share no component as adjacent
- * duplicate rows (one row per recipe, every non-recipe cell repeated
- * verbatim); this unions their recipes in row order, dedupes identical
- * recipes, and throws when any other cell differs. A repeated name that is
- * not adjacent is a separate row — downstream validation catches it.
+ * Collapse adjacent rows that share `nameColumn` into one entity. The
+ * onboarding contract writes recipes that cannot be factorized into a slot
+ * alternate as adjacent duplicate rows (one row per recipe, every non-recipe
+ * cell repeated verbatim); this unions their recipes in row order, dedupes
+ * identical recipes, and throws when any other cell differs. A repeated name
+ * that is not adjacent is a separate entity (the fact base does not use that
+ * form).
  */
 function groupRecipeRows(
-  rows: ReturnType<typeof parseMarkdownTable>,
+  rows: TableRow[],
   nameColumn: string,
   recipeColumn: string,
   label: string,
@@ -123,7 +128,7 @@ function groupRecipeRows(
         }
       }
       for (const recipe of parseRecipes(column(row, recipeColumn))) {
-        if (!last.recipes.some((existing) => existing.join('\u0000') === recipe.join('\u0000'))) {
+        if (!last.recipes.some((existing) => recipeKey(existing) === recipeKey(recipe))) {
           last.recipes.push(recipe);
         }
       }
@@ -132,6 +137,17 @@ function groupRecipeRows(
     }
   }
   return groups;
+}
+
+/** Parse one evolved table and collapse its adjacent duplicate recipe rows. */
+function parseEvolvedRows(
+  md: string,
+  headerRe: RegExp,
+  nameColumn: string,
+  recipeColumn: string,
+  label: string,
+): RecipeGroup[] {
+  return groupRecipeRows(parseMarkdownTable(md, headerRe, label), nameColumn, recipeColumn, label);
 }
 
 /** Parse the game-mechanics fact base: balls, passives, characters. */
@@ -160,8 +176,9 @@ export function parseGameMechanics(md: string): {
   // labels (which put e.g. Tumor — built from evolved Radiation Beam — in "Evo"):
   //   depth 1 (Tier-2) = recipe includes an evolved ball as a component
   //   depth 2 (Tier-3) = recipe includes a tier-2 ball as a component
-  const evo = groupRecipeRows(
-    parseMarkdownTable(md, /^\| Ball \| Depth \|/, 'evolved ball table'),
+  const evo = parseEvolvedRows(
+    md,
+    /^\| Ball \| Depth \|/,
     'Ball',
     'Recipe(s)',
     'evolved ball table',
@@ -183,8 +200,9 @@ export function parseGameMechanics(md: string): {
   }
   // Evolved passives (depth 1|2): Passive | Recipe | Effect text — same
   // structural depth computation as balls.
-  const evoPas = groupRecipeRows(
-    parseMarkdownTable(md, /^\| Passive \| Recipe \|/, 'evolved passive table'),
+  const evoPas = parseEvolvedRows(
+    md,
+    /^\| Passive \| Recipe \|/,
     'Passive',
     'Recipe',
     'evolved passive table',
