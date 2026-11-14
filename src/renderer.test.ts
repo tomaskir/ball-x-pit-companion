@@ -395,6 +395,46 @@ describe('plan screen behavior (jsdom, through paint())', () => {
     expect(emit).toHaveBeenCalledWith({ type: 'togglePlanFusion', a: 'flash', b: 'glacier' });
   });
 
+  it('The Potager marks a planned fusing pair red with a tooltip and shows the second hint line', () => {
+    drive({
+      type: 'hydrate',
+      shared: {
+        plan: { upgradesOn: true, balls: [], passives: [], fused: [{ a: 'flash', b: 'glacier' }] },
+        chars: ['the-potager'],
+        editions: ['base-game', 'dlc-risen-ballbylon'],
+      },
+    });
+    const entry = planView().querySelector<HTMLElement>('.plan-section[data-plan="balls"] .plan-entry')!;
+    expect(entry.classList.contains('fusion-invalid')).toBe(true);
+    expect(entry.title).toBe("The Potager can't fuse balls");
+    const hint = planView().querySelector<HTMLElement>('.plan-fusion-hint')!;
+    expect(hint.hidden).toBe(false);
+    expect(hint.textContent).toBe("The Potager can't fuse balls — remove the highlighted pairs");
+    // the over-limit hint slot stays separate (this plan is not over limit)
+    expect(planQ('.plan-hint').hidden).toBe(true);
+  });
+
+  it('The Ballbearer passives section shows its quirk empty hint', () => {
+    drive({ type: 'toggleChar', id: 'the-ballbearer' });
+    const empty = planView().querySelector<HTMLElement>('.plan-section[data-plan="passives"] .plan-empty')!;
+    expect(empty.hidden).toBe(false);
+    expect(empty.textContent).toBe('The Ballbearer has no passive slots.');
+  });
+
+  it('The Hoary Hoarder over-limit hint names the quirk instead of the upgrades toggle', () => {
+    drive({
+      type: 'hydrate',
+      shared: {
+        plan: { upgradesOn: true, balls: ['flash', 'glacier', 'maggot'], passives: [], fused: [] },
+        chars: ['the-hoary-hoarder'],
+        editions: ['base-game'],
+      },
+    });
+    const hint = planQ('.plan-hint');
+    expect(hint.hidden).toBe(false);
+    expect(hint.textContent).toBe('The Hoary Hoarder has 2 ball slots — remove the highlighted balls');
+  });
+
   it('a fused entry keeps an unordered identity while a compose-order change repaints the name', () => {
     // The pair's identity is unordered (src/pair.ts); compose order is
     // display content. A reversed hydrate must keep the same entry identity
@@ -509,6 +549,30 @@ describe('fusion panel plan button (jsdom, through paint())', () => {
     // the tooltip rides the row — a title on the disabled button never shows
     expect(btn.parentElement!.title).toContain('limit');
     expect(btn.textContent).toBe('Add to plan');
+  });
+
+  it('The Potager disables the add button with its tooltip; a planned pair still shows Remove', () => {
+    drive({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' });
+    drive({ type: 'toggleChar', id: 'the-potager' });
+    drive({ type: 'toggleFusion', id: 'flash' }, { type: 'toggleFusion', id: 'glacier' });
+    const btn = q<HTMLButtonElement>('.fusion-plan-btn');
+    expect(btn.hidden).toBe(false);
+    expect(btn.disabled).toBe(true);
+    expect(btn.textContent).toBe('Add to plan');
+    expect(btn.parentElement!.title).toBe("The Potager can't fuse balls");
+
+    // a pair already in the plan is removable: the block is on adds only
+    drive({
+      type: 'hydrate',
+      shared: {
+        plan: { upgradesOn: true, balls: [], passives: [], fused: [{ a: 'flash', b: 'glacier' }] },
+        chars: ['the-potager'],
+        editions: ['base-game', 'dlc-risen-ballbylon'],
+      },
+    });
+    drive({ type: 'toggleFusion', id: 'flash' }, { type: 'toggleFusion', id: 'glacier' });
+    expect(btn.textContent).toBe('Remove from plan');
+    expect(btn.disabled).toBe(false);
   });
 
   it('the plan button reads the CURRENT compose order after a repaint with a different pair', () => {

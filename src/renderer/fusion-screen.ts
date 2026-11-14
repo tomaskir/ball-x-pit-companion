@@ -14,7 +14,7 @@ import { markClearExempt } from '../clear-exempt';
 import { bindAction, type ActionSlot } from './action-slot';
 import type { Reconcile } from './reconcile';
 import { DEPTH_LABELS } from '../depth-labels';
-import { PLAN_LIMIT_TITLE, PLAN_TOGGLE_LABELS } from './labels';
+import { PLAN_LIMIT_TITLE, PLAN_TOGGLE_LABELS, POTAGER_FUSION_TITLE } from './labels';
 import { emptyFilterHint, icon } from './dom';
 import { paintTierHeadings, type TierHeading } from './tier-headings';
 import type { ViewModel } from '../view-state';
@@ -299,11 +299,14 @@ export function createFusionScreen({ emitAction, reconcile }: { emitAction: Emit
     p.iconB.alt = b.name;
     p.nameB.textContent = b.name;
     p.planBtn.textContent = fp.planned ? PLAN_TOGGLE_LABELS.remove : PLAN_TOGGLE_LABELS.add;
+    // The Potager blocks adding a pair that actually fuses; removal stays
+    // allowed, so the block only applies to the add action.
+    const planBlocked = !fp.planned && fp.fusionBlocked;
     const planAtLimit = !fp.planned && fp.planFull;
-    p.planBtn.disabled = planAtLimit;
+    p.planBtn.disabled = planBlocked || planAtLimit;
     // the title rides the row — a title on the disabled button never shows
     p.planBtn.title = '';
-    p.planRow.title = planAtLimit ? PLAN_LIMIT_TITLE : '';
+    p.planRow.title = planBlocked ? POTAGER_FUSION_TITLE : planAtLimit ? PLAN_LIMIT_TITLE : '';
     p.evo.hidden = !f.evolvesInstead;
     if (f.evolvesInstead) {
       p.evo.textContent = '';

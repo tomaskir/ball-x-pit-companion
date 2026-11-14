@@ -799,9 +799,11 @@ footer a { color: var(--gold); }
 
 .plan-entry.over-limit { border-color: var(--red); box-shadow: 0 0 8px var(--red); }
 
-/* a hydrated Matchmaker-forbidden character pair — kept and marked, same
-   never-trim philosophy as over-limit */
-.plan-entry.invalid-pair { border-color: var(--red); box-shadow: 0 0 8px var(--red); }
+/* a hydrated Matchmaker-forbidden character pair, or a planned fused pair
+   The Potager cannot build — kept and marked, same never-trim philosophy as
+   over-limit */
+.plan-entry.invalid-pair,
+.plan-entry.fusion-invalid { border-color: var(--red); box-shadow: 0 0 8px var(--red); }
 
 /* verdict badge — same look as the tiles' */
 .plan-entry .ind {

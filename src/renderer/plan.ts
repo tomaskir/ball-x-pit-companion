@@ -16,6 +16,7 @@ import { composeKey, pairKeyOf } from '../pair';
 import type { Emit } from './seam';
 import type { Reconcile } from './reconcile';
 import { icon, verdictBadge } from './dom';
+import { POTAGER_FUSION_TITLE } from './labels';
 import type { Verdict } from '../synergy';
 import type { PlanBallEntry } from '../plan-state';
 import type { ViewModel } from '../view-state';
@@ -28,6 +29,9 @@ interface PlanSectionEls {
 
 interface PlanEls {
   hint: HTMLElement;
+  /** The Potager's second warning line (fusion-invalid pairs); separate from
+   *  the over-limit hint slot. */
+  fusionHint: HTMLElement;
   sections: { characters: PlanSectionEls; balls: PlanSectionEls; passives: PlanSectionEls };
 }
 
@@ -99,6 +103,7 @@ export function createPlan({ emitAction, reconcile }: { emitAction: Emit; reconc
     const root = document.getElementById('planView')!;
     root.innerHTML = `
       <p class="plan-hint" hidden></p>
+      <p class="plan-hint plan-fusion-hint" hidden></p>
       ${(['characters', 'balls', 'passives'] as const).map((key) => `
         <section class="plan-section" data-plan="${key}">
           <h2 class="plan-heading"><span class="plan-title">${key[0].toUpperCase() + key.slice(1)}</span> <span class="plan-count"></span></h2>
@@ -116,6 +121,7 @@ export function createPlan({ emitAction, reconcile }: { emitAction: Emit; reconc
     };
     planEls = {
       hint: q('.plan-hint') as HTMLElement,
+      fusionHint: q('.plan-fusion-hint') as HTMLElement,
       sections: { characters: section('characters'), balls: section('balls'), passives: section('passives') },
     };
   }
@@ -131,6 +137,10 @@ export function createPlan({ emitAction, reconcile }: { emitAction: Emit; reconc
     if (upgrades) upgrades.checked = plan.upgradesOn;
     planEls.hint.textContent = plan.hint;
     planEls.hint.hidden = !plan.hint;
+    // The Potager's fusion-invalid line is its own slot — the over-limit
+    // message above stays put.
+    planEls.fusionHint.textContent = plan.fusionInvalidHint;
+    planEls.fusionHint.hidden = !plan.fusionInvalidHint;
 
     // each section's entries rebuild only when that section's entry set
     // changed — reconcile diffs the entry identities. Every built entry is
@@ -195,6 +205,9 @@ export function createPlan({ emitAction, reconcile }: { emitAction: Emit; reconc
       els.count.textContent = `${count} / ${limit}`;
       els.empty.hidden = count > 0;
     }
+    // the passives empty hint is quirk-aware (The Ballbearer has no passive
+    // slots); null means the static default the skeleton already carries
+    sections.passives.empty.textContent = plan.passivesEmptyHint ?? PLAN_EMPTY_HINTS.passives;
 
     // over-limit marks and verdict badges — repaint in place, found by each
     // entry's stamped identity (never grid position, so fused pairs stay put
@@ -203,13 +216,16 @@ export function createPlan({ emitAction, reconcile }: { emitAction: Emit; reconc
     // their per-component badges below.
     const entryIndex = (grid: HTMLElement) =>
       new Map([...grid.querySelectorAll<HTMLElement>('.plan-entry')].map((el) => [el.dataset.entry ?? '', el]));
-    const repaintEntry = (entry: HTMLElement | undefined, e: { overLimit: boolean; pairInvalid?: boolean; verdict?: Verdict | null }) => {
+    const repaintEntry = (entry: HTMLElement | undefined, e: { overLimit: boolean; pairInvalid?: boolean; fusionInvalid?: boolean; verdict?: Verdict | null }) => {
       if (!entry) return;
       entry.classList.toggle('over-limit', e.overLimit);
-      // a hydrated Matchmaker-forbidden pair: kept, marked red — same
-      // never-trim philosophy as over-limit
+      // a hydrated Matchmaker-forbidden character pair: kept, marked red —
+      // same never-trim philosophy as over-limit
       entry.classList.toggle('invalid-pair', !!e.pairInvalid);
-      entry.title = e.pairInvalid ? "these two can't team up in a run" : '';
+      // The Potager cannot fuse: a planned fusing pair is kept and marked
+      // red, with the same tooltip as the fusion screen's blocked button
+      entry.classList.toggle('fusion-invalid', !!e.fusionInvalid);
+      entry.title = e.fusionInvalid ? POTAGER_FUSION_TITLE : e.pairInvalid ? "these two can't team up in a run" : '';
       entry.querySelectorAll('.ind').forEach((b) => b.remove());
       if (e.verdict) entry.appendChild(verdictBadge(e.verdict));
     };

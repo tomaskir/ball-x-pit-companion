@@ -8,6 +8,10 @@
  *  pointer-events:none letting the hover reach it). */
 export const PLAN_LIMIT_TITLE = 'Plan limit reached';
 
+/** The Potager's fusion block — the disabled fusion-panel button's row
+ *  tooltip and the plan's fusion-invalid entry tooltip. */
+export const POTAGER_FUSION_TITLE = "The Potager can't fuse balls";
+
 /** The plan toggle's two states, shared by the selection box's buttons and
  *  the fusion panel's composed-pair button. */
 export const PLAN_TOGGLE_LABELS = { add: 'Add to plan', remove: 'Remove from plan' } as const;
