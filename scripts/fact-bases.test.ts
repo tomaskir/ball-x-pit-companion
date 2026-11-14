@@ -294,8 +294,7 @@ describe('parseFactBases: the real fact bases parse without the CLI', () => {
     expect(parsed.balls).toHaveLength(115);
     expect(parsed.passives).toHaveLength(116);
     expect(parsed.characters).toHaveLength(31);
-    // The level-3 overlay is extended separately; this pins the current fact base.
-    expect(Object.keys(parsed.level3)).toHaveLength(90);
+    expect(Object.keys(parsed.level3)).toHaveLength(114);
   });
 
   it('onboards the DLC balls, passives, and characters', () => {
@@ -377,6 +376,35 @@ function mechanicsTables(opts: { evolvedRows?: string[]; evolvedPassiveRows?: st
     ]),
   ].join('\n');
 }
+
+describe('parseFactBases: DLC level-3 normalization (T11 / #37)', () => {
+  const level3 = parseFactBases(realSources()).level3;
+  const dlcIds = [
+    'ash', 'beast', 'bullet', 'force', 'fruit', 'gale', 'hedgehog', 'ironwood',
+    'ivy', 'kaiju', 'misfortune', 'mudslide', 'rot', 'siren', 'stalagmite',
+    'steam', 'thunderbird', 'tsunami', 'water', 'water-bug', 'waterfall',
+    'werewolf', 'wolfpack', 'wood',
+  ];
+
+  it('onboards all 24 DLC balls under their catalog slugs', () => {
+    for (const id of dlcIds) expect(level3[id], `missing level-3 text for ${id}`).toBeTruthy();
+  });
+
+  it('applies the field-specific divisors, not a blanket ÷10', () => {
+    // kCharmChance and kLifeStealChance are tenths; kDamageMultiplier is hundredths.
+    expect(level3.siren).toContain('7.5% chance');
+    expect(level3.werewolf).toContain('40% chance');
+    expect(level3.misfortune).toContain('6.0x damage');
+    // kBonusDamagePct is a plain percentage (Stone precedent) — 1200%, not 120%.
+    expect(level3.bullet).toContain('1200% damage');
+    // Time fields with no field precedent: ÷10 per the S4 decision.
+    expect(level3.steam).toContain('6.0 seconds');
+    expect(level3.steam).toContain('8.0 seconds');
+    expect(level3.waterfall).toContain('8.0 seconds');
+    expect(level3.ash).toContain('5.0 seconds');
+    expect(level3.ash).toContain('6.0 seconds');
+  });
+});
 
 function realSources() {
   return {
