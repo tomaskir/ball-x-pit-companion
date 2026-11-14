@@ -11,8 +11,9 @@
 Researched 2026-11-13 (source-only; no playtest capability). Answers
 wayfinder ticket [#35](https://github.com/tomaskir/ball-x-pit-companion/issues/35).
 The datamined build is *Risen Ballbylon* (Unity 6000.0.62f1, extracted
-2026-11-13); the existing transcription is the wiki's v1.301 pre-DLC per-level
-tables (last rebuilt 2026-09-15/17).
+2026-11-13); at research time the existing transcription was the wiki's v1.301
+pre-DLC per-level tables (last rebuilt 2026-09-15/17). The landed file now
+also carries the 24 DLC rows (114 fusable balls).
 
 ## 1. Question and scope
 

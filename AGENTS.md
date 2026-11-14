@@ -61,11 +61,12 @@ Not an npm package (`"private": true`). Code is MIT-licensed; game art in
 - `docs/research/character-pairings.md` — the Matchmaker pairing-restriction fact base (also parsed).
 - `docs/research/passive-availability.md` — the passive-availability fact base (hard/soft/slot classification, offer-pool gates, unverified per-character leads; not parsed). Superseded for the DLC build by `character-passive-restrictions.md`.
 - `docs/research/character-passive-restrictions.md` — datamined per-character passive allow-list (DLC v1.308), inherited restrictions on evolved passives, and the base-game character-stat gates; not parsed.
-- `docs/research/fusion-mechanics.md` — the distilled fusion fact base (not parsed; `src/fusion.ts` implements it).
+- `docs/research/fusion-mechanics.md` — the distilled fusion fact base (not parsed; `src/fusion.ts`, `src/fusion-knowledge.ts`, and `src/ball-kit.ts` implement it).
 - `docs/research/fusion-observations/` — the fusion evidence corpus (append-only raw layer: the undated 2026-10-04 files plus dated per-source waves, `pending/` staging).
 - `docs/research/fusion-observations/CONTRADICTION-RESOLUTION-2026-11-11.md` — the dated source-only resolution pass applied to the curated layer.
 - `docs/research/fusion-claim-register.md` — the claim audit trail (historical snapshot; counts predate the 2026-11-11 pass).
 - `docs/research/fusion-order-mechanism.md`, `fusion-order-claims-nov-2026.md`, `fusion-composition-revalidation-2026-11.md`, `effect-text-currency.md`, `mosquito-king-spawn.md`, `brood-mother-spawn.md` — dated research snapshots whose recommendations have landed; read their status banners first.
+- `docs/research/risen-mechanics.md`, `risen-l3-refresh.md`, `risen-matchmaker-pairs.md`, `risen-fusion.md`, `risen-slot-limits.md` — the *Risen Ballbylon* research snapshots (datamined v1.308); their findings have landed, so read their status banners first.
 - `GLOSSARY.md` — domain glossary; read it first. Module headers carry the same vocabulary.
 
 ## Commands

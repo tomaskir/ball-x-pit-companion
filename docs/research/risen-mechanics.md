@@ -4,8 +4,9 @@ Research for wayfinder ticket
 [#34](https://github.com/tomaskir/ball-x-pit-companion/issues/34): inventory
 the mechanics introduced by the *Risen Ballbylon* DLC content (24 balls, 45
 passives, 8 characters) and recommend an editorial tag mapping for each, using
-the site's existing 17-tag vocabulary (`scripts/editorial.ts` `TAGS`) where it
-fits and proposing new tags where it does not.
+the site's then-current 17-tag vocabulary (`scripts/editorial.ts` `TAGS`) where
+it fits and proposing new tags where it does not (the landed vocabulary has
+30 tags).
 
 **Researched:** 2026-11-13.
 **Primary source:** `game-data/extracted/extract.json` (DLC datamine: every

@@ -257,13 +257,13 @@ matrix, not the explicit character matrix:
 This matches `docs/research/risen-matchmaker-pairs.md` §4, which lists
 "The Ballbearer — The Hoary Hoarder" among the 43 forbidden pairs, and §5
 item 3, which flags it as a missing row in the current community table.
-The site's `src/data/characters.ts` does not yet carry the pair: for these
-two characters, `cannotPair` currently lists only the False Messiah. T23 is
-the correction ticket. The enforcement mechanism already exists —
+At research time `src/data/characters.ts` did not carry the pair (for these
+two characters, `cannotPair` listed only the False Messiah); T23
+([#49](https://github.com/tomaskir/ball-x-pit-companion/issues/49)) added it,
+so both now list each other. The enforcement mechanism already exists —
 `view-state.ts`'s `toggleChar` breaks on `cannotPair`, and
-`src/plan-state.ts` line 227 marks a hydrated forbidden pair `pairInvalid` —
-so once T23 adds the row, live selection is blocked and only a hydrated/share
-link pair can reach the Plan.
+`src/plan-state.ts` marks a hydrated forbidden pair `pairInvalid` — so live
+selection is blocked and only a hydrated/share link pair can reach the Plan.
 
 **Consequence:** there is no legal two-character selection in which both
 characters change slots. The practical rule is **game-level

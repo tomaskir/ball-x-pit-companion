@@ -9,16 +9,16 @@ This file is hand-maintained (evidence accessed 2026-10-01..04 and
 2026-11-09..11, game v1.301) and is **not parsed by the data pipeline** —
 unlike `game-mechanics.md`, no script consumes it. The *Risen Ballbylon*
 extension (game v1.308, datamined 2026-11-13) widened the carrier gate and
-added the fifth cross-wire branch; its evidence is `risen-fusion.md`, and
-`src/fusion.ts` implements the extended model. The fusion composer
-`src/fusion.ts` implements the model described here, and `src/corpus.test.ts`
-gates that implementation against the observation corpus (below), so a
-composer change, a corpus refresh, or a change of mind here must keep the
-tests green. The corpus is **pre-DLC**, so it gates base-game behavior only;
-the expansion balls' behavior is mechanism-backed from the datamine, not
-observed. The 2026-11-11 audit trail behind these claims is
-`fusion-claim-register.md` (a historical pre-resolution snapshot; see §6 of
-this file for the current counts).
+added the fifth cross-wire branch; its evidence is `risen-fusion.md`. The
+extended model lives in `src/fusion-knowledge.ts` (`wireFor`) and
+`src/ball-kit.ts` (`BALL_KIT`), which the fusion composer `src/fusion.ts`
+consumes. `src/corpus.test.ts` gates the composer against the observation
+corpus (below), so a composer change, a corpus refresh, or a change of mind
+here must keep the tests green. The corpus is **pre-DLC**, so it gates
+base-game behavior only; the expansion balls' behavior is inferred from the
+datamine (unverified), not observed. The 2026-11-11 audit trail behind these
+claims is `fusion-claim-register.md` (a historical pre-resolution snapshot;
+see §6 of this file for the current counts).
 
 **Evidence base**: `fusion-observations/` — a harvest corpus of 1,035
 observations: **977 pair-filed rows over 370 distinct pairs** (the other 58
@@ -193,9 +193,9 @@ model without adding a new application channel:
   `field` (a trail or persistent ground zone) can carry a partner's
   **damage-riding** on-hit status. It is ranked after the AOE branch, so an
   AOE carrier keeps its own line; `per-second` alone does not make a carrier
-  (attach balls stay non-carriers). The game's `TouchableTrailObj` /
-  `RadialVFX` route damage with a `HitEffectSrc`, so a trail or field is a
-  real carrier path (mechanism-backed, not observed).
+  (attach balls stay non-carriers). The datamine supports the trail/field
+  carrier path, but `risen-fusion.md` §8 rates the rule **inferred;
+  unverified** — it is not an observed fusion result.
 - **Branch priority** (first match wins): spawn × on-hit status → AOE × on-hit
   status → field × on-hit status → AOE × kill-on-hit → spawn × spawn-bound
   status.

@@ -317,8 +317,9 @@ character or any combined character type**.
   a fused passive is unavailable if any passive component is unavailable.
 - The base-game stat gates should be modelled separately from the DLC
   allow-list: they depend on character stats/props, not on item identity.
-- The current `src/data/` is pre-DLC. Nothing in this document should be
-  applied to the 71-passive catalog until the DLC data is integrated.
+- At research time `src/data/` was pre-DLC (71 passives). The DLC data has
+  since been integrated (116 passives); the allow-lists landed in
+  `game-mechanics.md` §2.3 and `src/passive-availability.ts`.
 
 ## Open questions
 

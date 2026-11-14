@@ -11,8 +11,7 @@ The wiki (ballxpit.wiki.gg) distinguishes two mechanics that fan sites conflate:
 
 - **Evolution** — combining 2+ specific level-3 balls in the Fusion Reactor into
   a new *named* Evolved Ball (89 as of game v1.308: 69 base-game + 20 DLC).
-  Modeled
-  from the fact base.
+  Modeled from the fact base.
 - **Fusion** — merging any two unfused level-3 balls into a property-stacking
   ball with no unique identity. Modeled **editorially** on the Fusions screen:
   the game stores no fusion result table — it does store structured per-ball

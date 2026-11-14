@@ -22,13 +22,16 @@ synergy verdicts, as a static site that works offline.
   on hover. Red wins when two characters disagree, so clashes surface first
   (e.g. The Empty Nester and The Makeshift Sisyphus have no baby balls →
   everything that spawns or scales with them goes red).
-- **Character reference**: all 31 characters with base ball, quirk text, and
-  unlock context.
-- **Base / expansion content filter.** Two independent checkboxes per screen
-  (`base-game` and `dlc-risen-ballbylon`, base-game on by default) hide
-  expansion content across the Balls, Passives, Fusions, Characters, and Plan
-  screens. Hidden content is dropped, not dimmed, and a header notice reports
-  what a toggle removed.
+- **Character reference**: all 31 characters with base ball and quirk text.
+- **Plan screen**: build a run loadout of characters, balls, passives, and
+  fused pairs against the game's slot limits (with the End game upgrades
+  toggle and per-character quirks), see per-entry synergy verdicts and
+  over-limit marks, and get a build graph of every component to farm. Share a
+  plan as a link.
+- **Base / expansion content filter.** Two checkboxes per screen (one per
+  edition, base-game on by default) hide expansion content across the Balls,
+  Passives, Fusions, Characters, and Plan screens. Hidden content is dropped,
+  not dimmed, and a header notice reports what a toggle removed.
 - **Fusions screen**: pick any two unfused level-3 balls and see the composed
   fused ball — merged effect text, cross-wire interactions (e.g. a spawn,
   AOE, or field carrier delivering the partner's on-hit status), order
@@ -47,9 +50,9 @@ on 2026-09-13 (game v1.301, *Naturalist* update) and cross-checked against the
 community "Ultimate Guide of Evolutions" charts; both sources agree. The
 *Risen Ballbylon* expansion rows (24 balls, 45 passives, 8 characters, 24
 level-3 texts) are datamined from BALL x PIT v1.308 (extracted 2026-11-13). The
-full fact base, including per-entity effect text and the site's synergy tag
-model, lives in
-[`docs/research/game-mechanics.md`](docs/research/game-mechanics.md).
+full fact base, including per-entity effect text, lives in
+[`docs/research/game-mechanics.md`](docs/research/game-mechanics.md); the
+site's synergy tag model is hand-maintained in `scripts/editorial.ts`.
 
 Counts: 115 balls, 116 passives, 31 characters, 114 level-3 texts, and a
 30-tag editorial vocabulary. The Matchmaker forbids 43 pairs over the 30
@@ -100,7 +103,8 @@ factorization) are documented there and enforced by the test suite.
 
 The data files in `src/data/` are **generated**, don't edit them by hand:
 
-1. `docs/research/game-mechanics.md`, the hand-maintained fact base (wiki tables).
+1. `docs/research/game-mechanics.md`, the hand-maintained fact base (wiki
+   tables for the base game, the v1.308 datamine for the expansion).
 2. `node --experimental-strip-types scripts/parse-wiki.ts` → `src/data/parsed.json`.
    Evolution depth is computed structurally from recipe graphs, not from wiki labels.
 3. `node --experimental-strip-types scripts/emit-data.ts` → `src/data/*.ts`.

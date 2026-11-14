@@ -161,9 +161,10 @@ plausible, but the per-item mapping is not confirmed for the current build.
 2. **Sisyphus crit/dagger exclusion.** S14 and S16 claim the daggers are not
    offered to Sisyphus; verification refuted the claim 1-2, and the wiki's
    54-row passive table has no character column. Unconfirmed.
-3. **Passive count.** This research brief said 56 passives; the repo and wiki
-   have 54 base + 17 evolved = 71 (`src/data/passives.ts` has 71 entries:
-   depth 0 = 54, depth 1 = 16, depth 2 = 1). Use 71.
+3. **Passive count.** This research brief said 56 passives; at research time
+   the repo and wiki had 54 base + 17 evolved = 71 (`src/data/passives.ts`
+   had 71 entries: depth 0 = 54, depth 1 = 16, depth 2 = 1). The DLC build now
+   has 116 (77 base + 39 evolved).
 4. **Character count.** The brief said 24 while listing 23; the repo and wiki
    have 23.
 5. **Status-ball gate breadth.** Several guides say the gate accepts only
