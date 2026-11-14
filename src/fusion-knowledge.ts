@@ -298,10 +298,10 @@ export function wireFor(a: Ball, b: Ball): Wire | null {
     ?? directional(a, b, 'aoe-carries-on-hit', (carrier, status) =>
       aoeRank(carrier) > aoeRank(status) && canCarry(carrier, status))
     // 3. field/trail carrier + partner's damage-riding on-hit status
-    //    (docs/research/risen-fusion.md §8: TouchableTrailObj/RadialVFX route
-    //    damage with a HitEffectSrc, so a trail or field is a real carrier
-    //    path). Ranked after the AOE branch so an AOE carrier keeps its line;
-    //    only damage-riding statuses pass.
+    //    (docs/research/risen-fusion.md §8: the field/trail rule is inferred
+    //    from the class shape and trigger matrix — unverified — and treats a
+    //    trail or field as a real carrier path). Ranked after the AOE branch
+    //    so an AOE carrier keeps its line; only damage-riding statuses pass.
     ?? directional(a, b, 'field-carries-on-hit', canCarryField)
     // 4. AOE carrier + partner's kill-on-hit (Black Hole × Sun — the corpus
     //    meta pair; kamigame: "Black Hole's effect rides on Flash's
