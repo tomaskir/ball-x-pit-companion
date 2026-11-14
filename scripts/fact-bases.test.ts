@@ -11,6 +11,7 @@ import {
   parseFactBases,
 } from './fact-bases.ts';
 import { parseMarkdownTable, column } from './markdown-table.ts';
+import { slug } from './slug.ts';
 
 describe('parseRecipes: OR-of-ANDs grammar', () => {
   it('expands a parenthesized slot alternate', () => {
@@ -379,15 +380,24 @@ function mechanicsTables(opts: { evolvedRows?: string[]; evolvedPassiveRows?: st
 
 describe('parseFactBases: DLC level-3 normalization (T11 / #37)', () => {
   const level3 = parseFactBases(realSources()).level3;
-  const dlcIds = [
-    'ash', 'beast', 'bullet', 'force', 'fruit', 'gale', 'hedgehog', 'ironwood',
-    'ivy', 'kaiju', 'misfortune', 'mudslide', 'rot', 'siren', 'stalagmite',
-    'steam', 'thunderbird', 'tsunami', 'water', 'water-bug', 'waterfall',
-    'werewolf', 'wolfpack', 'wood',
+  // The catalog derives ids with `slug(name)`; pin that the fact-base rows land
+  // under the same ids the catalog will use once T10 onboards the DLC balls.
+  const dlcBalls: [name: string, id: string][] = [
+    ['Ash', 'ash'], ['Beast', 'beast'], ['Bullet', 'bullet'], ['Force', 'force'],
+    ['Fruit', 'fruit'], ['Gale', 'gale'], ['Hedgehog', 'hedgehog'],
+    ['Ironwood', 'ironwood'], ['Ivy', 'ivy'], ['Kaiju', 'kaiju'],
+    ['Misfortune', 'misfortune'], ['Mudslide', 'mudslide'], ['Rot', 'rot'],
+    ['Siren', 'siren'], ['Stalagmite', 'stalagmite'], ['Steam', 'steam'],
+    ['Thunderbird', 'thunderbird'], ['Tsunami', 'tsunami'], ['Water', 'water'],
+    ['Water Bug', 'water-bug'], ['Waterfall', 'waterfall'],
+    ['Werewolf', 'werewolf'], ['Wolfpack', 'wolfpack'], ['Wood', 'wood'],
   ];
 
-  it('onboards all 24 DLC balls under their catalog slugs', () => {
-    for (const id of dlcIds) expect(level3[id], `missing level-3 text for ${id}`).toBeTruthy();
+  it('onboards all 24 DLC balls under their catalog slug ids', () => {
+    for (const [name, id] of dlcBalls) {
+      expect(slug(name), `${name} slug`).toBe(id);
+      expect(level3[id], `missing level-3 text for ${id}`).toBeTruthy();
+    }
   });
 
   it('applies the field-specific divisors, not a blanket ÷10', () => {

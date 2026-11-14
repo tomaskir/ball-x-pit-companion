@@ -7,11 +7,16 @@ parser wiring in #13. Extended by T11
 ([#37](https://github.com/tomaskir/ball-x-pit-companion/issues/37)) with the 24
 DLC balls.
 
-**Researched:** 2026-11-11 (source-only; no playtest capability). The 90
-pre-DLC rows are **reported** from the wiki's per-level tables; the 24 DLC rows
-are the v1.308 datamine. Neither is playtest-verified.
+**Researched:** 2026-11-11 (source-only; no playtest capability) for the 90
+pre-DLC rows, **reported** from the wiki's per-level tables; 2026-11-14 for the
+24 DLC rows, from the v1.308 datamine (extracted 2026-11-13). Neither is
+playtest-verified.
 **Version tag:** v1.301 / v1.5 (Naturalist update), pre-DLC, for the original
 90 rows; *Risen Ballbylon* v1.308 for the 24 DLC rows.
+**Decision labels:** S3 = fusion model spec
+([#29](https://github.com/tomaskir/ball-x-pit-companion/issues/29)); S4 =
+onboarding contract
+([#30](https://github.com/tomaskir/ball-x-pit-companion/issues/30)).
 
 **Primary source:** each ball's individual page on <https://ballxpit.wiki.gg>,
 specifically the per-level `{{BallData}}` table rendered from `{{BallStat}}`
@@ -53,7 +58,7 @@ level 1; 3 have no L3 diff (Elemental, Ghost, Water Bug); 1 has no table
 | Ball | Level-3 effect text | Notes |
 |---|---|---|
 | Armageddon | Creates a meteor shower upon hitting an enemy. The meteor shower lasts for 5 seconds and deals 50–70 damage/second to enemies within a 3 tile radius. | — |
-| Ash | Goes through enemies and leaves behind a trail of ash for the first 5.0 seconds after being launched. Ash lasts for 6.0 seconds and applies 1 stack of burn per second (max 4 stacks). Burn lasts for 8 seconds. Burnt units are dealt 4–7 damage per stack per second. | DLC. Emission length unit absent from the template; resolved to 5.0 s (S4). Ash lifetime ÷10 (no field precedent). |
+| Ash | Goes through enemies and leaves behind a trail of ash for the first 5.0 seconds after being launched. Ash lasts for 6.0 seconds and applies 1 stack of burn per second (max 4 stacks). Burn lasts for 8 seconds. Burnt units are dealt 4–7 damage per stack per second. | DLC. Emission length unit absent from the template; resolved to 5.0 s (S3 decision). Ash lifetime ÷10 (no field precedent). |
 | Assassin | Passes through the front of enemies, but not the back. Backstabs deal 50% bonus damage. | — |
 | Baby Ball | — | No table — not fusable (base attack ball). |
 | Banished Flame | Add 1 stack of darkflame on hit for 2 seconds (max 8 stacks). Darkflame deals 1–35 damage per stack per second. When the darkflame goes out, it deals 1–100 to the enemy. | — |
@@ -170,7 +175,7 @@ level 1; 3 have no L3 diff (Elemental, Ghost, Water Bug); 1 has no table
 
 ## 1. Coverage and notes
 
-- 115 catalog balls: 25 base + 89 evolved + 1 baby.
+- 115 balls: 25 base + 89 evolved + 1 baby.
 - 114/114 fusable balls have level-3 text: the 90 wiki per-level tables (levels
   1, 2, 3; no duplicate levels, no empty effect cells, no placeholder text) plus
   the 24 DLC texts from the v1.308 datamine.
@@ -278,7 +283,7 @@ normalized to display units with the field-specific divisor table in
 
 | Ball | Field | Raw L3 | Divisor | Display |
 |---|---|---:|---:|---|
-| Ash | `kEmissionLength` | 50 | ÷10 (unit absent; S4) | 5.0 s |
+| Ash | `kEmissionLength` | 50 | ÷10 (unit absent; S3) | 5.0 s |
 | Ash | `kSteamLifetime` | 60 | ÷10 | 6.0 s |
 | Bullet | `kBonusDamagePct` | 1200 | ÷1 | 1200% |
 | Misfortune | `kDamageMultiplier` | 600 | ÷100 | 6.0x |
@@ -298,15 +303,18 @@ Wording normalizations applied to the DLC rows:
 - Hedgehog: `Max` → `max`.
 - Kaiju: terminal period added (the template omits it).
 - Mudslide, Waterfall: `damage / second` → `damage/second` (matches the
-  existing Landslide row).
+  existing Landslide row). This overrides the S4 contract's "one space around
+  `/`" for consistency with the 90 existing rows; changing Landslide is T20
+  scope.
 - Siren: the extraction renders 75%; `kCharmChance` is tenths (Charm, Incubus,
   and Succubus all 50 → 5%), so the display is 7.5%. Medium confidence — no
   DLC tooltip confirms it.
 - Steam, Waterfall: no existing field precedent for `kEmissionLength`,
   `kSteamLifetime`, or `kDuration`; the ÷10 reading is the magnitude argument
-  from `risen-l3-refresh.md` Appendix B. Medium confidence.
+  from `risen-l3-refresh.md` Appendix A. Medium confidence.
 - Ash: the template omits the unit for `kEmissionLength` ("for the first 50");
-  resolved to 5.0 seconds per the S4 decision. Low confidence (5.0 s vs 50%).
+  resolved to 5.0 seconds per the S3 decision. Low confidence (5.0 s if ÷10,
+  50 s if ÷1).
 
 Uncertain values stay unmarked in the effect cell; the caveat lives in the
 Notes column and here.
