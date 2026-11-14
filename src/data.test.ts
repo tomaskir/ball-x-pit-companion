@@ -86,11 +86,63 @@ describe('icon assets self-hosted (ticket 04)', () => {
     for (const c of CHARACTERS) expect(existsSync(`${iconDir}character-portraits/${c.id}.png`)).toBe(true);
   });
 
-  it('icon counts on disk match data (91/71/23/23)', () => {
-    expect(readdirSync(`${iconDir}balls`)).toHaveLength(91);
-    expect(readdirSync(`${iconDir}passives`)).toHaveLength(71);
-    expect(readdirSync(`${iconDir}character-sprites`)).toHaveLength(23);
-    expect(readdirSync(`${iconDir}character-portraits`)).toHaveLength(23);
+  it('icon counts on disk match data (115/116/31/31)', () => {
+    expect(readdirSync(`${iconDir}balls`)).toHaveLength(115);
+    expect(readdirSync(`${iconDir}passives`)).toHaveLength(116);
+    expect(readdirSync(`${iconDir}character-sprites`)).toHaveLength(31);
+    expect(readdirSync(`${iconDir}character-portraits`)).toHaveLength(31);
+  });
+});
+
+describe('Risen Ballbylon icons (ticket 38)', () => {
+  const iconDir = new URL('./../public/icons/', import.meta.url).pathname;
+  const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
+  // The DLC catalog rows land in T10; pin the files on disk independently so
+  // the onboarding is verified before the data merge.
+  const dlcBalls = [
+    'ash', 'beast', 'bullet', 'force', 'fruit', 'gale', 'hedgehog', 'ironwood',
+    'ivy', 'kaiju', 'misfortune', 'mudslide', 'rot', 'siren', 'stalagmite',
+    'steam', 'thunderbird', 'tsunami', 'water', 'water-bug', 'waterfall',
+    'werewolf', 'wolfpack', 'wood',
+  ];
+  const dlcPassives = [
+    'ancient-ladle', 'baby-armor', 'bent-spyglass', 'blood-kunai', 'charged-bow',
+    'charged-bracelet', 'cracked-cinderblock', 'cradle-of-filth',
+    'crystal-decanter', 'eldritch-dagger', 'eldritch-gauntlet',
+    'eyeless-spyglass', 'fractured-boulder', 'goniometer', 'hand-drill',
+    'hand-me-downs', 'handheld-rupture', 'jugglers-club', 'jugglers-wheel',
+    'kris-knife', 'kunai', 'levitating-rock', 'liquid-flame', 'lucky-coin',
+    'mystic-dipper', 'peacemaker', 'reachers-drill', 'refracted-echo',
+    'refracting-glass', 'relentless-whip', 'rusted-blade', 'sands-of-time',
+    'shadow-blade', 'silver-revolver', 'spiked-discipline', 'spiked-shield',
+    'steel-bulwark', 'teardrop-dagger', 'teardrop-necklace', 'test-tube',
+    'tilted-dagger', 'unkempt-cradle', 'vampires-kiss', 'volatile-explosive',
+    'wrapped-explosive',
+  ];
+  const dlcCharacters = [
+    'the-conduit', 'the-potager', 'the-recollector', 'the-right-hand-man',
+    'the-scandalmonger', 'the-scrupulous-scoundrel', 'the-sentinel',
+    'the-wallbreaker',
+  ];
+
+  it('has all 85 DLC icon files on disk', () => {
+    for (const id of dlcBalls) expect(existsSync(`${iconDir}balls/${id}.png`)).toBe(true);
+    for (const id of dlcPassives) expect(existsSync(`${iconDir}passives/${id}.png`)).toBe(true);
+    for (const id of dlcCharacters) {
+      expect(existsSync(`${iconDir}character-portraits/${id}.png`)).toBe(true);
+      expect(existsSync(`${iconDir}character-sprites/${id}.png`)).toBe(true);
+    }
+  });
+
+  it('every icon file is a valid non-empty PNG', () => {
+    for (const dir of ['balls', 'passives', 'character-sprites', 'character-portraits']) {
+      for (const file of readdirSync(`${iconDir}${dir}`)) {
+        const bytes = readFileSync(`${iconDir}${dir}/${file}`);
+        expect(bytes.length, `${dir}/${file} is non-empty`).toBeGreaterThan(0);
+        expect(bytes.subarray(0, 8), `${dir}/${file} has the PNG signature`).toEqual(PNG_SIGNATURE);
+      }
+    }
   });
 });
 
