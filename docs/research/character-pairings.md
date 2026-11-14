@@ -10,7 +10,9 @@ character in `src/data/characters.ts`.
 
 The wiki's own Matchmaker page has an "Allowable Character Combinations"
 section that is still a `{?TODO}` stub (checked 2026-10-10), so the pair list
-is reconstructed from community sources.
+is reconstructed from community sources. The pre-DLC rows (S1/S2) were
+reconciled against the v1.308 `GameAssembly.dll` decode (S5); the Risen
+Ballbylon rows are datamined directly from it.
 
 ## Sources
 
@@ -64,7 +66,6 @@ incompatible partners and rejecting them with a message.
 | The Itchy Finger | The Tactician | S1, S2 |
 | The Repentant | The Shieldbearer, The Flagellant, The Tunneller | S1 (Tunneller: v2.0 only), S2 |
 | The Cohabitants | The Makeshift Sisyphus, The Spendthrift, The Juggler, The Falconer | S1 (Falconer: v2.0 only), S2 |
-| The Cogitator | The Radical | S1 |
 | The Shade | The Makeshift Sisyphus, The Falconer | S1 (Falconer: v2.0 only), S2 |
 | The Makeshift Sisyphus | The Cohabitants, The Shade, The Spendthrift | S1, S2 |
 | The Shieldbearer | The Repentant, The Flagellant, The Physicist, The Tactician | S1, S2 |
@@ -72,10 +73,10 @@ incompatible partners and rejecting them with a message.
 | The Flagellant | The Repentant, The Shieldbearer, The Physicist, The Tactician | S2, S1 (Repentant/Shieldbearer/Physicist; see contradiction 1) |
 | The Juggler | The Cohabitants | S1, S2 |
 | The Physicist | The Shieldbearer, The Flagellant | S2, S1 (Shieldbearer/Flagellant entries) |
-| The Tactician | The Itchy Finger, The Shieldbearer, The Flagellant | S2, S1 (Itchy Finger/Shieldbearer entries) |
-| The Radical | The Cogitator | S1 |
+| The Tactician | The Itchy Finger, The Shieldbearer, The Flagellant, The Carouser | S2, S1 (Itchy Finger/Shieldbearer entries), S5 (Carouser) |
 | The Falconer | The Cohabitants, The Shade | S1 |
-| The Tunneller | The Repentant | S1 (v2.0 only) |
+| The Tunneller | The Repentant, The Shieldbearer, The Flagellant | S1 (Repentant: v2.0 only), S5 |
+| The Ballbearer | The Hoary Hoarder | S5 |
 | The Potager | The Spendthrift, The Empty Nester | S5 |
 | The Recollector | The Cohabitants, The Embedded, The Flagellant, The Juggler, The Physicist, The Repentant, The Right Hand Man, The Scrupulous Scoundrel, The Sentinel, The Shieldbearer, The Spendthrift, The Tunneller, The Wallbreaker | S5 |
 | The Right Hand Man | The Recollector | S5 |
@@ -85,14 +86,12 @@ incompatible partners and rejecting them with a message.
 | The Wallbreaker | The Recollector | S5 |
 | The False Messiah | *all* — cannot be a second character, and takes no partner (outside the vote mechanic) | S3 |
 
-No restrictions (any partner): **The Warrior, The Conduit, The Tiptoer, The
-Hoary Hoarder, The Ballbearer.**
+No restrictions (any partner): **The Warrior, The Conduit, The Tiptoer.**
 
-That is 40 forbidden pairs over the 30 pairable characters, plus the False
-Messiah's special rule. The Risen Ballbylon rows are the v1.308 datamine
-(S5); the pre-DLC rows remain the community-sourced model (S1/S2). The
-datamine also disagrees with several pre-DLC rows — those corrections are
-tracked separately (#49) and are not applied here.
+That is 43 forbidden pairs over the 30 pairable characters, plus the False
+Messiah's special rule. The Risen Ballbylon rows and the corrected pre-DLC
+rows are the v1.308 datamine (S5); the remaining pre-DLC rows are the
+community-sourced model (S1/S2), confirmed by S5's full matrix.
 
 ## Contradictions and caveats
 
@@ -111,11 +110,12 @@ tracked separately (#49) and are not applied here.
    the Naturalist update. The update fixed the *message* (S4), not the
    pairing; the False Messiah still takes no partner (S3). The site models the
    post-Naturalist state: the pair stays forbidden.
-4. **Unverified tails.** S1's per-character entries for The Carouser, The
+4. **S1's truncated tails.** S1's per-character entries for The Carouser, The
    Tiptoer, The Hoary Hoarder and The Ballbearer were never retrievable
-   (snippet truncation + Cloudflare gate). No other source names any
-   restriction for them, and S2 ran all their era-peers with no rejections,
-   so they are modeled as unrestricted. Re-verify against S1 when the page
+   (snippet truncation + Cloudflare gate). The v1.308 decode (S5) supplies
+   them: The Carouser cannot pair with The Tactician and The Scandalmonger,
+   The Hoary Hoarder with The Ballbearer, and The Ballbearer with The Hoary
+   Hoarder; The Tiptoer is unrestricted. Re-verify against S1 when the page
    is reachable.
 5. **False Messiah nuance.** S3 notes Messiah *can* gain a second character
    by enabling the character-choice vote (flagged as possibly unintended).
@@ -127,13 +127,12 @@ tracked separately (#49) and are not applied here.
    Shieldbearer/Physicist all rewrite ball return trajectories; Cohabitants/
    Falconer/Spendthrift/Juggler all rewrite launching), but the site records
    the *what*, not a theory of the *why*.
-7. **Pre-DLC rows vs. the v1.308 datamine.** S5's full matrix confirms 16 of
-   the 17 pre-DLC pairs but flags one row the code does not enforce (The
-   Cogitator × The Radical) and four pre-DLC pairs the current table omits
-   (Tunneller × Shieldbearer, Tunneller × Flagellant, Tactician × Carouser,
-   Ballbearer × Hoary Hoarder). Those are existing-roster corrections, not
-   Risen Ballbylon rows; they are tracked in #49 and deliberately not applied
-   here. See `docs/research/risen-matchmaker-pairs.md` §5.
+7. **Pre-DLC rows vs. the v1.308 datamine.** S5's full matrix confirmed 16 of
+   the original 17 pre-DLC pairs and corrected the table (#49): The
+   Cogitator × The Radical is not enforced by the code and was removed, and
+   four pairs the community table missed were added — Tunneller ×
+   Shieldbearer, Tunneller × Flagellant, Tactician × Carouser, Ballbearer ×
+   Hoary Hoarder. See `docs/research/risen-matchmaker-pairs.md` §5.
 
 ## Maintenance
 
@@ -144,4 +143,5 @@ file's table together. For the DLC roster, re-run the S5 decode: the prop
 matrix is the bulk of the relation, so changing a character's `Props` list
 changes the pair list without any edit to the explicit matrix. `npm test`
 pins the emitted pair list's shape (symmetry, id resolution, the False
-Messiah rule) in `src/data.test.ts`.
+Messiah rule) in `src/data.test.ts`, and the parser tests pin the v1.308
+matrix's 43 non-Messiah pairs in `scripts/fact-bases.test.ts`.
