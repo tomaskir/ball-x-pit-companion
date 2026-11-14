@@ -10,6 +10,7 @@ import {
   parseLevel3,
   parseFactBases,
 } from './fact-bases.ts';
+import { parseMarkdownTable, column } from './markdown-table.ts';
 
 describe('parseRecipes: OR-of-ANDs grammar', () => {
   it('expands a parenthesized slot alternate', () => {
@@ -241,18 +242,67 @@ describe('parseFactBases: the real fact bases parse without the CLI', () => {
   const parsed = parseFactBases(realSources());
 
   it('parses the full catalog', () => {
-    expect(parsed.balls).toHaveLength(91);
-    expect(parsed.passives).toHaveLength(71);
-    expect(parsed.characters).toHaveLength(23);
+    expect(parsed.balls).toHaveLength(115);
+    expect(parsed.passives).toHaveLength(116);
+    expect(parsed.characters).toHaveLength(31);
+    // T11 adds the 24 DLC level-3 texts; T14 owns the final count.
     expect(Object.keys(parsed.level3)).toHaveLength(90);
+  });
+
+  it('onboards the DLC balls, passives, and characters', () => {
+    const balls = new Map(parsed.balls.map((b) => [b.name, b]));
+    expect(balls.get('Beast')).toMatchObject({ depth: 0, recipes: [] });
+    expect(balls.get('Mudslide')).toMatchObject({
+      depth: 2,
+      recipes: [['landslide', 'water'], ['sandstorm', 'water']],
+    });
+    expect(balls.get('Overgrowth')!.recipes).toEqual([
+      ['earthquake', 'cell'],
+      ['time', 'wood'],
+    ]);
+    expect(balls.get('Blizzard')!.recipes).toEqual([
+      ['freeze', 'wind'],
+      ['freeze', 'lightning'],
+      ['freeze', 'water'],
+    ]);
+    expect(balls.get('Venom')!.recipes).toEqual([
+      ['freeze', 'poison'],
+      ['beast', 'poison'],
+    ]);
+    expect(parsed.passives.find((p) => p.name === 'Ancient Ladle')).toMatchObject({ depth: 0 });
+    expect(parsed.passives.find((p) => p.name === 'Mystic Dipper')).toMatchObject({ depth: 1 });
+    expect(parsed.characters.find((c) => c.name === 'The Potager')).toMatchObject({
+      baseBall: 'Wood',
+    });
   });
 
   it('expands the Matchmaker relation symmetrically', () => {
     const byName = new Map(parsed.characters.map((c) => [c.name, c]));
     expect(byName.get('The Repentant')!.cannotPair).toContain('The Shieldbearer');
     expect(byName.get('The Shieldbearer')!.cannotPair).toContain('The Repentant');
-    expect(byName.get('The False Messiah')!.cannotPair).toHaveLength(22);
+    expect(byName.get('The False Messiah')!.cannotPair).toHaveLength(parsed.characters.length - 1);
   });
+});
+
+describe('game-mechanics.md: every entity row carries an Edition cell', () => {
+  const md = realMechanics();
+  const tables: [RegExp, string][] = [
+    [/^\| Ball \| On-hit effect \|/, 'base balls'],
+    [/^\| Ball \| Depth \|/, 'evolved balls'],
+    [/^\| Passive \| Effect text \(wiki\) \|/, 'base passives'],
+    [/^\| Passive \| Recipe \|/, 'evolved passives'],
+    [/^\| Character \| Base ball \|/, 'characters'],
+  ];
+
+  for (const [headerRe, label] of tables) {
+    it(`${label} rows are base-game or dlc-risen-ballbylon`, () => {
+      const rows = parseMarkdownTable(md, headerRe, label);
+      expect(rows.length).toBeGreaterThan(0);
+      for (const row of rows) {
+        expect(['base-game', 'dlc-risen-ballbylon']).toContain(column(row, 'Edition'));
+      }
+    });
+  }
 });
 
 /** A minimal mechanics doc whose evolved tables are the variables. */
