@@ -17,8 +17,9 @@
 // instance's seam (seam.ts — the emit callback, the captured view model, and
 // the toast adapter from src/toast.ts) and reconcile cache (reconcile.ts —
 // the content-diff cache), sharing the action-slot adapter (action-slot.ts —
-// the typed action a built-once handler reports) and the DOM/label helpers
-// (dom.ts, labels.ts). This facade composes them; only createRenderer,
+// the typed action a built-once handler reports), the DOM/label helpers
+// (dom.ts, labels.ts), and the tier-heading repaint both content lists use
+// (tier-headings.ts). This facade composes them; only createRenderer,
 // Renderer, BuildOptions, FUSION_PANEL_SKELETON, and FUSION_PANEL_SELECTORS
 // are public.
 //
