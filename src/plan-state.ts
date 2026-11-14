@@ -25,6 +25,11 @@
 // The Potager's "cannot fuse balls normally" is derived here too: a planned
 // pair that actually fuses is marked `fusionInvalid` (kept, never trimmed)
 // while The Potager is selected, and live fusing-pair adds are blocked.
+// Passive availability (src/passive-availability.ts) is derived the same way:
+// a planned passive the selected characters cannot use is marked
+// `passiveInvalid` (kept, never trimmed), live adds are blocked, and the
+// build graph excludes it. Zero passive slots stays the capacity's over-limit
+// mark, never passive-invalid.
 import { type Ball } from './data/balls';
 import { type Passive } from './data/passives';
 import { type Character } from './data/characters';
@@ -34,6 +39,7 @@ import { isEditionEnabled } from './edition-gate';
 import { complexity } from './graph';
 import { evolvesInstead, fusionName, isFusable } from './fusion';
 import { createPickList } from './pick-list';
+import { passiveAvailability } from './passive-availability';
 import { verdictFor, type Item, type Verdict } from './synergy';
 import { pairKey } from './pair';
 import { globalLimits, limitsFor, selectedSlotRule, type PlanLimits } from './slot-limits';
@@ -53,10 +59,17 @@ export interface PlanSnapshot { upgradesOn: boolean; balls: string[]; passives: 
  *  (Share link / localStorage) — also kept and marked, never trimmed; live
  *  selection can never produce one. */
 export interface PlanCharState { character: Character; overLimit: boolean; pairInvalid: boolean; }
-/** One ball/passive in the plan: the resolved item (renderer never
- *  re-resolves), its verdict against the selected characters, and the
- *  over-limit mark. The passives' entry shape. */
-export interface PlanEntryState { item: Item; overLimit: boolean; verdict: Verdict | null; }
+/** One passive in the plan: the resolved item (renderer never re-resolves),
+ *  its verdict against the selected characters, the over-limit mark, and the
+ *  passive-availability mark (character-locked or stat-gated; kept, never
+ *  trimmed). `invalidReason` is the tooltip line for the red mark. */
+export interface PlanEntryState {
+  item: Item;
+  overLimit: boolean;
+  verdict: Verdict | null;
+  passiveInvalid: boolean;
+  invalidReason: string;
+}
 /** One single ball in the plan's merged ball grid. */
 export interface PlanSingleState { kind: 'single'; item: Ball; overLimit: boolean; verdict: Verdict | null; }
 /** One fused pair in the plan's merged ball grid: resolved components in
@@ -92,6 +105,8 @@ export interface PlanState {
   fusionBlocked: boolean;
   /** Second warning line shown while fusion-invalid pairs exist; '' otherwise. */
   fusionInvalidHint: string;
+  /** Second warning line shown while passive-invalid entries exist; '' otherwise. */
+  passiveInvalidHint: string;
   /** Override for the passives section's empty hint (The Ballbearer has no
    *  passive slots); null means the renderer's default. */
   passivesEmptyHint: string | null;
@@ -248,21 +263,38 @@ export function createPlanState() {
     ]
       .sort((x, y) => ballComplexity(y) - ballComplexity(x))
       .map((e, i) => ({ ...e, overLimit: i >= limits.balls }));
+    // Quirk-aware copy: re-enabling End game upgrades cannot help the
+    // section a quirk owns, so that hint names the quirk instead. Read before
+    // the passive entries because the zero-slots reason comes from the rule.
+    const slotRule = selectedSlotRule(selectedChars);
     const planPassivesState = planPassiveItems
-      .map((item) => ({ item, overLimit: false, verdict: verdictFor(item, selectedChars) }))
+      .map((item) => {
+        const availability = passiveAvailability(item, {
+          selectedChars,
+          passiveSlots: limits.passives,
+          zeroSlotsReason: slotRule?.passivesEmptyHint ?? null,
+        });
+        return {
+          item,
+          overLimit: false,
+          verdict: verdictFor(item, selectedChars),
+          // Character-locked / stat-gated entries are kept and marked red.
+          // Zero slots is the capacity's mark (over-limit), never this one.
+          passiveInvalid: availability.blocked,
+          invalidReason: availability.reason,
+        };
+      })
       .sort((x, y) => complexity(y.item, passiveMap) - complexity(x.item, passiveMap))
       .map((e, i) => ({ ...e, overLimit: i >= limits.passives }));
     const ballsOver = ballSlots > limits.balls;
     const passivesOver = planPassiveItems.length > limits.passives;
     const overLimit = selectedChars.length > limits.chars || ballsOver || passivesOver;
-    // Quirk-aware copy: re-enabling End game upgrades cannot help the
-    // section a quirk owns, so that hint names the quirk instead.
-    const slotRule = selectedSlotRule(selectedChars);
     const quirkOver = slotRule?.overLimitHint.section === 'passives' ? passivesOver
       : slotRule?.overLimitHint.section === 'balls' ? ballsOver
       : false;
     const hint = slotRule && quirkOver ? slotRule.overLimitHint.text : overLimit ? OVER_LIMIT_HINT : '';
     const fusionInvalid = balls.some((e) => e.kind === 'fused' && e.fusionInvalid);
+    const passiveInvalid = planPassivesState.some((e) => e.passiveInvalid);
     return {
       upgradesOn,
       limits,
@@ -280,6 +312,9 @@ export function createPlanState() {
       hint,
       fusionBlocked: potager,
       fusionInvalidHint: fusionInvalid ? "The Potager can't fuse balls — remove the highlighted pairs" : '',
+      passiveInvalidHint: passiveInvalid
+        ? "Some passives aren't available to the selected characters — remove the highlighted entries."
+        : '',
       passivesEmptyHint: slotRule?.passivesEmptyHint ?? null,
     };
   };
@@ -296,6 +331,16 @@ export function createPlanState() {
         // limit is a no-op. Removal is always allowed — even over-limit
         // entries.
         case 'togglePlanItem':
+          // Live passive adds are blocked when the selected characters cannot
+          // use the passive (character-locked or stat-gated); removal is
+          // always allowed, and hydrated entries are kept and marked.
+          if (isPassive(action.id) && !planPassives.has(action.id)) {
+            const passive = passiveMap.get(action.id);
+            if (passive) {
+              const limits = activeLimits();
+              if (passiveAvailability(passive, { selectedChars: currentChars, passiveSlots: limits.passives }).blocked) break;
+            }
+          }
           (isPassive(action.id) ? planPassives : planBalls).toggle(action.id);
           break;
         // Fused-pair plan membership: the pick list's identity is

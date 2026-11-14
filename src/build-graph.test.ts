@@ -464,4 +464,17 @@ describe('build graph view: the whole Plan-screen derivation', () => {
     expect(view.balls.height).toBe(BUILD_GRAPH_ROWS.balls.rowCount * BUILD_GRAPH_METRICS.rowH);
     expect(view.passives.height).toBe(BUILD_GRAPH_ROWS.passives.rowCount * BUILD_GRAPH_METRICS.rowH);
   });
+
+  it('keeps passive-invalid entries out of the graph (the selected character cannot use them)', () => {
+    const plan = createPlanState();
+    plan.dispatch({
+      type: 'hydrate',
+      plan: { upgradesOn: true, balls: [], passives: ['rusted-blade'], fused: [] },
+    });
+    const shade = CHARACTERS.filter((c) => c.id === 'the-shade');
+    const planState = plan.derive(shade);
+    expect(planState.passives[0].passiveInvalid).toBe(true);
+    const view = deriveBuildGraphView(planState, session());
+    expect(view.passives.nodes).toHaveLength(0);
+  });
 });

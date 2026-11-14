@@ -16,6 +16,7 @@ import { deriveBuildGraph, FUSION_ID_PREFIX } from './build-graph';
 import { verdictFor } from './synergy';
 import { createPlanState } from './plan-state';
 import { limitsFor } from './slot-limits';
+import { passiveAvailability } from './passive-availability';
 import { encodeShared } from './plan-codec';
 import { takeShareParam } from './share';
 import { readFileSync, readdirSync } from 'node:fs';
@@ -749,5 +750,52 @@ describe('regression: The Potager cannot fuse balls normally (fusion-invalid pai
     plan.dispatch({ type: 'togglePlanFusion', a: 'freeze', b: 'laser-horizontal' }, potager());
     const pair = plan.derive(potager()).balls.find((e) => e.kind === 'fused');
     expect(pair && pair.kind === 'fused' && pair.fusionInvalid).toBe(false);
+  });
+});
+
+describe('regression: per-character passive restrictions (datamined v1.308, #50)', () => {
+  // The old community leads in docs/research/passive-availability.md were
+  // reconciled against the datamine in character-passive-restrictions.md.
+  // One named test per lead: refuted leads must not block, confirmed leads
+  // must block.
+  const character = (id: string) => CHARACTERS.find((c) => c.id === id)!;
+  const blocked = (passiveId: string, characterId: string) =>
+    passiveAvailability(passiveMap.get(passiveId)!, {
+      selectedChars: [character(characterId)],
+      passiveSlots: 5,
+    }).blocked;
+
+  it('Magnet / Tactician is refuted: the Tactician has no brick-breaker prop', () => {
+    expect(blocked('magnet', 'the-tactician')).toBe(false);
+  });
+
+  it('Ethereal Cloak / Shade is refuted: the passive has no character case', () => {
+    expect(blocked('ethereal-cloak', 'the-shade')).toBe(false);
+  });
+
+  it('crit / Sisyphus is refuted: the dagger passives have no character case', () => {
+    for (const id of ['diamond-hilted-dagger', 'sapphire-hilted-dagger', 'ruby-hilted-dagger', 'emerald-hilted-dagger', 'deadeyes-cross']) {
+      expect(blocked(id, 'the-makeshift-sisyphus'), id).toBe(false);
+    }
+  });
+
+  it('fire-rate / Itchy Finger is refuted: Shortbow gates on shotgun/turn-based', () => {
+    expect(blocked('shortbow', 'the-itchy-finger')).toBe(false);
+  });
+
+  it('Magnet / Shieldbearer is confirmed (brick-breaker gate)', () => {
+    expect(blocked('magnet', 'the-shieldbearer')).toBe(true);
+  });
+
+  it('Radiant Feather / Shieldbearer is confirmed (and also excludes the Tactician)', () => {
+    expect(blocked('radiant-feather', 'the-shieldbearer')).toBe(true);
+    expect(blocked('radiant-feather', 'the-tactician')).toBe(true);
+  });
+
+  it('baby-ball passives / Empty Nester + Sisyphus are confirmed hard gates', () => {
+    for (const id of ['war-horn', 'baby-rattle', 'cornucopia']) {
+      expect(blocked(id, 'the-empty-nester'), id).toBe(true);
+      expect(blocked(id, 'the-makeshift-sisyphus'), id).toBe(true);
+    }
   });
 });

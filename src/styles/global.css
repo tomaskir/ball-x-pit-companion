@@ -363,6 +363,9 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .tile.related { border-color: var(--gold); box-shadow: 0 0 6px var(--glow); }
 .tile.dimmed { opacity: var(--dim); }
 
+/* passive availability: dimmed, not hidden — the tile stays searchable */
+.tile.unavailable { opacity: var(--dim); filter: grayscale(0.7); }
+
 /* search: non-matching tiles dim + greyscale in place (ticket 07) */
 .tile.filtered,
 .char-card.filtered { opacity: var(--dim); filter: grayscale(1); }
@@ -381,6 +384,22 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 }
 .tile .ind.red { background: var(--red); }
 .tile .ind.green { background: var(--green); }
+
+/* character-specific badge (DLC allow-list): the tooltip lists the allowed
+   characters; the other corner from the verdict badge */
+.tile .char-lock {
+  position: absolute;
+  top: -7px;
+  left: -7px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 11px;
+  line-height: 18px;
+  text-align: center;
+  color: #111;
+  background: var(--gold);
+}
 
 /* ---------- characters ---------- */
 
@@ -454,6 +473,13 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 
 .toast h4 img { width: 20px; height: 20px; image-rendering: pixelated; }
 .toast .eff { margin: 0; }
+
+/* passive availability / loadout requirement line */
+.toast .restriction {
+  margin: 6px 0 0;
+  color: var(--gold);
+  font-size: 11px;
+}
 
 .toast .rec {
   margin-top: 6px;
@@ -803,7 +829,8 @@ footer a { color: var(--gold); }
    The Potager cannot build — kept and marked, same never-trim philosophy as
    over-limit */
 .plan-entry.invalid-pair,
-.plan-entry.fusion-invalid { border-color: var(--red); box-shadow: 0 0 8px var(--red); }
+.plan-entry.fusion-invalid,
+.plan-entry.passive-invalid { border-color: var(--red); box-shadow: 0 0 8px var(--red); }
 
 /* verdict badge — same look as the tiles' */
 .plan-entry .ind {

@@ -3,9 +3,11 @@
 // the existing DOM — rebuilding would recreate the <img> elements and blink
 // the icons (invariant 2). The edition filter hides a tile with the hidden
 // attribute (absent, not dimmed) and repaints each tier heading's count; a
-// grid with no visible tile shows the one filter hint. Internal to the
-// renderer facade; the tile registry belongs to the renderer instance
-// (createGrids), so two renderers never share tiles.
+// grid with no visible tile shows the one filter hint. Passive availability
+// dims a tile in place (never hides it — unavailable passives stay
+// searchable) and adds the character-specific badge; the reason rides the
+// toast. Internal to the renderer facade; the tile registry belongs to the
+// renderer instance (createGrids), so two renderers never share tiles.
 import { BALLS } from '../data/balls';
 import { PASSIVES } from '../data/passives';
 import { itemFor, type Item } from '../catalog';
@@ -107,15 +109,28 @@ export function createGrids({ emitAction, attachToast }: PainterSeam): Grids {
       if (!t) continue;
       // the edition filter: hidden content is absent, not dimmed
       tile.hidden = t.hidden;
-      tile.classList.remove('selected', 'related', 'dimmed', 'filtered');
+      tile.classList.remove('selected', 'related', 'dimmed', 'filtered', 'unavailable');
       if (t.selected) tile.classList.add('selected');
       else if (t.related) tile.classList.add('related');
       else if (t.dimmed) tile.classList.add('dimmed');
       if (t.filtered) tile.classList.add('filtered');
+      // passive availability: dimmed, not hidden — the tile stays searchable
+      if (t.unavailable) tile.classList.add('unavailable');
 
       // verdict badge: replace in place (cheap, no img recreation)
       tile.querySelector('.ind')?.remove();
       if (t.verdict) tile.appendChild(verdictBadge(t.verdict));
+
+      // character-specific badge (DLC allow-list): the tooltip lists the
+      // allowed characters, also with no character selected
+      tile.querySelector('.char-lock')?.remove();
+      if (t.availability?.characterSpecific) {
+        const badge = document.createElement('span');
+        badge.className = 'char-lock';
+        badge.textContent = 'C';
+        badge.title = t.availability.characterLockReason;
+        tile.appendChild(badge);
+      }
     }
   }
 

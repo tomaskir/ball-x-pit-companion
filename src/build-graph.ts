@@ -9,7 +9,8 @@
 // The module owns the graph's inputs, row model, and highlight rule:
 // `deriveBuildGraphView(planState, { focus, done, collapsed, editions })`
 // assembles the targets from the plan (including Evolves-instead resolution;
-// over-limit entries and The Potager's fusion-invalid pairs stay out), gates
+// over-limit entries, passive-invalid entries, and The Potager's
+// fusion-invalid pairs stay out), gates
 // each recipe on the enabled editions (a recipe with a hidden component is
 // unavailable), derives and lays out both namespace graphs, validates the
 // focus id, walks the related set, and carries the fixed row model (row
@@ -461,7 +462,9 @@ export function deriveBuildGraphView(
     }
   }
   const passiveTargets: BuildGraphTargets = {
-    singles: planState.passives.filter((e) => !e.overLimit).map((e) => e.item.id),
+    // A passive the selected characters cannot use is not buildable, so it
+    // stays out of the graph like an over-limit entry.
+    singles: planState.passives.filter((e) => !e.overLimit && !e.passiveInvalid).map((e) => e.item.id),
     pairs: [],
   };
   const deriveAndLayout = <T extends GraphItem & { name: string; icon: string }>(

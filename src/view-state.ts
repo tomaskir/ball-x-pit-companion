@@ -13,7 +13,11 @@
 // fusion picks, plan entries, fused pairs) and reports the loss count;
 // re-enabling restores nothing. The ViewModel carries the per-item hidden
 // flags, the edition-filtered collections, and each item's surviving
-// recipes, so the renderer never re-derives the gate.
+// recipes, so the renderer never re-derives the gate. Passive availability
+// (src/passive-availability.ts) rides each passive tile too — dimmed, never
+// hidden, with the character-specific badge and the reason — and the
+// selection box carries the unavailable-passive reason that disables its
+// plan button.
 // The island (src/companion.ts) keeps only composition, hash routing, and
 // plan persistence; the static-shell wiring lives in src/shell.ts and
 // painting lives in src/renderer.ts. Fusion
@@ -49,12 +53,24 @@ import { deriveBuildGraphView, type BuildGraphViewState } from './build-graph';
 import { fusionBalls, isFusable } from './fusion';
 import { deriveFusionPanel, type FusionPanelState } from './fusion-panel';
 import { createPickList } from './pick-list';
+import { passiveAvailability, type PassiveAvailability } from './passive-availability';
 import { verdictFor, type Item, type Verdict } from './synergy';
 import { createPlanState } from './plan-state';
 import type { PlanAction, PlanLimits, PlanState } from './plan-state';
 import type { SharedSnapshot } from './plan-codec';
 
-export interface TileState { selected: boolean; related: boolean; dimmed: boolean; filtered: boolean; hidden: boolean; verdict: Verdict | null; }
+export interface TileState {
+  selected: boolean;
+  related: boolean;
+  dimmed: boolean;
+  filtered: boolean;
+  hidden: boolean;
+  verdict: Verdict | null;
+  /** Passive availability under the selected characters: dimmed (not hidden)
+   *  and, for character-locked passives, badged. Always false/null for balls. */
+  unavailable: boolean;
+  availability: PassiveAvailability | null;
+}
 /** One character card. `blocked` is a Matchmaker pairing restriction (game
  *  data): with exactly one character held (and two allowed), a forbidden
  *  partner is blocked — selecting it is a no-op. `blockedBy` names the held
@@ -75,6 +91,9 @@ export interface FusionRowState { slot: 1 | 2 | null; filtered: boolean; hidden:
 export interface SelectionBoxState {
   item: Item;
   plan: 'add' | 'remove' | 'disabled';
+  /** Why the plan button is disabled (passive unavailable vs. capacity);
+   *  null when enabled. The renderer falls back to the limit copy. */
+  planReason: string | null;
   fusion: 'add' | 'remove' | 'disabled' | 'unfusable' | null;
 }
 export interface ViewModel {
@@ -286,12 +305,26 @@ export function createViewState({ editions }: ViewStateOptions = {}) {
     const passiveQ = queries.passives.trim().toLowerCase();
     const charQ = queries.characters.trim().toLowerCase();
     const fusionQ = queries.fusions.trim().toLowerCase();
+    // The plan state is derived before the tiles because passive availability
+    // reads the character-overlaid passive slot limit (zero slots is a limit,
+    // not a per-passive rule).
+    const planState = plan.derive(chars);
+    const limits = planState.limits;
     // each namespace filters against its own screen's query — one loop shape,
     // two (collection, query) pairs; the graphs themselves stay separate.
     // `hidden` is the edition filter: hidden content is not painted at all.
+    // Passives additionally carry their availability under the selection
+    // (dimmed, not hidden; searchable).
     for (const [items, q] of [[BALLS, ballQ], [PASSIVES, passiveQ]] as const) {
       for (const item of items) {
         const v = verdictFor(item, chars);
+        const availability = isPassive(item.id)
+          ? passiveAvailability(item as Passive, {
+              selectedChars: chars,
+              passiveSlots: limits.passives,
+              zeroSlotsReason: planState.passivesEmptyHint,
+            })
+          : null;
         tiles.set(item.id, {
           selected: selectedId === item.id,
           related: !!selectedId && selectedId !== item.id && related.has(item.id),
@@ -299,14 +332,14 @@ export function createViewState({ editions }: ViewStateOptions = {}) {
           filtered: !!q && !(item.name.toLowerCase().includes(q) || item.effects.toLowerCase().includes(q)),
           hidden: !isEditionEnabled(enabledEditions, item.edition),
           verdict: v,
+          unavailable: availability?.unavailable ?? false,
+          availability,
         });
       }
     }
     // Matchmaker pairing restrictions: with exactly one character held (and
     // two allowed), forbidden partners are blocked — the game darkens them
     // on the select screen. With 0 or 2 held nothing is blocked.
-    const planState = plan.derive(chars);
-    const limits = planState.limits;
     const held = blockedPartner(chars, limits);
     for (const ch of CHARACTERS) {
       const blockedBy = held && ch.cannotPair.includes(held.id) ? held.name : null;
@@ -343,10 +376,25 @@ export function createViewState({ editions }: ViewStateOptions = {}) {
     const selected = selectedId ? itemFor(selectedId) : undefined;
     const selectedIsPassive = selected ? isPassive(selected.id) : false;
     const inPlan = selected ? plan.has(selected.id) : false;
+    // A selected passive's availability drives the "Add to plan" disable and
+    // its tooltip; the capacity check still owns the zero-slot case (which
+    // the availability object reports as a reason).
+    const selectedAvailability = selected && selectedIsPassive
+      ? passiveAvailability(selected as Passive, {
+          selectedChars: chars,
+          passiveSlots: limits.passives,
+          zeroSlotsReason: planState.passivesEmptyHint,
+        })
+      : null;
+    const atCapacity = (selectedIsPassive ? planState.counts.passives : planState.counts.balls) >= (selectedIsPassive ? limits.passives : limits.balls);
     const planLabel: SelectionBoxState['plan'] =
       inPlan ? 'remove'
-      : (selectedIsPassive ? planState.counts.passives : planState.counts.balls) >= (selectedIsPassive ? limits.passives : limits.balls) ? 'disabled'
+      : selectedAvailability?.blocked || atCapacity ? 'disabled'
       : 'add';
+    const planReason: string | null =
+      planLabel === 'disabled' && selectedAvailability && (selectedAvailability.blocked || selectedAvailability.zeroSlots)
+        ? selectedAvailability.reason
+        : null;
     const fusionLabel: SelectionBoxState['fusion'] = !selected || selectedIsPassive
       ? null
       : !isFusable(selected.id) ? 'unfusable'
@@ -354,8 +402,8 @@ export function createViewState({ editions }: ViewStateOptions = {}) {
       : picks.length >= 2 ? 'disabled'
       : 'add';
     const selectionBoxes: ViewModel['selectionBoxes'] = {
-      balls: selected && !isPassive(selected.id) ? { item: selected, plan: planLabel, fusion: fusionLabel } : null,
-      passives: selected && isPassive(selected.id) ? { item: selected, plan: planLabel, fusion: fusionLabel } : null,
+      balls: selected && !isPassive(selected.id) ? { item: selected, plan: planLabel, planReason, fusion: fusionLabel } : null,
+      passives: selected && isPassive(selected.id) ? { item: selected, plan: planLabel, planReason, fusion: fusionLabel } : null,
     };
     // The build graphs: src/build-graph.ts's deriveBuildGraphView owns the
     // graph's inputs — targets (including Evolves-instead resolution), both

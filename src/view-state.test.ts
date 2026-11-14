@@ -1022,3 +1022,81 @@ describe('view state: the highlight walk honors gated recipes', () => {
     expect(vm2.tiles.get('water')!.related).toBe(true);
   });
 });
+
+describe('view state: passive availability (catalog + selection box)', () => {
+  const withDlc = () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' });
+    return view;
+  };
+
+  it('dims a passive the selected character cannot use, without hiding it', () => {
+    const view = withDlc();
+    const vm = view.dispatch({ type: 'toggleChar', id: 'the-shade' });
+    const tile = vm.tiles.get('rusted-blade')!;
+    expect(tile.unavailable).toBe(true);
+    expect(tile.hidden).toBe(false);
+    expect(tile.availability!.characterSpecific).toBe(true);
+    expect(tile.availability!.reason).toBe('Only The Warrior can use this.');
+  });
+
+  it('does not dim anything with zero characters selected', () => {
+    const view = withDlc();
+    const vm = view.derive();
+    expect(vm.tiles.get('rusted-blade')!.unavailable).toBe(false);
+    // the badge/allow-list reason still rides the tile
+    expect(vm.tiles.get('rusted-blade')!.availability!.characterSpecific).toBe(true);
+  });
+
+  it('never marks a ball unavailable', () => {
+    const view = withDlc();
+    const vm = view.dispatch({ type: 'toggleChar', id: 'the-shade' });
+    expect(vm.tiles.get('flash')!.unavailable).toBe(false);
+    expect(vm.tiles.get('flash')!.availability).toBeNull();
+  });
+
+  it('dims a stat-gated passive for the excluded character', () => {
+    const view = createViewState();
+    const vm = view.dispatch({ type: 'toggleChar', id: 'the-shieldbearer' });
+    expect(vm.tiles.get('magnet')!.unavailable).toBe(true);
+    expect(vm.tiles.get('magnet')!.availability!.reason).toContain('stat gate');
+  });
+
+  it('disables the selection box add with the availability reason', () => {
+    const view = withDlc();
+    view.dispatch({ type: 'toggleChar', id: 'the-shade' });
+    const vm = view.dispatch({ type: 'toggleItem', id: 'rusted-blade' });
+    const box = vm.selectionBoxes.passives!;
+    expect(box.plan).toBe('disabled');
+    expect(box.planReason).toBe('Only The Warrior can use this.');
+  });
+
+  it('keeps removal enabled for an invalid passive already in the plan', () => {
+    const view = withDlc();
+    view.dispatch({ type: 'toggleChar', id: 'the-shade' });
+    const vm = view.dispatch({
+      type: 'hydrate',
+      shared: {
+        plan: { upgradesOn: true, balls: [], passives: ['rusted-blade'], fused: [] },
+        chars: ['the-shade'],
+        editions: ['base-game', 'dlc-risen-ballbylon'],
+      },
+    });
+    const box = view.dispatch({ type: 'toggleItem', id: 'rusted-blade' });
+    expect(box.selectionBoxes.passives!.plan).toBe('remove');
+    expect(vm.plan.passives[0].passiveInvalid).toBe(true);
+  });
+
+  it('zero slots disables the add with The Ballbearer reason (capacity, not passive-invalid)', () => {
+    const view = createViewState();
+    view.dispatch({ type: 'toggleChar', id: 'the-ballbearer' });
+    const vm = view.dispatch({ type: 'toggleItem', id: 'wagon-wheel' });
+    const box = vm.selectionBoxes.passives!;
+    expect(box.plan).toBe('disabled');
+    expect(box.planReason).toBe('The Ballbearer has no passive slots.');
+    // every passive tile is dimmed by the zero-slot limit, but none is
+    // marked passive-invalid (the plan has no entries)
+    expect(vm.tiles.get('wagon-wheel')!.unavailable).toBe(true);
+    expect(vm.plan.passiveInvalidHint).toBe('');
+  });
+});

@@ -4,9 +4,10 @@
 // outside-tap dismissal. Extracted from src/renderer.ts, which kept the
 // only renderer subsystem with its own mutable module state and no tests;
 // the renderer now creates one adapter per renderer instance (createRenderer)
-// and only binds anchors to it. The verdict lookup is injected at creation
-// (the build seam's read of the last painted view model), so a shown toast
-// always matches the verdict the tiles were painted with.
+// and only binds anchors to it. The verdict and passive-availability lookups
+// are injected at creation (the build seam's read of the last painted view
+// model), so a shown toast always matches the verdict and restriction line
+// the tiles were painted with.
 //
 // The dismissal is the adapter's own document-level pointerdown listener —
 // not the island's empty-space clear policy (companion-core's shouldClear):
@@ -22,11 +23,16 @@ import { markClearExempt } from './clear-exempt';
 import { itemFor, type Item } from './catalog';
 import { iconUrl } from './icon-url';
 import type { Verdict } from './synergy';
+import type { PassiveAvailability } from './passive-availability';
 
 export interface ToastOptions {
   /** Per-item verdict as last painted (the build seam reads it from the
    *  captured view model's tile state). */
   getVerdict: (item: Item) => Verdict | null;
+  /** Per-passive availability as last painted — the restriction line (DLC
+   *  allow-list, stat gate, zero slots, loadout requirement). Null for
+   *  balls and unrestricted passives. */
+  getAvailability?: (item: Item) => PassiveAvailability | null;
 }
 
 export interface ToastAdapter {
@@ -44,7 +50,7 @@ export interface ToastAdapter {
   destroy(): void;
 }
 
-export function createToast({ getVerdict }: ToastOptions): ToastAdapter {
+export function createToast({ getVerdict, getAvailability }: ToastOptions): ToastAdapter {
   const icon = (p: string) => iconUrl(import.meta.env.BASE_URL, p);
 
   let toastEl: HTMLElement | null = null;
@@ -64,9 +70,11 @@ export function createToast({ getVerdict }: ToastOptions): ToastAdapter {
       return comp ? `<img src="${icon(comp.icon)}" alt="${comp.name}" title="${comp.name}" width="28" height="28">` : null;
     }) : '';
     const v = getVerdict(item);
+    const availability = getAvailability?.(item) ?? null;
     el.innerHTML = `
       <h4><img src="${icon(item.icon)}" alt="" width="20" height="20">${item.name}</h4>
       <p class="eff">${item.effects}</p>
+      ${availability?.reason ? `<p class="restriction">${availability.reason}</p>` : ''}
       ${comps ? `<div class="rec">${comps}</div>` : ''}
       ${v ? `<div class="verdicts"><span class="${v.verdict}">${v.verdict === 'red' ? '▲ red' : '✓ green'}${v.note ? ` — ${v.note}` : ''}</span></div>` : ''}
       ${item.tags.length ? `<div class="tags">${item.tags.map((t) => `<span>${t}</span>`).join('')}</div>` : ''}`;

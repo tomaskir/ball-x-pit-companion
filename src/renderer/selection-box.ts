@@ -1,7 +1,9 @@
 // The balls/passives screens' selection box: one box per item screen, built
 // once into its index.astro container; paint() toggles hidden, the label,
-// and the button labels/disabled states from vm.selectionBoxes. Buttons emit
-// through the seam like every other built-in click handler. Internal to the
+// and the button labels/disabled states from vm.selectionBoxes. A disabled
+// plan button's tooltip is the view model's reason (an unavailable passive)
+// or the generic capacity copy. Buttons emit through the seam like every
+// other built-in click handler. Internal to the
 // renderer facade; the element registry belongs to the renderer instance
 // (createSelectionBoxes).
 import type { Emit } from './seam';
@@ -107,7 +109,8 @@ export function createSelectionBoxes({ emitAction }: { emitAction: Emit }): Sele
       }
       // disabled buttons suppress mouse events, so the tooltips ride the box
       const boxTitles = [
-        state.plan === 'disabled' ? PLAN_LIMIT_TITLE : '',
+        // an unavailable passive's reason replaces the capacity copy
+        state.plan === 'disabled' ? (state.planReason ?? PLAN_LIMIT_TITLE) : '',
         els.fusionBtn && state.fusion ? FUSION_BTN_TITLES[state.fusion] : '',
       ].filter(Boolean);
       els.root.title = boxTitles.join(' · ');

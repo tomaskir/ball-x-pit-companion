@@ -1,10 +1,10 @@
 // The plan screen's three sections (characters/balls/passives). The skeleton
 // is built once; entries rebuild only when their section's reconcile content
 // key changes (reconcile's diff — the one accepted exception to
-// never-recreate, since entry sets are dynamic). Badges and over-limit marks
-// repaint in place every paint, found by each entry's stamped identity, so a
-// character toggle (which changes verdicts but not the entry set) never
-// rebuilds. A fused pair's identity is unordered (src/pair.ts); its reconcile
+// never-recreate, since entry sets are dynamic). Badges and over-limit /
+// invalid marks repaint in place every paint, found by each entry's stamped
+// identity, so a character toggle (which changes verdicts and availability
+// but not the entry set) never rebuilds. A fused pair's identity is unordered (src/pair.ts); its reconcile
 // content key also carries the displayed compose order, so a swap rebuilds
 // the grid to repaint the name/icon order while the entry stamp stays the
 // same pair — the accepted cost of a name built once. Internal to the
@@ -32,6 +32,8 @@ interface PlanEls {
   /** The Potager's second warning line (fusion-invalid pairs); separate from
    *  the over-limit hint slot. */
   fusionHint: HTMLElement;
+  /** The passive-availability warning line; separate from the other two. */
+  passiveHint: HTMLElement;
   sections: { characters: PlanSectionEls; balls: PlanSectionEls; passives: PlanSectionEls };
 }
 
@@ -104,6 +106,7 @@ export function createPlan({ emitAction, reconcile }: { emitAction: Emit; reconc
     root.innerHTML = `
       <p class="plan-hint" hidden></p>
       <p class="plan-hint plan-fusion-hint" hidden></p>
+      <p class="plan-hint plan-passive-hint" hidden></p>
       ${(['characters', 'balls', 'passives'] as const).map((key) => `
         <section class="plan-section" data-plan="${key}">
           <h2 class="plan-heading"><span class="plan-title">${key[0].toUpperCase() + key.slice(1)}</span> <span class="plan-count"></span></h2>
@@ -122,6 +125,7 @@ export function createPlan({ emitAction, reconcile }: { emitAction: Emit; reconc
     planEls = {
       hint: q('.plan-hint') as HTMLElement,
       fusionHint: q('.plan-fusion-hint') as HTMLElement,
+      passiveHint: q('.plan-passive-hint') as HTMLElement,
       sections: { characters: section('characters'), balls: section('balls'), passives: section('passives') },
     };
   }
@@ -141,6 +145,10 @@ export function createPlan({ emitAction, reconcile }: { emitAction: Emit; reconc
     // message above stays put.
     planEls.fusionHint.textContent = plan.fusionInvalidHint;
     planEls.fusionHint.hidden = !plan.fusionInvalidHint;
+    // Passive availability has its own line too — the over-limit message
+    // above stays put.
+    planEls.passiveHint.textContent = plan.passiveInvalidHint;
+    planEls.passiveHint.hidden = !plan.passiveInvalidHint;
 
     // each section's entries rebuild only when that section's entry set
     // changed — reconcile diffs the entry identities. Every built entry is
@@ -216,7 +224,7 @@ export function createPlan({ emitAction, reconcile }: { emitAction: Emit; reconc
     // their per-component badges below.
     const entryIndex = (grid: HTMLElement) =>
       new Map([...grid.querySelectorAll<HTMLElement>('.plan-entry')].map((el) => [el.dataset.entry ?? '', el]));
-    const repaintEntry = (entry: HTMLElement | undefined, e: { overLimit: boolean; pairInvalid?: boolean; fusionInvalid?: boolean; verdict?: Verdict | null }) => {
+    const repaintEntry = (entry: HTMLElement | undefined, e: { overLimit: boolean; pairInvalid?: boolean; fusionInvalid?: boolean; passiveInvalid?: boolean; invalidReason?: string; verdict?: Verdict | null }) => {
       if (!entry) return;
       entry.classList.toggle('over-limit', e.overLimit);
       // a hydrated Matchmaker-forbidden character pair: kept, marked red —
@@ -225,7 +233,13 @@ export function createPlan({ emitAction, reconcile }: { emitAction: Emit; reconc
       // The Potager cannot fuse: a planned fusing pair is kept and marked
       // red, with the same tooltip as the fusion screen's blocked button
       entry.classList.toggle('fusion-invalid', !!e.fusionInvalid);
-      entry.title = e.fusionInvalid ? POTAGER_FUSION_TITLE : e.pairInvalid ? PAIR_INVALID_TITLE : '';
+      // A passive the selected characters cannot use: kept and marked red,
+      // tooltip names the restriction (allow-list or stat gate)
+      entry.classList.toggle('passive-invalid', !!e.passiveInvalid);
+      entry.title = e.fusionInvalid ? POTAGER_FUSION_TITLE
+        : e.pairInvalid ? PAIR_INVALID_TITLE
+        : e.passiveInvalid ? (e.invalidReason ?? '')
+        : '';
       entry.querySelectorAll('.ind').forEach((b) => b.remove());
       if (e.verdict) entry.appendChild(verdictBadge(e.verdict));
     };

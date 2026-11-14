@@ -1,9 +1,9 @@
 // The build seam, created once per renderer instance: the click→island
 // callback (emit — the island dispatches the named view-state action and
-// paints) and the toast adapter (src/toast.ts), whose verdict lookup reads
-// the latest ViewModel paint() captured — the same verdict the tiles were
-// painted with, so hover and paint cannot disagree and the seam needs no
-// second callback into live view state. Every internal painter reports clicks
+// paints) and the toast adapter (src/toast.ts), whose verdict and passive-
+// availability lookups read the latest ViewModel paint() captured — the same
+// state the tiles were painted with, so hover and paint cannot disagree and
+// the seam needs no second callback into live view state. Every internal painter reports clicks
 // through emitAction and binds hover anchors through attachToast, so the
 // seam has one home and the facade (src/renderer.ts) stays the only public
 // interface. The seam is an instance, not module state: two renderers on one
@@ -46,6 +46,7 @@ export function createSeam({ emit }: SeamOptions): Seam {
   let destroyed = false;
   const toast = createToast({
     getVerdict: (item: Item) => latest?.tiles.get(item.id)?.verdict ?? null,
+    getAvailability: (item: Item) => latest?.tiles.get(item.id)?.availability ?? null,
   });
   return {
     emitAction: (action) => {

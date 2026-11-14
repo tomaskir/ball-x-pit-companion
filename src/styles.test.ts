@@ -170,3 +170,12 @@ describe('global stylesheet', () => {
     expect(shared.length, 'swap and plan buttons share a rule').toBeGreaterThan(0);
   });
 });
+
+describe('passive availability styles', () => {
+  it('styles the dimmed tile, the character-specific badge, the toast reason, and the plan mark', () => {
+    const css = globalCss();
+    for (const selector of ['.tile.unavailable', '.tile .char-lock', '.toast .restriction', '.plan-entry.passive-invalid']) {
+      expect(rulesFor(css, selector).length, `${selector} has a rule`).toBeGreaterThan(0);
+    }
+  });
+});

@@ -566,3 +566,71 @@ describe('plan state: dropHidden (the edition filter\'s no-hidden-live-state rul
     expect(state.derive([]).balls).toHaveLength(0);
   });
 });
+
+describe('plan state: passive availability (character-locked / stat-gated)', () => {
+  const hydratePassives = (state: ReturnType<typeof createPlanState>, passives: string[]) =>
+    state.dispatch({ type: 'hydrate', plan: { upgradesOn: true, balls: [], passives, fused: [] } });
+
+  it('blocks a live add the selected character cannot use', () => {
+    const state = createPlanState();
+    state.dispatch({ type: 'togglePlanItem', id: 'rusted-blade' }, chars('the-shade'));
+    expect(state.derive(chars('the-shade')).passives).toHaveLength(0);
+  });
+
+  it('allows a live add the selected character can use', () => {
+    const state = createPlanState();
+    state.dispatch({ type: 'togglePlanItem', id: 'rusted-blade' }, chars('the-warrior'));
+    expect(state.derive(chars('the-warrior')).passives.map((e) => e.item.id)).toEqual(['rusted-blade']);
+  });
+
+  it('keeps a hydrated invalid passive and marks it red with the reason', () => {
+    const state = createPlanState();
+    hydratePassives(state, ['rusted-blade']);
+    const plan = state.derive(chars('the-shade'));
+    expect(plan.passives).toHaveLength(1);
+    expect(plan.passives[0].passiveInvalid).toBe(true);
+    expect(plan.passives[0].invalidReason).toBe('Only The Warrior can use this.');
+    expect(plan.passiveInvalidHint).toBe("Some passives aren't available to the selected characters — remove the highlighted entries.");
+  });
+
+  it('removal is always allowed, even for an invalid entry', () => {
+    const state = createPlanState();
+    hydratePassives(state, ['rusted-blade']);
+    state.dispatch({ type: 'togglePlanItem', id: 'rusted-blade' }, chars('the-shade'));
+    expect(state.derive(chars('the-shade')).passives).toHaveLength(0);
+  });
+
+  it('marks a stat-gated passive for the excluded character', () => {
+    const state = createPlanState();
+    hydratePassives(state, ['magnet']);
+    const plan = state.derive(chars('the-shieldbearer'));
+    expect(plan.passives[0].passiveInvalid).toBe(true);
+    expect(plan.passives[0].invalidReason).toContain('The Shieldbearer');
+    expect(plan.passives[0].invalidReason).toContain('stat gate');
+  });
+
+  it('uses union semantics: a pair where either can use it stays valid', () => {
+    const state = createPlanState();
+    hydratePassives(state, ['rusted-blade']);
+    const plan = state.derive(chars('the-warrior', 'the-shade'));
+    expect(plan.passives[0].passiveInvalid).toBe(false);
+    expect(plan.passiveInvalidHint).toBe('');
+  });
+
+  it('zero slots marks over-limit, never passive-invalid (S7 refinement)', () => {
+    const state = createPlanState();
+    hydratePassives(state, ['rusted-blade']);
+    const plan = state.derive(chars('the-ballbearer'));
+    expect(plan.passives[0].overLimit).toBe(true);
+    expect(plan.passives[0].passiveInvalid).toBe(false);
+    expect(plan.passiveInvalidHint).toBe('');
+    expect(plan.hint).toBe('The Ballbearer has no passive slots — remove the highlighted passives');
+  });
+
+  it('clears the invalid hint when the offending entry is removed', () => {
+    const state = createPlanState();
+    hydratePassives(state, ['rusted-blade']);
+    state.dispatch({ type: 'togglePlanItem', id: 'rusted-blade' }, chars('the-shade'));
+    expect(state.derive(chars('the-shade')).passiveInvalidHint).toBe('');
+  });
+});

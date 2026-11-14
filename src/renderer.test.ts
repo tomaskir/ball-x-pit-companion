@@ -1094,3 +1094,68 @@ describe('plan build graphs: structural changes still rebuild (jsdom, through pa
     expect(canvas().querySelector('.build-node[data-id="freeze"] img')).not.toBe(img);
   });
 });
+
+// ---------- behavior: passive availability (catalog, toast, plan) ----------
+
+describe('passive availability (jsdom, through paint())', () => {
+  const withDlc = (action: Action): ViewModel =>
+    drive({ type: 'toggleEdition', edition: 'dlc-risen-ballbylon' }, action);
+
+  it('dims an unavailable passive and adds the character-specific badge', () => {
+    withDlc({ type: 'toggleChar', id: 'the-shade' });
+    const tile = document.querySelector<HTMLElement>('#passivesGrid .tile[data-id="rusted-blade"]')!;
+    expect(tile.hidden).toBe(false);
+    expect(tile.classList.contains('unavailable')).toBe(true);
+    const badge = tile.querySelector<HTMLElement>('.char-lock')!;
+    expect(badge).toBeTruthy();
+    expect(badge.title).toBe('Only The Warrior can use this.');
+  });
+
+  it('keeps the tile searchable (dimmed, never hidden)', () => {
+    withDlc({ type: 'toggleChar', id: 'the-shade' });
+    const tile = document.querySelector<HTMLElement>('#passivesGrid .tile[data-id="rusted-blade"]')!;
+    expect(tile.hidden).toBe(false);
+    // the search box still matches it
+    const vm = drive({ type: 'search', section: 'passives', query: 'rusted' });
+    expect(vm.tiles.get('rusted-blade')!.filtered).toBe(false);
+  });
+
+  it('the toast carries the availability reason', () => {
+    withDlc({ type: 'toggleChar', id: 'the-shade' });
+    const tile = document.querySelector<HTMLElement>('#passivesGrid .tile[data-id="rusted-blade"]')!;
+    tile.dispatchEvent(new MouseEvent('mouseenter'));
+    const line = document.querySelector<HTMLElement>('body > .toast .restriction')!;
+    expect(line).toBeTruthy();
+    expect(line.textContent).toBe('Only The Warrior can use this.');
+    tile.dispatchEvent(new MouseEvent('mouseleave'));
+  });
+
+  it('the selection box disables the add and names the restriction', () => {
+    withDlc({ type: 'toggleChar', id: 'the-shade' });
+    drive({ type: 'toggleItem', id: 'rusted-blade' });
+    const box = document.getElementById('selection-passives')!;
+    expect(box.hidden).toBe(false);
+    expect(box.title).toContain('Only The Warrior can use this.');
+    expect(box.querySelector<HTMLButtonElement>('.selection-btn[data-kind="plan"]')!.disabled).toBe(true);
+  });
+
+  it('marks a hydrated invalid passive red with a tooltip and its own hint line', () => {
+    drive({
+      type: 'hydrate',
+      shared: {
+        plan: { upgradesOn: true, balls: [], passives: ['rusted-blade'], fused: [] },
+        chars: ['the-shade'],
+        editions: ['base-game', 'dlc-risen-ballbylon'],
+      },
+    });
+    const entry = planView().querySelector<HTMLElement>('.plan-section[data-plan="passives"] .plan-entry')!;
+    expect(entry.classList.contains('passive-invalid')).toBe(true);
+    expect(entry.title).toBe('Only The Warrior can use this.');
+    const hint = planView().querySelector<HTMLElement>('.plan-passive-hint')!;
+    expect(hint.hidden).toBe(false);
+    expect(hint.textContent).toBe("Some passives aren't available to the selected characters — remove the highlighted entries.");
+    // the over-limit and fusion hint slots stay separate
+    expect(planQ('.plan-hint').hidden).toBe(true);
+    expect(planQ('.plan-fusion-hint').hidden).toBe(true);
+  });
+});
