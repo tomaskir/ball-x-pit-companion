@@ -98,6 +98,25 @@ describe('passive availability: base-game stat gates', () => {
     }
   });
 
+  it('propagates a stat gate through evolution (the component must be obtainable)', () => {
+    // Wings of the Anointed = Radiant Feather + Fleet Feet.
+    expect(availability('wings-of-the-anointed', ['the-shieldbearer']).blocked).toBe(true);
+    expect(availability('wings-of-the-anointed', ['the-tactician']).blocked).toBe(true);
+    expect(availability('wings-of-the-anointed', ['the-warrior']).blocked).toBe(false);
+    // Remote Detonator = Pressure Valve + Magnet.
+    expect(availability('remote-detonator', ['the-shieldbearer']).blocked).toBe(true);
+    expect(availability('remote-detonator', ['the-warrior']).blocked).toBe(false);
+    // Inglorious Hammer = Platinum Dumbbell + Upturned Hatchet.
+    expect(availability('inglorious-hammer', ['the-physicist']).blocked).toBe(true);
+    expect(availability('inglorious-hammer', ['the-warrior']).blocked).toBe(false);
+  });
+
+  it('does not propagate the DLC allow-list through the stat-gate walk (Handheld Rupture override survives)', () => {
+    // Fractured Boulder is Sisyphus-only, but the override widens the result
+    // to Wallbreaker; the stat-gate walk must not narrow it back.
+    expect(availability('handheld-rupture', ['the-wallbreaker']).blocked).toBe(false);
+  });
+
   it('uses union semantics across two selected characters', () => {
     // Shieldbearer is excluded; Warrior is not — the pair may use it.
     expect(availability('magnet', ['the-shieldbearer', 'the-warrior']).blocked).toBe(false);

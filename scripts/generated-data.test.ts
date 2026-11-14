@@ -185,7 +185,7 @@ describe('the checked-in generated files are exactly what the fact bases emit', 
   }
 });
 
-describe('passive allow-lists: emit, derive, and validate (T24 / #50)', () => {
+describe('passive allow-lists: emit, derive, and validate', () => {
   const sources = {
     mechanics: readFileSync(new URL('../docs/research/game-mechanics.md', import.meta.url), 'utf8'),
     pairings: readFileSync(new URL('../docs/research/character-pairings.md', import.meta.url), 'utf8'),
@@ -244,10 +244,11 @@ describe('passive allow-lists: emit, derive, and validate (T24 / #50)', () => {
     expect(validateGenerated(data, EDITORIAL).some((f) => f.startsWith('passive vampires-kiss: allow-list'))).toBe(true);
   });
 
-  it('rejects a wrong Handheld Rupture override (the one documented exception)', () => {
+  it('skips the intersection check for the documented Handheld Rupture override', () => {
+    // The override is authored, not derived; the data test pins its value.
     const data = real();
     passive(data, 'handheld-rupture').characterIds = ['the-makeshift-sisyphus'];
-    expect(validateGenerated(data, EDITORIAL).some((f) => f.startsWith('passive handheld-rupture: allow-list'))).toBe(true);
+    expect(validateGenerated(data, EDITORIAL).some((f) => f.startsWith('passive handheld-rupture: allow-list'))).toBe(false);
   });
 
   it('keeps the two mechanisms separate: no DLC allow-list on base passives, no stat gates on DLC passives', () => {

@@ -62,13 +62,13 @@ export interface PlanCharState { character: Character; overLimit: boolean; pairI
 /** One passive in the plan: the resolved item (renderer never re-resolves),
  *  its verdict against the selected characters, the over-limit mark, and the
  *  passive-availability mark (character-locked or stat-gated; kept, never
- *  trimmed). `invalidReason` is the tooltip line for the red mark. */
+ *  trimmed). `availabilityReason` is the tooltip line (used when invalid). */
 export interface PlanEntryState {
   item: Item;
   overLimit: boolean;
   verdict: Verdict | null;
   passiveInvalid: boolean;
-  invalidReason: string;
+  availabilityReason: string;
 }
 /** One single ball in the plan's merged ball grid. */
 export interface PlanSingleState { kind: 'single'; item: Ball; overLimit: boolean; verdict: Verdict | null; }
@@ -267,13 +267,17 @@ export function createPlanState() {
     // section a quirk owns, so that hint names the quirk instead. Read before
     // the passive entries because the zero-slots reason comes from the rule.
     const slotRule = selectedSlotRule(selectedChars);
+    /** One passive's availability under the derived selection and limits —
+     *  the one context literal the entries read. */
+    const availabilityOf = (passive: Passive) =>
+      passiveAvailability(passive, {
+        selectedChars,
+        passiveSlots: limits.passives,
+        zeroSlotsReason: slotRule?.passivesEmptyHint ?? null,
+      });
     const planPassivesState = planPassiveItems
       .map((item) => {
-        const availability = passiveAvailability(item, {
-          selectedChars,
-          passiveSlots: limits.passives,
-          zeroSlotsReason: slotRule?.passivesEmptyHint ?? null,
-        });
+        const availability = availabilityOf(item);
         return {
           item,
           overLimit: false,
@@ -281,7 +285,7 @@ export function createPlanState() {
           // Character-locked / stat-gated entries are kept and marked red.
           // Zero slots is the capacity's mark (over-limit), never this one.
           passiveInvalid: availability.blocked,
-          invalidReason: availability.reason,
+          availabilityReason: availability.reason,
         };
       })
       .sort((x, y) => complexity(y.item, passiveMap) - complexity(x.item, passiveMap))
@@ -338,6 +342,8 @@ export function createPlanState() {
             const passive = passiveMap.get(action.id);
             if (passive) {
               const limits = activeLimits();
+              // The zero-slots reason is display-only; the guard reads
+              // `blocked` (capacity owns the zero-slot case).
               if (passiveAvailability(passive, { selectedChars: currentChars, passiveSlots: limits.passives }).blocked) break;
             }
           }

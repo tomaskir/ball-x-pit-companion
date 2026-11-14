@@ -224,7 +224,7 @@ export function createPlan({ emitAction, reconcile }: { emitAction: Emit; reconc
     // their per-component badges below.
     const entryIndex = (grid: HTMLElement) =>
       new Map([...grid.querySelectorAll<HTMLElement>('.plan-entry')].map((el) => [el.dataset.entry ?? '', el]));
-    const repaintEntry = (entry: HTMLElement | undefined, e: { overLimit: boolean; pairInvalid?: boolean; fusionInvalid?: boolean; passiveInvalid?: boolean; invalidReason?: string; verdict?: Verdict | null }) => {
+    const repaintEntry = (entry: HTMLElement | undefined, e: { overLimit: boolean; pairInvalid?: boolean; fusionInvalid?: boolean; passiveInvalid?: boolean; availabilityReason?: string; verdict?: Verdict | null }) => {
       if (!entry) return;
       entry.classList.toggle('over-limit', e.overLimit);
       // a hydrated Matchmaker-forbidden character pair: kept, marked red —
@@ -238,7 +238,7 @@ export function createPlan({ emitAction, reconcile }: { emitAction: Emit; reconc
       entry.classList.toggle('passive-invalid', !!e.passiveInvalid);
       entry.title = e.fusionInvalid ? POTAGER_FUSION_TITLE
         : e.pairInvalid ? PAIR_INVALID_TITLE
-        : e.passiveInvalid ? (e.invalidReason ?? '')
+        : e.passiveInvalid ? (e.availabilityReason ?? '')
         : '';
       entry.querySelectorAll('.ind').forEach((b) => b.remove());
       if (e.verdict) entry.appendChild(verdictBadge(e.verdict));

@@ -1034,7 +1034,7 @@ describe('view state: passive availability (catalog + selection box)', () => {
     const view = withDlc();
     const vm = view.dispatch({ type: 'toggleChar', id: 'the-shade' });
     const tile = vm.tiles.get('rusted-blade')!;
-    expect(tile.unavailable).toBe(true);
+    expect(tile.availability!.unavailable).toBe(true);
     expect(tile.hidden).toBe(false);
     expect(tile.availability!.characterSpecific).toBe(true);
     expect(tile.availability!.reason).toBe('Only The Warrior can use this.');
@@ -1043,22 +1043,30 @@ describe('view state: passive availability (catalog + selection box)', () => {
   it('does not dim anything with zero characters selected', () => {
     const view = withDlc();
     const vm = view.derive();
-    expect(vm.tiles.get('rusted-blade')!.unavailable).toBe(false);
+    expect(vm.tiles.get('rusted-blade')!.availability!.unavailable).toBe(false);
     // the badge/allow-list reason still rides the tile
     expect(vm.tiles.get('rusted-blade')!.availability!.characterSpecific).toBe(true);
+  });
+
+  it('hidden content carries no availability state (the edition filter runs first)', () => {
+    const view = createViewState(); // base-game only; rusted-blade is DLC
+    const vm = view.dispatch({ type: 'toggleChar', id: 'the-warrior' });
+    const tile = vm.tiles.get('rusted-blade')!;
+    expect(tile.hidden).toBe(true);
+    expect(tile.availability).toBeNull();
   });
 
   it('never marks a ball unavailable', () => {
     const view = withDlc();
     const vm = view.dispatch({ type: 'toggleChar', id: 'the-shade' });
-    expect(vm.tiles.get('flash')!.unavailable).toBe(false);
+    expect(vm.tiles.get('flash')!.availability).toBeNull();
     expect(vm.tiles.get('flash')!.availability).toBeNull();
   });
 
   it('dims a stat-gated passive for the excluded character', () => {
     const view = createViewState();
     const vm = view.dispatch({ type: 'toggleChar', id: 'the-shieldbearer' });
-    expect(vm.tiles.get('magnet')!.unavailable).toBe(true);
+    expect(vm.tiles.get('magnet')!.availability!.unavailable).toBe(true);
     expect(vm.tiles.get('magnet')!.availability!.reason).toContain('stat gate');
   });
 
@@ -1096,7 +1104,7 @@ describe('view state: passive availability (catalog + selection box)', () => {
     expect(box.planReason).toBe('The Ballbearer has no passive slots.');
     // every passive tile is dimmed by the zero-slot limit, but none is
     // marked passive-invalid (the plan has no entries)
-    expect(vm.tiles.get('wagon-wheel')!.unavailable).toBe(true);
+    expect(vm.tiles.get('wagon-wheel')!.availability!.unavailable).toBe(true);
     expect(vm.plan.passiveInvalidHint).toBe('');
   });
 });

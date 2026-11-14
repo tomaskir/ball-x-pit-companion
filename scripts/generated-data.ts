@@ -63,37 +63,50 @@ export interface GeneratedData {
 }
 
 /**
- * The effective DLC allow-list for every passive, keyed by id. Base passives
- * carry the authored list; an evolved passive inherits the intersection of
- * its components' lists (a component without one is universal), unioned
- * across alternate recipes. The documented Handheld Rupture override widens
- * the intersection. A passive with no character-locked component has no
- * allow-list (undefined).
+ * The allow-list a passive's recipes imply: intersection within a recipe,
+ * union across alternate recipes; a recipe with no character-locked
+ * component is universal. One definition, shared by the emitter and the
+ * validator (the validator recomputes from the emitted data).
  */
-export function derivePassiveAllowLists(passives: readonly ParsedPassive[]): Map<string, string[] | undefined> {
+function recipesAllowList(
+  recipes: readonly string[][],
+  resolve: (id: string) => string[] | undefined,
+): string[] | undefined {
+  let result: string[] | undefined;
+  for (const recipe of recipes) {
+    const lists = recipe.map(resolve).filter((list): list is string[] => list !== undefined);
+    // A recipe with no character-locked component is universal, so the
+    // passive is unrestricted regardless of its other recipes.
+    if (lists.length === 0) return undefined;
+    const intersection = lists.reduce((acc, list) => acc.filter((componentId) => list.includes(componentId)));
+    result = result === undefined ? [...intersection] : [...new Set([...result, ...intersection])];
+  }
+  return result;
+}
+
+/**
+ * The effective DLC allow-list for every passive, keyed by id. Base passives
+ * carry the authored list; an evolved passive inherits the components'
+ * intersection, unioned across alternate recipes. The documented Handheld
+ * Rupture override is authored (`allowListOverride`) and wins outright. A
+ * passive with no character-locked component has no allow-list (undefined).
+ */
+function derivePassiveAllowLists(passives: readonly ParsedPassive[]): Map<string, string[] | undefined> {
   const byId = new Map(passives.map((p) => [slug(p.name), p]));
   const memo = new Map<string, string[] | undefined>();
+  const visiting = new Set<string>();
   const resolve = (id: string): string[] | undefined => {
     if (memo.has(id)) return memo.get(id);
+    if (visiting.has(id)) return undefined; // defensive: the graph is acyclic
     const passive = byId.get(id);
     if (!passive) return undefined;
-    let result: string[] | undefined;
-    if (passive.allowListOverride) result = [...passive.allowListOverride];
-    else if (passive.characterIds) result = [...passive.characterIds];
-    else if (passive.recipes.length === 0) result = undefined;
-    else {
-      let union: string[] | undefined;
-      let unrestricted = false;
-      for (const recipe of passive.recipes) {
-        const lists = recipe.map(resolve).filter((list): list is string[] => list !== undefined);
-        // A recipe with no character-locked component is universal; the
-        // passive is then unrestricted regardless of its other recipes.
-        if (lists.length === 0) { unrestricted = true; break; }
-        const intersection = lists.reduce((acc, list) => acc.filter((componentId) => list.includes(componentId)));
-        union = union === undefined ? [...intersection] : [...new Set([...union, ...intersection])];
-      }
-      result = unrestricted ? undefined : union;
-    }
+    visiting.add(id);
+    const result = passive.allowListOverride
+      ? [...passive.allowListOverride]
+      : passive.characterIds
+        ? [...passive.characterIds]
+        : recipesAllowList(passive.recipes, resolve);
+    visiting.delete(id);
     memo.set(id, result);
     return result;
   };
@@ -302,30 +315,18 @@ export function validateGenerated(data: GeneratedData, editorial: EditorialMaps)
   // Passive availability: the DLC allow-list and the base-game stat-gate
   // exclusions are separate mechanisms, both resolving to characters.
   // Evolved passives derive the components' intersection (unioned across
-  // alternate recipes); Handheld Rupture is the documented override, whose
-  // allow-list is the union of its components' lists.
+  // alternate recipes); Handheld Rupture is the documented authored override,
+  // so the intersection check is skipped for it.
   const passiveById = new Map(data.passives.map((p) => [p.id, p]));
   const expectedAllowList = new Map<string, string[] | undefined>();
+  const visiting = new Set<string>();
   const expectedFor = (id: string): string[] | undefined => {
     if (expectedAllowList.has(id)) return expectedAllowList.get(id);
+    if (visiting.has(id)) return undefined; // defensive: the graph is acyclic
     const p = passiveById.get(id);
-    if (!p) return undefined;
-    let result: string[] | undefined;
-    if (p.depth === 0) result = p.characterIds;
-    else {
-      const perRecipe = p.recipes.map((recipe) =>
-        recipe.map(expectedFor).filter((list): list is string[] => list !== undefined),
-      );
-      // A recipe with no character-locked component is universal.
-      if (perRecipe.some((lists) => lists.length === 0)) result = undefined;
-      else if (id === 'handheld-rupture') result = [...new Set(perRecipe.flat().flat())];
-      else {
-        const intersections = perRecipe.map((lists) =>
-          lists.reduce((acc, list) => acc.filter((componentId) => list.includes(componentId))),
-        );
-        result = [...new Set(intersections.flat())];
-      }
-    }
+    visiting.add(id);
+    const result = !p ? undefined : p.depth === 0 ? p.characterIds : recipesAllowList(p.recipes, expectedFor);
+    visiting.delete(id);
     expectedAllowList.set(id, result);
     return result;
   };
@@ -349,7 +350,8 @@ export function validateGenerated(data: GeneratedData, editorial: EditorialMaps)
     if (p.edition !== 'base-game' && p.excludedCharacterIds) {
       findings.push(`DLC passive ${p.id}: unexpected stat-gate exclusions`);
     }
-    if (p.depth > 0 && !sameIds(p.characterIds, expectedFor(p.id))) {
+    // The documented Handheld Rupture override is authored, not derived.
+    if (p.depth > 0 && p.id !== 'handheld-rupture' && !sameIds(p.characterIds, expectedFor(p.id))) {
       findings.push(`passive ${p.id}: allow-list ${JSON.stringify(p.characterIds)} != expected ${JSON.stringify(expectedFor(p.id))}`);
     }
   }

@@ -115,7 +115,7 @@ export function createGrids({ emitAction, attachToast }: PainterSeam): Grids {
       else if (t.dimmed) tile.classList.add('dimmed');
       if (t.filtered) tile.classList.add('filtered');
       // passive availability: dimmed, not hidden — the tile stays searchable
-      if (t.unavailable) tile.classList.add('unavailable');
+      if (t.availability?.unavailable) tile.classList.add('unavailable');
 
       // verdict badge: replace in place (cheap, no img recreation)
       tile.querySelector('.ind')?.remove();

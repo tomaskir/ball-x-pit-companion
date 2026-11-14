@@ -6,7 +6,9 @@
 //   listed characters; evolved passives inherit the components' intersection
 //   (Handheld Rupture is the documented override);
 // - the base-game character-stat gate (`excludedCharacterIds`): a hard
-//   offer-pool exclusion authored from the datamined stat/prop table.
+//   offer-pool exclusion authored from the datamined stat/prop table. It
+//   propagates through evolution (the component must be obtainable), even
+//   though the game's `CanBeUsed` recursion does not re-check it.
 //
 // Selection semantics are the game's `CanBeUsed()`: usable by the active
 // character or any combined type, so with two selected characters a passive
@@ -24,6 +26,7 @@
 import type { Passive } from './data/passives';
 import type { Character } from './data/characters';
 import { CHARACTERS } from './data/characters';
+import { passiveMap } from './catalog';
 
 /** The character-specific badge applies to every DLC passive (base and
  *  evolved): the allow-list is the game's `IsCharSpecific` marker. */
@@ -74,6 +77,43 @@ const namesOf = (ids: readonly string[]): string[] => ids.map((id) => characterN
 const hasZeroSlots = ({ selectedChars, passiveSlots }: AvailabilityContext): boolean =>
   selectedChars.length > 0 && passiveSlots <= 0;
 
+/**
+ * Whether a character is stat-gate-excluded from a passive, recursively
+ * through evolution. The game's `CanBeUsed(ct)` recursion does not re-check
+ * the stat gate, but the component must still be obtainable before the
+ * evolution is possible (the gate propagates through ownership), so an
+ * evolved passive is excluded when every recipe has an excluded component.
+ *
+ * Only the stat gate propagates here. The evolved passive's own
+ * `characterIds` already encodes the allow-list intersection (and the
+ * Handheld Rupture override), so re-walking components' allow-lists would
+ * wrongly narrow the override.
+ */
+function statGateExcluded(
+  characterId: string,
+  passive: Passive,
+  memo: Map<string, boolean>,
+  visiting: Set<string>,
+): boolean {
+  const key = `${characterId}\u0000${passive.id}`;
+  const cached = memo.get(key);
+  if (cached !== undefined) return cached;
+  if (visiting.has(key)) return false; // defensive: the graph is acyclic
+  visiting.add(key);
+  let excluded = passive.excludedCharacterIds?.includes(characterId) ?? false;
+  if (!excluded && passive.recipes.length > 0) {
+    excluded = passive.recipes.every((recipe) =>
+      recipe.some((componentId) => {
+        const component = passiveMap.get(componentId);
+        return component !== undefined && statGateExcluded(characterId, component, memo, visiting);
+      }),
+    );
+  }
+  visiting.delete(key);
+  memo.set(key, excluded);
+  return excluded;
+}
+
 export function passiveAvailability(passive: Passive, context: AvailabilityContext): PassiveAvailability {
   const { selectedChars } = context;
   const characterSpecific = isCharacterSpecific(passive);
@@ -95,27 +135,27 @@ export function passiveAvailability(passive: Passive, context: AvailabilityConte
     };
   }
 
+  // Combine the two mechanisms per character, then apply the union rule: the
+  // passive is available if either selected character can use it. Combining
+  // per character (not per mechanism) keeps a character who fails one gate
+  // from counting as "able to use it" under the other.
+  const memo = new Map<string, boolean>();
+  const allowListed = (character: Character): boolean =>
+    !characterSpecific || passive.characterIds!.includes(character.id);
+  const statBlocked = (character: Character): boolean =>
+    statGateExcluded(character.id, passive, memo, new Set());
+  const canUse = (character: Character): boolean => allowListed(character) && !statBlocked(character);
+  const blocked = selectedChars.length > 0 && !selectedChars.some(canUse);
+
   const reasons: string[] = [];
-  let blocked = false;
-
-  // DLC allow-list: the allowed characters are always worth listing (the
-  // badge/tooltip); blocked only when every selected character is outside it.
-  if (characterSpecific) {
-    const canUse = selectedChars.length === 0 || selectedChars.some((c) => passive.characterIds!.includes(c.id));
-    if (!canUse) blocked = true;
-    reasons.push(characterLockReason);
+  // The allowed characters are always worth listing (the badge/tooltip).
+  if (characterSpecific) reasons.push(characterLockReason);
+  // Name the stat gate only when the allow-list does not already explain the
+  // block (a DLC passive outside every selected character's allow-list needs
+  // no second reason).
+  if (blocked && selectedChars.every(statBlocked) && (!characterSpecific || selectedChars.some(allowListed))) {
+    reasons.push(`${formatNames(selectedChars.map((c) => c.name))} can't use this (character stat gate).`);
   }
-
-  // Base-game stat gate: blocked only when every selected character is excluded.
-  if (passive.excludedCharacterIds && passive.excludedCharacterIds.length > 0) {
-    const excluded = passive.excludedCharacterIds;
-    const canUse = selectedChars.length === 0 || selectedChars.some((c) => !excluded.includes(c.id));
-    if (!canUse) {
-      blocked = true;
-      reasons.push(`${formatNames(selectedChars.map((c) => c.name))} can't use this (character stat gate).`);
-    }
-  }
-
   // Loadout gate: informational only.
   if (passive.requirement) reasons.push(`Requirement: ${passive.requirement}`);
 

@@ -589,7 +589,7 @@ describe('plan state: passive availability (character-locked / stat-gated)', () 
     const plan = state.derive(chars('the-shade'));
     expect(plan.passives).toHaveLength(1);
     expect(plan.passives[0].passiveInvalid).toBe(true);
-    expect(plan.passives[0].invalidReason).toBe('Only The Warrior can use this.');
+    expect(plan.passives[0].availabilityReason).toBe('Only The Warrior can use this.');
     expect(plan.passiveInvalidHint).toBe("Some passives aren't available to the selected characters — remove the highlighted entries.");
   });
 
@@ -605,8 +605,8 @@ describe('plan state: passive availability (character-locked / stat-gated)', () 
     hydratePassives(state, ['magnet']);
     const plan = state.derive(chars('the-shieldbearer'));
     expect(plan.passives[0].passiveInvalid).toBe(true);
-    expect(plan.passives[0].invalidReason).toContain('The Shieldbearer');
-    expect(plan.passives[0].invalidReason).toContain('stat gate');
+    expect(plan.passives[0].availabilityReason).toContain('The Shieldbearer');
+    expect(plan.passives[0].availabilityReason).toContain('stat gate');
   });
 
   it('uses union semantics: a pair where either can use it stays valid', () => {
@@ -617,7 +617,7 @@ describe('plan state: passive availability (character-locked / stat-gated)', () 
     expect(plan.passiveInvalidHint).toBe('');
   });
 
-  it('zero slots marks over-limit, never passive-invalid (S7 refinement)', () => {
+  it('zero slots marks over-limit, never passive-invalid', () => {
     const state = createPlanState();
     hydratePassives(state, ['rusted-blade']);
     const plan = state.derive(chars('the-ballbearer'));

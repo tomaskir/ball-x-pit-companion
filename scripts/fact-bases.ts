@@ -84,18 +84,17 @@ function editionOf(row: TableRow): Edition {
   return raw as Edition;
 }
 
-/** A cell's comma-separated display names → slugs. Blank and the fact base's
- *  em-dash placeholder mean "no restriction". */
-function nameList(cell: string | undefined): string[] {
-  const raw = (cell ?? '').trim();
-  if (raw === '' || raw === '—' || raw === '-') return [];
-  return raw.split(',').map((name) => slug(clean(name))).filter((id) => id.length > 0);
-}
-
-/** A free-text requirement cell; blank and em-dash mean none. */
-function requirementOf(cell: string | undefined): string | undefined {
+/** A cell's value, or undefined for blank and the fact base's em-dash
+ *  placeholder ("no restriction"). */
+function cellOrNone(cell: string | undefined): string | undefined {
   const raw = (cell ?? '').trim();
   return raw === '' || raw === '—' || raw === '-' ? undefined : clean(raw);
+}
+
+/** A cell's comma-separated display names → slugs. */
+function nameList(cell: string | undefined): string[] {
+  const raw = cellOrNone(cell);
+  return raw === undefined ? [] : raw.split(',').map((name) => slug(name)).filter((id) => id.length > 0);
 }
 
 /**
@@ -247,7 +246,7 @@ export function parseGameMechanics(md: string): {
       recipes: [],
       effect: clean(column(row, 'Effect text (wiki)')),
       edition: editionOf(row),
-      requirement: requirementOf(row['Appearance requirement']),
+      requirement: cellOrNone(row['Appearance requirement']),
     });
   }
   // Evolved passives (depth 1|2): Passive | Recipe | Effect text — same
@@ -274,8 +273,13 @@ export function parseGameMechanics(md: string): {
   // and base-game character-stat gate exclusions. Loadout gates ride the
   // base table's Appearance requirement column, parsed above.
   const byPassiveName = new Map(passives.map((p) => [p.name, p]));
-  // Optional: synthetic fact bases in the parser tests omit the table.
-  if (md.includes('| Passive | Character(s) | Excluded characters |')) {
+  const hasRestrictionTable = md.includes('| Passive | Character(s) | Excluded characters |');
+  // A real fact base with DLC passives must carry the table; synthetic parser
+  // docs may omit it (they have no DLC passives).
+  if (!hasRestrictionTable && passives.some((p) => p.edition !== 'base-game')) {
+    throw new Error('passive restriction table missing (DLC passives need an allow-list)');
+  }
+  if (hasRestrictionTable) {
     for (const row of parseMarkdownTable(md, /^\| Passive \| Character\(s\) \| Excluded characters \|/, 'passive restriction table')) {
       const name = clean(column(row, 'Passive'));
       const passive = byPassiveName.get(name);

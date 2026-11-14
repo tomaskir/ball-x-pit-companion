@@ -90,8 +90,9 @@ Other wiki terms used verbatim: **Base Balls** (21), **Baby Ball** (not special)
   table's header cells (`column(row, 'Effect text (wiki)')`) — parsers name
   the columns they read instead of hardcoding indices.
 - **Generated-data contract** — `scripts/generated-data.ts`: `emitData`
-  (parsed + editorial → in-memory data), `renderGenerated` (data → the six
-  file contents), and `validateGenerated` (the one invariant list). The
+  (parsed + editorial → in-memory data, including the passive allow-list
+  derivation), `renderGenerated` (data → the six file contents), and
+  `validateGenerated` (the one invariant list). The
   editorial maps' own contract lives with the model: `validateEditorial`
   (`scripts/editorial.ts`) checks bidirectional entity coverage, the tag
   vocabulary, verdict-rule sanity, and wildcard uniqueness; `validateGenerated`

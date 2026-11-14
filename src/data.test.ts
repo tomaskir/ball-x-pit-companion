@@ -262,7 +262,7 @@ describe('ball kit table agrees with the level-3 overlay', () => {
   });
 });
 
-describe('passive availability data (T24 / #50)', () => {
+describe('passive availability data', () => {
   const byId = new Map(PASSIVES.map((p) => [p.id, p]));
 
   it('every DLC passive carries a non-empty allow-list', () => {

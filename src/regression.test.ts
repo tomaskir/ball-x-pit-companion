@@ -753,7 +753,7 @@ describe('regression: The Potager cannot fuse balls normally (fusion-invalid pai
   });
 });
 
-describe('regression: per-character passive restrictions (datamined v1.308, #50)', () => {
+describe('regression: per-character passive restrictions (datamined v1.308)', () => {
   // The old community leads in docs/research/passive-availability.md were
   // reconciled against the datamine in character-passive-restrictions.md.
   // One named test per lead: refuted leads must not block, confirmed leads

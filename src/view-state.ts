@@ -67,8 +67,8 @@ export interface TileState {
   hidden: boolean;
   verdict: Verdict | null;
   /** Passive availability under the selected characters: dimmed (not hidden)
-   *  and, for character-locked passives, badged. Always false/null for balls. */
-  unavailable: boolean;
+   *  and, for character-locked passives, badged. Null for balls and for
+   *  edition-hidden content (the filter runs first). */
   availability: PassiveAvailability | null;
 }
 /** One character card. `blocked` is a Matchmaker pairing restriction (game
@@ -310,30 +310,33 @@ export function createViewState({ editions }: ViewStateOptions = {}) {
     // not a per-passive rule).
     const planState = plan.derive(chars);
     const limits = planState.limits;
+    /** One passive's availability under the current selection and limits —
+     *  the one context literal both the tiles and the selection box read. */
+    const availabilityOf = (passive: Passive): PassiveAvailability =>
+      passiveAvailability(passive, {
+        selectedChars: chars,
+        passiveSlots: limits.passives,
+        zeroSlotsReason: planState.passivesEmptyHint,
+      });
     // each namespace filters against its own screen's query — one loop shape,
     // two (collection, query) pairs; the graphs themselves stay separate.
-    // `hidden` is the edition filter: hidden content is not painted at all.
+    // `hidden` is the edition filter: hidden content is not painted at all
+    // and carries no availability state (the filter runs first).
     // Passives additionally carry their availability under the selection
     // (dimmed, not hidden; searchable).
     for (const [items, q] of [[BALLS, ballQ], [PASSIVES, passiveQ]] as const) {
       for (const item of items) {
         const v = verdictFor(item, chars);
-        const availability = isPassive(item.id)
-          ? passiveAvailability(item as Passive, {
-              selectedChars: chars,
-              passiveSlots: limits.passives,
-              zeroSlotsReason: planState.passivesEmptyHint,
-            })
-          : null;
+        const hidden = !isEditionEnabled(enabledEditions, item.edition);
+        const passive = isPassive(item.id) ? passiveMap.get(item.id) : undefined;
         tiles.set(item.id, {
           selected: selectedId === item.id,
           related: !!selectedId && selectedId !== item.id && related.has(item.id),
           dimmed: !!selectedId && !related.has(item.id),
           filtered: !!q && !(item.name.toLowerCase().includes(q) || item.effects.toLowerCase().includes(q)),
-          hidden: !isEditionEnabled(enabledEditions, item.edition),
+          hidden,
           verdict: v,
-          unavailable: availability?.unavailable ?? false,
-          availability,
+          availability: !hidden && passive ? availabilityOf(passive) : null,
         });
       }
     }
@@ -379,13 +382,8 @@ export function createViewState({ editions }: ViewStateOptions = {}) {
     // A selected passive's availability drives the "Add to plan" disable and
     // its tooltip; the capacity check still owns the zero-slot case (which
     // the availability object reports as a reason).
-    const selectedAvailability = selected && selectedIsPassive
-      ? passiveAvailability(selected as Passive, {
-          selectedChars: chars,
-          passiveSlots: limits.passives,
-          zeroSlotsReason: planState.passivesEmptyHint,
-        })
-      : null;
+    const selectedPassive = selected && selectedIsPassive ? passiveMap.get(selected.id) : undefined;
+    const selectedAvailability = selectedPassive ? availabilityOf(selectedPassive) : null;
     const atCapacity = (selectedIsPassive ? planState.counts.passives : planState.counts.balls) >= (selectedIsPassive ? limits.passives : limits.balls);
     const planLabel: SelectionBoxState['plan'] =
       inPlan ? 'remove'
