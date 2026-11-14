@@ -9,10 +9,12 @@ DLC balls.
 
 **Researched:** 2026-11-11 (source-only; no playtest capability) for the 90
 pre-DLC rows, **reported** from the wiki's per-level tables; 2026-11-14 for the
-24 DLC rows, from the v1.308 datamine (extracted 2026-11-13). Neither is
+24 DLC rows, from the v1.308 datamine (extracted 2026-11-13); 2026-11-14 for the
+T20 refresh of the 90 existing rows against that same datamine. None of it is
 playtest-verified.
 **Version tag:** v1.301 / v1.5 (Naturalist update), pre-DLC, for the original
-90 rows; *Risen Ballbylon* v1.308 for the 24 DLC rows.
+90 rows, refreshed against *Risen Ballbylon* v1.308 (two value corrections);
+*Risen Ballbylon* v1.308 for the 24 DLC rows.
 **Decision labels:** S3 = fusion model spec
 ([#29](https://github.com/tomaskir/ball-x-pit-companion/issues/29)); S4 =
 onboarding contract
@@ -31,9 +33,11 @@ Strategies/Trivia, not the level tables.
 IL2CPP), extracted 2026-11-13 from `game-data/BALLxPIT/`; the decoded package
 (`game-data/extracted/`) is not committed.
 
-Rows for the 24 DLC balls are from the v1.308 datamine; all other rows are wiki
-v1.301. DLC values are normalized to display units with the field-specific
-divisors in `docs/research/risen-l3-refresh.md` §5 — never a blanket ÷10.
+Rows for the 24 DLC balls are from the v1.308 datamine. The 90 existing rows
+were validated row-for-row against the same datamine (T20 / #46): 88 keep the
+wiki v1.301 text, 2 take the datamined value (§6). All datamined values are
+normalized to display units with the field-specific divisors in
+`docs/research/risen-l3-refresh.md` §5 — never a blanket ÷10.
 
 **Method:** `action=cargoquery&tables=BallStatsByLevel` for all 270 rows
 (90 balls × 3 levels), cross-checked row-for-row against the `{{BallStat|3|…}}`
@@ -97,7 +101,7 @@ level 1; 3 have no L3 diff (Elemental, Ghost, Water Bug); 1 has no table
 | Glacier | Releases glacial spikes over time that deal 25–40 to enemies that touch them and freeze them for 3.0 seconds. This ball and its glacial spikes also deal 6–12 damage to nearby units. | — |
 | Heart Swallower | Saps enemies on hit, with a 70% chance of stealing 1 health and reducing their attack damage by 40%. Lifesteal chance only applies once per enemy. | — |
 | Hedgehog | Inflicts 5 stacks of bleed (max 14 stacks) and emits 2–4 spiky baby balls on hitting an enemy. | DLC. `Max` → `max`. |
-| Hemorrhage | Inflicts 4 stacks of bleed. When hitting an enemy with 12 stacks of bleed or more, consumes all stacks of bleed to deal 30% of their current health. | — |
+| Hemorrhage | Inflicts 4 stacks of bleed. When hitting an enemy with 12 stacks of bleed or more, consumes all stacks of bleed to deal 20% of their current health. | Datamined v1.308: 20% (wiki v1.301 said 30%); see §6. |
 | Holy Laser | Deals 30–60 damage to all enemies in the same row and column. | — |
 | Incubus | Each hit has a 5% chance of charming the enemy for 9 seconds. Charmed enemies curse nearby enemies. Cursed enemies are dealt 150–250 after being hit 5 times. | — |
 | Inferno | Applies 1 stack of burn every second to all enemies within a 2 tile radius. Burn lasts for 10 seconds, dealing 6–10 damage per stack per second. | — |
@@ -157,7 +161,7 @@ level 1; 3 have no L3 diff (Elemental, Ghost, Water Bug); 1 has no table
 | Tsunami | Goes through enemies and deals 90–170 damage in a large area, but is destroyed upon hitting an edge of the field. | — |
 | Tumor | Applies tumor on hit. Enemies with a tumor die after 30 seconds (except for bosses). | — |
 | Vampire | Each hit has a 6% chance of healing 2 health. | — |
-| Vampire Lord | Each hit inflicts 3 stacks of bleed. Heals 1 health and consumes all stacks when hitting an enemy with at least 9 stacks of bleed. | L3 threshold 10 → 9. |
+| Vampire Lord | Each hit inflicts 4 stacks of bleed. Heals 1 health and consumes all stacks when hitting an enemy with at least 9 stacks of bleed. | L3 threshold 10 → 9. Datamined v1.308: 4 stacks (wiki v1.301 said 3); see §6. |
 | Venom | Applies 1 stack of venom on hit (max 12 stacks). Each stack deals 4–7 damage per second and slows down enemies. | — |
 | Virus | Applies 1 stack of disease to units it hits (max 8 stacks). Disease lasts for 6 seconds. Each stack of disease deals 5–9 damage per second and diseased units have a 25% chance of passing a stack to undiseased nearby enemies each second. | — |
 | Voluptuous Egg Sac | Explodes into 3–4 egg sacs on hitting an enemy. Has a 3 second cooldown before it can be shot again. | — |
@@ -319,7 +323,41 @@ Wording normalizations applied to the DLC rows:
 Uncertain values stay unmarked in the effect cell; the caveat lives in the
 Notes column and here.
 
-## 6. Sources
+## 6. Existing-row refresh (T20 / #46)
+
+R9 ([#35](https://github.com/tomaskir/ball-x-pit-companion/issues/35)) diffed
+the 90 pre-DLC rows against the v1.308 datamine
+(`game-data/extracted/level3-candidates.json` and `extract.json`) using the
+method in `docs/research/risen-l3-refresh.md` §3: normalize typography, map each
+row to its candidate key, then classify. T20 applied the two corrections and
+re-checked both against `level3-candidates.json`. The result:
+
+| Class | Count | Action |
+|---|---:|---|
+| Identical after normalization | 66 | None |
+| Numeric difference explained by a display divisor | 19 | Keep the wiki text (already in display units) |
+| Prose-only difference (extract omits `%`) | 3 | Keep the wiki text |
+| Genuine value discrepancy | 2 | Take the datamined value |
+
+The two corrections:
+
+| Ball | Field | Wiki v1.301 | Datamined v1.308 | Basis |
+|---|---|---|---:|---|
+| Hemorrhage | `kHemorrhagePct` | 30% | **20%** | ÷1 field; no divisor explains the gap |
+| Vampire Lord | `kBleedAmt` | 3 stacks | **4 stacks** | ÷1 field; threshold (9) agrees |
+
+The 19 divisor rows are unchanged because the wiki already carries the display
+value: the datamined raw value is the same quantity in game units (e.g.
+Blizzard 13 → 1.3 s, Charm 50 → 5%, Dark 500 → 5.0x, Heart Swallower 700 →
+70%). The field-specific divisor table is in `risen-l3-refresh.md` §5; a
+blanket ÷10 would corrupt the `÷1` and `÷100` fields. The 3 prose-only rows
+(Flesh, Shotgun, Warp) keep the wiki's `%` sign.
+
+Out of scope: the level-1 catalog still reads Hemorrhage 20% (`src/data/balls.ts`,
+from `game-mechanics.md`); the datamined L1 is 15%. T20 is L3-only — flag it for
+the next catalog refresh.
+
+## 7. Sources
 
 - Per-ball pages: `https://ballxpit.wiki.gg/wiki/<Page_Name>` (e.g. `Sun`,
   `Laser_(Horizontal)`, `X_Ray`). The page name is the `Ball` column value with
