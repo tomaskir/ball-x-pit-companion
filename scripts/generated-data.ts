@@ -6,7 +6,7 @@
 import { slug } from './slug.ts';
 import { WILDCARD, validateEditorial } from './editorial.ts';
 import { EDITIONS, type Edition } from './editions.ts';
-import type { ParsedFactBases } from './fact-bases.ts';
+import type { ParsedFactBases, ParsedPassive } from './fact-bases.ts';
 import type { EditorialMaps, VerdictRule } from './editorial.ts';
 
 export interface GeneratedBall {
@@ -30,6 +30,15 @@ export interface GeneratedPassive {
   recipes: string[][];
   icon: string;
   tags: string[];
+  /** DLC allow-list: one or two character ids. Authored for DLC base
+   *  passives; derived (components' intersection) for evolved passives,
+   *  with the documented Handheld Rupture override. Absent on base-game
+   *  passives (no character allow-list). */
+  characterIds?: string[];
+  /** Base-game character-stat gate exclusions (authored; not inherited). */
+  excludedCharacterIds?: string[];
+  /** Loadout gate / appearance requirement text (informational). */
+  requirement?: string;
 }
 
 export interface GeneratedCharacter {
@@ -53,8 +62,48 @@ export interface GeneratedData {
   level3: Record<string, string>;
 }
 
+/**
+ * The effective DLC allow-list for every passive, keyed by id. Base passives
+ * carry the authored list; an evolved passive inherits the intersection of
+ * its components' lists (a component without one is universal), unioned
+ * across alternate recipes. The documented Handheld Rupture override widens
+ * the intersection. A passive with no character-locked component has no
+ * allow-list (undefined).
+ */
+export function derivePassiveAllowLists(passives: readonly ParsedPassive[]): Map<string, string[] | undefined> {
+  const byId = new Map(passives.map((p) => [slug(p.name), p]));
+  const memo = new Map<string, string[] | undefined>();
+  const resolve = (id: string): string[] | undefined => {
+    if (memo.has(id)) return memo.get(id);
+    const passive = byId.get(id);
+    if (!passive) return undefined;
+    let result: string[] | undefined;
+    if (passive.allowListOverride) result = [...passive.allowListOverride];
+    else if (passive.characterIds) result = [...passive.characterIds];
+    else if (passive.recipes.length === 0) result = undefined;
+    else {
+      let union: string[] | undefined;
+      let unrestricted = false;
+      for (const recipe of passive.recipes) {
+        const lists = recipe.map(resolve).filter((list): list is string[] => list !== undefined);
+        // A recipe with no character-locked component is universal; the
+        // passive is then unrestricted regardless of its other recipes.
+        if (lists.length === 0) { unrestricted = true; break; }
+        const intersection = lists.reduce((acc, list) => acc.filter((componentId) => list.includes(componentId)));
+        union = union === undefined ? [...intersection] : [...new Set([...union, ...intersection])];
+      }
+      result = unrestricted ? undefined : union;
+    }
+    memo.set(id, result);
+    return result;
+  };
+  for (const passive of passives) resolve(slug(passive.name));
+  return memo;
+}
+
 /** Pure mapping: parsed fact bases + editorial maps → the generated data. */
 export function emitData(parsed: ParsedFactBases, editorial: EditorialMaps): GeneratedData {
+  const allowLists = derivePassiveAllowLists(parsed.passives);
   return {
     tags: { ...editorial.TAGS },
     balls: parsed.balls.map((b) => ({
@@ -68,16 +117,22 @@ export function emitData(parsed: ParsedFactBases, editorial: EditorialMaps): Gen
       icon: `icons/balls/${slug(b.name)}.png`, // prefix with import.meta.env.BASE_URL at runtime
       tags: [...(editorial.BALL_TAGS[slug(b.name)] ?? [])],
     })),
-    passives: parsed.passives.map((p) => ({
-      id: slug(p.name),
-      name: p.name,
-      depth: p.depth,
-      edition: p.edition,
-      effects: p.effect,
-      recipes: p.recipes,
-      icon: `icons/passives/${slug(p.name)}.png`, // prefix with import.meta.env.BASE_URL at runtime
-      tags: [...(editorial.PASSIVE_TAGS[slug(p.name)] ?? [])],
-    })),
+    passives: parsed.passives.map((p) => {
+      const id = slug(p.name);
+      return {
+        id,
+        name: p.name,
+        depth: p.depth,
+        edition: p.edition,
+        effects: p.effect,
+        recipes: p.recipes,
+        icon: `icons/passives/${id}.png`, // prefix with import.meta.env.BASE_URL at runtime
+        tags: [...(editorial.PASSIVE_TAGS[id] ?? [])],
+        characterIds: allowLists.get(id),
+        excludedCharacterIds: p.excludedCharacterIds ? [...p.excludedCharacterIds] : undefined,
+        requirement: p.requirement,
+      };
+    }),
     characters: parsed.characters.map((c) => ({
       id: slug(c.name),
       name: c.name,
@@ -140,6 +195,10 @@ export const BALLS: Ball[] = ${JSON.stringify(data.balls, null, 2)};
 // Ballbylon rows datamined from v1.308, normalized to display units.
 // Same shape as Ball; own id namespace. Ball and passive graphs never
 // cross-reference. edition is the content-filter dimension.
+// characterIds is the DLC allow-list (authored for DLC base passives, derived
+// from the components' intersection for evolved passives; Handheld Rupture is
+// the documented override). excludedCharacterIds is the separate base-game
+// character-stat gate. requirement is the informational loadout gate.
 import type { Edition } from './editions';
 
 export interface Passive {
@@ -151,6 +210,12 @@ export interface Passive {
   recipes: string[][];
   icon: string;
   tags: string[];
+  /** DLC allow-list (one or two character ids); absent = no character lock. */
+  characterIds?: string[];
+  /** Base-game character-stat gate exclusions (not inherited by evolution). */
+  excludedCharacterIds?: string[];
+  /** Loadout gate / appearance requirement (informational). */
+  requirement?: string;
 }
 
 export const PASSIVES: Passive[] = ${JSON.stringify(data.passives, null, 2)};
@@ -233,6 +298,61 @@ export function validateGenerated(data: GeneratedData, editorial: EditorialMaps)
     for (const r of p.recipes)
       for (const c of r)
         if (!passiveIds.has(c)) findings.push(`passive ${p.name}: unresolved component ${c}`);
+
+  // Passive availability: the DLC allow-list and the base-game stat-gate
+  // exclusions are separate mechanisms, both resolving to characters.
+  // Evolved passives derive the components' intersection (unioned across
+  // alternate recipes); Handheld Rupture is the documented override, whose
+  // allow-list is the union of its components' lists.
+  const passiveById = new Map(data.passives.map((p) => [p.id, p]));
+  const expectedAllowList = new Map<string, string[] | undefined>();
+  const expectedFor = (id: string): string[] | undefined => {
+    if (expectedAllowList.has(id)) return expectedAllowList.get(id);
+    const p = passiveById.get(id);
+    if (!p) return undefined;
+    let result: string[] | undefined;
+    if (p.depth === 0) result = p.characterIds;
+    else {
+      const perRecipe = p.recipes.map((recipe) =>
+        recipe.map(expectedFor).filter((list): list is string[] => list !== undefined),
+      );
+      // A recipe with no character-locked component is universal.
+      if (perRecipe.some((lists) => lists.length === 0)) result = undefined;
+      else if (id === 'handheld-rupture') result = [...new Set(perRecipe.flat().flat())];
+      else {
+        const intersections = perRecipe.map((lists) =>
+          lists.reduce((acc, list) => acc.filter((componentId) => list.includes(componentId))),
+        );
+        result = [...new Set(intersections.flat())];
+      }
+    }
+    expectedAllowList.set(id, result);
+    return result;
+  };
+  const sameIds = (a: string[] | undefined, b: string[] | undefined): boolean =>
+    a === undefined || b === undefined
+      ? a === b
+      : a.length === b.length && a.every((id) => b.includes(id));
+  for (const p of data.passives) {
+    for (const c of p.characterIds ?? []) {
+      if (!charIds.has(c)) findings.push(`passive ${p.id}: unknown allow-list character ${c}`);
+    }
+    for (const c of p.excludedCharacterIds ?? []) {
+      if (!charIds.has(c)) findings.push(`passive ${p.id}: unknown excluded character ${c}`);
+    }
+    if (p.edition !== 'base-game' && (!p.characterIds || p.characterIds.length === 0)) {
+      findings.push(`DLC passive ${p.id}: empty character allow-list`);
+    }
+    if (p.edition === 'base-game' && p.characterIds) {
+      findings.push(`base-game passive ${p.id}: unexpected DLC allow-list`);
+    }
+    if (p.edition !== 'base-game' && p.excludedCharacterIds) {
+      findings.push(`DLC passive ${p.id}: unexpected stat-gate exclusions`);
+    }
+    if (p.depth > 0 && !sameIds(p.characterIds, expectedFor(p.id))) {
+      findings.push(`passive ${p.id}: allow-list ${JSON.stringify(p.characterIds)} != expected ${JSON.stringify(expectedFor(p.id))}`);
+    }
+  }
 
   // tags and verdicts use the vocabulary
   for (const b of data.balls)

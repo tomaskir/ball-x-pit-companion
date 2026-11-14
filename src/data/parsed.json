@@ -1491,7 +1491,10 @@
       "depth": 0,
       "recipes": [],
       "effect": "Your combined ball has a 6% chance of birthing a copy of one of its components with each bounce.",
-      "edition": "dlc-risen-ballbylon"
+      "edition": "dlc-risen-ballbylon",
+      "characterIds": [
+        "the-potager"
+      ]
     },
     {
       "name": "Archer's Effigy",
@@ -1505,14 +1508,20 @@
       "depth": 0,
       "recipes": [],
       "effect": "Friendly pieces gain 100% more health",
-      "edition": "base-game"
+      "edition": "base-game",
+      "requirement": "needs another \"friendly pieces\" passive"
     },
     {
       "name": "Baby Rattle",
       "depth": 0,
       "recipes": [],
       "effect": "Gain 1.5x baby balls, but your aim becomes scattered",
-      "edition": "base-game"
+      "edition": "base-game",
+      "excludedCharacterIds": [
+        "the-empty-nester",
+        "the-makeshift-sisyphus",
+        "the-potager"
+      ]
     },
     {
       "name": "Bandage Roll",
@@ -1526,7 +1535,10 @@
       "depth": 0,
       "recipes": [],
       "effect": "Balls that are shot while aiming backwards deal 60% more damage.",
-      "edition": "dlc-risen-ballbylon"
+      "edition": "dlc-risen-ballbylon",
+      "characterIds": [
+        "the-sentinel"
+      ]
     },
     {
       "name": "Bottled Tornado",
@@ -1547,14 +1559,21 @@
       "depth": 0,
       "recipes": [],
       "effect": "Increase range of all ball area-of-effects by an extra 20%.",
-      "edition": "dlc-risen-ballbylon"
+      "edition": "dlc-risen-ballbylon",
+      "characterIds": [
+        "the-conduit"
+      ]
     },
     {
       "name": "Cracked Cinderblock",
       "depth": 0,
       "recipes": [],
       "effect": "After a special ball passes through a wall, spawn 1–3 baby balls where it emerges.",
-      "edition": "dlc-risen-ballbylon"
+      "edition": "dlc-risen-ballbylon",
+      "characterIds": [
+        "the-makeshift-sisyphus",
+        "the-wallbreaker"
+      ]
     },
     {
       "name": "Crown of Thorns",
@@ -1568,14 +1587,19 @@
       "depth": 0,
       "recipes": [],
       "effect": "Balls deal 20% more damage when in orbit.",
-      "edition": "dlc-risen-ballbylon"
+      "edition": "dlc-risen-ballbylon",
+      "characterIds": [
+        "the-carouser",
+        "the-scandalmonger"
+      ]
     },
     {
       "name": "Cursed Elixir",
       "depth": 0,
       "recipes": [],
       "effect": "When a poisoned enemy dies, 10% chance to come back as a zombie with 240 health",
-      "edition": "base-game"
+      "edition": "base-game",
+      "requirement": "needs a Poison-applying ball"
     },
     {
       "name": "Deadeye's Amulet",
@@ -1603,7 +1627,10 @@
       "depth": 0,
       "recipes": [],
       "effect": "Increase bonus damage after hitting the right wall by 20%.",
-      "edition": "dlc-risen-ballbylon"
+      "edition": "dlc-risen-ballbylon",
+      "characterIds": [
+        "the-right-hand-man"
+      ]
     },
     {
       "name": "Emerald Hilted Dagger",
@@ -1645,14 +1672,18 @@
       "depth": 0,
       "recipes": [],
       "effect": "Increase area-of-effect damage (such as earthquake, laser, and lightning) and status effect damage (such as burn and poison) by 10%.",
-      "edition": "dlc-risen-ballbylon"
+      "edition": "dlc-risen-ballbylon",
+      "characterIds": [
+        "the-makeshift-sisyphus"
+      ]
     },
     {
       "name": "Frozen Spike",
       "depth": 0,
       "recipes": [],
       "effect": "When an enemy is frozen, they emit a chill to nearby enemies that deals 10–20 damage",
-      "edition": "base-game"
+      "edition": "base-game",
+      "requirement": "needs a Freeze-applying ball"
     },
     {
       "name": "Gemspring",
@@ -1673,7 +1704,8 @@
       "depth": 0,
       "recipes": [],
       "effect": "Balls go through allies and heal them for 2 health",
-      "edition": "base-game"
+      "edition": "base-game",
+      "requirement": "needs an \"allies\" passive"
     },
     {
       "name": "Golden Bull",
@@ -1687,14 +1719,20 @@
       "depth": 0,
       "recipes": [],
       "effect": "Balls' first bounce deals more damage based on how close to a perfect diagonal it is (up to 100%).",
-      "edition": "dlc-risen-ballbylon"
+      "edition": "dlc-risen-ballbylon",
+      "characterIds": [
+        "the-scrupulous-scoundrel"
+      ]
     },
     {
       "name": "Hand Drill",
       "depth": 0,
       "recipes": [],
       "effect": "Each time a ball loops around, it deals 30% extra damage on the next hit.",
-      "edition": "dlc-risen-ballbylon"
+      "edition": "dlc-risen-ballbylon",
+      "characterIds": [
+        "the-tunneller"
+      ]
     },
     {
       "name": "Hand Fan",
@@ -1708,7 +1746,10 @@
       "depth": 0,
       "recipes": [],
       "effect": "Launch 1–2 baby balls randomly with each shot.",
-      "edition": "dlc-risen-ballbylon"
+      "edition": "dlc-risen-ballbylon",
+      "characterIds": [
+        "the-empty-nester"
+      ]
     },
     {
       "name": "Hand Mirror",
@@ -1743,28 +1784,38 @@
       "depth": 0,
       "recipes": [],
       "effect": "Balls deal an extra 5–15 damage to nearby enemies upon first landing.",
-      "edition": "dlc-risen-ballbylon"
+      "edition": "dlc-risen-ballbylon",
+      "characterIds": [
+        "the-juggler"
+      ]
     },
     {
       "name": "Kiss of Death",
       "depth": 0,
       "recipes": [],
       "effect": "Charmed enemies have a 10% chance of dying after recovering",
-      "edition": "base-game"
+      "edition": "base-game",
+      "requirement": "needs a Charm-applying ball"
     },
     {
       "name": "Kris Knife",
       "depth": 0,
       "recipes": [],
       "effect": "Backstabs deal 10–15 bonus damage until they hit the back of the field.",
-      "edition": "dlc-risen-ballbylon"
+      "edition": "dlc-risen-ballbylon",
+      "characterIds": [
+        "the-shade"
+      ]
     },
     {
       "name": "Kunai",
       "depth": 0,
       "recipes": [],
       "effect": "Balls deal 10–15 bonus damage to bosses and minibosses.",
-      "edition": "dlc-risen-ballbylon"
+      "edition": "dlc-risen-ballbylon",
+      "characterIds": [
+        "the-tiptoer"
+      ]
     },
     {
       "name": "Lover's Quiver",
@@ -1778,7 +1829,10 @@
       "depth": 0,
       "recipes": [],
       "effect": "30% bonus gold dropped. Launch 1–2 baby balls when picking up gold or other resources.",
-      "edition": "dlc-risen-ballbylon"
+      "edition": "dlc-risen-ballbylon",
+      "characterIds": [
+        "the-spendthrift"
+      ]
     },
     {
       "name": "Magic Staff",
@@ -1792,14 +1846,18 @@
       "depth": 0,
       "recipes": [],
       "effect": "Increase range at which you pick up items and catch balls by 1.0 tiles",
-      "edition": "base-game"
+      "edition": "base-game",
+      "excludedCharacterIds": [
+        "the-shieldbearer"
+      ]
     },
     {
       "name": "Midnight Oil",
       "depth": 0,
       "recipes": [],
       "effect": "Balls that hit flaming enemies light on fire and deal 10–20 bonus fire damage on the next hit",
-      "edition": "base-game"
+      "edition": "base-game",
+      "requirement": "needs a Burn-applying ball"
     },
     {
       "name": "Platinum Dumbbell",
@@ -1827,7 +1885,11 @@
       "depth": 0,
       "recipes": [],
       "effect": "Increases ball launch speed by 20%, but you get knocked back a little each shot",
-      "edition": "base-game"
+      "edition": "base-game",
+      "excludedCharacterIds": [
+        "the-shieldbearer",
+        "the-tactician"
+      ]
     },
     {
       "name": "Reacher's Spear",
@@ -1841,7 +1903,10 @@
       "depth": 0,
       "recipes": [],
       "effect": "After a special ball reaches its target position, spawn 1–2 baby balls from that position.",
-      "edition": "dlc-risen-ballbylon"
+      "edition": "dlc-risen-ballbylon",
+      "characterIds": [
+        "the-recollector"
+      ]
     },
     {
       "name": "Rubber Headband",
@@ -1862,7 +1927,10 @@
       "depth": 0,
       "recipes": [],
       "effect": "Whenever bleed is applied, add 2 extra stacks.",
-      "edition": "dlc-risen-ballbylon"
+      "edition": "dlc-risen-ballbylon",
+      "characterIds": [
+        "the-warrior"
+      ]
     },
     {
       "name": "Sapphire Hilted Dagger",
@@ -1876,7 +1944,11 @@
       "depth": 0,
       "recipes": [],
       "effect": "Increase fire rate by 15%",
-      "edition": "base-game"
+      "edition": "base-game",
+      "excludedCharacterIds": [
+        "the-spendthrift",
+        "the-tactician"
+      ]
     },
     {
       "name": "Silver Blindfold",
@@ -1897,7 +1969,10 @@
       "depth": 0,
       "recipes": [],
       "effect": "Balls pierce and deal 50% extra damage to the first enemy they hit.",
-      "edition": "dlc-risen-ballbylon"
+      "edition": "dlc-risen-ballbylon",
+      "characterIds": [
+        "the-itchy-finger"
+      ]
     },
     {
       "name": "Slingshot",
@@ -1918,14 +1993,20 @@
       "depth": 0,
       "recipes": [],
       "effect": "Each time a ball hits the bottom of the screen, it deals 50% extra damage on the next hit.",
-      "edition": "dlc-risen-ballbylon"
+      "edition": "dlc-risen-ballbylon",
+      "characterIds": [
+        "the-flagellant"
+      ]
     },
     {
       "name": "Steel Bulwark",
       "depth": 0,
       "recipes": [],
       "effect": "Increase shield size by 20%.",
-      "edition": "dlc-risen-ballbylon"
+      "edition": "dlc-risen-ballbylon",
+      "characterIds": [
+        "the-shieldbearer"
+      ]
     },
     {
       "name": "Stone Effigy",
@@ -1946,21 +2027,28 @@
       "depth": 0,
       "recipes": [],
       "effect": "Balls deal 50% more damage when on a return trajectory.",
-      "edition": "dlc-risen-ballbylon"
+      "edition": "dlc-risen-ballbylon",
+      "characterIds": [
+        "the-repentant"
+      ]
     },
     {
       "name": "Test Tube",
       "depth": 0,
       "recipes": [],
       "effect": "Balls deal more damage the faster they move (up to 100%).",
-      "edition": "dlc-risen-ballbylon"
+      "edition": "dlc-risen-ballbylon",
+      "characterIds": [
+        "the-physicist"
+      ]
     },
     {
       "name": "Traitor's Cowl",
       "depth": 0,
       "recipes": [],
       "effect": "Stone allies can now be damaged by your balls, but you heal 2 health when a ball hits one",
-      "edition": "base-game"
+      "edition": "base-game",
+      "requirement": "needs a \"stone allies\" passive"
     },
     {
       "name": "Turret",
@@ -1974,14 +2062,20 @@
       "depth": 0,
       "recipes": [],
       "effect": "Shots made while characters are facing each other have a 30% chance to shoot an extra baby ball straight forward.",
-      "edition": "dlc-risen-ballbylon"
+      "edition": "dlc-risen-ballbylon",
+      "characterIds": [
+        "the-cohabitants"
+      ]
     },
     {
       "name": "Upturned Hatchet",
       "depth": 0,
       "recipes": [],
       "effect": "Balls deal 80% more damage after hitting the back of the field, otherwise damage reduced by 20%",
-      "edition": "base-game"
+      "edition": "base-game",
+      "excludedCharacterIds": [
+        "the-physicist"
+      ]
     },
     {
       "name": "Vampiric Sword",
@@ -1995,7 +2089,8 @@
       "depth": 0,
       "recipes": [],
       "effect": "Curse has a 10% chance of killing enemies",
-      "edition": "base-game"
+      "edition": "base-game",
+      "requirement": "needs a Curse-applying ball"
     },
     {
       "name": "Wagon Wheel",
@@ -2009,14 +2104,22 @@
       "depth": 0,
       "recipes": [],
       "effect": "All baby balls deal 20% more damage",
-      "edition": "base-game"
+      "edition": "base-game",
+      "excludedCharacterIds": [
+        "the-empty-nester",
+        "the-makeshift-sisyphus",
+        "the-potager"
+      ]
     },
     {
       "name": "Wrapped Explosive",
       "depth": 0,
       "recipes": [],
       "effect": "The first time balls hit a wall, they emit an explosion, dealing 20–30 to nearby enemies.",
-      "edition": "dlc-risen-ballbylon"
+      "edition": "dlc-risen-ballbylon",
+      "characterIds": [
+        "the-embedded"
+      ]
     },
     {
       "name": "Wretched Onion",
@@ -2107,7 +2210,12 @@
         ]
       ],
       "effect": "Each time baby balls are created, spawn 0–1 additional baby balls.",
-      "edition": "base-game"
+      "edition": "base-game",
+      "excludedCharacterIds": [
+        "the-empty-nester",
+        "the-makeshift-sisyphus",
+        "the-potager"
+      ]
     },
     {
       "name": "Cradle of Filth",
@@ -2217,7 +2325,11 @@
         ]
       ],
       "effect": "Whenever a special ball warps, emit an earthquake that deals 5–13 damage to nearby enemies. Increase area-of-effect damage and status effect damage by 20%.",
-      "edition": "dlc-risen-ballbylon"
+      "edition": "dlc-risen-ballbylon",
+      "allowListOverride": [
+        "the-makeshift-sisyphus",
+        "the-wallbreaker"
+      ]
     },
     {
       "name": "Inglorious Hammer",

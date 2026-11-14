@@ -433,6 +433,41 @@ describe('game-mechanics.md: every entity row carries an Edition cell', () => {
   }
 });
 
+describe('parseGameMechanics: passive allow-lists and stat gates (§2.3)', () => {
+  const parsed = parseFactBases(realSources());
+  const passive = (name: string) => parsed.passives.find((p) => p.name === name)!;
+
+  it('parses the DLC allow-list into characterIds', () => {
+    expect(passive('Rusted Blade').characterIds).toEqual(['the-warrior']);
+    expect(passive('Crystal Decanter').characterIds).toEqual(['the-carouser', 'the-scandalmonger']);
+  });
+
+  it('parses the evolved override separately from the base allow-list', () => {
+    expect(passive('Handheld Rupture').allowListOverride).toEqual(['the-makeshift-sisyphus', 'the-wallbreaker']);
+    expect(passive('Handheld Rupture').characterIds).toBeUndefined();
+  });
+
+  it('parses base-game stat-gate exclusions', () => {
+    expect(passive('Magnet').excludedCharacterIds).toEqual(['the-shieldbearer']);
+    expect(passive('Cornucopia').excludedCharacterIds).toEqual(['the-empty-nester', 'the-makeshift-sisyphus', 'the-potager']);
+  });
+
+  it('parses the loadout requirement text', () => {
+    expect(passive('Cursed Elixir').requirement).toBe('needs a Poison-applying ball');
+    expect(passive('Wagon Wheel').requirement).toBeUndefined();
+  });
+
+  it('throws on a restriction row for an unknown passive', () => {
+    const md = mechanicsTables() + [
+      '',
+      '| Passive | Character(s) | Excluded characters |',
+      '|---|---|---|',
+      '| Nobody | The Warrior | — |',
+    ].join('\n');
+    expect(() => parseGameMechanics(md)).toThrow('passive restriction row for unknown passive: Nobody');
+  });
+});
+
 /** The markdown separator row for a header line. */
 const separator = (header: string): string =>
   `|${header.split('|').slice(1, -1).map(() => '---').join('|')}|`;

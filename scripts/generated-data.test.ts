@@ -184,3 +184,78 @@ describe('the checked-in generated files are exactly what the fact bases emit', 
     });
   }
 });
+
+describe('passive allow-lists: emit, derive, and validate (T24 / #50)', () => {
+  const sources = {
+    mechanics: readFileSync(new URL('../docs/research/game-mechanics.md', import.meta.url), 'utf8'),
+    pairings: readFileSync(new URL('../docs/research/character-pairings.md', import.meta.url), 'utf8'),
+    level3: readFileSync(new URL('../docs/research/level-3-effects.md', import.meta.url), 'utf8'),
+  };
+  const real = () => emitData(parseFactBases(sources), EDITORIAL);
+  const passive = (data: ReturnType<typeof real>, id: string) => data.passives.find((p) => p.id === id)!;
+
+  it('emits the authored DLC allow-list on base passives', () => {
+    const data = real();
+    expect(passive(data, 'rusted-blade').characterIds).toEqual(['the-warrior']);
+    expect(passive(data, 'crystal-decanter').characterIds).toEqual(['the-carouser', 'the-scandalmonger']);
+  });
+
+  it('derives evolved allow-lists as the components\' intersection', () => {
+    const data = real();
+    expect(passive(data, 'vampires-kiss').characterIds).toEqual(['the-warrior']);
+    expect(passive(data, 'liquid-flame').characterIds).toEqual(['the-carouser', 'the-scandalmonger']);
+    expect(passive(data, 'baby-armor').characterIds).toEqual(['the-empty-nester']);
+  });
+
+  it('applies the documented Handheld Rupture override', () => {
+    const data = real();
+    expect(passive(data, 'handheld-rupture').characterIds).toEqual(['the-makeshift-sisyphus', 'the-wallbreaker']);
+  });
+
+  it('emits the separate stat-gate exclusions and loadout requirement', () => {
+    const data = real();
+    expect(passive(data, 'magnet').excludedCharacterIds).toEqual(['the-shieldbearer']);
+    expect(passive(data, 'cornucopia').excludedCharacterIds).toEqual(['the-empty-nester', 'the-makeshift-sisyphus', 'the-potager']);
+    expect(passive(data, 'cursed-elixir').requirement).toBe('needs a Poison-applying ball');
+  });
+
+  it('the real data passes every invariant', () => {
+    expect(validateGenerated(real(), EDITORIAL)).toEqual([]);
+  });
+
+  it('rejects a DLC passive with an empty allow-list', () => {
+    const data = real();
+    passive(data, 'rusted-blade').characterIds = [];
+    expect(validateGenerated(data, EDITORIAL)).toContain('DLC passive rusted-blade: empty character allow-list');
+  });
+
+  it('rejects an unknown allow-list or excluded character', () => {
+    const data = real();
+    passive(data, 'rusted-blade').characterIds = ['nobody'];
+    passive(data, 'magnet').excludedCharacterIds = ['nobody'];
+    const findings = validateGenerated(data, EDITORIAL);
+    expect(findings).toContain('passive rusted-blade: unknown allow-list character nobody');
+    expect(findings).toContain('passive magnet: unknown excluded character nobody');
+  });
+
+  it('rejects an evolved allow-list that is not the component intersection', () => {
+    const data = real();
+    passive(data, 'vampires-kiss').characterIds = ['the-shade'];
+    expect(validateGenerated(data, EDITORIAL).some((f) => f.startsWith('passive vampires-kiss: allow-list'))).toBe(true);
+  });
+
+  it('rejects a wrong Handheld Rupture override (the one documented exception)', () => {
+    const data = real();
+    passive(data, 'handheld-rupture').characterIds = ['the-makeshift-sisyphus'];
+    expect(validateGenerated(data, EDITORIAL).some((f) => f.startsWith('passive handheld-rupture: allow-list'))).toBe(true);
+  });
+
+  it('keeps the two mechanisms separate: no DLC allow-list on base passives, no stat gates on DLC passives', () => {
+    const data = real();
+    passive(data, 'magnet').characterIds = ['the-warrior'];
+    passive(data, 'rusted-blade').excludedCharacterIds = ['the-warrior'];
+    const findings = validateGenerated(data, EDITORIAL);
+    expect(findings).toContain('base-game passive magnet: unexpected DLC allow-list');
+    expect(findings).toContain('DLC passive rusted-blade: unexpected stat-gate exclusions');
+  });
+});

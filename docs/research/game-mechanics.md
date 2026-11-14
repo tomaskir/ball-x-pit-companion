@@ -342,6 +342,67 @@ Two evolution chains exist: Dagger quartet → Deadeye's Cross → Deadeye's Imp
 Deadeye's Cross) → Deadeye's Impaler. The passive graph is shallower than the ball
 graph; only Deadeye's Impaler is a tier-3-equivalent.
 
+### 2.3 Passive allow-lists and stat gates
+
+The two character-dependent mechanisms from
+[character-passive-restrictions.md](character-passive-restrictions.md), kept
+separate:
+
+- **`Character(s)`** is the DLC allow-list (the v1.308 `PassiveInfo.CanBeUsed`
+  switch). Only the 23 DLC base passives carry one; a character outside the
+  list is never offered the passive. Evolved passives inherit the
+  intersection of their components' allow-lists, so they are not authored
+  here — the one exception is Handheld Rupture, whose explicit override
+  widens the intersection to both Sisyphus and Wallbreaker.
+- **`Excluded characters`** is the base-game character-stat gate (the
+  no-arg `CanBeUsed`): a hard offer-pool exclusion, authored from the
+  datamined stat/prop table. It is not an item allow-list and is not
+  inherited by evolved passives (the game re-checks it only when the
+  component itself is offered).
+
+Blank cells (`—`) mean no restriction. The DLC allow-list applies only to
+`dlc-risen-ballbylon` passives; the stat gates apply to `base-game` passives.
+Loadout gates (status ball / friendly piece / stone ally) are the
+"Appearance requirement" column above, not a character restriction.
+
+| Passive | Character(s) | Excluded characters |
+|---|---|---|
+| Ancient Ladle | The Potager | — |
+| Bent Spyglass | The Sentinel | — |
+| Charged Bracelet | The Conduit | — |
+| Cracked Cinderblock | The Makeshift Sisyphus, The Wallbreaker | — |
+| Crystal Decanter | The Carouser, The Scandalmonger | — |
+| Eldritch Gauntlet | The Right Hand Man | — |
+| Fractured Boulder | The Makeshift Sisyphus | — |
+| Goniometer | The Scrupulous Scoundrel | — |
+| Hand Drill | The Tunneller | — |
+| Hand Me Downs | The Empty Nester | — |
+| Juggler's Club | The Juggler | — |
+| Kris Knife | The Shade | — |
+| Kunai | The Tiptoer | — |
+| Lucky Coin | The Spendthrift | — |
+| Refracting Glass | The Recollector | — |
+| Rusted Blade | The Warrior | — |
+| Silver Revolver | The Itchy Finger | — |
+| Spiked Discipline | The Flagellant | — |
+| Steel Bulwark | The Shieldbearer | — |
+| Teardrop Necklace | The Repentant | — |
+| Test Tube | The Physicist | — |
+| Unkempt Cradle | The Cohabitants | — |
+| Wrapped Explosive | The Embedded | — |
+| Handheld Rupture | The Makeshift Sisyphus, The Wallbreaker | — |
+| War Horn | — | The Empty Nester, The Makeshift Sisyphus, The Potager |
+| Baby Rattle | — | The Empty Nester, The Makeshift Sisyphus, The Potager |
+| Cornucopia | — | The Empty Nester, The Makeshift Sisyphus, The Potager |
+| Radiant Feather | — | The Shieldbearer, The Tactician |
+| Magnet | — | The Shieldbearer |
+| Shortbow | — | The Spendthrift, The Tactician |
+| Upturned Hatchet | — | The Physicist |
+
+The Handheld Rupture row is the documented override: its components
+(Cracked Cinderblock, Fractured Boulder) intersect to Sisyphus only, but the
+game's explicit type-111 case allows both Sisyphus and Wallbreaker.
+
 ---
 
 ## 3. Characters (31)

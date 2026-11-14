@@ -261,3 +261,44 @@ describe('ball kit table agrees with the level-3 overlay', () => {
     }
   });
 });
+
+describe('passive availability data (T24 / #50)', () => {
+  const byId = new Map(PASSIVES.map((p) => [p.id, p]));
+
+  it('every DLC passive carries a non-empty allow-list', () => {
+    for (const p of PASSIVES.filter((p) => p.edition !== 'base-game')) {
+      expect(p.characterIds?.length, p.id).toBeGreaterThan(0);
+    }
+  });
+
+  it('evolved passives inherit the components\' intersection', () => {
+    expect(byId.get('vampires-kiss')!.characterIds).toEqual(['the-warrior']);
+    expect(byId.get('liquid-flame')!.characterIds).toEqual(['the-carouser', 'the-scandalmonger']);
+    expect(byId.get('baby-armor')!.characterIds).toEqual(['the-empty-nester']);
+  });
+
+  it('Handheld Rupture is the documented override (Sisyphus or Wallbreaker)', () => {
+    expect(byId.get('handheld-rupture')!.characterIds).toEqual(['the-makeshift-sisyphus', 'the-wallbreaker']);
+  });
+
+  it('pins the base-game stat gates (authored separately from the allow-list)', () => {
+    expect(byId.get('magnet')!.excludedCharacterIds).toEqual(['the-shieldbearer']);
+    expect(byId.get('radiant-feather')!.excludedCharacterIds).toEqual(['the-shieldbearer', 'the-tactician']);
+    expect(byId.get('shortbow')!.excludedCharacterIds).toEqual(['the-spendthrift', 'the-tactician']);
+    expect(byId.get('upturned-hatchet')!.excludedCharacterIds).toEqual(['the-physicist']);
+    for (const id of ['war-horn', 'baby-rattle', 'cornucopia']) {
+      expect(byId.get(id)!.excludedCharacterIds, id).toEqual(['the-empty-nester', 'the-makeshift-sisyphus', 'the-potager']);
+    }
+  });
+
+  it('base-game passives carry no DLC allow-list', () => {
+    for (const p of PASSIVES.filter((p) => p.edition === 'base-game')) {
+      expect(p.characterIds, p.id).toBeUndefined();
+    }
+  });
+
+  it('carries the loadout requirement text (informational)', () => {
+    expect(byId.get('cursed-elixir')!.requirement).toBe('needs a Poison-applying ball');
+    expect(byId.get('wagon-wheel')!.requirement).toBeUndefined();
+  });
+});

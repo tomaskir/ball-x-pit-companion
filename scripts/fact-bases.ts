@@ -32,6 +32,17 @@ export interface ParsedPassive {
   recipes: string[][];
   effect: string;
   edition: Edition;
+  /** DLC allow-list (base passives only; one or two character names). */
+  characterIds?: string[];
+  /** Evolved-passive allow-list override — the documented Handheld Rupture
+   *  exception. Evolved passives otherwise derive the intersection. */
+  allowListOverride?: string[];
+  /** Base-game character-stat gate exclusions (authored from the datamined
+   *  stat/prop table; not inherited by evolved passives). */
+  excludedCharacterIds?: string[];
+  /** Loadout gate / appearance requirement text (status ball, friendly piece,
+   *  stone ally). Informational, not a character restriction. */
+  requirement?: string;
 }
 
 export interface ParsedCharacter {
@@ -71,6 +82,20 @@ function editionOf(row: TableRow): Edition {
   if (raw === '') return 'base-game';
   if (!EDITION_VOCABULARY.has(raw)) throw new Error(`unknown edition "${raw}"`);
   return raw as Edition;
+}
+
+/** A cell's comma-separated display names → slugs. Blank and the fact base's
+ *  em-dash placeholder mean "no restriction". */
+function nameList(cell: string | undefined): string[] {
+  const raw = (cell ?? '').trim();
+  if (raw === '' || raw === '—' || raw === '-') return [];
+  return raw.split(',').map((name) => slug(clean(name))).filter((id) => id.length > 0);
+}
+
+/** A free-text requirement cell; blank and em-dash mean none. */
+function requirementOf(cell: string | undefined): string | undefined {
+  const raw = (cell ?? '').trim();
+  return raw === '' || raw === '—' || raw === '-' ? undefined : clean(raw);
 }
 
 /**
@@ -216,7 +241,14 @@ export function parseGameMechanics(md: string): {
   const passives: ParsedPassive[] = [];
   // Base passives (depth 0): Passive | Effect text | Appearance requirement | Unlock
   for (const row of parseMarkdownTable(md, /^\| Passive \| Effect text \(wiki\) \|/, 'passive table')) {
-    passives.push({ name: clean(column(row, 'Passive')), depth: 0, recipes: [], effect: clean(column(row, 'Effect text (wiki)')), edition: editionOf(row) });
+    passives.push({
+      name: clean(column(row, 'Passive')),
+      depth: 0,
+      recipes: [],
+      effect: clean(column(row, 'Effect text (wiki)')),
+      edition: editionOf(row),
+      requirement: requirementOf(row['Appearance requirement']),
+    });
   }
   // Evolved passives (depth 1|2): Passive | Recipe | Effect text — same
   // structural depth computation as balls.
@@ -234,6 +266,30 @@ export function parseGameMechanics(md: string): {
   }));
   for (const ent of withStructuralDepth(evoPas)) {
     passives.push({ name: ent.name, depth: ent.depth, recipes: ent.recipes, effect: ent.effect, edition: ent.edition });
+  }
+
+  // ---------- passive restrictions ----------
+  // The two character-dependent mechanisms stay separate (see the fact base's
+  // §2.3): a DLC allow-list on base passives (and the one evolved override),
+  // and base-game character-stat gate exclusions. Loadout gates ride the
+  // base table's Appearance requirement column, parsed above.
+  const byPassiveName = new Map(passives.map((p) => [p.name, p]));
+  // Optional: synthetic fact bases in the parser tests omit the table.
+  if (md.includes('| Passive | Character(s) | Excluded characters |')) {
+    for (const row of parseMarkdownTable(md, /^\| Passive \| Character\(s\) \| Excluded characters \|/, 'passive restriction table')) {
+      const name = clean(column(row, 'Passive'));
+      const passive = byPassiveName.get(name);
+      if (!passive) throw new Error(`passive restriction row for unknown passive: ${name}`);
+      const characters = nameList(column(row, 'Character(s)'));
+      const excluded = nameList(column(row, 'Excluded characters'));
+      if (characters.length) {
+        // Base passives author the allow-list; an evolved row is the documented
+        // override (Handheld Rupture), not a general evolved allow-list.
+        if (passive.depth === 0) passive.characterIds = characters;
+        else passive.allowListOverride = characters;
+      }
+      if (excluded.length) passive.excludedCharacterIds = excluded;
+    }
   }
 
   // ---------- characters ----------

@@ -3,6 +3,10 @@
 // Ballbylon rows datamined from v1.308, normalized to display units.
 // Same shape as Ball; own id namespace. Ball and passive graphs never
 // cross-reference. edition is the content-filter dimension.
+// characterIds is the DLC allow-list (authored for DLC base passives, derived
+// from the components' intersection for evolved passives; Handheld Rupture is
+// the documented override). excludedCharacterIds is the separate base-game
+// character-stat gate. requirement is the informational loadout gate.
 import type { Edition } from './editions';
 
 export interface Passive {
@@ -14,6 +18,12 @@ export interface Passive {
   recipes: string[][];
   icon: string;
   tags: string[];
+  /** DLC allow-list (one or two character ids); absent = no character lock. */
+  characterIds?: string[];
+  /** Base-game character-stat gate exclusions (not inherited by evolution). */
+  excludedCharacterIds?: string[];
+  /** Loadout gate / appearance requirement (informational). */
+  requirement?: string;
 }
 
 export const PASSIVES: Passive[] = [
@@ -28,6 +38,9 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "fused-ball",
       "clone"
+    ],
+    "characterIds": [
+      "the-potager"
     ]
   },
   {
@@ -50,7 +63,8 @@ export const PASSIVES: Passive[] = [
     "effects": "Friendly pieces gain 100% more health",
     "recipes": [],
     "icon": "icons/passives/artificial-heart.png",
-    "tags": []
+    "tags": [],
+    "requirement": "needs another \"friendly pieces\" passive"
   },
   {
     "id": "baby-rattle",
@@ -62,6 +76,11 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/baby-rattle.png",
     "tags": [
       "spawns-baby-balls"
+    ],
+    "excludedCharacterIds": [
+      "the-empty-nester",
+      "the-makeshift-sisyphus",
+      "the-potager"
     ]
   },
   {
@@ -87,6 +106,9 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/bent-spyglass.png",
     "tags": [
       "aim-direction"
+    ],
+    "characterIds": [
+      "the-sentinel"
     ]
   },
   {
@@ -121,6 +143,9 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/charged-bracelet.png",
     "tags": [
       "aoe"
+    ],
+    "characterIds": [
+      "the-conduit"
     ]
   },
   {
@@ -134,6 +159,10 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "spawns-baby-balls",
       "wall-bounce"
+    ],
+    "characterIds": [
+      "the-makeshift-sisyphus",
+      "the-wallbreaker"
     ]
   },
   {
@@ -158,6 +187,10 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/crystal-decanter.png",
     "tags": [
       "orbit"
+    ],
+    "characterIds": [
+      "the-carouser",
+      "the-scandalmonger"
     ]
   },
   {
@@ -171,7 +204,8 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "spawns-allies",
       "status-effect"
-    ]
+    ],
+    "requirement": "needs a Poison-applying ball"
   },
   {
     "id": "deadeyes-amulet",
@@ -219,6 +253,9 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/eldritch-gauntlet.png",
     "tags": [
       "wall-bounce"
+    ],
+    "characterIds": [
+      "the-right-hand-man"
     ]
   },
   {
@@ -290,6 +327,9 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "aoe",
       "status-scaling"
+    ],
+    "characterIds": [
+      "the-makeshift-sisyphus"
     ]
   },
   {
@@ -303,7 +343,8 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "aoe",
       "status-effect"
-    ]
+    ],
+    "requirement": "needs a Freeze-applying ball"
   },
   {
     "id": "gemspring",
@@ -337,7 +378,8 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/ghostly-shield.png",
     "tags": [
       "lifesteal"
-    ]
+    ],
+    "requirement": "needs an \"allies\" passive"
   },
   {
     "id": "golden-bull",
@@ -362,6 +404,9 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "bounce-scaling",
       "diagonal"
+    ],
+    "characterIds": [
+      "the-scrupulous-scoundrel"
     ]
   },
   {
@@ -374,6 +419,9 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/hand-drill.png",
     "tags": [
       "playfield-loop"
+    ],
+    "characterIds": [
+      "the-tunneller"
     ]
   },
   {
@@ -398,6 +446,9 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/hand-me-downs.png",
     "tags": [
       "spawns-baby-balls"
+    ],
+    "characterIds": [
+      "the-empty-nester"
     ]
   },
   {
@@ -457,6 +508,9 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/jugglers-club.png",
     "tags": [
       "aoe"
+    ],
+    "characterIds": [
+      "the-juggler"
     ]
   },
   {
@@ -469,7 +523,8 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/kiss-of-death.png",
     "tags": [
       "status-effect"
-    ]
+    ],
+    "requirement": "needs a Charm-applying ball"
   },
   {
     "id": "kris-knife",
@@ -481,6 +536,9 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/kris-knife.png",
     "tags": [
       "backstab"
+    ],
+    "characterIds": [
+      "the-shade"
     ]
   },
   {
@@ -493,6 +551,9 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/kunai.png",
     "tags": [
       "direct-damage"
+    ],
+    "characterIds": [
+      "the-tiptoer"
     ]
   },
   {
@@ -517,6 +578,9 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/lucky-coin.png",
     "tags": [
       "spawns-baby-balls"
+    ],
+    "characterIds": [
+      "the-spendthrift"
     ]
   },
   {
@@ -539,7 +603,10 @@ export const PASSIVES: Passive[] = [
     "effects": "Increase range at which you pick up items and catch balls by 1.0 tiles",
     "recipes": [],
     "icon": "icons/passives/magnet.png",
-    "tags": []
+    "tags": [],
+    "excludedCharacterIds": [
+      "the-shieldbearer"
+    ]
   },
   {
     "id": "midnight-oil",
@@ -551,7 +618,8 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/midnight-oil.png",
     "tags": [
       "status-effect"
-    ]
+    ],
+    "requirement": "needs a Burn-applying ball"
   },
   {
     "id": "platinum-dumbbell",
@@ -599,6 +667,10 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/radiant-feather.png",
     "tags": [
       "ball-speed"
+    ],
+    "excludedCharacterIds": [
+      "the-shieldbearer",
+      "the-tactician"
     ]
   },
   {
@@ -623,6 +695,9 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/refracting-glass.png",
     "tags": [
       "spawns-baby-balls"
+    ],
+    "characterIds": [
+      "the-recollector"
     ]
   },
   {
@@ -660,6 +735,9 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/rusted-blade.png",
     "tags": [
       "status-effect"
+    ],
+    "characterIds": [
+      "the-warrior"
     ]
   },
   {
@@ -682,7 +760,11 @@ export const PASSIVES: Passive[] = [
     "effects": "Increase fire rate by 15%",
     "recipes": [],
     "icon": "icons/passives/shortbow.png",
-    "tags": []
+    "tags": [],
+    "excludedCharacterIds": [
+      "the-spendthrift",
+      "the-tactician"
+    ]
   },
   {
     "id": "silver-blindfold",
@@ -719,6 +801,9 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "pass-through",
       "direct-damage"
+    ],
+    "characterIds": [
+      "the-itchy-finger"
     ]
   },
   {
@@ -755,6 +840,9 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/spiked-discipline.png",
     "tags": [
       "wall-bounce"
+    ],
+    "characterIds": [
+      "the-flagellant"
     ]
   },
   {
@@ -767,6 +855,9 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/steel-bulwark.png",
     "tags": [
       "shield"
+    ],
+    "characterIds": [
+      "the-shieldbearer"
     ]
   },
   {
@@ -803,6 +894,9 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/teardrop-necklace.png",
     "tags": [
       "return-trajectory"
+    ],
+    "characterIds": [
+      "the-repentant"
     ]
   },
   {
@@ -815,6 +909,9 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/test-tube.png",
     "tags": [
       "ball-speed"
+    ],
+    "characterIds": [
+      "the-physicist"
     ]
   },
   {
@@ -828,7 +925,8 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "friendly-fire-risk",
       "lifesteal"
-    ]
+    ],
+    "requirement": "needs a \"stone allies\" passive"
   },
   {
     "id": "turret",
@@ -852,6 +950,9 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/unkempt-cradle.png",
     "tags": [
       "spawns-baby-balls"
+    ],
+    "characterIds": [
+      "the-cohabitants"
     ]
   },
   {
@@ -864,6 +965,9 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/upturned-hatchet.png",
     "tags": [
       "wall-bounce"
+    ],
+    "excludedCharacterIds": [
+      "the-physicist"
     ]
   },
   {
@@ -889,7 +993,8 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/voodoo-doll.png",
     "tags": [
       "status-effect"
-    ]
+    ],
+    "requirement": "needs a Curse-applying ball"
   },
   {
     "id": "wagon-wheel",
@@ -913,6 +1018,11 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/war-horn.png",
     "tags": [
       "baby-ball-scaling"
+    ],
+    "excludedCharacterIds": [
+      "the-empty-nester",
+      "the-makeshift-sisyphus",
+      "the-potager"
     ]
   },
   {
@@ -926,6 +1036,9 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "aoe",
       "wall-bounce"
+    ],
+    "characterIds": [
+      "the-embedded"
     ]
   },
   {
@@ -1008,6 +1121,9 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/baby-armor.png",
     "tags": [
       "spawns-baby-balls"
+    ],
+    "characterIds": [
+      "the-empty-nester"
     ]
   },
   {
@@ -1025,6 +1141,9 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/blood-kunai.png",
     "tags": [
       "direct-damage"
+    ],
+    "characterIds": [
+      "the-tiptoer"
     ]
   },
   {
@@ -1042,6 +1161,9 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/charged-bow.png",
     "tags": [
       "aoe"
+    ],
+    "characterIds": [
+      "the-conduit"
     ]
   },
   {
@@ -1059,6 +1181,11 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/cornucopia.png",
     "tags": [
       "spawns-baby-balls"
+    ],
+    "excludedCharacterIds": [
+      "the-empty-nester",
+      "the-makeshift-sisyphus",
+      "the-potager"
     ]
   },
   {
@@ -1076,6 +1203,9 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/cradle-of-filth.png",
     "tags": [
       "spawns-baby-balls"
+    ],
+    "characterIds": [
+      "the-cohabitants"
     ]
   },
   {
@@ -1130,6 +1260,9 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "aoe",
       "wall-bounce"
+    ],
+    "characterIds": [
+      "the-right-hand-man"
     ]
   },
   {
@@ -1148,6 +1281,9 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "crit",
       "aim-direction"
+    ],
+    "characterIds": [
+      "the-sentinel"
     ]
   },
   {
@@ -1218,6 +1354,10 @@ export const PASSIVES: Passive[] = [
       "aoe",
       "status-scaling",
       "teleport"
+    ],
+    "characterIds": [
+      "the-makeshift-sisyphus",
+      "the-wallbreaker"
     ]
   },
   {
@@ -1252,6 +1392,9 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/jugglers-wheel.png",
     "tags": [
       "aoe"
+    ],
+    "characterIds": [
+      "the-juggler"
     ]
   },
   {
@@ -1270,6 +1413,9 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "aoe",
       "status-scaling"
+    ],
+    "characterIds": [
+      "the-makeshift-sisyphus"
     ]
   },
   {
@@ -1288,6 +1434,10 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "status-effect",
       "orbit"
+    ],
+    "characterIds": [
+      "the-carouser",
+      "the-scandalmonger"
     ]
   },
   {
@@ -1307,6 +1457,9 @@ export const PASSIVES: Passive[] = [
       "fused-ball",
       "clone",
       "aoe"
+    ],
+    "characterIds": [
+      "the-potager"
     ]
   },
   {
@@ -1340,6 +1493,9 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "pass-through",
       "direct-damage"
+    ],
+    "characterIds": [
+      "the-itchy-finger"
     ]
   },
   {
@@ -1375,6 +1531,9 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "crit",
       "playfield-loop"
+    ],
+    "characterIds": [
+      "the-tunneller"
     ]
   },
   {
@@ -1392,6 +1551,9 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/refracted-echo.png",
     "tags": [
       "clone"
+    ],
+    "characterIds": [
+      "the-recollector"
     ]
   },
   {
@@ -1410,6 +1572,9 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "spawns-baby-balls",
       "wall-bounce"
+    ],
+    "characterIds": [
+      "the-flagellant"
     ]
   },
   {
@@ -1445,6 +1610,9 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/sands-of-time.png",
     "tags": [
       "ball-speed"
+    ],
+    "characterIds": [
+      "the-physicist"
     ]
   },
   {
@@ -1463,6 +1631,9 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "crit",
       "backstab"
+    ],
+    "characterIds": [
+      "the-shade"
     ]
   },
   {
@@ -1498,6 +1669,9 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "shield",
       "aoe"
+    ],
+    "characterIds": [
+      "the-shieldbearer"
     ]
   },
   {
@@ -1516,6 +1690,9 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "return-trajectory",
       "ball-speed"
+    ],
+    "characterIds": [
+      "the-repentant"
     ]
   },
   {
@@ -1534,6 +1711,9 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "crit",
       "backstab"
+    ],
+    "characterIds": [
+      "the-scrupulous-scoundrel"
     ]
   },
   {
@@ -1567,6 +1747,9 @@ export const PASSIVES: Passive[] = [
     "tags": [
       "status-effect",
       "lifesteal"
+    ],
+    "characterIds": [
+      "the-warrior"
     ]
   },
   {
@@ -1584,6 +1767,9 @@ export const PASSIVES: Passive[] = [
     "icon": "icons/passives/volatile-explosive.png",
     "tags": [
       "aoe"
+    ],
+    "characterIds": [
+      "the-embedded"
     ]
   },
   {
