@@ -416,6 +416,40 @@ describe('parseFactBases: DLC level-3 normalization (T11 / #37)', () => {
   });
 });
 
+describe('parseFactBases: existing-row refresh (T20 / #46)', () => {
+  const level3 = parseFactBases(realSources()).level3;
+
+  it('takes the datamined Hemorrhage value (30% → 20%)', () => {
+    // R9 (#35): kHemorrhagePct is a ÷1 field, so no divisor explains the gap;
+    // the v1.308 release build is the current game value.
+    expect(level3.hemorrhage).toContain('deal 20% of their current health');
+    expect(level3.hemorrhage).not.toContain('30%');
+  });
+
+  it('takes the datamined Vampire Lord bleed count (3 → 4 stacks)', () => {
+    // R9 (#35): kBleedAmt is a ÷1 count; the threshold (9) agrees.
+    expect(level3['vampire-lord']).toContain('inflicts 4 stacks of bleed');
+    expect(level3['vampire-lord']).not.toContain('3 stacks');
+  });
+
+  it('keeps the wiki display values for divisor-only rows (no blanket ÷10)', () => {
+    // The datamined raw values are game units: Blizzard 13, Charm 50,
+    // Dark 500, Heart Swallower 700, Freeze 80, Vampire 60.
+    expect(level3.blizzard).toContain('1.3 seconds');
+    expect(level3.charm).toContain('5% chance');
+    expect(level3.dark).toContain('5.0x damage');
+    expect(level3['heart-swallower']).toContain('70% chance');
+    expect(level3.freeze).toContain('8.0 seconds');
+    expect(level3.vampire).toContain('6% chance');
+  });
+
+  it('keeps the wiki prose for the three extract-omits-% rows', () => {
+    expect(level3.flesh).toContain('40%');
+    expect(level3.shotgun).toContain('200%');
+    expect(level3.warp).toContain('10%');
+  });
+});
+
 function realSources() {
   return {
     mechanics: realMechanics(),
