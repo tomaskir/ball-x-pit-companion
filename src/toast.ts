@@ -23,6 +23,7 @@ import { markClearExempt } from './clear-exempt';
 import { itemFor, type Item } from './catalog';
 import { iconUrl } from './icon-url';
 import type { Verdict } from './synergy';
+import { tagDescription, tagLabel, t } from './i18n';
 import type { PassiveAvailability } from './passive-availability';
 
 export interface ToastOptions {
@@ -76,8 +77,8 @@ export function createToast({ getVerdict, getAvailability }: ToastOptions): Toas
       <p class="eff">${item.effects}</p>
       ${availability?.reason ? `<p class="restriction">${availability.reason}</p>` : ''}
       ${comps ? `<div class="rec">${comps}</div>` : ''}
-      ${v ? `<div class="verdicts"><span class="${v.verdict}">${v.verdict === 'red' ? '▲ red' : '✓ green'}${v.note ? ` — ${v.note}` : ''}</span></div>` : ''}
-      ${item.tags.length ? `<div class="tags">${item.tags.map((t) => `<span>${t}</span>`).join('')}</div>` : ''}`;
+      ${v ? `<div class="verdicts"><span class="${v.verdict}">${v.verdict === 'red' ? t('toast.red') : t('toast.green')}${v.note ? ` — ${v.note}` : ''}</span></div>` : ''}
+      ${item.tags.length ? `<div class="tags">${item.tags.map((tag) => `<span title="${tagDescription(tag)}">${tagLabel(tag)}</span>`).join('')}</div>` : ''}`;
     return el;
   }
 

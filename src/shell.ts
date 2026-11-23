@@ -1,6 +1,6 @@
 // Shell-adapter module: every static-shell control the island wires lives
 // here behind one createShell({ ports, dispatch, snapshot }) call — the
-// theme toggle, the tab buttons, the per-screen search boxes, the
+// theme toggle, the language selector, the tab buttons, the per-screen search boxes, the
 // per-screen edition-filter checkboxes, the plan toolbar (Clear, End game
 // upgrades, Share), and the document-level Esc / empty-space clear handlers.
 // All listeners and the share flash timer go
@@ -21,6 +21,7 @@ import { isEdition } from './edition-gate';
 import { planLink } from './share';
 import { isClearExempt } from './clear-exempt';
 import { ESC_EXEMPT_SELECTOR, shouldClear, themeFromStorage } from './companion-core';
+import { chooseLanguage, t } from './i18n';
 
 /** The environment touchpoints the shell needs, injected so the adapter is
  *  callable outside a browser. The island's full IslandPorts extends this
@@ -86,6 +87,16 @@ export function createShell({ ports, dispatch, snapshot }: ShellOptions): Shell 
   }
 
   applyTheme(themeFromStorage(ports.storage.getItem('theme'), ports.prefersLight()));
+
+  // ---------- language ----------
+  // The header's select persists the choice and reloads (src/i18n/index.ts);
+  // the shell only transports the event and validates the value.
+  const langSelect = document.getElementById('langSelect') as HTMLSelectElement | null;
+  if (langSelect) listen(langSelect, 'change', () => {
+    const next = langSelect.value;
+    if (next === 'en' || next === 'zh') chooseLanguage(next);
+  });
+
   listen(themeToggle, 'click', () => {
     const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
     ports.storage.setItem('theme', next);
@@ -159,7 +170,7 @@ export function createShell({ ports, dispatch, snapshot }: ShellOptions): Shell 
     const url = planLink(ports.location.origin(), ports.location.pathname(), snapshot());
     const flash = () => {
       if (destroyed) return; // a clipboard promise that settles after teardown
-      shareBtn.textContent = 'Copied!';
+      shareBtn.textContent = t('plan.copied');
       if (flashTimer !== null) clearTimeout(flashTimer);
       flashTimer = setTimeout(() => {
         shareBtn.textContent = idleShareLabel;

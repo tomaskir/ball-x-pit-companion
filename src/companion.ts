@@ -29,6 +29,7 @@ import { createRenderer } from './renderer';
 import { restore, save } from './plan-session';
 import { createShell, type ShellPorts } from './shell';
 import { sectionFromHash } from './companion-core';
+import { applyStaticI18n, t } from './i18n';
 
 /** The environment touchpoints the island needs, injected so the startup
  *  sequence is callable outside a browser. The real implementations live in
@@ -52,6 +53,10 @@ export function startIsland(ports: IslandPorts): () => void {
   // A second island on the same document replaces the first — two live
   // islands would double every listener (tabs, search, share, Esc…).
   activeStop?.();
+
+  // the static shell ships in English; a Chinese preference repaints its copy
+  // from the dictionary before anything else reads the markup
+  applyStaticI18n();
 
   const { storage, location: loc } = ports;
 
@@ -145,7 +150,7 @@ function realPorts(): IslandPorts {
       replaceState: (url) => { history.replaceState(null, '', url); },
     },
     copy: (text) => navigator.clipboard?.writeText(text),
-    promptCopy: (text) => { window.prompt('Copy the plan link:', text); },
+    promptCopy: (text) => { window.prompt(t('plan.copyPrompt'), text); },
     prefersLight: () => matchMedia('(prefers-color-scheme: light)').matches,
   };
 }

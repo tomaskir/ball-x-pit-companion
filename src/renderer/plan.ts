@@ -19,6 +19,7 @@ import { icon, verdictBadge } from './dom';
 import { PAIR_INVALID_TITLE, POTAGER_FUSION_TITLE } from './labels';
 import type { Verdict } from '../synergy';
 import type { PlanBallEntry } from '../plan-state';
+import { t } from '../i18n';
 import type { ViewModel } from '../view-state';
 
 interface PlanSectionEls {
@@ -48,15 +49,15 @@ export interface PlanScreen {
 }
 
 const PLAN_EMPTY_HINTS = {
-  characters: 'Pick characters on the Characters screen — they appear here.',
-  balls: 'Balls you pick on the Balls screen will appear here.',
-  passives: 'Passives you pick on the Passives screen will appear here.',
+  characters: t('plan.empty.characters'),
+  balls: t('plan.empty.balls'),
+  passives: t('plan.empty.passives'),
 } as const;
 
 function planEntry(inner: string, onRemove: () => void): HTMLElement {
   const entry = document.createElement('div');
   entry.className = 'plan-entry';
-  entry.innerHTML = `${inner}<button class="plan-x" aria-label="Remove">×</button>`;
+  entry.innerHTML = `${inner}<button class="plan-x" aria-label="${t('plan.remove')}">×</button>`;
   entry.querySelector('.plan-x')!.addEventListener('click', () => onRemove());
   return entry;
 }
@@ -109,7 +110,7 @@ export function createPlan({ emitAction, reconcile }: { emitAction: Emit; reconc
       <p class="plan-hint plan-passive-hint" hidden></p>
       ${(['characters', 'balls', 'passives'] as const).map((key) => `
         <section class="plan-section" data-plan="${key}">
-          <h2 class="plan-heading"><span class="plan-title">${key[0].toUpperCase() + key.slice(1)}</span> <span class="plan-count"></span></h2>
+          <h2 class="plan-heading"><span class="plan-title">${t(`plan.section.${key}`)}</span> <span class="plan-count"></span></h2>
           <p class="plan-empty">${PLAN_EMPTY_HINTS[key]}</p>
           <div class="plan-grid"></div>
         </section>`).join('')}`;
@@ -162,7 +163,7 @@ export function createPlan({ emitAction, reconcile }: { emitAction: Emit; reconc
         const entry = planEntry(
           `<img src="${icon(ch.sprite)}" alt="${ch.name}" width="48" height="48" loading="lazy">` +
           `<span class="plan-body"><span class="plan-name">${ch.name}</span>` +
-          (base ? `<span class="plan-base" title="Base ball"><img src="${icon(base.icon)}" alt="${base.name}" width="20" height="20">${base.name}</span>` : '') +
+          (base ? `<span class="plan-base" title="${t('characters.baseBall')}"><img src="${icon(base.icon)}" alt="${base.name}" width="20" height="20">${base.name}</span>` : '') +
           `</span>`,
           () => emitAction({ type: 'toggleChar', id: ch.id }),
         );

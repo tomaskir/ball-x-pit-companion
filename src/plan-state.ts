@@ -42,6 +42,7 @@ import { createPickList } from './pick-list';
 import { passiveAvailability } from './passive-availability';
 import { verdictFor, type Item, type Verdict } from './synergy';
 import { pairKey } from './pair';
+import { t } from './i18n';
 import { globalLimits, limitsFor, selectedSlotRule, type PlanLimits } from './slot-limits';
 
 export type { PlanLimits };
@@ -145,7 +146,7 @@ const POTAGER_ID = 'the-potager';
 
 /** The generic over-limit hint — used when no slot quirk is responsible (the
  *  End game upgrades toggle can help). */
-const OVER_LIMIT_HINT = 'Over the limit — remove the highlighted picks or re-enable End game upgrades.';
+const OVER_LIMIT_HINT = t('plan.overLimit');
 
 /** Whether any selected character is The Potager — the fusion block applies
  *  with one or two selected characters. */
@@ -315,9 +316,9 @@ export function createPlanState() {
       overLimit,
       hint,
       fusionBlocked: potager,
-      fusionInvalidHint: fusionInvalid ? "The Potager can't fuse balls — remove the highlighted pairs" : '',
+      fusionInvalidHint: fusionInvalid ? t('plan.potagerFusion') : '',
       passiveInvalidHint: passiveInvalid
-        ? "Some passives aren't available to the selected characters — remove the highlighted entries."
+        ? t('plan.passiveInvalid')
         : '',
       passivesEmptyHint: slotRule?.passivesEmptyHint ?? null,
     };

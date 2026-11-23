@@ -18,6 +18,7 @@ import { PLAN_LIMIT_TITLE, PLAN_TOGGLE_LABELS, POTAGER_FUSION_TITLE } from './la
 import { emptyFilterHint, icon } from './dom';
 import { paintTierHeadings, type TierHeading } from './tier-headings';
 import type { ViewModel } from '../view-state';
+import { t } from '../i18n';
 
 /** One renderer instance's fusion-screen painters. */
 export interface FusionScreen {
@@ -37,7 +38,7 @@ export interface FusionScreen {
  *  scraping this file's source for the first root.innerHTML literal. A pure
  *  string; it carries no behavior and does not touch the paint-only rule. */
 export const FUSION_PANEL_SKELETON = `
-    <p class="fusion-hint">Pick two balls to see their fusion.</p>
+    <p class="fusion-hint">${t('fusion.hint.empty')}</p>
     <div class="fusion-head" hidden>
       <img class="icon-a" alt="" width="48" height="48"><span class="name-a fusion-name"></span>
       <span class="fusion-times">×</span>
@@ -50,17 +51,17 @@ export const FUSION_PANEL_SKELETON = `
       <p class="fusion-cross" hidden></p>
     </div>
     <section class="fusion-result" hidden>
-      <h3 class="fusion-result-title">Fused result</h3>
+      <h3 class="fusion-result-title">${t('fusion.resultTitle')}</h3>
       <ul class="fusion-result-rows"></ul>
     </section>
     <section class="fusion-exceptions" hidden>
-      <h3 class="fusion-exceptions-title">Reported exceptions</h3>
+      <h3 class="fusion-exceptions-title">${t('fusion.exceptionsTitle')}</h3>
       <ul class="fusion-exceptions-list"></ul>
     </section>
     <ul class="fusion-notes" hidden></ul>
     <p class="fusion-order-notice" hidden></p>
     <div class="fusion-plan-row">
-      <button class="fusion-swap-btn" type="button" hidden>Swap order</button>
+      <button class="fusion-swap-btn" type="button" hidden>${t('fusion.swap')}</button>
       <button class="fusion-plan-btn" type="button" hidden></button>
     </div>`;
 
@@ -310,10 +311,10 @@ export function createFusionScreen({ emitAction, reconcile }: { emitAction: Emit
     p.evo.hidden = !f.evolvesInstead;
     if (f.evolvesInstead) {
       p.evo.textContent = '';
-      p.evo.append('⚠ These two Evolve into ');
+      p.evo.append(t('fusion.evolve.before'));
       const strong = document.createElement('strong');
       strong.textContent = f.evolvesInstead.name;
-      p.evo.append(strong, ' rather than fuse — the Fusion Reactor will not offer this pair.');
+      p.evo.append(strong, t('fusion.evolve.after'));
       // the pair does not fuse — the composed paragraphs/cross/notes would be
       // made-up content; only the balls and the evolution warning show
       p.body.hidden = true;
@@ -364,7 +365,7 @@ export function createFusionScreen({ emitAction, reconcile }: { emitAction: Emit
         if (r.reported) {
           const reported = document.createElement('span');
           reported.className = 'fusion-result-reported';
-          reported.textContent = ' · reported';
+          reported.textContent = t('fusion.reported');
           li.append(reported);
         }
         return li;
@@ -387,7 +388,7 @@ export function createFusionScreen({ emitAction, reconcile }: { emitAction: Emit
         detail.textContent = ` — ${r.detail}`;
         const confidence = document.createElement('span');
         confidence.className = 'fusion-exception-confidence';
-        confidence.textContent = ` · ${r.confidence}`;
+        confidence.textContent = ` · ${t(`fusion.confidence.${r.confidence}`)}`;
         li.append(title, detail, confidence);
         return li;
       }));

@@ -35,9 +35,11 @@
 // shared selectedChars in on every derive. The persistence currency is
 // src/plan-codec.ts's SharedSnapshot: this module owns the chars and editions
 // halves and restores them on hydrate; plan-state owns the plan half.
-import { BALLS, type Ball } from './data/balls';
-import { PASSIVES, type Passive } from './data/passives';
-import { CHARACTERS, type Character } from './data/characters';
+import { type Ball } from './data/balls';
+import { type Passive } from './data/passives';
+import { type Character } from './data/characters';
+import { BALLS, PASSIVES, CHARACTERS } from './i18n/catalog';
+import { t } from './i18n';
 import { type Edition } from './data/editions';
 import {
   DEFAULT_EDITIONS,
@@ -201,7 +203,7 @@ const FUSION_BALLS = fusionBalls();
  *  the sticky-toggle semantics are shared, so is the wording. The fusion
  *  panel keeps the same literal in src/fusion-panel.ts (its hint is derived
  *  there); the two are pinned by tests. */
-const SELECTION_FULL = 'selection full — deselect one first';
+const SELECTION_FULL = t('selectionFull');
 
 /** The held character whose partners are Matchmaker-blocked: exactly one
  *  character held and two allowed. Null otherwise (0 or 2 held, or limit 1
@@ -431,7 +433,7 @@ export function createViewState({ editions }: ViewStateOptions = {}) {
       selectedChars: chars,
       slotHint:
         chars.length === 0 ? ''
-        : chars.length < limits.chars ? 'pick a second character…'
+        : chars.length < limits.chars ? t('characters.hint.second')
         : SELECTION_FULL,
       fusionPanel,
       fusionHint,

@@ -1,6 +1,10 @@
 ---
 // Single-page companion site. Static shell + one interactive island
-// (src/companion.ts).
+// (src/companion.ts). The shell ships in English (the upstream default);
+// data-i18n keys let the island repaint it in Simplified Chinese when the
+// header's language selector is set to 中文. Language is resolved before the
+// module loads, because the localized data collections are built at import
+// time. See src/i18n/index.ts.
 import '../styles/global.css';
 // The deployed release label — package.json is the single source of truth.
 import { version } from '../../package.json';
@@ -19,24 +23,45 @@ const faviconUrl = `${import.meta.env.BASE_URL}/favicon.ico`;
     <meta name="description" content="Fan companion for Ball x Pit: evolution recipes, synergy guides, and character quirks." />
     <link rel="icon" href={faviconUrl} />
     <title>Ball x Pit Companion</title>
+    <!-- Language bootstrap: ?lang=en/zh overrides the stored preference; a
+         first visit defaults to English. This must run before the module
+         script, which builds the localized catalogs from <html lang>. -->
+    <script is:inline>
+      (function () {
+        var lang = 'en';
+        try {
+          var param = new URLSearchParams(location.search).get('lang');
+          if (param === 'zh' || param === 'en') {
+            lang = param;
+            localStorage.setItem('bxp-lang', lang);
+          } else {
+            var stored = localStorage.getItem('bxp-lang');
+            if (stored === 'zh' || stored === 'en') lang = stored;
+          }
+        } catch (e) {
+          // Private mode: the inline ?lang override still works for this load.
+        }
+        document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+      })();
+    </script>
   </head>
   <body>
-    <!-- data-clear-exempt: the header owns its clicks (tabs, theme, repo
-         link) — an empty-space clear must not fire for them. The attribute
+    <!-- data-clear-exempt: the header owns its clicks (tabs, theme, language,
+         repo link) — an empty-space clear must not fire for them. The attribute
          is defined in src/clear-exempt.ts (CLEAR_EXEMPT_ATTR); static
          markup repeats the literal because it cannot call the marker. -->
     <header data-clear-exempt>
       <h1>Ball x Pit <span>Companion</span></h1>
       <span class="tab-sep" aria-hidden="true"></span>
-      <nav class="tabs" aria-label="Sections">
-        <button class="tab-btn active" data-section="balls">Balls</button>
-        <button class="tab-btn" data-section="fusions">Fusions</button>
+      <nav class="tabs" aria-label="Sections" data-i18n-aria="nav.sections">
+        <button class="tab-btn active" data-section="balls" data-i18n="nav.balls">Balls</button>
+        <button class="tab-btn" data-section="fusions" data-i18n="nav.fusions">Fusions</button>
         <span class="tab-sep" aria-hidden="true"></span>
-        <button class="tab-btn" data-section="passives">Passives</button>
+        <button class="tab-btn" data-section="passives" data-i18n="nav.passives">Passives</button>
         <span class="tab-sep" aria-hidden="true"></span>
-        <button class="tab-btn" data-section="characters">Characters</button>
+        <button class="tab-btn" data-section="characters" data-i18n="nav.characters">Characters</button>
         <span class="tab-sep" aria-hidden="true"></span>
-        <button class="tab-btn" data-section="plan">Plan</button>
+        <button class="tab-btn" data-section="plan" data-i18n="nav.plan">Plan</button>
       </nav>
       <div class="chips" id="charChips"></div>
       <span class="hint" id="slotHint"></span>
@@ -44,9 +69,13 @@ const faviconUrl = `${import.meta.env.BASE_URL}/favicon.ico`;
            fills when a toggle-off (or a share restore) drops entries. -->
       <p class="edition-loss" id="editionLoss" role="status" aria-live="polite" hidden></p>
       <div class="header-right">
-        <span class="app-version" title="Deployed version">v{version}</span>
-        <button id="themeToggle" aria-label="Toggle theme">☀️</button>
-        <a class="repo-link" href="https://github.com/tomaskir/ball-x-pit-companion" aria-label="GitHub repository" target="_blank" rel="noopener noreferrer">
+        <span class="app-version" title="Deployed version" data-i18n-title="header.version">v{version}</span>
+        <select id="langSelect" aria-label="Switch language" data-i18n-aria="header.lang" title="Switch language" data-i18n-title="header.lang">
+          <option value="en">English</option>
+          <option value="zh">中文</option>
+        </select>
+        <button id="themeToggle" aria-label="Toggle theme" data-i18n-aria="header.theme" title="Toggle theme" data-i18n-title="header.theme">☀️</button>
+        <a class="repo-link" href="https://github.com/tomaskir/ball-x-pit-companion" aria-label="GitHub repository" data-i18n-aria="header.repo" target="_blank" rel="noopener noreferrer">
           <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
         </a>
       </div>
@@ -55,39 +84,39 @@ const faviconUrl = `${import.meta.env.BASE_URL}/favicon.ico`;
     <main>
       <div class="section-view" data-section="balls">
         <div class="screen-toolbar">
-          <input class="screen-search" data-section="balls" data-clear-exempt id="search-balls" type="search" placeholder="Search name or effect…" autocomplete="off" />
+          <input class="screen-search" data-section="balls" data-clear-exempt id="search-balls" type="search" placeholder="Search name or effect…" data-i18n-placeholder="search.balls" autocomplete="off" />
           <div id="selection-balls" class="selection-box" hidden></div>
           <!-- The content filter's controls: one group per screen toolbar,
                top-right. Native checkboxes in a labelled fieldset; the island
                wires their change events (src/shell.ts) and the renderer paints
                the checked state (src/renderer/edition-filter.ts). -->
           <fieldset class="edition-filter" data-clear-exempt>
-            <legend>Editions</legend>
-            <label><input type="checkbox" class="edition-toggle" data-edition="base-game"> Base game</label>
-            <label><input type="checkbox" class="edition-toggle" data-edition="dlc-risen-ballbylon"> Risen Ballbylon</label>
+            <legend data-i18n="editions.legend">Editions</legend>
+            <label><input type="checkbox" class="edition-toggle" data-edition="base-game"> <span data-i18n="editions.base">Base game</span></label>
+            <label><input type="checkbox" class="edition-toggle" data-edition="dlc-risen-ballbylon"> <span data-i18n="editions.dlc">Risen Ballbylon</span></label>
           </fieldset>
         </div>
         <div id="ballsGrid"></div>
       </div>
       <div class="section-view" data-section="passives" hidden>
         <div class="screen-toolbar">
-          <input class="screen-search" data-section="passives" data-clear-exempt id="search-passives" type="search" placeholder="Search name or effect…" autocomplete="off" />
+          <input class="screen-search" data-section="passives" data-clear-exempt id="search-passives" type="search" placeholder="Search name or effect…" data-i18n-placeholder="search.passives" autocomplete="off" />
           <div id="selection-passives" class="selection-box" hidden></div>
           <fieldset class="edition-filter" data-clear-exempt>
-            <legend>Editions</legend>
-            <label><input type="checkbox" class="edition-toggle" data-edition="base-game"> Base game</label>
-            <label><input type="checkbox" class="edition-toggle" data-edition="dlc-risen-ballbylon"> Risen Ballbylon</label>
+            <legend data-i18n="editions.legend">Editions</legend>
+            <label><input type="checkbox" class="edition-toggle" data-edition="base-game"> <span data-i18n="editions.base">Base game</span></label>
+            <label><input type="checkbox" class="edition-toggle" data-edition="dlc-risen-ballbylon"> <span data-i18n="editions.dlc">Risen Ballbylon</span></label>
           </fieldset>
         </div>
         <div id="passivesGrid"></div>
       </div>
       <div class="section-view" data-section="characters" hidden>
         <div class="screen-toolbar">
-          <input class="screen-search" data-section="characters" data-clear-exempt id="search-characters" type="search" placeholder="Search name, quirk, or base ball…" autocomplete="off" />
+          <input class="screen-search" data-section="characters" data-clear-exempt id="search-characters" type="search" placeholder="Search name, quirk, or base ball…" data-i18n-placeholder="search.characters" autocomplete="off" />
           <fieldset class="edition-filter" data-clear-exempt>
-            <legend>Editions</legend>
-            <label><input type="checkbox" class="edition-toggle" data-edition="base-game"> Base game</label>
-            <label><input type="checkbox" class="edition-toggle" data-edition="dlc-risen-ballbylon"> Risen Ballbylon</label>
+            <legend data-i18n="editions.legend">Editions</legend>
+            <label><input type="checkbox" class="edition-toggle" data-edition="base-game"> <span data-i18n="editions.base">Base game</span></label>
+            <label><input type="checkbox" class="edition-toggle" data-edition="dlc-risen-ballbylon"> <span data-i18n="editions.dlc">Risen Ballbylon</span></label>
           </fieldset>
         </div>
         <div id="charactersGrid" class="char-grid"></div>
@@ -97,15 +126,15 @@ const faviconUrl = `${import.meta.env.BASE_URL}/favicon.ico`;
              make room for the controls at the screen's top-right -->
         <div class="screen-toolbar">
           <fieldset class="edition-filter" data-clear-exempt>
-            <legend>Editions</legend>
-            <label><input type="checkbox" class="edition-toggle" data-edition="base-game"> Base game</label>
-            <label><input type="checkbox" class="edition-toggle" data-edition="dlc-risen-ballbylon"> Risen Ballbylon</label>
+            <legend data-i18n="editions.legend">Editions</legend>
+            <label><input type="checkbox" class="edition-toggle" data-edition="base-game"> <span data-i18n="editions.base">Base game</span></label>
+            <label><input type="checkbox" class="edition-toggle" data-edition="dlc-risen-ballbylon"> <span data-i18n="editions.dlc">Risen Ballbylon</span></label>
           </fieldset>
         </div>
         <div class="fusion-layout">
           <div class="fusion-list-col">
-            <input class="screen-search" data-section="fusions" data-clear-exempt id="search-fusions" type="search" placeholder="Search balls…" autocomplete="off" />
-            <div id="fusionList" class="fusion-list" aria-label="Pick two balls to fuse"></div>
+            <input class="screen-search" data-section="fusions" data-clear-exempt id="search-fusions" type="search" placeholder="Search balls…" data-i18n-placeholder="search.fusions" autocomplete="off" />
+            <div id="fusionList" class="fusion-list" aria-label="Pick two balls to fuse" data-i18n-aria="fusion.listAria"></div>
           </div>
           <div id="fusionPanel" class="fusion-panel"></div>
         </div>
@@ -115,16 +144,16 @@ const faviconUrl = `${import.meta.env.BASE_URL}/favicon.ico`;
           <!-- the plan's action row: Clear + Share left, End game upgrades
                right. All three are static shell chrome — the island wires
                them (Clear/Share click, toggle change). -->
-          <button id="planClear" class="plan-btn">Clear plan</button>
-          <button id="planShare" class="plan-btn">Share</button>
+          <button id="planClear" class="plan-btn" data-i18n="plan.clear">Clear plan</button>
+          <button id="planShare" class="plan-btn" data-i18n="plan.share">Share</button>
           <label class="plan-upgrades">
             <input type="checkbox" id="planUpgrades" checked>
-            <span>End game upgrades</span>
+            <span data-i18n="plan.upgrades">End game upgrades</span>
           </label>
           <fieldset class="edition-filter" data-clear-exempt>
-            <legend>Editions</legend>
-            <label><input type="checkbox" class="edition-toggle" data-edition="base-game"> Base game</label>
-            <label><input type="checkbox" class="edition-toggle" data-edition="dlc-risen-ballbylon"> Risen Ballbylon</label>
+            <legend data-i18n="editions.legend">Editions</legend>
+            <label><input type="checkbox" class="edition-toggle" data-edition="base-game"> <span data-i18n="editions.base">Base game</span></label>
+            <label><input type="checkbox" class="edition-toggle" data-edition="dlc-risen-ballbylon"> <span data-i18n="editions.dlc">Risen Ballbylon</span></label>
           </fieldset>
         </div>
         <div id="planView"></div>
@@ -133,9 +162,9 @@ const faviconUrl = `${import.meta.env.BASE_URL}/favicon.ico`;
 
     <footer>
       <p>
-        Fan-made companion site. Ball x Pit © Kenny Sun (Kenomi LLC).
-        Icons from <a href="https://ballxpit.wiki.gg/">ballxpit.wiki.gg</a> — see
-        <a href="/ball-x-pit-companion/icons/CREDITS.md">credits</a>. Not affiliated with the rights holder.
+        <span data-i18n="footer.disclaimer">Fan-made companion site. Ball x Pit © Kenny Sun (Kenomi LLC). Icons from</span>
+        <a href="https://ballxpit.wiki.gg/">ballxpit.wiki.gg</a><span data-i18n="footer.seeCredits"> — see</span>
+        <a href="/ball-x-pit-companion/icons/CREDITS.md" data-i18n="footer.credits">credits</a><span data-i18n="footer.notAffiliated">. Not affiliated with the rights holder.</span>
       </p>
     </footer>
 

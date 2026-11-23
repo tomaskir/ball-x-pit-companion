@@ -7,6 +7,7 @@ import { markClearExempt } from '../clear-exempt';
 import type { Reconcile } from './reconcile';
 import { icon } from './dom';
 import type { ViewModel } from '../view-state';
+import { t } from '../i18n';
 
 /** One renderer instance's chip painter. */
 export interface Chips {
@@ -25,7 +26,7 @@ export function createChips({ emitAction, reconcile }: { emitAction: Emit; recon
           const chip = document.createElement('span');
           chip.className = 'chip';
           markClearExempt(chip);
-          chip.innerHTML = `<img src="${icon(ch.sprite)}" alt="" width="22" height="22"><span>${ch.name}</span><button class="chip-x" aria-label="Remove ${ch.name}" title="Click × to remove">×</button>`;
+          chip.innerHTML = `<img src="${icon(ch.sprite)}" alt="" width="22" height="22"><span>${ch.name}</span><button class="chip-x" aria-label="${t('chips.remove', { name: ch.name })}" title="${t('chips.removeTitle')}">×</button>`;
           chip.querySelector('.chip-x')!.addEventListener('click', () => {
             emitAction({ type: 'toggleChar', id: ch.id });
           });

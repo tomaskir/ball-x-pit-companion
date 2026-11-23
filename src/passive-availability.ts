@@ -25,7 +25,8 @@
 // they are surfaced as a requirement line, never as a block.
 import type { Passive } from './data/passives';
 import type { Character } from './data/characters';
-import { CHARACTERS } from './data/characters';
+import { CHARACTERS } from './i18n/catalog';
+import { listJoin, requirementText, t } from './i18n';
 import { passiveMap } from './catalog';
 
 /** The character-specific badge applies to every DLC passive (base and
@@ -64,12 +65,9 @@ export interface AvailabilityContext {
 
 const characterName = new Map(CHARACTERS.map((character) => [character.id, character.name]));
 
-/** "A", "A or B", "A, B, or C" — the display join for a character set. */
-function formatNames(names: readonly string[]): string {
-  if (names.length <= 1) return names[0] ?? '';
-  if (names.length === 2) return `${names[0]} or ${names[1]}`;
-  return `${names.slice(0, -1).join(', ')}, or ${names[names.length - 1]}`;
-}
+/** "A"、"A 或 B" — the display join for a character set (listJoin owns the
+ *  中/英连接词)。 */
+const formatNames = (names: readonly string[]): string => listJoin(names);
 
 const namesOf = (ids: readonly string[]): string[] => ids.map((id) => characterName.get(id) ?? id);
 
@@ -118,7 +116,7 @@ export function passiveAvailability(passive: Passive, context: AvailabilityConte
   const { selectedChars } = context;
   const characterSpecific = isCharacterSpecific(passive);
   const characterLockReason = characterSpecific
-    ? `Only ${formatNames(namesOf(passive.characterIds!))} can use this.`
+    ? t('passive.only', { names: formatNames(namesOf(passive.characterIds!)) })
     : '';
   const zeroSlots = hasZeroSlots(context);
 
@@ -131,7 +129,7 @@ export function passiveAvailability(passive: Passive, context: AvailabilityConte
       characterLockReason,
       zeroSlots: true,
       unavailable: true,
-      reason: context.zeroSlotsReason ?? 'No passive slots with the selected characters.',
+      reason: context.zeroSlotsReason ?? t('passive.zeroSlots'),
     };
   }
 
@@ -154,10 +152,10 @@ export function passiveAvailability(passive: Passive, context: AvailabilityConte
   // block (a DLC passive outside every selected character's allow-list needs
   // no second reason).
   if (blocked && selectedChars.every(statBlocked) && (!characterSpecific || selectedChars.some(allowListed))) {
-    reasons.push(`${formatNames(selectedChars.map((c) => c.name))} can't use this (character stat gate).`);
+    reasons.push(t('passive.statGate', { names: formatNames(selectedChars.map((c) => c.name)) }));
   }
   // Loadout gate: informational only.
-  if (passive.requirement) reasons.push(`Requirement: ${passive.requirement}`);
+  if (passive.requirement) reasons.push(t('passive.requirement', { req: requirementText(passive.requirement) }));
 
   return {
     blocked,

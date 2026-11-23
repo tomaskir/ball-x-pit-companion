@@ -8,8 +8,7 @@
 // searchable) and adds the character-specific badge; the reason rides the
 // toast. Internal to the renderer facade; the tile registry belongs to the
 // renderer instance (createGrids), so two renderers never share tiles.
-import { BALLS } from '../data/balls';
-import { PASSIVES } from '../data/passives';
+import { BALLS, PASSIVES } from '../i18n/catalog';
 import { itemFor, type Item } from '../catalog';
 import { recipeHtml } from '../graph';
 import type { PainterSeam } from './seam';
