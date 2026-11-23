@@ -12,6 +12,7 @@ import type { Emit } from './seam';
 import type { Reconcile } from './reconcile';
 import { icon } from './dom';
 import type { ViewModel } from '../view-state';
+import { t } from '../i18n';
 
 interface GraphSectionEls {
   section: HTMLElement;
@@ -38,11 +39,11 @@ export interface BuildGraphs {
 }
 
 const GRAPH_EMPTY_HINTS = {
-  balls: 'Balls or fused pairs in your plan will show every step to build them here.',
-  passives: 'Passives in your plan will show every step to build them here.',
+  balls: t('graph.empty.balls'),
+  passives: t('graph.empty.passives'),
 } as const;
 
-const GRAPH_TITLES = { balls: 'Ball build graph', passives: 'Passive build graph' } as const;
+const GRAPH_TITLES = { balls: t('graph.title.balls'), passives: t('graph.title.passives') } as const;
 
 /** One edge's identity: the stamped endpoints, shared by the reconcile key,
  *  the path lookup, and the DOM dataset stamp — one spelling, all uses. */
@@ -206,8 +207,8 @@ export function createBuildGraphs({ emitAction, reconcile }: { emitAction: Emit;
         const check = el.querySelector<HTMLButtonElement>('.build-check');
         if (check) {
           check.hidden = n.suppressed;
-          check.ariaLabel = n.done ? 'Mark as not done' : 'Mark as done';
-          check.title = n.done ? 'Not done yet' : 'Done this run';
+          check.ariaLabel = n.done ? t('graph.markUndone') : t('graph.markDone');
+          check.title = n.done ? t('graph.notDone') : t('graph.done');
         }
       }
       // edges: paths follow their endpoints' new positions after a reorder;

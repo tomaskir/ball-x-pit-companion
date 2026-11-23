@@ -15,6 +15,7 @@ import { ballMap } from './catalog';
 import { fuse, type FusionResult } from './fusion';
 import { type FusionException } from './fusion-knowledge';
 import { type Ball } from './data/balls';
+import { isZh, propertyLabel, propertyValue, fusionException, t } from './i18n';
 
 /** One "Fused result" display row — a shared scalar collision resolved to
  *  the first pick. Text-only, so the renderer never blinks an icon. */
@@ -105,13 +106,15 @@ export interface FusionPanelPlan {
 /** Both max-2 selections (characters, fusion picks) show this when full —
  *  the sticky-toggle semantics are shared, so is the wording. view-state's
  *  slotHint carries the same literal; the two are pinned by tests. */
-const SELECTION_FULL = 'selection full — deselect one first';
+const SELECTION_FULL = t('selectionFull');
 
 /** "A", "A and B", "A, B, and C" — the order notice's property list. */
 const labelList = (labels: string[]): string =>
   labels.length <= 1 ? (labels[0] ?? '')
-  : labels.length === 2 ? `${labels[0]} and ${labels[1]}`
-  : `${labels.slice(0, -1).join(', ')}, and ${labels[labels.length - 1]}`;
+  : labels.length === 2 ? (isZh() ? `${labels[0]}和${labels[1]}` : `${labels[0]} and ${labels[1]}`)
+  : isZh()
+    ? `${labels.slice(0, -1).join('、')}和${labels[labels.length - 1]}`
+    : `${labels.slice(0, -1).join(', ')}, and ${labels[labels.length - 1]}`;
 
 /** The composed state's whole presentation: the "Fused result" and
  *  "Reported exceptions" display rows, their section visibility, and the
@@ -142,16 +145,21 @@ const composedPresentation = (
   }
   const resultRows: FusionResultRow[] = fusion.resolved.collisions.map((c) => ({
     key: `${c.key}|${c.winner}|${c.value}|${c.reported}`,
-    label: c.label,
-    value: c.value,
+    label: propertyLabel(c.label),
+    value: propertyValue(c.value),
     winner: c.winnerName,
-    title: `${c.winnerName}'s ${c.value} wins over ${c.loserName}'s ${c.loserValue}`,
+    title: t('fusion.collision.title', {
+      winner: c.winnerName,
+      value: propertyValue(c.value),
+      loser: c.loserName,
+      loserValue: propertyValue(c.loserValue),
+    }),
     reported: c.reported,
   }));
   const exceptions: FusionExceptionRow[] = fusion.exceptions.map((e) => ({
     key: e.pair,
-    title: e.title,
-    detail: e.detail,
+    title: fusionException(e.pair, e.title, e.detail).title,
+    detail: fusionException(e.pair, e.title, e.detail).detail,
     source: e.source,
     confidence: e.confidence,
     orderDependent: e.orderDependent,
@@ -159,8 +167,8 @@ const composedPresentation = (
   const orderSensitive = resultRows.length > 0 || exceptions.some((r) => r.orderDependent);
   const orderNotice = !orderSensitive ? ''
     : resultRows.length
-      ? `⚠ Order matters for this pair — swapping changes ${labelList(resultRows.map((r) => r.label))}.`
-      : '⚠ Order matters for this pair — a reported exception is order-dependent.';
+      ? t('fusion.order.labels', { labels: labelList(resultRows.map((r) => r.label)) })
+      : t('fusion.order.exception');
   return {
     resultRows,
     exceptions,
@@ -208,8 +216,8 @@ export function deriveFusionPanel(
       ? { state: 'pending', first: a }
       : composedPanel(a, b, plan);
   const hint =
-    picks.length === 0 ? 'Pick two balls to see their fusion.'
-    : picks.length === 1 ? '…pick a second ball.'
+    picks.length === 0 ? t('fusion.hint.empty')
+    : picks.length === 1 ? t('fusion.hint.pending')
     : SELECTION_FULL;
   return { panel, hint };
 }

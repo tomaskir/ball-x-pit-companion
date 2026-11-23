@@ -38,6 +38,8 @@ const GLOBAL: { on: PlanLimits; off: PlanLimits } = {
   off: { chars: 1, balls: 4, passives: 4 },
 };
 
+import { t } from './i18n';
+
 /** One character's slot-quirk overlay: a pure transform of the global limits
  *  (so the upgrade toggle still applies underneath) plus the copy explaining
  *  it. The quirk's id is the map key, not a field. */
@@ -61,15 +63,15 @@ export const SLOT_RULES: ReadonlyMap<string, SlotRule> = new Map<string, SlotRul
     apply: (global) => ({ ...global, balls: global.balls * 2, passives: 0 }),
     overLimitHint: {
       section: 'passives',
-      text: 'The Ballbearer has no passive slots — remove the highlighted passives',
+      text: t('slot.ballbearer.passives'),
     },
-    passivesEmptyHint: 'The Ballbearer has no passive slots.',
+    passivesEmptyHint: t('slot.ballbearer.empty'),
   }],
   ['the-hoary-hoarder', {
     apply: (global) => ({ ...global, balls: 2, passives: global.passives - 2 + global.balls }),
     overLimitHint: {
       section: 'balls',
-      text: 'The Hoary Hoarder has 2 ball slots — remove the highlighted balls',
+      text: t('slot.hoary.balls'),
     },
   }],
 ]);

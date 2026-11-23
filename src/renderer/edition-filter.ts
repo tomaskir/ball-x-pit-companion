@@ -7,6 +7,7 @@
 // destroy() cannot leave it running.
 import { isEdition } from '../edition-gate';
 import type { ViewModel } from '../view-state';
+import { isZh, t } from '../i18n';
 
 /** One renderer instance's edition-filter chrome. */
 export interface EditionFilter {
@@ -21,7 +22,9 @@ export interface EditionFilter {
 const LOSS_NOTICE_MS = 4000;
 
 const lossText = (count: number): string =>
-  `${count} ${count === 1 ? 'entry' : 'entries'} removed by edition filter`;
+  isZh()
+    ? t('edition.loss', { n: count })
+    : `${count} ${count === 1 ? 'entry' : 'entries'} removed by edition filter`;
 
 export function createEditionFilter(): EditionFilter {
   let timer: ReturnType<typeof setTimeout> | null = null;

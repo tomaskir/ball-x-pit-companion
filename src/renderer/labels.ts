@@ -6,19 +6,21 @@
 /** Disabled buttons suppress mouse events, so a title on the button itself
  *  never shows — the title rides the nearest container instead (with
  *  pointer-events:none letting the hover reach it). */
-export const PLAN_LIMIT_TITLE = 'Plan limit reached';
+import { t } from '../i18n';
+
+export const PLAN_LIMIT_TITLE = t('labels.planLimit');
 
 /** The Potager's fusion block — the disabled fusion-panel button's row
  *  tooltip and the plan's fusion-invalid entry tooltip. */
-export const POTAGER_FUSION_TITLE = "The Potager can't fuse balls";
+export const POTAGER_FUSION_TITLE = t('labels.potagerFusion');
 
 /** A hydrated Matchmaker-forbidden character pair's plan-entry tooltip. */
-export const PAIR_INVALID_TITLE = "these two can't team up in a run";
+export const PAIR_INVALID_TITLE = t('labels.pairInvalid');
 
 /** The plan toggle's two states, shared by the selection box's buttons and
  *  the fusion panel's composed-pair button. */
-export const PLAN_TOGGLE_LABELS = { add: 'Add to plan', remove: 'Remove from plan' } as const;
+export const PLAN_TOGGLE_LABELS = { add: t('selection.plan.add'), remove: t('selection.plan.remove') } as const;
 
 /** The content filter's one empty-screen hint — the grids, the character
  *  screen, and the fusion pick list all paint this same line. */
-export const EMPTY_HINT = 'No content matches the current filters.';
+export const EMPTY_HINT = t('labels.empty');

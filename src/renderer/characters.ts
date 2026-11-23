@@ -2,7 +2,9 @@
 // attributes/classes in place (hidden content is absent, not dimmed). An
 // empty grid shows the one filter hint. Internal to the renderer facade; the
 // card registry belongs to the renderer instance (createCharacters).
-import { CHARACTERS, type Character } from '../data/characters';
+import { type Character } from '../data/characters';
+import { CHARACTERS } from '../i18n/catalog';
+import { t } from '../i18n';
 import { ballMap } from '../catalog';
 import type { PainterSeam } from './seam';
 import { markClearExempt } from '../clear-exempt';
@@ -41,8 +43,8 @@ export function createCharacters({ emitAction, attachToast }: PainterSeam): Char
         <div class="char-name">${ch.name}</div>
         <div class="char-quirk">${ch.quirk}</div>
         ${base
-          ? `<div class="char-base" title="Base ball"><img src="${icon(base.icon)}" alt="${base.name}" width="24" height="24"><span>${base.name}</span></div>`
-          : '<div class="char-base none">no base ball</div>'}`;
+          ? `<div class="char-base" title="${t('characters.baseBall')}"><img src="${icon(base.icon)}" alt="${base.name}" width="24" height="24"><span>${base.name}</span></div>`
+          : `<div class="char-base none">${t('characters.noBase')}</div>`}`;
       card.addEventListener('click', () => {
         emitAction({ type: 'toggleChar', id: ch.id });
       });
@@ -73,7 +75,7 @@ export function createCharacters({ emitAction, attachToast }: PainterSeam): Char
       // dispatch is a no-op) so the native tooltip keeps working — disabled
       // elements suppress mouse events.
       card.classList.toggle('blocked', c.blocked);
-      card.title = c.blockedBy ? `can't pair with ${c.blockedBy}` : '';
+      card.title = c.blockedBy ? t('characters.blocked', { name: c.blockedBy }) : '';
     }
     if (empty) empty.hidden = anyVisible;
   }

@@ -17,7 +17,8 @@ Not an npm package (`"private": true`). Code is MIT-licensed; game art in
 
 ## Repo map
 
-- `src/pages/index.astro` — static page shell (header with the edition-filter loss notice, tabs, per-screen search + edition checkboxes, footer disclaimer).
+- `src/pages/index.astro` — static page shell (header with the edition-filter loss notice, tabs, per-screen search + edition checkboxes, language selector, footer disclaimer). English is the markup language; `data-i18n` keys drive Chinese repaint.
+- `src/i18n/` — localization layer: language resolution/persistence, `t()` and entity accessors (`index.ts`), localized collections consumed by the catalog (`catalog.ts`), and the official Simplified Chinese copy tables (`zh/*`). Language is fixed before module load; switching reloads the page. See `docs/localization/zh-CN.md`.
 - `src/companion.ts` — the **island**: composition root for shell, renderer, and view state — plan persistence, hash routing, and the startup/disposal sequence only.
 - `src/companion-core.ts` — pure startup decisions (`sectionFromHash`, `shouldClear`, `themeFromStorage`); the island and shell are their transport.
 - `src/shell.ts` — the **shell adapter**: `createShell({ ports, dispatch, snapshot })` owns every static-shell control (theme, tabs, per-screen search, per-screen edition-filter checkboxes, plan toolbar, share, Esc/empty-space) in one listener registry and returns `{ showSection, destroy }`; `destroy` removes every listener and clears the share flash timer.

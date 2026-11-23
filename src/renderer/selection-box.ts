@@ -10,6 +10,7 @@ import type { Emit } from './seam';
 import { markClearExempt } from '../clear-exempt';
 import { bindAction, type ActionSlot } from './action-slot';
 import { PLAN_LIMIT_TITLE, PLAN_TOGGLE_LABELS } from './labels';
+import { t } from '../i18n';
 import type { SelectionBoxState, ViewModel } from '../view-state';
 
 interface SelectionBoxEls {
@@ -39,16 +40,16 @@ const PLAN_BTN_LABELS: Record<SelectionBoxState['plan'], string> = {
   disabled: PLAN_TOGGLE_LABELS.add,
 };
 const FUSION_BTN_LABELS: Record<Exclude<SelectionBoxState['fusion'], null>, string> = {
-  add: 'Add to fusion',
-  remove: 'Remove from fusion',
-  disabled: 'Add to fusion',
-  unfusable: 'Add to fusion',
+  add: t('selection.fusion.add'),
+  remove: t('selection.fusion.remove'),
+  disabled: t('selection.fusion.disabled'),
+  unfusable: t('selection.fusion.unfusable'),
 };
 const FUSION_BTN_TITLES: Record<Exclude<SelectionBoxState['fusion'], null>, string> = {
   add: '',
   remove: '',
-  disabled: 'selection full — deselect one first',
-  unfusable: 'Baby Ball cannot be fused',
+  disabled: t('selectionFull'),
+  unfusable: t('selection.fusion.unfusableTitle'),
 };
 
 export function createSelectionBoxes({ emitAction }: { emitAction: Emit }): SelectionBoxes {

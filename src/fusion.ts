@@ -30,7 +30,10 @@
 // docs/research/fusion-mechanics.md §2-§3; evidence corpus:
 // docs/research/fusion-observations/ (counts derive from fusion-pairs.json).
 // It is the site's editorial model of fusion, not game data.
-import { BALLS, type Ball } from './data/balls';
+import { type Ball } from './data/balls';
+import { BALLS } from './i18n/catalog';
+import { LEVEL_3_EFFECTS } from './data/level-3';
+import { fusionNote, level3Effect, t } from './i18n';
 import { resolveProperties, type ResolvedProperties } from './fusion-properties';
 import {
   componentText,
@@ -71,7 +74,10 @@ export function abstractDamage(text: string): string {
     // health", "25% less damage") — those are mechanics, not damage rolls.
     .replace(/\b(?:deals?|dealt|dealing) \d+(?:\.\d+)?(?:[–-]\d+(?:\.\d+)?)?(?![\dx%]|\.\d)/gi, (m) =>
       m.replace(/\d+(?:\.\d+)?(?:[–-]\d+(?:\.\d+)?)?$/, 'X')
-    );
+    )
+    // Chinese: rolls right before "伤害" ("50-70伤害", "1点伤害"). Percentages
+    // and multipliers stay — the unit between the number and 伤害 blocks them.
+    .replace(/\d+(?:[.,]\d+)?(?:[–-]\d+(?:[.,]\d+)?)?(?=点?伤害)/g, 'X');
 }
 
 /** Cross-wire result: the emitted line (or null) plus whether the emitted kill
@@ -101,15 +107,15 @@ export function crossWire(a: Ball, b: Ball): CrossWireResult {
 function wireLine(wire: Wire): string {
   switch (wire.kind) {
     case 'spawn-carries-on-hit':
-      return `Spawned balls from ${wire.carrier.name} have the same properties as ${wire.status.name}.`;
+      return t('fusion.wire.spawn', { carrier: wire.carrier.name, status: wire.status.name });
     case 'aoe-carries-on-hit':
-      return `Area-of-effect damage from ${wire.carrier.name} inflicts the status effect of ${wire.status.name}.`;
+      return t('fusion.wire.aoe', { carrier: wire.carrier.name, status: wire.status.name });
     case 'field-carries-on-hit':
-      return `The trail or field from ${wire.carrier.name} inflicts the status effect of ${wire.status.name}.`;
+      return t('fusion.wire.field', { carrier: wire.carrier.name, status: wire.status.name });
     case 'aoe-carries-kill':
-      return `Area-of-effect damage from ${wire.carrier.name} triggers the instant kill of ${wire.status.name}.`;
+      return t('fusion.wire.aoeKill', { carrier: wire.carrier.name, status: wire.status.name });
     case 'spawn-carries-spawn-bound':
-      return `Spawned balls from ${wire.carrier.name} have the same properties as ${wire.status.name}, including its spawned effects.`;
+      return t('fusion.wire.spawnBound', { carrier: wire.carrier.name, status: wire.status.name });
   }
 }
 
@@ -151,7 +157,7 @@ export interface FusionResult {
 export function fuse(a: Ball, b: Ball): FusionResult | null {
   if (a.id === b.id) return null;
   const evo = evolvesInstead(a, b);
-  const notes = ['Composition is modeled from community-observed rules; verify against the game.'];
+  const notes = [t('fusion.note.model')];
 
   // Order resolution (fusion-mechanics.md §3, decision #7): property-set
   // union with first-pick scalar precedence. Each differing shared scalar key
@@ -164,11 +170,14 @@ export function fuse(a: Ball, b: Ball): FusionResult | null {
   // computed wire state; fuse() names no pair and no class.
   const wire = crossWire(a, b);
   const facts = factsFor(a, b, { spawnerId: wire.spawnerId, disputed: wire.disputed });
-  notes.push(...facts.notes);
+  notes.push(...facts.notes.map(fusionNote));
 
   return {
     name: fusionName(a, b),
-    paragraphs: [componentText(a), componentText(b)].map(abstractDamage) as [string, string],
+    paragraphs: [
+      level3Effect(a.id, LEVEL_3_EFFECTS[a.id] ?? a.effects),
+      level3Effect(b.id, LEVEL_3_EFFECTS[b.id] ?? b.effects),
+    ].map(abstractDamage) as [string, string],
     crossWire: wire.line,
     evolvesInstead: evo ? { id: evo.id, name: evo.name } : null,
     notes,

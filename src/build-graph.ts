@@ -46,6 +46,7 @@ import { pairKey, parsePair } from './pair';
 import { ballMap, passiveMap, isPassive } from './catalog';
 import { evolvesInstead } from './fusion';
 import { gatedGraph } from './edition-gate';
+import { t } from './i18n';
 import type { Edition } from './data/editions';
 import { DEPTH_LABELS } from './depth-labels';
 import type { PlanState } from './plan-state';
@@ -72,7 +73,7 @@ const rows = (labels: readonly string[], fusionRow: FusionRow | null): BuildGrap
   labels,
 });
 export const BUILD_GRAPH_ROWS: Record<'balls' | 'passives', BuildGraphRows> = {
-  balls: rows([...DEPTH_LABELS, 'Fusions'], FUSION_ROW),
+  balls: rows([...DEPTH_LABELS, t('tier.fusions')], FUSION_ROW),
   passives: rows(DEPTH_LABELS, null),
 };
 
